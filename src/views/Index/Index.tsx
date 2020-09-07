@@ -1,9 +1,10 @@
 import { NextPage } from 'next';
+import { Page } from '../../components/Page/Page';
 
 export type WorkoutProps = {};
 
-const Workout: NextPage<WorkoutProps> = (props: WorkoutProps) => {
-	return <div>Home Page</div>;
+const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
+	return <Page>Home Page</Page>;
 };
 
-export default Workout;
+export default Index;

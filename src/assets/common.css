@@ -1,0 +1,10 @@
+body {
+	--theme-dark: #4d4646;
+	--theme-dark2: #5b5656;
+	--theme-green: #7fcd91;
+	--theme-light: #f5eaea;
+
+	margin: 0;
+	background-color: var(--theme-light);
+	font-family: sans-serif;
+}
