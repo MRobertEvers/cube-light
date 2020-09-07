@@ -1,0 +1,34 @@
+.index-container {
+	margin: auto;
+	display: flex;
+}
+
+.avatar {
+	--size: 240px;
+	width: var(--size);
+	height: var(--size);
+	background-color: var(--theme-dark2);
+}
+
+.decklist {
+	margin: 0 auto;
+	border-collapse: collapse;
+	flex-grow: 1;
+}
+
+.decklist > tr > th {
+	border-bottom: 1px solid var(--theme-dark2);
+	border-spacing: 0;
+}
+
+.decklist > tr > th:first-child {
+	text-align: left;
+}
+
+.decklist > tr > th:last-child {
+	width: 64px;
+}
+
+.decklist > tr > td:last-child {
+	text-align: center;
+}

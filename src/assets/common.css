@@ -6,5 +6,6 @@ body {
 
 	margin: 0;
 	background-color: var(--theme-light);
+	color: var(--theme-dark);
 	font-family: sans-serif;
 }
