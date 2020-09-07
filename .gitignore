@@ -12,6 +12,7 @@
 # Build Artifacts
 **/build
 **/dist
+**/.next
 
 # Deployment Artifacts
 **/.serverless
