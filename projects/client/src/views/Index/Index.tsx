@@ -10,11 +10,6 @@ import AlertIcon from '../../components/Icons/AlertIcon';
 
 export type WorkoutProps = {};
 
-const tmp = [];
-for (let i = 0; i < 100; i += 1) {
-	tmp.push('Words');
-}
-
 const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 	const [suggestions, setSuggestions] = useState({ sorted: [], set: new Set() });
 	const [isWaiting, setIsWaiting] = useState(false);
@@ -25,7 +20,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 		return data as { name: string; cards: Array<{ name: string; count: string }> };
 	});
 	const worker = useMemo(() => {
-		if (typeof Worker !== 'undefined') return new Worker('../../workers/suggestions.worker.ts', { type: 'module' });
+		if (typeof Worker !== 'undefined') return new Worker('../../workers/deck.worker.ts', { type: 'module' });
 	}, []);
 	useEffect(() => {
 		if (!worker) {
@@ -62,7 +57,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 					className={styles['submit-button']}
 					onClick={() => {
 						worker.postMessage({
-							type: 'submit',
+							type: 'add',
 							cardName: addItemText
 						});
 						setIsWaiting(true);
@@ -128,8 +123,6 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 			<div className={styles['index-container']}>
 				<div>
 					<div className={styles['avatar']}></div>
-
-					<button>Add Card</button>
 				</div>
 				<div className={styles['body']}>
 					<h2 className={styles['deck-title']}>{data?.name}</h2>
