@@ -7,10 +7,6 @@ export function xhrFetch(url: string, options?: XHRFetchInit, onreadystatechange
 
 	request.withCredentials = credentials === 'include';
 
-	for (const header in headers || {}) {
-		request.setRequestHeader(header, headers[header]);
-	}
-
 	// IE 11 does not support 'json' type
 	// request.responseType = "json";
 	// Just use the default type ('text') and JSON.parse it if you need json.
@@ -19,5 +15,11 @@ export function xhrFetch(url: string, options?: XHRFetchInit, onreadystatechange
 	};
 
 	request.open(method || 'GET', url);
+
+	const requestHeaders = headers || {};
+	for (const header in requestHeaders) {
+		request.setRequestHeader(header, headers[header]);
+	}
+
 	request.send(body);
 }

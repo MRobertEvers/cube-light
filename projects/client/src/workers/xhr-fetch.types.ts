@@ -1,6 +1,6 @@
 export type XHRFetchInit = {
 	method?: 'POST' | 'GET';
-	headers?: string[];
+	headers?: { [x: string]: string };
 	body?: string;
 	credentials?: 'include' | 'omit';
 };

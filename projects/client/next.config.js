@@ -9,6 +9,15 @@ module.exports = {
 			);
 		}
 
+		config.module.rules.push({
+			test: /.*\.svgi$/i,
+			use: [
+				{
+					loader: 'svg-inline-loader'
+				}
+			]
+		});
+
 		return config;
 	}
 };

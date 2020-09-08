@@ -17,6 +17,6 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true
 	},
-	"include": ["src", "custom.d.ts", "test"],
+	"include": ["src", "custom.d.ts"],
 	"exclude": ["node_modules"]
 }

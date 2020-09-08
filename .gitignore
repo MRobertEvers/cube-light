@@ -17,3 +17,6 @@
 # Deployment Artifacts
 **/.serverless
 **/screenshots/*.png
+
+# Data
+**/AllPrintings.*
