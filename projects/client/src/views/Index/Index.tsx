@@ -7,6 +7,8 @@ import { Page } from '../../components/Page/Page';
 import styles from './index.module.css';
 import { Spinner } from '../../components/Spinner/Spinner';
 import AlertIcon from '../../components/Icons/AlertIcon';
+import { useDeckWorker } from '../../workers/deck.hook';
+import { DeckWorkerResponse } from '../../workers/deck.types';
 
 export type WorkoutProps = {};
 
@@ -19,30 +21,19 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 
 		return data as { name: string; cards: Array<{ name: string; count: string }> };
 	});
-	const worker = useMemo(() => {
-		if (typeof Worker !== 'undefined') return new Worker('../../workers/deck.worker.ts', { type: 'module' });
-	}, []);
-	useEffect(() => {
-		if (!worker) {
-			return;
+
+	const postToWorker = useDeckWorker((e: DeckWorkerResponse) => {
+		if (e.type === 'suggest') {
+			setSuggestions(e);
+		} else {
+			setAddItemText('');
+			setSuggestions({ sorted: [], set: new Set() });
+			mutate('1');
 		}
-		worker.onmessage = (e: MessageEvent) => {
-			const result = e.data as { type: string; sorted: string[]; set: Set<string> };
-			if (result.type === 'suggest') {
-				setSuggestions(result);
-			} else {
-				setAddItemText('');
-				setSuggestions({ sorted: [], set: new Set() });
-				mutate('1');
-			}
 
-			setIsWaiting(false);
-		};
+		setIsWaiting(false);
+	});
 
-		return () => {
-			worker.terminate();
-		};
-	}, [worker]);
 	const [suggestDebounceTimer, setSuggestDebounceTimer] = useState(null);
 	const [addItemText, setAddItemText] = useState('');
 
@@ -56,7 +47,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 					tabIndex={2}
 					className={styles['submit-button']}
 					onClick={() => {
-						worker.postMessage({
+						postToWorker({
 							type: 'add',
 							cardName: addItemText
 						});
@@ -97,7 +88,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 								const timer = setTimeout(() => {
 									if (newText.length > 3) {
 										setIsWaiting(true);
-										worker.postMessage({ type: 'suggest', payload: newText });
+										postToWorker({ type: 'suggest', payload: newText });
 									} else {
 										setSuggestions({ sorted: [], set: new Set() });
 									}

@@ -17,3 +17,4 @@ export type AddCardResponse = {
 };
 
 export type DeckWorkerCommand = GetSuggestionsCommand | AddCardCommand;
+export type DeckWorkerResponse = GetSuggestionsResponse | AddCardResponse;
