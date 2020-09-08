@@ -1,3 +1,5 @@
+import { useState, useMemo, useEffect } from 'react';
+import type { ChangeEvent } from 'react';
 import { NextPage } from 'next';
 import { Page } from '../../components/Page/Page';
 
@@ -11,6 +13,22 @@ for (let i = 0; i < 100; i += 1) {
 }
 
 const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
+	const [suggestions, setSuggestions] = useState([]);
+	const worker = useMemo(() => {
+		if (typeof Worker !== 'undefined') return new Worker('../workers/suggestions.worker.ts');
+	}, []);
+	useEffect(() => {
+		if (!worker) {
+			return;
+		}
+		worker.onmessage = (e: MessageEvent) => {
+			setSuggestions(e.data);
+		};
+
+		return () => {
+			worker.terminate();
+		};
+	}, [worker]);
 	return (
 		<Page>
 			<div className={styles['index-container']}>
@@ -19,6 +37,21 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 				</div>
 				<div className={styles['body']}>
 					<h2 className={styles['deck-title']}>Mono Blue</h2>
+					<input
+						type="text"
+						onChange={(e: ChangeEvent<HTMLInputElement>) => {
+							const newText = e.target.value;
+							worker.postMessage(newText);
+						}}
+					/>
+					<button>Add Card</button>
+					{suggestions.length && (
+						<ul>
+							{suggestions.map((suggestion) => (
+								<li>{suggestion}</li>
+							))}
+						</ul>
+					)}
 					<table className={styles['decklist']}>
 						<tr>
 							<th>Card Name</th>
