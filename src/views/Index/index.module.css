@@ -1,6 +1,7 @@
 .index-container {
 	margin: auto;
 	display: flex;
+	max-width: var(--max-width);
 }
 
 .avatar {
@@ -10,8 +11,18 @@
 	background-color: var(--theme-dark2);
 }
 
+.body {
+	flex-grow: 1;
+	display: flex;
+	flex-direction: column;
+}
+
+.deck-title {
+	margin: 12px 40px;
+}
+
 .decklist {
-	margin: 0 auto;
+	margin: 0 40px;
 	border-collapse: collapse;
 	flex-grow: 1;
 }

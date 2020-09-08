@@ -17,16 +17,19 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 				<div>
 					<div className={styles['avatar']}></div>
 				</div>
-				<table className={styles['decklist']}>
-					<tr>
-						<th>Card Name</th>
-						<th>#</th>
-					</tr>
-					<tr>
-						<td>Shark Typhoon</td>
-						<td>1</td>
-					</tr>
-				</table>
+				<div className={styles['body']}>
+					<h2 className={styles['deck-title']}>Mono Blue</h2>
+					<table className={styles['decklist']}>
+						<tr>
+							<th>Card Name</th>
+							<th>#</th>
+						</tr>
+						<tr>
+							<td>Shark Typhoon</td>
+							<td>1</td>
+						</tr>
+					</table>
+				</div>
 			</div>
 		</Page>
 	);

@@ -3,3 +3,8 @@
 	color: white;
 	height: 44px;
 }
+
+.header-content {
+	max-width: var(--max-width);
+	margin: auto;
+}

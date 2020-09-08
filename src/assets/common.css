@@ -4,6 +4,8 @@ body {
 	--theme-green: #7fcd91;
 	--theme-light: #f5eaea;
 
+	--max-width: 1060px;
+
 	margin: 0;
 	background-color: var(--theme-light);
 	color: var(--theme-dark);
