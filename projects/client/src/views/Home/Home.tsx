@@ -3,12 +3,13 @@ import type { ChangeEvent } from 'react';
 import { NextPage } from 'next';
 import useSWR, { mutate } from 'swr';
 import { Page } from '../../components/Page/Page';
-
-import styles from './index.module.css';
 import { Spinner } from '../../components/Spinner/Spinner';
 import AlertIcon from '../../components/Icons/AlertIcon';
 import { useDeckWorker } from '../../workers/deck.hook';
 import { DeckWorkerResponse } from '../../workers/deck.types';
+
+import styles from './home.module.css';
+import { Decklist } from '../../components/Decklist/Decklist';
 
 const KEY = {
 	BACKSPACE: 8,
@@ -35,20 +36,27 @@ const KEY = {
 	UP: 38
 };
 
-export type WorkoutProps = {};
+type DecklistData = { name: string; cards: Array<{ name: string; count: string; image: string }> };
+async function fetchDeck(key: string) {
+	const result = await fetch('http://localhost:4040/deck/1');
+	const data = await result.json();
+
+	return data as DecklistData;
+}
+
+export type WorkoutProps = {
+	initialDeckData: DecklistData;
+};
 
 const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
+	const { initialDeckData } = props;
+
 	const [suggestions, setSuggestions] = useState({ sorted: [], set: new Set() });
 	const [isWaiting, setIsWaiting] = useState(false);
 	const addItemInput = useRef(null);
 	const [imageSource, setImageSource] = useState(null);
 
-	const { data, error } = useSWR('1', async (key) => {
-		const result = await fetch('http://localhost:4040/deck/1');
-		const data = await result.json();
-
-		return data as { name: string; cards: Array<{ name: string; count: string; image: string }> };
-	});
+	const { data, error } = useSWR('1', fetchDeck, { initialData: initialDeckData });
 
 	const postToWorker = useDeckWorker((e: DeckWorkerResponse) => {
 		if (e.type === 'suggest') {
@@ -168,33 +176,17 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 						<img src={imageSource}></img>
 					</div>
 				</div>
-				<div className={styles['body']}>
-					<h2 className={styles['deck-title']}>{data?.name}</h2>
-
-					<div className={styles['decklist-container']}>
-						<table className={styles['decklist']}>
-							<thead>
-								<tr>
-									<th>Card Name</th>
-									<th>#</th>
-								</tr>
-							</thead>
-							<tbody>
-								{data?.cards.map((card, index) => {
-									return (
-										<tr key={index}>
-											<td onMouseEnter={() => setImageSource(card.image)}>{card.name}</td>
-											<td>{card.count}</td>
-										</tr>
-									);
-								})}
-							</tbody>
-						</table>
-					</div>
-				</div>
+				{data && (
+					<Decklist name={data.name} cards={data.cards} onCardHover={(image) => setImageSource(image)} />
+				)}
 			</div>
 		</Page>
 	);
 };
+
+export async function getServerSideProps() {
+	const data = await fetchDeck('1');
+	return { props: { initialDeckData: data } };
+}
 
 export default Index;

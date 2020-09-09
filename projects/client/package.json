@@ -4,7 +4,8 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"start": "next dev"
+		"start": "next dev",
+		"start:prod": "next build && next start"
 	},
 	"author": "",
 	"license": "ISC",

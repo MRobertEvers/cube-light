@@ -1,1 +1,1 @@
-export { default } from '../views/Index';
+export { default, getServerSideProps } from '../views/Home';

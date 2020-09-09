@@ -16,16 +16,6 @@
 	background-color: var(--theme-dark2);
 }
 
-.body {
-	flex-grow: 1;
-	display: flex;
-	flex-direction: column;
-}
-
-.deck-title {
-	margin: 12px 40px;
-}
-
 .combobox {
 	position: relative;
 	margin: 10px 0;
@@ -113,31 +103,4 @@
 	padding-left: 4px;
 	border-bottom: 1px solid #cecaca;
 	font-weight: bold;
-}
-
-.decklist-container {
-	margin: 12px 40px;
-}
-
-.decklist {
-	width: 100%;
-	border-collapse: collapse;
-	flex-grow: 1;
-}
-
-.decklist > thead > tr > th {
-	border-bottom: 1px solid var(--theme-dark2);
-	border-spacing: 0;
-}
-
-.decklist > thead > tr > th:first-child {
-	text-align: left;
-}
-
-.decklist > tbody > tr > th:last-child {
-	width: 64px;
-}
-
-.decklist > tbody > tr > td:last-child {
-	text-align: center;
 }
