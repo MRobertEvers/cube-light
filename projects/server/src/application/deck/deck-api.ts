@@ -5,6 +5,7 @@ import { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import { DeckCard } from '../../database/app/tables/deck-card';
 import { Deck } from '../../database/app/tables/deck';
+import { fetchCardDataByScryFallIds } from '../../external/scryfall';
 
 export function useDeckApi(app: Express, database: Database, cardDatabase: CardDatabase) {
 	const { Deck, DeckCard } = database;
@@ -30,6 +31,7 @@ export function useDeckApi(app: Express, database: Database, cardDatabase: CardD
 		}
 
 		const cardInfos = await cardDatabase.queryCardInfo(result.Deck_Cards.map((dc) => dc.Uuid));
+		const cardImages = await fetchCardDataByScryFallIds(cardInfos.map((card) => card.scryfallId));
 
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -37,9 +39,11 @@ export function useDeckApi(app: Express, database: Database, cardDatabase: CardD
 		const data = result.toJSON() as Deck;
 		const cardData = data.Deck_Cards.map((card) => {
 			// TODO: Better loop
+			const cardImage = cardImages.data.find((scryfallData) => scryfallData.id === card.Uuid);
 			const cardData = cardInfos.find((info) => info.scryfallId === card.Uuid);
 			return {
 				...cardData,
+				image: cardImage?.image_uris.small,
 				count: card.Count
 			};
 		});

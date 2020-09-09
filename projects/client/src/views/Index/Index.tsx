@@ -41,23 +41,24 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 	const [suggestions, setSuggestions] = useState({ sorted: [], set: new Set() });
 	const [isWaiting, setIsWaiting] = useState(false);
 	const addItemInput = useRef(null);
+	const [imageSource, setImageSource] = useState(null);
 	const { data, error } = useSWR('1', async (key) => {
 		const result = await fetch('http://localhost:4040/deck/1');
 		const data = await result.json();
 
-		return data as { name: string; cards: Array<{ name: string; count: string }> };
+		return data as { name: string; cards: Array<{ name: string; count: string; image: string }> };
 	});
 
 	const postToWorker = useDeckWorker((e: DeckWorkerResponse) => {
 		if (e.type === 'suggest') {
 			setSuggestions(e);
 		} else {
-			setAddItemText('');
-			setSuggestions({ sorted: [], set: new Set() });
-			mutate('1');
 			if (addItemInput.current) {
 				addItemInput.current.focus();
 			}
+			setAddItemText('');
+			setSuggestions({ sorted: [], set: new Set() });
+			mutate('1');
 		}
 
 		setIsWaiting(false);
@@ -73,7 +74,6 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 		if (suggestions.set.size === 1 || suggestions.set.has(addItemText.toLowerCase())) {
 			comboboxIndicator = (
 				<button
-					ref={addItemInput}
 					className={styles['submit-button']}
 					onClick={() => {
 						postToWorker({
@@ -99,6 +99,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 					<div className={styles['combobox-input']}>
 						<div className={styles['combobox-submit']}>{comboboxIndicator}</div>
 						<input
+							ref={addItemInput}
 							onKeyDown={(e) => {
 								if (e.which === 9 && suggestions.sorted.length === 1) {
 									setAddItemText(suggestions.sorted[0]);
@@ -155,7 +156,9 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 			</div>
 			<div className={styles['index-container']}>
 				<div>
-					<div className={styles['avatar']}></div>
+					<div className={styles['avatar']}>
+						<img src={imageSource}></img>
+					</div>
 				</div>
 				<div className={styles['body']}>
 					<h2 className={styles['deck-title']}>{data?.name}</h2>
@@ -172,7 +175,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 								{data?.cards.map((card, index) => {
 									return (
 										<tr key={index}>
-											<td>{card.name}</td>
+											<td onMouseEnter={() => setImageSource(card.image)}>{card.name}</td>
 											<td>{card.count}</td>
 										</tr>
 									);

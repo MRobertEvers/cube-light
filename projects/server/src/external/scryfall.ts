@@ -4,6 +4,7 @@ const SCRYFALL_API = `https://api.scryfall.com/cards/collection`;
 
 type ScryfallApiResponse = {
 	data: Array<{
+		id: string;
 		image_uris: {
 			small: string;
 			art_crop: string;
