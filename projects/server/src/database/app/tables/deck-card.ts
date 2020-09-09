@@ -5,6 +5,7 @@ export class DeckCard extends Sequelize.Model {
 	public DeckCardId!: number;
 	public DeckId!: number;
 	public Uuid!: string;
+	public Count!: number;
 }
 
 export const TABLE_NAME = 'Deck_Card';
@@ -37,5 +38,6 @@ export function DefineDeckCardModel(database: Sequelize.Sequelize, deckTable: ty
 	deckTable.hasMany(Model, {
 		foreignKey: 'DeckId'
 	});
+
 	return Model;
 }
