@@ -7,6 +7,8 @@ type ScryfallApiResponse = {
 		id: string;
 		image_uris: {
 			small: string;
+			normal: string;
+			large: string;
 			art_crop: string;
 		};
 	}>;

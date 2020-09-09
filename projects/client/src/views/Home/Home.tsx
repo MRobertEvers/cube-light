@@ -36,7 +36,7 @@ const KEY = {
 	UP: 38
 };
 
-type DecklistData = { name: string; cards: Array<{ name: string; count: string; image: string }> };
+type DecklistData = { name: string; icon: string; cards: Array<{ name: string; count: string; image: string }> };
 async function fetchDeck(key: string) {
 	const result = await fetch('http://localhost:4040/deck/1');
 	const data = await result.json();
@@ -171,7 +171,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 			</div>
 			<div className={styles['index-container']}>
 				<div>
-					<div className={styles['avatar']}></div>
+					<div className={styles['avatar']}>{data && <img src={data.icon} />}</div>
 				</div>
 				{data && <Decklist name={data.name} cards={data.cards} />}
 			</div>

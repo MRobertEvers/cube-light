@@ -44,6 +44,7 @@ export function useDeckApi(app: Express, database: Database, cardDatabase: CardD
 			return {
 				...cardData,
 				image: cardImage?.image_uris.small,
+				art: cardImage?.image_uris.art_crop,
 				count: card.Count
 			};
 		});
@@ -51,6 +52,7 @@ export function useDeckApi(app: Express, database: Database, cardDatabase: CardD
 		res.send(
 			JSON.stringify({
 				name: data.Name,
+				icon: cardData ? cardData[0].art : null,
 				cards: cardData
 			})
 		);

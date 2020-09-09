@@ -10,10 +10,16 @@
 }
 
 .avatar {
+	margin: 12px;
 	--size: 240px;
 	width: var(--size);
-	height: var(--size);
-	background-color: var(--theme-dark2);
+}
+
+.avatar > img {
+	box-sizing: border-box;
+	max-width: 100%;
+	max-height: 100%;
+	border: 1px solid var(--theme-dark2);
 }
 
 .combobox {
