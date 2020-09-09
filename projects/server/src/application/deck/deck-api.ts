@@ -3,6 +3,8 @@ import { Database } from '../../database/app/database';
 import { CardDatabase } from '../../database/cards/database';
 import { Request, Response } from 'express';
 import bodyParser from 'body-parser';
+import { DeckCard } from '../../database/app/tables/deck-card';
+import { Deck } from '../../database/app/tables/deck';
 
 export function useDeckApi(app: Express, database: Database, cardDatabase: CardDatabase) {
 	const { Deck, DeckCard } = database;
@@ -32,11 +34,20 @@ export function useDeckApi(app: Express, database: Database, cardDatabase: CardD
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 		res.setHeader('Content-Type', 'application/json');
-		const data: any = result.toJSON();
+		const data = result.toJSON() as Deck;
+		const cardData = data.Deck_Cards.map((card) => {
+			// TODO: Better loop
+			const cardData = cardInfos.find((info) => info.scryfallId === card.Uuid);
+			return {
+				...cardData,
+				count: card.Count
+			};
+		});
+
 		res.send(
 			JSON.stringify({
 				name: data.Name,
-				cards: cardInfos
+				cards: cardData
 			})
 		);
 	});
@@ -94,11 +105,20 @@ export function useDeckApi(app: Express, database: Database, cardDatabase: CardD
 			}
 		});
 
-		await DeckCard.upsert({
-			DeckId: id,
-			Uuid: cards[0].scryfallId,
-			Count: 1 + (card ? card.Count : 0)
-		});
+		if (card) {
+			await DeckCard.upsert({
+				DeckCardId: card.DeckCardId,
+				DeckId: id,
+				Uuid: cards[0].scryfallId,
+				Count: card.Count + 1
+			});
+		} else {
+			await DeckCard.upsert({
+				DeckId: id,
+				Uuid: cards[0].scryfallId,
+				Count: 1
+			});
+		}
 
 		res.sendStatus(200);
 	});

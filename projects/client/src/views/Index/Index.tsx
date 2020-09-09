@@ -131,7 +131,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 									return (
 										<tr key={index}>
 											<td>{card.name}</td>
-											<td>1</td>
+											<td>{card.count}</td>
 										</tr>
 									);
 								})}
