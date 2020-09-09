@@ -54,7 +54,6 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 	const [suggestions, setSuggestions] = useState({ sorted: [], set: new Set() });
 	const [isWaiting, setIsWaiting] = useState(false);
 	const addItemInput = useRef(null);
-	const [imageSource, setImageSource] = useState(null);
 
 	const { data, error } = useSWR('1', fetchDeck, { initialData: initialDeckData });
 
@@ -172,13 +171,9 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 			</div>
 			<div className={styles['index-container']}>
 				<div>
-					<div className={styles['avatar']}>
-						<img src={imageSource}></img>
-					</div>
+					<div className={styles['avatar']}></div>
 				</div>
-				{data && (
-					<Decklist name={data.name} cards={data.cards} onCardHover={(card) => setImageSource(card.image)} />
-				)}
+				{data && <Decklist name={data.name} cards={data.cards} />}
 			</div>
 		</Page>
 	);

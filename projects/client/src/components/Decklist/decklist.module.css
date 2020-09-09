@@ -27,10 +27,35 @@
 	text-align: left;
 }
 
-.decklist > tbody > tr > th:first-child {
-	width: 64px;
+.decklist > tbody > tr > td:nth-child(2) > span {
+	box-sizing: border-box;
+	transition: padding-left 0.1s;
+	padding-left: 0px;
+	cursor: pointer;
+}
+
+.decklist > tbody > tr > td:nth-child(2) > span:hover {
+	padding-left: 5px;
+}
+
+.decklist > tbody > tr > td:first-child {
+	width: 32px;
 }
 
 .decklist > tbody > tr > td:first-child {
 	text-align: center;
+}
+
+.hover-card {
+	position: absolute;
+	border-radius: 4px;
+	padding: 1px;
+	background-color: var(--theme-dark2);
+	border-color: var(--theme-dark);
+	transition: opacity ease-in-out 0.2s;
+	opacity: 0;
+}
+
+.hover-card-visible {
+	opacity: 1;
 }
