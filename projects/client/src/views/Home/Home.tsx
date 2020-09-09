@@ -177,7 +177,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 					</div>
 				</div>
 				{data && (
-					<Decklist name={data.name} cards={data.cards} onCardHover={(image) => setImageSource(image)} />
+					<Decklist name={data.name} cards={data.cards} onCardHover={(card) => setImageSource(card.image)} />
 				)}
 			</div>
 		</Page>

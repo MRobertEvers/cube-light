@@ -1,9 +1,10 @@
 import styles from './decklist.module.css';
 
+type DecklistCardInfo = { name: string; count: string; image: string };
 type DecklistProps = {
 	name: string;
-	cards: Array<{ name: string; count: string; image: string }>;
-	onCardHover: (image: string) => void;
+	cards: Array<DecklistCardInfo>;
+	onCardHover: (card: DecklistCardInfo) => void;
 };
 
 export function Decklist(props: DecklistProps) {
@@ -26,7 +27,7 @@ export function Decklist(props: DecklistProps) {
 							return (
 								<tr key={index}>
 									<td>{card.count}</td>
-									<td onMouseEnter={() => onCardHover(card.image)}>{card.name}</td>
+									<td onMouseEnter={() => onCardHover(card)}>{card.name}</td>
 								</tr>
 							);
 						})}
