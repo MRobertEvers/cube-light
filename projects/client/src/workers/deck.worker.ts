@@ -16,7 +16,7 @@ onmessage = async (event: MessageEvent) => {
 		const front = [];
 		const back = [];
 		for (const name of dedupedArray) {
-			if (messageData.payload.indexOf(name) === 0) {
+			if (name.toLowerCase().indexOf(messageData.payload) === 0) {
 				front.push(name);
 			} else {
 				back.push(name);
