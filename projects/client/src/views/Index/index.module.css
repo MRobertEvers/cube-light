@@ -107,7 +107,8 @@
 	cursor: pointer;
 }
 
-.suggestions > li:hover {
+.suggestions > li:hover,
+.suggestions > li:focus {
 	padding: 2px;
 	padding-left: 4px;
 	border-bottom: 1px solid #cecaca;

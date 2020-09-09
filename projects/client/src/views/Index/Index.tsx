@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 import { NextPage } from 'next';
 import useSWR, { mutate } from 'swr';
@@ -10,11 +10,37 @@ import AlertIcon from '../../components/Icons/AlertIcon';
 import { useDeckWorker } from '../../workers/deck.hook';
 import { DeckWorkerResponse } from '../../workers/deck.types';
 
+const KEY = {
+	BACKSPACE: 8,
+	COMMA: 188,
+	DELETE: 46,
+	DOWN: 40,
+	END: 35,
+	ENTER: 13,
+	ESCAPE: 27,
+	HOME: 36,
+	LEFT: 37,
+	NUMPAD_ADD: 107,
+	NUMPAD_DECIMAL: 110,
+	NUMPAD_DIVIDE: 111,
+	NUMPAD_ENTER: 108,
+	NUMPAD_MULTIPLY: 106,
+	NUMPAD_SUBTRACT: 109,
+	PAGE_DOWN: 34,
+	PAGE_UP: 33,
+	PERIOD: 190,
+	RIGHT: 39,
+	SPACE: 32,
+	TAB: 9,
+	UP: 38
+};
+
 export type WorkoutProps = {};
 
 const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 	const [suggestions, setSuggestions] = useState({ sorted: [], set: new Set() });
 	const [isWaiting, setIsWaiting] = useState(false);
+	const addItemInput = useRef(null);
 	const { data, error } = useSWR('1', async (key) => {
 		const result = await fetch('http://localhost:4040/deck/1');
 		const data = await result.json();
@@ -29,6 +55,9 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 			setAddItemText('');
 			setSuggestions({ sorted: [], set: new Set() });
 			mutate('1');
+			if (addItemInput.current) {
+				addItemInput.current.focus();
+			}
 		}
 
 		setIsWaiting(false);
@@ -44,7 +73,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 		if (suggestions.set.size === 1 || suggestions.set.has(addItemText.toLowerCase())) {
 			comboboxIndicator = (
 				<button
-					tabIndex={2}
+					ref={addItemInput}
 					className={styles['submit-button']}
 					onClick={() => {
 						postToWorker({
@@ -98,11 +127,24 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 						/>
 					</div>
 					<ul className={styles['suggestions']}>
-						{suggestions.sorted.map((suggestion) => (
+						{suggestions.sorted.map((suggestion, index) => (
 							<li
+								tabIndex={index + 1}
 								key={suggestion}
 								onClick={() => {
 									setAddItemText(suggestion);
+								}}
+								onFocus={() => {
+									setAddItemText(suggestion);
+								}}
+								onKeyDown={(e) => {
+									if (e.keyCode === KEY.ENTER) {
+										postToWorker({
+											type: 'add',
+											cardName: suggestion
+										});
+										setIsWaiting(true);
+									}
 								}}
 							>
 								{suggestion}

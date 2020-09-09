@@ -12,7 +12,17 @@ onmessage = async (event: MessageEvent) => {
 		const suggestionArray = await fetchSuggestions(messageData.payload);
 
 		const deduped = new Set(suggestionArray);
-		const sorted = Array.from(deduped).sort();
+		const dedupedArray = Array.from(deduped).sort();
+		const front = [];
+		const back = [];
+		for (const name of dedupedArray) {
+			if (messageData.payload.indexOf(name) === 0) {
+				front.push(name);
+			} else {
+				back.push(name);
+			}
+		}
+		const sorted = front.concat(back);
 		const result = {
 			type: messageType,
 			sorted: sorted,

@@ -19,9 +19,9 @@ export class CardDatabase {
 	}
 
 	public async queryCardsByName(name: string): Promise<CardInfo[]> {
-		const query = this.db.query(
-			`SELECT name, uuid, scryfallId FROM cards WHERE name='${name}' COLLATE NOCASE`
-		) as Promise<[CardInfo[], any]>;
+		const query = this.db.query(`SELECT name, uuid, scryfallId FROM cards WHERE name=? COLLATE NOCASE`, {
+			replacements: [name]
+		}) as Promise<[CardInfo[], any]>;
 		const [result] = await query;
 
 		return result;
