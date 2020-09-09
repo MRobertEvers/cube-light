@@ -42,6 +42,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 	const [isWaiting, setIsWaiting] = useState(false);
 	const addItemInput = useRef(null);
 	const [imageSource, setImageSource] = useState(null);
+
 	const { data, error } = useSWR('1', async (key) => {
 		const result = await fetch('http://localhost:4040/deck/1');
 		const data = await result.json();
@@ -145,6 +146,13 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 											cardName: suggestion
 										});
 										setIsWaiting(true);
+									}
+								}}
+								onKeyDownCapture={(e) => {
+									if (e.keyCode === KEY.BACKSPACE) {
+										addItemInput.current.focus();
+										setAddItemText((prev) => prev.substr(0, prev.length - 1));
+										e.preventDefault();
 									}
 								}}
 							>
