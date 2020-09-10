@@ -65,20 +65,6 @@ export function CardAdder() {
 		if (suggestions.set.size === 1 || suggestions.set.has(addItemText.toLowerCase())) {
 			isOkToSubmit = true;
 			comboboxIndicator = <EnterIcon className={styles['combobox-input-alert']} />;
-			// comboboxIndicator = (
-			// 	<button
-			// 		className={styles['submit-button']}
-			// 		onClick={() => {
-			// 			postToWorker({
-			// 				type: 'add',
-			// 				cardName: addItemText
-			// 			});
-			// 			setIsWaiting(true);
-			// 		}}
-			// 	>
-			// 		Submit
-			// 	</button>
-			// );
 		} else {
 			comboboxIndicator = <AlertIcon className={styles['combobox-input-alert']} />;
 		}
@@ -99,7 +85,7 @@ export function CardAdder() {
 							}
 						}}
 						tabIndex={1}
-						type="text"
+						type="search"
 						value={addItemText}
 						placeholder="Card name"
 						onChange={(e: ChangeEvent<HTMLInputElement>) => {
@@ -153,11 +139,6 @@ export function CardAdder() {
 						}}
 						onKeyDown={(e) => {
 							if (e.keyCode === KEY.ENTER) {
-								// postToWorker({
-								// 	type: 'add',
-								// 	cardName: suggestion
-								// });
-								// setIsWaiting(true);
 								if (itemCountRef.current) {
 									itemCountRef.current.focus();
 								}
