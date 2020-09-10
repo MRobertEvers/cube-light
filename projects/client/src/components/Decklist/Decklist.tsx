@@ -1,11 +1,11 @@
 import { useState } from 'react';
-
+import type { DeckMappedData } from '../../workers/deck.types';
 import styles from './decklist.module.css';
 
 type DecklistCardInfo = { name: string; count: string; image: string };
 type DecklistProps = {
 	name: string;
-	cards: Array<DecklistCardInfo>;
+	cards: DeckMappedData;
 };
 
 export function Decklist(props: DecklistProps) {
@@ -14,6 +14,45 @@ export function Decklist(props: DecklistProps) {
 		null as { card: DecklistCardInfo; position: { x: number; y: number } } | null
 	);
 
+	let index = 0;
+	const categoryArrays = [];
+	for (const cardType of Object.keys(cards)) {
+		const count = cards[cardType].reduce((acc, card) => acc + Number.parseInt(card.count), 0);
+		categoryArrays.push(
+			<tr key={index}>
+				<td colSpan={2} className={styles['decklist-category']}>
+					{`${cardType} (${count})`}
+				</td>
+			</tr>
+		);
+
+		index++;
+		for (const card of cards[cardType]) {
+			categoryArrays.push(
+				<tr key={index}>
+					<td className={styles['decklist-card-count']}>{card.count}</td>
+					<td className="wow">
+						<span
+							onMouseLeave={() => setImageSource(null)}
+							onMouseOver={(e) => {
+								const node = e.currentTarget.getBoundingClientRect();
+								setImageSource({
+									card,
+									position: {
+										x: node.left,
+										y: node.bottom
+									}
+								});
+							}}
+						>
+							{card.name}
+						</span>
+					</td>
+				</tr>
+			);
+			index++;
+		}
+	}
 	return (
 		<div className={styles['body']}>
 			<div
@@ -39,35 +78,10 @@ export function Decklist(props: DecklistProps) {
 					<thead>
 						<tr>
 							<th></th>
-							<th>Card Name</th>
+							<th></th>
 						</tr>
 					</thead>
-					<tbody>
-						{cards.map((card, index) => {
-							return (
-								<tr key={index}>
-									<td>{card.count}</td>
-									<td>
-										<span
-											onMouseLeave={() => setImageSource(null)}
-											onMouseOver={(e) => {
-												const node = e.currentTarget.getBoundingClientRect();
-												setImageSource({
-													card,
-													position: {
-														x: node.left,
-														y: node.bottom
-													}
-												});
-											}}
-										>
-											{card.name}
-										</span>
-									</td>
-								</tr>
-							);
-						})}
-					</tbody>
+					<tbody>{categoryArrays}</tbody>
 				</table>
 			</div>
 		</div>

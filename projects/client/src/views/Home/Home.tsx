@@ -8,15 +8,22 @@ import { fetchDeck, FetchDeckResponse } from '../../api/fetch-deck';
 import styles from './home.module.css';
 import { fetchSortedDeck } from '../../workers/deck.functions';
 import { useDeckWorker } from '../../workers/deck.hook';
+import type { GetDeckResponse } from '../../workers/deck.types';
 
 export type WorkoutProps = {
-	initialDeckData: FetchDeckResponse;
+	initialDeckData: GetDeckResponse;
 };
 
 const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 	const { initialDeckData } = props;
 
-	const { data, error } = useSWR('1', fetchDeck, { initialData: initialDeckData });
+	const { data, error } = useSWR(
+		'1',
+		async (key: string) => {
+			return await fetchSortedDeck({ deckId: key, type: 'deck' });
+		},
+		{ initialData: initialDeckData }
+	);
 
 	return (
 		<Page>
@@ -27,7 +34,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 				<div>
 					<div className={styles['avatar']}>{data && <img src={data.icon} />}</div>
 				</div>
-				{data && <Decklist name={data.name} cards={data.cards} />}
+				{data && <Decklist name={data.name} cards={data.deck} />}
 			</div>
 		</Page>
 	);

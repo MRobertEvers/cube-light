@@ -22,11 +22,13 @@ export type GetDeckCommand = {
 	type: 'deck';
 	deckId: string;
 };
+
+export type DeckMappedData = {
+	[x: string]: FetchDeckCardResponse[];
+};
 export type GetDeckResponse = FetchDeckResponse & {
 	type: 'deck';
-	deck: {
-		[x: string]: FetchDeckCardResponse[];
-	};
+	deck: DeckMappedData;
 };
 
 export type DeckWorkerCommand = GetSuggestionsCommand | AddCardCommand | GetDeckCommand;
