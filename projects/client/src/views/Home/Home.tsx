@@ -18,7 +18,9 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 
 	return (
 		<Page>
-			<div className={styles['index-container-top']}>{/* <CardAdder></CardAdder> */}</div>
+			<div className={styles['index-container-top']}>
+				<CardAdder></CardAdder>
+			</div>
 			<div className={styles['index-container']}>
 				<div>
 					<div className={styles['avatar']}>{data && <img src={data.icon} />}</div>
