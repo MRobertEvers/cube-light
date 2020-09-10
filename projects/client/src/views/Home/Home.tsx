@@ -3,12 +3,14 @@ import useSWR from 'swr';
 import { Page } from '../../components/Page/Page';
 import { Decklist } from '../../components/Decklist/Decklist';
 import { CardAdder } from './components/CardAdder';
-import { fetchDeck, DecklistData } from '../../api/fetch-deck';
+import { fetchDeck, FetchDeckResponse } from '../../api/fetch-deck';
 
 import styles from './home.module.css';
+import { fetchSortedDeck } from '../../workers/deck.functions';
+import { useDeckWorker } from '../../workers/deck.hook';
 
 export type WorkoutProps = {
-	initialDeckData: DecklistData;
+	initialDeckData: FetchDeckResponse;
 };
 
 const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
@@ -32,7 +34,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 };
 
 export async function getServerSideProps() {
-	const data = await fetchDeck('1');
+	const data = await fetchSortedDeck({ deckId: '1', type: 'deck' });
 	return { props: { initialDeckData: data } };
 }
 

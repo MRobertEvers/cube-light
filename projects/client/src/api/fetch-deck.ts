@@ -1,13 +1,14 @@
 import { xhrFetch } from './xhr-fetch';
 import { API_URI } from '../config/api-url';
 
-export type DecklistData = {
+export type FetchDeckCardResponse = { name: string; count: string; image: string; types: string };
+export type FetchDeckResponse = {
 	name: string;
 	icon: string;
-	cards: Array<{ name: string; count: string; image: string; types: string }>;
+	cards: FetchDeckCardResponse[];
 };
 
-export async function fetchDeck(deckId: string): Promise<DecklistData> {
+export async function fetchDeck(deckId: string): Promise<FetchDeckResponse> {
 	const API_CALL = `${API_URI}/deck/${deckId}`;
 	const API_OPTIONS = {
 		method: 'GET' as 'GET'
@@ -16,7 +17,7 @@ export async function fetchDeck(deckId: string): Promise<DecklistData> {
 	// API calls that are called in SSR must use fetch.
 	if (typeof XMLHttpRequest === 'undefined') {
 		const fetchResult = await fetch(API_CALL, API_OPTIONS);
-		return fetchResult.json() as Promise<DecklistData>;
+		return fetchResult.json() as Promise<FetchDeckResponse>;
 	}
 
 	return new Promise((resolve, reject) => {

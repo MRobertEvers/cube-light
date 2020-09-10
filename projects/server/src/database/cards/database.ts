@@ -1,9 +1,12 @@
 import { Sequelize } from 'sequelize';
-
+const CARD_DATABASE_KEYS = ['name', 'uuid', 'scryfallId', 'types'];
+const CARD_DATABASE_COLUMNS = CARD_DATABASE_KEYS.join(',');
+// 'Enchantment' | 'Creature' | 'Instant' | 'Sorcery' | 'Artifact' | 'Planeswalker' | 'Land'
 type CardInfo = {
 	name: string;
 	uuid: string;
 	scryfallId: string;
+	types: string; // Comma separated types above.
 };
 
 export class CardDatabase {
@@ -32,7 +35,7 @@ export class CardDatabase {
 			return [];
 		}
 
-		const query = this.db.query(`SELECT name, uuid, scryfallId FROM cards WHERE name LIKE ? COLLATE NOCASE`, {
+		const query = this.db.query(`SELECT ${CARD_DATABASE_COLUMNS} FROM cards WHERE name LIKE ? COLLATE NOCASE`, {
 			replacements: [`%${nameStub}%`]
 		}) as Promise<[CardInfo[], any]>;
 		const [result] = await query;
@@ -44,7 +47,7 @@ export class CardDatabase {
 		//Scryfallid
 		const uuidInString = uuids.map((uuid) => `'${uuid}'`).join(',');
 		const query = this.db.query(
-			`SELECT name, uuid, scryfallId FROM cards WHERE scryfallId IN (${uuidInString})`
+			`SELECT ${CARD_DATABASE_COLUMNS} FROM cards WHERE scryfallId IN (${uuidInString})`
 		) as Promise<[CardInfo[], any]>;
 
 		const [result] = await query;

@@ -1,7 +1,14 @@
 import { useMemo, useEffect } from 'react';
 import { DeckWorkerCommand, DeckWorkerResponse } from './deck.types';
 
-const WORKER_NAME = 'DECK_WORKER';
+type DeckWorkerOnMessage = (e: DeckWorkerResponse) => void;
+
+const globalWorker: {
+	worker?: Worker;
+	listeners: Set<DeckWorkerOnMessage>;
+} = {
+	listeners: new Set()
+};
 
 /**
  * The worker-plugin requires the Worker(path) in order to package it correctly.
@@ -13,17 +20,15 @@ const WORKER_NAME = 'DECK_WORKER';
  *
  * THIS IS SAFE TO CALL MORE THAN ONCE!
  */
-export function useDeckWorker(onmessage: (e: DeckWorkerResponse) => void): (message: DeckWorkerCommand) => void {
+export function useDeckWorker(onmessage: DeckWorkerOnMessage): (message: DeckWorkerCommand) => void {
 	const worker = useMemo(() => {
 		if (typeof Worker !== 'undefined') {
-			if (!window[WORKER_NAME]) {
-				const newWorker = new Worker('./deck.worker.ts', { type: 'module' });
-
-				window[WORKER_NAME] = newWorker;
-				window[WORKER_NAME].references = 0;
+			if (!globalWorker.worker) {
+				globalWorker.worker = new Worker('./deck.worker.ts', { type: 'module' });
+				globalWorker.listeners = new Set();
 			}
 
-			return window[WORKER_NAME];
+			return globalWorker.worker;
 		}
 	}, []);
 
@@ -31,16 +36,22 @@ export function useDeckWorker(onmessage: (e: DeckWorkerResponse) => void): (mess
 		if (!worker) {
 			return;
 		}
-		window[WORKER_NAME].references += 1;
+		const newListener = onmessage;
 
-		worker.onmessage = (e: MessageEvent) => onmessage(e.data);
+		globalWorker.listeners.add(newListener);
+
+		worker.onmessage = (e: MessageEvent) => {
+			for (const listener of globalWorker.listeners) {
+				listener(e.data);
+			}
+		};
 
 		return () => {
-			window[WORKER_NAME].references -= 1;
+			globalWorker.listeners.delete(newListener);
 
-			if (window[WORKER_NAME].references === 0) {
+			if (globalWorker.listeners.size === 0) {
 				worker.terminate();
-				delete window[WORKER_NAME];
+				delete globalWorker.worker;
 			}
 		};
 	}, [worker]);

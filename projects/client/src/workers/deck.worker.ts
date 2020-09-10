@@ -1,42 +1,42 @@
-import { AddCardCommand, GetSuggestionsCommand, DeckWorkerCommand } from './deck.types';
-import { fetchSuggestions } from '../api/fetch-suggestions';
-import { fetchAddCard } from '../api/fetch-add-card';
+import {
+	AddCardCommand,
+	GetSuggestionsCommand,
+	DeckWorkerCommand,
+	DeckWorkerResponse,
+	GetDeckCommand
+} from './deck.types';
+import { fetchSortedSuggestions, fetchAddCardCommand, fetchSortedDeck } from './deck.functions';
+
+function postResult(result: DeckWorkerResponse) {
+	postMessage(result);
+}
 
 // This is the service worker entry point.
 onmessage = async (event: MessageEvent) => {
 	const message = event.data as DeckWorkerCommand;
 	const messageType = message.type;
-	if (messageType === 'suggest') {
-		const messageData = event.data as GetSuggestionsCommand;
 
-		const suggestionArray = await fetchSuggestions(messageData.payload);
-
-		const deduped = new Set(suggestionArray);
-		const dedupedArray = Array.from(deduped).sort();
-		const front = [];
-		const back = [];
-		const testName = messageData.payload.toLowerCase();
-		for (const name of dedupedArray) {
-			if (name.toLowerCase().indexOf(testName) === 0) {
-				front.push(name);
-			} else {
-				back.push(name);
+	switch (messageType) {
+		case 'suggest':
+			{
+				const messageData = event.data as GetSuggestionsCommand;
+				const result = await fetchSortedSuggestions(messageData);
+				postResult(result);
 			}
-		}
-		const sorted = front.concat(back);
-		const result = {
-			type: messageType,
-			sorted: sorted,
-			set: new Set(sorted.map((item) => item.toLowerCase()))
-		};
-
-		postMessage(result);
-	} else if (messageType === 'add') {
-		const messageData = event.data as AddCardCommand;
-
-		const ok = await fetchAddCard('1', messageData.cardName);
-		postMessage({
-			type: messageType
-		});
+			break;
+		case 'add':
+			{
+				const messageData = event.data as AddCardCommand;
+				const result = await fetchAddCardCommand(messageData);
+				postResult(result);
+			}
+			break;
+		case 'deck':
+			{
+				const messageData = event.data as GetDeckCommand;
+				const result = await fetchSortedDeck(messageData);
+				postResult(result);
+			}
+			break;
 	}
 };
