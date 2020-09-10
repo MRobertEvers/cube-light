@@ -12,6 +12,12 @@
 	margin: 12px 40px;
 }
 
+@media (max-width: 866px) {
+	.decklist-container {
+		margin: 12px;
+	}
+}
+
 .decklist {
 	width: 100%;
 	border-collapse: collapse;

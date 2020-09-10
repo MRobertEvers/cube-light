@@ -1,4 +1,5 @@
 import { xhrFetch } from './xhr-fetch';
+import { API_URI } from '../config/api-url';
 
 export type AddCardResponse = null;
 export async function fetchAddCard(deckId: string, cardName: string): Promise<AddCardResponse> {
@@ -15,7 +16,7 @@ export async function fetchAddCard(deckId: string, cardName: string): Promise<Ad
 			body: body
 		};
 
-		xhrFetch(`http://localhost:4040/deck/${deckId}/cards`, options, (xhr: XMLHttpRequest) => {
+		xhrFetch(`${API_URI}/deck/${deckId}/cards`, options, (xhr: XMLHttpRequest) => {
 			const state = xhr.readyState;
 			switch (state) {
 				case XMLHttpRequest.OPENED:

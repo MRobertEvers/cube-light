@@ -1,10 +1,11 @@
 import { xhrFetch } from './xhr-fetch';
+import { API_URI } from '../config/api-url';
 
 export type SuggestionsResponse = string[];
 export async function fetchSuggestions(name: string): Promise<SuggestionsResponse> {
 	return new Promise((resolve, reject) => {
 		xhrFetch(
-			`http://localhost:4040/suggest?stub=${name}`,
+			`${API_URI}/suggest?stub=${name}`,
 			{
 				method: 'GET'
 			},
