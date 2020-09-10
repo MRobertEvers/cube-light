@@ -24,6 +24,7 @@ export function useDeckWorker(onmessage: DeckWorkerOnMessage): (message: DeckWor
 	const worker = useMemo(() => {
 		if (typeof Worker !== 'undefined') {
 			if (!globalWorker.worker) {
+				// The worker-plugin requires the Worker(path) in order to package it correctly.
 				globalWorker.worker = new Worker('./deck.worker.ts', { type: 'module' });
 				globalWorker.listeners = new Set();
 			}
