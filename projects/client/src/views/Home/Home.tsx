@@ -3,16 +3,9 @@ import useSWR from 'swr';
 import { Page } from '../../components/Page/Page';
 import { Decklist } from '../../components/Decklist/Decklist';
 import { CardAdder } from './components/CardAdder';
+import { fetchDeck, DecklistData } from '../../api/fetch-deck';
 
 import styles from './home.module.css';
-
-type DecklistData = { name: string; icon: string; cards: Array<{ name: string; count: string; image: string }> };
-async function fetchDeck(key: string) {
-	const result = await fetch('http://localhost:4040/deck/1');
-	const data = await result.json();
-
-	return data as DecklistData;
-}
 
 export type WorkoutProps = {
 	initialDeckData: DecklistData;
@@ -25,9 +18,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 
 	return (
 		<Page>
-			<div className={styles['index-container-top']}>
-				<CardAdder></CardAdder>
-			</div>
+			<div className={styles['index-container-top']}>{/* <CardAdder></CardAdder> */}</div>
 			<div className={styles['index-container']}>
 				<div>
 					<div className={styles['avatar']}>{data && <img src={data.icon} />}</div>
