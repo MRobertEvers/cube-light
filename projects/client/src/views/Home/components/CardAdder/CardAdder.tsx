@@ -1,13 +1,13 @@
 import { useState, useRef } from 'react';
-import type { ChangeEvent } from 'react';
 import { mutate } from 'swr';
 import { Spinner } from '../../../../components/Spinner/Spinner';
-import AlertIcon from '../../../../components/Icons/AlertIcon';
 import { DeckWorkerResponse } from '../../../../workers/deck.types';
 import { useDeckWorker } from '../../../../workers/deck.hook';
+import EnterIcon from '../../../../components/Icons/EnterIcon';
+import AlertIcon from '../../../../components/Icons/AlertIcon';
+import type { ChangeEvent } from 'react';
 
 import styles from './card-adder.module.css';
-import EnterIcon from '../../../../components/Icons/EnterIcon';
 
 const KEY = {
 	BACKSPACE: 8,

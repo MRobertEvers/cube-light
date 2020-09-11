@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import type { DeckMappedData } from '../../workers/deck.types';
+
 import styles from './decklist.module.css';
 
 function CardTableRows(props: { deck: DeckMappedData; setImageSource: any }) {

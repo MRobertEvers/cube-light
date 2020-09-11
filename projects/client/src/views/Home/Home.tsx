@@ -3,36 +3,25 @@ import useSWR from 'swr';
 import { Page } from '../../components/Page/Page';
 import { Decklist } from '../../components/Decklist/Decklist';
 import { CardAdder } from './components/CardAdder';
+import { fetchSortedDeck } from '../../workers/deck.functions';
+import { useQueryState } from '../../hooks/useQueryParam';
+import type { GetDeckResponse } from '../../workers/deck.types';
 
 import styles from './home.module.css';
-import { fetchSortedDeck } from '../../workers/deck.functions';
-import type { GetDeckResponse } from '../../workers/deck.types';
-import { useQueryState } from '../../hooks/useQueryParam';
 
 export type WorkoutProps = {
 	initialDeckData: GetDeckResponse;
 };
 
-function CardAdderEditable() {
-	const [editMode, setEditMode] = useQueryState('edit', {
-		history: 'push',
-		shallow: true
-	});
-	const edit = editMode === 'true';
-	if (edit) {
-		return (
-			<div>
-				<button onClick={() => setEditMode((!edit).toString())}>Edit</button>
-				<CardAdder />
-			</div>
-		);
-	} else {
-		return <button onClick={() => setEditMode((!edit).toString())}>Edit</button>;
-	}
-}
-
 const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 	const { initialDeckData } = props;
+
+	const [editMode, setEditMode] = useQueryState('edit', {
+		history: 'push',
+		shallow: true,
+		parse: (value: string) => value === 'true',
+		serialize: (value: boolean) => value.toString()
+	});
 
 	const { data, error } = useSWR(
 		'1',
@@ -44,12 +33,13 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 
 	return (
 		<Page>
-			<div className={styles['index-container-top']}>
-				<CardAdderEditable />
-			</div>
+			<div className={styles['index-container-top']}>{editMode && <CardAdder />}</div>
 			<div className={styles['index-container']}>
 				<div>
-					<div className={styles['avatar']}>{data && <img src={data.icon} />}</div>
+					<div className={styles['avatar']}>
+						{data && <img src={data.icon} />}
+						<button onClick={() => setEditMode(!editMode)}>Edit</button>
+					</div>
 				</div>
 				{data && <Decklist name={data.name} deck={data.deck} />}
 			</div>
