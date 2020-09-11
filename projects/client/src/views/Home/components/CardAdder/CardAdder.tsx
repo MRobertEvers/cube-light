@@ -1,11 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef } from 'preact/hooks';
 import { mutate } from 'swr';
 import { Spinner } from '../../../../components/Spinner/Spinner';
 import { DeckWorkerResponse } from '../../../../workers/deck.types';
 import { useDeckWorker } from '../../../../workers/deck.hook';
 import EnterIcon from '../../../../components/Icons/EnterIcon';
 import AlertIcon from '../../../../components/Icons/AlertIcon';
-import type { ChangeEvent } from 'react';
 
 import styles from './card-adder.module.css';
 
@@ -42,7 +41,6 @@ export function CardAdder() {
 	const addItemInputRef = useRef(null);
 	const itemCountRef = useRef(null);
 
-	// const postToWorker = (() => {}) as any;
 	const postToWorker = useDeckWorker((e: DeckWorkerResponse) => {
 		if (e.type === 'suggest') {
 			setSuggestions(e);
@@ -89,7 +87,7 @@ export function CardAdder() {
 						type="search"
 						value={addItemText}
 						placeholder="Card name"
-						onChange={(e: ChangeEvent<HTMLInputElement>) => {
+						onChange={(e) => {
 							const newText = e.target.value;
 							setAddItemText(newText);
 							if (suggestDebounceTimer) {

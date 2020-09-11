@@ -1,7 +1,7 @@
 import { xhrFetch } from './xhr-fetch';
 import { API_URI } from '../config/api-url';
 
-export type FetchDeckCardResponse = { name: string; count: string; image: string; types: string };
+export type FetchDeckCardResponse = { name: string; count: string; image: string; types: string; manaCost: string };
 export type FetchDeckResponse = {
 	name: string;
 	icon: string;

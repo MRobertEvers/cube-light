@@ -1,0 +1,19 @@
+.mana-symbol {
+	position: relative;
+	display: inline-block;
+	border-radius: 50%;
+	box-sizing: border-box;
+	border: 1px solid black;
+}
+
+.mana-generic-number {
+	position: absolute;
+	bottom: 1px;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	font-weight: bold;
+	color: black;
+	font-size: 14px;
+	text-align: center;
+}

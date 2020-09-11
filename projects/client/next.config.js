@@ -23,7 +23,8 @@ module.exports = {
 			react: 'preact/compat',
 			'react-dom/test-utils': 'preact/test-utils',
 			'react-dom': 'preact/compat',
-			'react-ssr-prepass': 'preact-ssr-prepass'
+			'react-ssr-prepass': 'preact-ssr-prepass',
+			'react-render-to-string': 'preact-render-to-string'
 			// Must be below test-utils
 		};
 

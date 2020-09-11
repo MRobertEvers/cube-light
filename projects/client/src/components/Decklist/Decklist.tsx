@@ -1,8 +1,56 @@
 import { useState } from 'react';
 import type { DeckMappedData } from '../../workers/deck.types';
 
+import manaStyles from './mana.module.css';
 import styles from './decklist.module.css';
 
+const colorMap = {
+	W: 'rgb(252, 248, 219)',
+	U: 'rgb(117, 188, 220)',
+	B: 'rgb(50, 50, 50)',
+	R: 'rgb(250, 127, 96)',
+	G: 'rgb(90, 195, 126)'
+};
+
+function ManaSymbol(props: { symbol: string; size: number }) {
+	const { symbol, size } = props;
+	return (
+		<span
+			className={manaStyles['mana-symbol']}
+			style={{
+				backgroundColor: symbol in colorMap ? colorMap[symbol] : 'rgb(170, 170, 170)',
+				width: `${size}px`,
+				height: `${size}px`
+			}}
+		>
+			<span className={manaStyles['mana-generic-number']}>{symbol in colorMap ? '' : symbol}</span>
+		</span>
+	);
+}
+
+function ManaCost(props: { manaCost: string }) {
+	const { manaCost } = props;
+	if (!manaCost) {
+		return <div></div>;
+	}
+	const symbols = manaCost
+		.split('{')
+		.filter(Boolean)
+		.map((symbol) => symbol.substr(0, symbol.length - 1));
+
+	const size = 16;
+	return (
+		<div
+			style={{
+				width: `${symbols.length * size}px`
+			}}
+		>
+			{symbols.map((symbol, index) => {
+				return <ManaSymbol key={index} symbol={symbol} size={size} />;
+			})}
+		</div>
+	);
+}
 function CardTableRows(props: { deck: DeckMappedData; setImageSource: any }) {
 	const { deck, setImageSource } = props;
 	let index = 0;
@@ -26,7 +74,7 @@ function CardTableRows(props: { deck: DeckMappedData; setImageSource: any }) {
 
 		categoryArray.push(
 			<tr key={index} className={styles['decklist-category']}>
-				<td colSpan={2}>{`${categoryName} (${count})`}</td>
+				<td colSpan={3}>{`${categoryName} (${count})`}</td>
 			</tr>
 		);
 
@@ -52,6 +100,9 @@ function CardTableRows(props: { deck: DeckMappedData; setImageSource: any }) {
 							{card.name}
 							<div className={styles['decklist-card-type']}>{card.types}</div>
 						</span>
+					</td>
+					<td>
+						<ManaCost manaCost={card.manaCost} />
 					</td>
 				</tr>
 			);
