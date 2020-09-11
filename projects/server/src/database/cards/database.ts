@@ -1,5 +1,5 @@
 import { Sequelize } from 'sequelize';
-const CARD_DATABASE_KEYS = ['name', 'uuid', 'scryfallId', 'types'];
+const CARD_DATABASE_KEYS = ['name', 'uuid', 'scryfallId', 'types', 'manaCost'];
 const CARD_DATABASE_COLUMNS = CARD_DATABASE_KEYS.join(',');
 // 'Enchantment' | 'Creature' | 'Instant' | 'Sorcery' | 'Artifact' | 'Planeswalker' | 'Land'
 export type CardInfo = {
@@ -7,6 +7,7 @@ export type CardInfo = {
 	uuid: string;
 	scryfallId: string;
 	types: string; // Comma separated types above.
+	manaCost: string; // {X}{W}
 };
 
 export class CardDatabase {
