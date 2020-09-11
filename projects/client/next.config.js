@@ -18,6 +18,15 @@ module.exports = {
 			]
 		});
 
+		config.resolve.alias = {
+			...config.resolve.alias,
+			react: 'preact/compat',
+			'react-dom/test-utils': 'preact/test-utils',
+			'react-dom': 'preact/compat',
+			'react-ssr-prepass': 'preact-ssr-prepass'
+			// Must be below test-utils
+		};
+
 		return config;
 	}
 };
