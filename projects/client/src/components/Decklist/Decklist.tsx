@@ -1,32 +1,37 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { DeckMappedData } from '../../workers/deck.types';
 import styles from './decklist.module.css';
 
-type DecklistCardInfo = { name: string; count: string; image: string };
-type DecklistProps = {
-	name: string;
-	cards: DeckMappedData;
-};
-
-export function Decklist(props: DecklistProps) {
-	const { name, cards } = props;
-	const [imageSource, setImageSource] = useState(
-		null as { card: DecklistCardInfo; position: { x: number; y: number } } | null
-	);
-
+function CardTableRows(props: { deck: DeckMappedData; setImageSource: any }) {
+	const { deck, setImageSource } = props;
 	let index = 0;
-	const categoryArrays = [];
-	for (const cardType of Object.keys(cards)) {
-		const count = cards[cardType].reduce((acc, card) => acc + Number.parseInt(card.count), 0);
-		categoryArrays.push(
+	const creatures = [];
+	const spells = [];
+	const lands = [];
+
+	const categoryArrays = [creatures, spells, lands];
+	for (const cardType of Object.keys(deck.cardCategories)) {
+		const { cards, count } = deck.cardCategories[cardType];
+
+		let categoryName = 'Spells';
+		let categoryArray = spells;
+		if (cardType.toLowerCase().indexOf('creature') >= 0) {
+			categoryName = 'Creatures';
+			categoryArray = creatures;
+		} else if (cardType.toLowerCase().indexOf('land') >= 0) {
+			categoryName = 'Lands';
+			categoryArray = lands;
+		}
+
+		categoryArray.push(
 			<tr key={index} className={styles['decklist-category']}>
-				<td colSpan={2}>{`${cardType} (${count})`}</td>
+				<td colSpan={2}>{`${categoryName} (${count})`}</td>
 			</tr>
 		);
 
 		index++;
-		for (const card of cards[cardType]) {
-			categoryArrays.push(
+		for (const card of cards) {
+			categoryArray.push(
 				<tr key={index}>
 					<td className={styles['decklist-card-count']}>{card.count}</td>
 					<td className="wow">
@@ -52,6 +57,23 @@ export function Decklist(props: DecklistProps) {
 			index++;
 		}
 	}
+	const displayList = (categoryArrays as any).flatMap((x) => x);
+
+	return displayList;
+}
+
+type DecklistCardInfo = { name: string; count: string; image: string };
+type DecklistProps = {
+	name: string;
+	deck: DeckMappedData;
+};
+
+export function Decklist(props: DecklistProps) {
+	const { name, deck } = props;
+	const [imageSource, setImageSource] = useState(
+		null as { card: DecklistCardInfo; position: { x: number; y: number } } | null
+	);
+
 	return (
 		<div className={styles['body']}>
 			<div
@@ -70,17 +92,17 @@ export function Decklist(props: DecklistProps) {
 					></img>
 				)}
 			</div>
-			<h2 className={styles['deck-title']}>{name}</h2>
-
+			<div className={styles['deck-header']}>
+				<div className={styles['deck-header-container']}>
+					<h2 className={styles['deck-title']}>{name}</h2>
+					{/* <div className={styles['deck-card-count']}>{deck.count}</div> */}
+				</div>
+			</div>
 			<div className={styles['decklist-container']}>
 				<table className={styles['decklist']}>
-					{/* <thead>
-						<tr>
-							<th></th>
-							<th></th>
-						</tr>
-					</thead> */}
-					<tbody>{categoryArrays}</tbody>
+					<tbody>
+						<CardTableRows deck={deck} setImageSource={setImageSource} />
+					</tbody>
 				</table>
 			</div>
 		</div>

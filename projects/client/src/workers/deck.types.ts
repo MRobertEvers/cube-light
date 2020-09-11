@@ -23,8 +23,15 @@ export type GetDeckCommand = {
 	deckId: string;
 };
 
+export type DeckGroupMappedData = {
+	[x: string]: {
+		count: number;
+		cards: FetchDeckCardResponse[];
+	};
+};
 export type DeckMappedData = {
-	[x: string]: FetchDeckCardResponse[];
+	count: number;
+	cardCategories: DeckGroupMappedData;
 };
 export type GetDeckResponse = FetchDeckResponse & {
 	type: 'deck';

@@ -42,6 +42,7 @@ export function CardAdder() {
 	const addItemInputRef = useRef(null);
 	const itemCountRef = useRef(null);
 
+	// const postToWorker = (() => {}) as any;
 	const postToWorker = useDeckWorker((e: DeckWorkerResponse) => {
 		if (e.type === 'suggest') {
 			setSuggestions(e);

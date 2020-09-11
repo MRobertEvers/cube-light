@@ -4,8 +4,32 @@
 	flex-direction: column;
 }
 
+.deck-header {
+	border-bottom: 1px solid var(--theme-dark2);
+	margin: 12px;
+}
+
+.deck-header-container {
+	display: flex;
+	padding-left: 40px;
+	padding-right: 12px;
+	justify-content: space-between;
+}
+
 .deck-title {
-	margin: 12px 40px;
+	margin-left: 0;
+	padding: 0px 12px 0px 0px;
+}
+
+.deck-card-count {
+	border-radius: 8px;
+	border: 1px solid var(--theme-dark);
+	background-color: var(--theme-dark2);
+	color: white;
+	font-weight: bold;
+	align-self: center;
+	font-size: 16px;
+	padding: 12px 6px;
 }
 
 .decklist-container {
@@ -13,6 +37,15 @@
 }
 
 @media (max-width: 866px) {
+	.deck-header {
+		border: none;
+		margin: 0;
+	}
+
+	.deck-title {
+		font-size: 36px;
+	}
+
 	.decklist-container {
 		margin: 0px;
 	}

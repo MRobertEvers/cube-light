@@ -52,14 +52,26 @@ export async function fetchSortedDeck(messageData: GetDeckCommand): Promise<GetD
 
 	const { cards } = data;
 
-	const deck = {};
+	const deck: GetDeckResponse['deck'] = {
+		count: 0,
+		cardCategories: {}
+	};
+	const deckCards = deck.cardCategories;
 	for (const card of cards) {
 		// TODO: multiple types.
-		if (!(card.types in deck)) {
-			deck[card.types] = [];
+		if (!(card.types in deckCards)) {
+			deckCards[card.types] = {
+				count: 0,
+				cards: []
+			};
 		}
 
-		deck[card.types].push(card);
+		const count = parseInt(card.count);
+
+		deckCards[card.types].count += count;
+		deckCards[card.types].cards.push(card);
+
+		deck.count += count;
 	}
 
 	// Avoid duplicating the response.

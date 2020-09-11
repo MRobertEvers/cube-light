@@ -9,6 +9,7 @@ export interface UseQueryStateOptions<T> {
 
 	parse: (value: string) => T | null;
 	serialize: (value: T) => string;
+	shallow: boolean;
 }
 
 export type UseQueryStateReturn<T> = [T | null, React.Dispatch<React.SetStateAction<T>>];
@@ -23,7 +24,8 @@ export function useQueryState<T = string>(
 	{
 		history = 'replace',
 		parse = (x) => (x as unknown) as T,
-		serialize = (x) => `${x}`
+		serialize = (x) => `${x}`,
+		shallow = false
 	}: Partial<UseQueryStateOptions<T>> = {}
 ): UseQueryStateReturn<T | null> {
 	const router = useRouter();
@@ -62,7 +64,7 @@ export function useQueryState<T = string>(
 			// unnecessary renders when other query parameters change.
 			// URLSearchParams is already polyfilled by Next.js
 			const query = new URLSearchParams(window.location.search);
-			if (newValue) {
+			if (typeof newValue !== 'undefined') {
 				query.set(key, serialize(newValue));
 			} else {
 				// Don't leave value-less keys hanging
@@ -84,10 +86,13 @@ export function useQueryState<T = string>(
 					pathname: asPath,
 					hash: window.location.hash,
 					search: query.toString()
+				},
+				{
+					shallow: shallow
 				}
 			);
 		},
-		[key, updateUrl]
+		[key, updateUrl, shallow]
 	);
 	return [value, update];
 }
