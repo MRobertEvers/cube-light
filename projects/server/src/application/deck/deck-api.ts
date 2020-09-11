@@ -1,11 +1,11 @@
 import { Express } from 'express';
-import { Database } from '../../database/app/database';
-import { CardDatabase } from '../../database/cards/database';
-import { Request, Response } from 'express';
 import bodyParser from 'body-parser';
-import { DeckCard } from '../../database/app/tables/deck-card';
+import { Request, Response } from 'express';
+import { Database } from '../../database/app/database';
+import { CardDatabase, CardInfo } from '../../database/cards/database';
 import { Deck } from '../../database/app/tables/deck';
-import { fetchCardDataByScryFallIds } from '../../external/scryfall';
+import { fetchCardDataByScryFallIds, ScryfallCardInfo } from '../../external/scryfall';
+import { Mapped } from '../../utils/templates.types';
 
 export function useDeckApi(app: Express, database: Database, cardDatabase: CardDatabase) {
 	const { Deck, DeckCard } = database;
@@ -31,16 +31,24 @@ export function useDeckApi(app: Express, database: Database, cardDatabase: CardD
 		}
 
 		const cardInfos = await cardDatabase.queryCardInfo(result.Deck_Cards.map((dc) => dc.Uuid));
+		const cardInfosMapped: Mapped<CardInfo> = cardInfos.reduce((map, card) => {
+			map[card.scryfallId] = card;
+			return map;
+		}, {});
+
 		const cardImages = await fetchCardDataByScryFallIds(cardInfos.map((card) => card.scryfallId));
+		const cardImagesMapped: Mapped<ScryfallCardInfo> = cardImages.data.reduce((map, card) => {
+			map[card.id] = card;
+			return map;
+		}, {});
 
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 		res.setHeader('Content-Type', 'application/json');
 		const data = result.toJSON() as Deck;
 		const cardData = data.Deck_Cards.map((card) => {
-			// TODO: Better loop
-			const cardImage = cardImages.data.find((scryfallData) => scryfallData.id === card.Uuid);
-			const cardData = cardInfos.find((info) => info.scryfallId === card.Uuid);
+			const cardImage = cardImagesMapped[card.Uuid];
+			const cardData = cardInfosMapped[card.Uuid];
 			return {
 				...cardData,
 				image: cardImage?.image_uris.small,

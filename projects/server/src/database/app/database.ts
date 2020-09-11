@@ -2,7 +2,7 @@ import { Sequelize } from 'sequelize';
 import { DefineDeckModel, Deck } from './tables/deck';
 import { DefineDeckCardModel, DeckCard } from './tables/deck-card';
 
-type CardInfo = {
+export type CardInfo = {
 	name: string;
 	uuid: string;
 	scryfallId: string;

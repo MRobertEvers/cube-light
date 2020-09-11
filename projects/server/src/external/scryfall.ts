@@ -2,16 +2,18 @@ import fetch from 'node-fetch';
 
 const SCRYFALL_API = `https://api.scryfall.com/cards/collection`;
 
+export type ScryfallCardInfo = {
+	id: string;
+	image_uris: {
+		small: string;
+		normal: string;
+		large: string;
+		art_crop: string;
+	};
+};
+
 type ScryfallApiResponse = {
-	data: Array<{
-		id: string;
-		image_uris: {
-			small: string;
-			normal: string;
-			large: string;
-			art_crop: string;
-		};
-	}>;
+	data: ScryfallCardInfo[];
 };
 
 export async function fetchCardDataByScryFallIds(ids: string[]): Promise<ScryfallApiResponse> {

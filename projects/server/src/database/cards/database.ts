@@ -2,7 +2,7 @@ import { Sequelize } from 'sequelize';
 const CARD_DATABASE_KEYS = ['name', 'uuid', 'scryfallId', 'types'];
 const CARD_DATABASE_COLUMNS = CARD_DATABASE_KEYS.join(',');
 // 'Enchantment' | 'Creature' | 'Instant' | 'Sorcery' | 'Artifact' | 'Planeswalker' | 'Land'
-type CardInfo = {
+export type CardInfo = {
 	name: string;
 	uuid: string;
 	scryfallId: string;
