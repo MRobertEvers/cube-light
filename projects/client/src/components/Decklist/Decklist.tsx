@@ -19,10 +19,8 @@ export function Decklist(props: DecklistProps) {
 	for (const cardType of Object.keys(cards)) {
 		const count = cards[cardType].reduce((acc, card) => acc + Number.parseInt(card.count), 0);
 		categoryArrays.push(
-			<tr key={index}>
-				<td colSpan={2} className={styles['decklist-category']}>
-					{`${cardType} (${count})`}
-				</td>
+			<tr key={index} className={styles['decklist-category']}>
+				<td colSpan={2}>{`${cardType} (${count})`}</td>
 			</tr>
 		);
 
@@ -46,6 +44,7 @@ export function Decklist(props: DecklistProps) {
 							}}
 						>
 							{card.name}
+							<div className={styles['decklist-card-type']}>{card.types}</div>
 						</span>
 					</td>
 				</tr>
@@ -75,12 +74,12 @@ export function Decklist(props: DecklistProps) {
 
 			<div className={styles['decklist-container']}>
 				<table className={styles['decklist']}>
-					<thead>
+					{/* <thead>
 						<tr>
 							<th></th>
 							<th></th>
 						</tr>
-					</thead>
+					</thead> */}
 					<tbody>{categoryArrays}</tbody>
 				</table>
 			</div>

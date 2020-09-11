@@ -115,6 +115,7 @@ export function CardAdder() {
 
 				<button
 					className={styles['submit-button']}
+					disabled={!isOkToSubmit}
 					onClick={() => {
 						postToWorker({
 							type: 'add',
