@@ -13,9 +13,9 @@ export function SpotlightCard(props: { card: DecklistCardInfo }) {
 					backgroundImage: `
                         linear-gradient(
                             to right, 
-                            rgba(${BACKGROUND_COLOR}, 0) 10px,
-                            rgba(${BACKGROUND_COLOR}, .9) 90px,
-                            rgba(${BACKGROUND_COLOR}, 1) 110px
+                            rgba(${BACKGROUND_COLOR}, 0) 13px,
+                            rgba(${BACKGROUND_COLOR}, .9) 120px,
+                            rgba(${BACKGROUND_COLOR}, 1) 143px
                         ), 
                         url("${card.art}")
                     `

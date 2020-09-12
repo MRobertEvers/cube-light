@@ -51,4 +51,8 @@
 
 .body ul > li {
 	padding: 4px;
+	border-radius: 6px;
+	border: 1px solid var(--theme-dark);
+	margin: 4px;
+	cursor: pointer;
 }
