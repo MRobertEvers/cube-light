@@ -31,11 +31,12 @@
 	border: 2px solid #a7a8aa;
 	outline: none;
 	font-weight: bold;
-	color: var(--theme-dark2);
+	color: #a7a8aa;
 }
 
 .submit-button:enabled {
 	cursor: pointer;
+	color: var(--theme-dark2);
 }
 
 .submit-button:enabled:hover,
