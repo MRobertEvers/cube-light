@@ -15,9 +15,7 @@
 }
 
 .square {
-	border: 1px solid var(--theme-dark);
-	border-radius: 50%;
-	overflow: hidden;
+	clip-path: circle(50%);
 	position: relative;
 }
 
@@ -35,7 +33,6 @@
 	width: auto;
 	transform: translate(-50%, -50%);
 	box-sizing: border-box;
-	border: 1px solid var(--theme-dark2);
 }
 
 @media (max-width: 866px) {
