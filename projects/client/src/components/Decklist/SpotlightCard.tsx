@@ -11,18 +11,18 @@ export function SpotlightCard(props: { card: DecklistCardInfo }) {
 			<div
 				style={{
 					backgroundImage: `
-                    linear-gradient(
-                        to right, 
-                        rgba(${BACKGROUND_COLOR}, 0) 5%,
-                        rgba(${BACKGROUND_COLOR}, .9) 45%,
-                        rgba(${BACKGROUND_COLOR}, 1) 50%,
-                        rgba(${BACKGROUND_COLOR}, 1)
-                    ), 
-                    url("${card.art}")`
+                        linear-gradient(
+                            to right, 
+                            rgba(${BACKGROUND_COLOR}, 0) 10px,
+                            rgba(${BACKGROUND_COLOR}, .9) 90px,
+                            rgba(${BACKGROUND_COLOR}, 1) 110px
+                        ), 
+                        url("${card.art}")
+                    `
 				}}
 				className={styles['spotlight-card']}
 			>
-				{card.name}
+				<h2>{card.name}</h2>
 			</div>
 		</div>
 	);

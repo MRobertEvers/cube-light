@@ -11,7 +11,7 @@
 
 .avatar {
 	margin: 12px;
-	min-width: 260px;
+	min-width: 160px;
 }
 
 .square {
@@ -46,11 +46,13 @@
 	.avatar {
 		margin: auto;
 		width: unset;
+		max-width: 120px;
+		min-width: 80px;
 	}
 
-	/* .avatar > img {
+	.avatar img {
 		display: block;
 		margin: auto;
 		border-radius: 50%;
-	} */
+	}
 }

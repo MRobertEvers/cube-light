@@ -1,8 +1,8 @@
 body {
-	--theme-dark: #4d4646;
-	--theme-dark2: #5b5656;
-	--theme-green: #e8e4e1;
-
+	--theme-dark-tuple: 77, 70, 70;
+	--theme-dark: rgba(var(--theme-dark-tuple), 1);
+	--theme-dark2-tuple: 91, 86, 86;
+	--theme-dark2: rgba(var(--theme-dark2-tuple), 1);
 	--theme-light-tuple: 245, 234, 234;
 	--theme-light: rgba(var(--theme-light-tuple), 1);
 

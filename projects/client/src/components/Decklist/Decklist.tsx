@@ -5,6 +5,7 @@ import manaStyles from './mana.module.css';
 import styles from './decklist.module.css';
 import { SpotlightCard } from './SpotlightCard';
 import { FetchDeckCardResponse } from '../../api/fetch-deck';
+import { DecklistGroup } from './DecklistGroup';
 
 const colorMap = {
 	W: 'rgb(252, 248, 219)',
@@ -130,7 +131,7 @@ export function Decklist(props: DecklistProps) {
 
 	const spotlightCards = [];
 	for (const cardType of Object.keys(deck.cardCategories)) {
-		const { cards, count } = deck.cardCategories[cardType];
+		const { cards } = deck.cardCategories[cardType];
 
 		for (const card of cards) {
 			spotlightCards.push(card);
@@ -173,11 +174,11 @@ export function Decklist(props: DecklistProps) {
 						<SpotlightCard card={card} />
 					))}
 				</div>
-				{/* <table className={styles['decklist']}>
-					<tbody>
-						<CardTableRows deck={deck} setImageSource={setImageSource} />
-					</tbody>
-				</table> */}
+				<div className={styles['decklist-groups']}>
+					{Object.keys(deck.cardCategories).map((group) => {
+						return <DecklistGroup name={group} group={deck.cardCategories[group]} />;
+					})}
+				</div>
 			</div>
 		</div>
 	);

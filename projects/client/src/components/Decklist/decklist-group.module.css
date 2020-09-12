@@ -1,0 +1,54 @@
+.container {
+	flex-grow: 1;
+	flex-basis: 100%;
+}
+
+.contents {
+	margin: 4px;
+	display: flex;
+	box-sizing: border-box;
+}
+
+.tab {
+	position: relative;
+	box-sizing: border-box;
+	border-top-left-radius: 6px;
+	border-bottom-left-radius: 6px;
+	overflow: hidden;
+	display: flex;
+}
+
+.tab h3 {
+	font-size: 12px;
+	letter-spacing: 1px;
+	background: var(--theme-dark);
+	color: var(--theme-light);
+	padding: 20px 10px;
+	margin: 0;
+	line-height: 24px;
+	writing-mode: vertical-lr;
+	text-orientation: mixed;
+	min-height: 120px;
+}
+
+.tab h3 {
+	/* Abs positioning makes it not take up vert space */
+
+	/* Rotate from top left corner (not default) */
+	transform: rotate(180deg);
+}
+
+.body {
+	flex-grow: 1;
+	border: 1px solid var(--theme-dark);
+}
+
+.body ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+
+.body ul > li {
+	padding: 4px;
+}

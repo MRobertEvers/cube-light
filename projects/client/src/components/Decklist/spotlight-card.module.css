@@ -1,14 +1,28 @@
 .spotlight-card-container {
 	flex-basis: 50%;
+	flex-grow: 1;
 	box-sizing: border-box;
 }
 
 .spotlight-card {
 	margin: 4px;
-	border: 1px solid var(--theme-dark2);
-	box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+	border: 1px solid var(--theme-dark);
+	box-shadow: 0 0 4px rgba(var(--theme-dark-tuple), 0.2);
 	height: 80px;
-	background-size: auto 150px;
+	background-size: auto 100%;
 	background-repeat: no-repeat;
 	background-position-x: -30px;
+	cursor: pointer;
+	transition: box-shadow 0.1s;
+	min-width: 180px;
+}
+
+.spotlight-card:hover {
+	box-shadow: 0 0 6px rgba(var(--theme-dark-tuple), 0.6);
+}
+
+.spotlight-card h2 {
+	margin: 0px;
+	text-align: right;
+	font-size: 20px;
 }
