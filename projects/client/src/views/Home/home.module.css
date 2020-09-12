@@ -11,14 +11,30 @@
 
 .avatar {
 	margin: 12px;
-	--size: 240px;
-	width: var(--size);
+	min-width: 260px;
 }
 
-.avatar > img {
+.square {
+	border: 1px solid var(--theme-dark);
+	border-radius: 50%;
+	overflow: hidden;
+	position: relative;
+}
+
+.square::after {
+	content: '';
+	display: block;
+	padding-bottom: 100%;
+}
+
+.avatar img {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	height: 100%;
+	width: auto;
+	transform: translate(-50%, -50%);
 	box-sizing: border-box;
-	max-width: 100%;
-	max-height: 100%;
 	border: 1px solid var(--theme-dark2);
 }
 
@@ -32,8 +48,9 @@
 		width: unset;
 	}
 
-	.avatar > img {
+	/* .avatar > img {
 		display: block;
 		margin: auto;
-	}
+		border-radius: 50%;
+	} */
 }

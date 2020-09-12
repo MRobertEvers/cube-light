@@ -37,7 +37,9 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 			<div className={styles['index-container']}>
 				<div>
 					<div className={styles['avatar']}>
-						{data && <img src={data.icon} />}
+						<div className={styles['square']}>
+							{data && <img width={260} height={260} src={data.icon} />}
+						</div>
 						<button onClick={() => setEditMode(!editMode)}>Edit</button>
 					</div>
 				</div>
