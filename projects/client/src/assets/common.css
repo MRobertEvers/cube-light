@@ -2,7 +2,9 @@ body {
 	--theme-dark: #4d4646;
 	--theme-dark2: #5b5656;
 	--theme-green: #e8e4e1;
-	--theme-light: #f5eaea;
+
+	--theme-light-tuple: 245, 234, 234;
+	--theme-light: rgba(var(--theme-light-tuple), 1);
 
 	--max-width: 1060px;
 
