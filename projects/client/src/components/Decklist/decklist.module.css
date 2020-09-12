@@ -36,6 +36,11 @@
 	margin: 12px 40px;
 }
 
+.decklist-spotlight {
+	display: flex;
+	flex-wrap: wrap;
+}
+
 @media (max-width: 866px) {
 	.deck-header {
 		border: none;

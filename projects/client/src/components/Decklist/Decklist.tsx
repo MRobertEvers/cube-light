@@ -3,6 +3,8 @@ import type { DeckMappedData } from '../../workers/deck.types';
 
 import manaStyles from './mana.module.css';
 import styles from './decklist.module.css';
+import { SpotlightCard } from './SpotlightCard';
+import { FetchDeckCardResponse } from '../../api/fetch-deck';
 
 const colorMap = {
 	W: 'rgb(252, 248, 219)',
@@ -114,7 +116,7 @@ function CardTableRows(props: { deck: DeckMappedData; setImageSource: any }) {
 	return displayList;
 }
 
-type DecklistCardInfo = { name: string; count: string; image: string };
+export type DecklistCardInfo = FetchDeckCardResponse;
 type DecklistProps = {
 	name: string;
 	deck: DeckMappedData;
@@ -125,6 +127,21 @@ export function Decklist(props: DecklistProps) {
 	const [imageSource, setImageSource] = useState(
 		null as { card: DecklistCardInfo; position: { x: number; y: number } } | null
 	);
+
+	const spotlightCards = [];
+	for (const cardType of Object.keys(deck.cardCategories)) {
+		const { cards, count } = deck.cardCategories[cardType];
+
+		for (const card of cards) {
+			spotlightCards.push(card);
+			if (spotlightCards.length === 4) {
+				break;
+			}
+		}
+		if (spotlightCards.length === 4) {
+			break;
+		}
+	}
 
 	return (
 		<div className={styles['body']}>
@@ -151,11 +168,16 @@ export function Decklist(props: DecklistProps) {
 				</div>
 			</div>
 			<div className={styles['decklist-container']}>
-				<table className={styles['decklist']}>
+				<div className={styles['decklist-spotlight']}>
+					{spotlightCards.map((card) => (
+						<SpotlightCard card={card} />
+					))}
+				</div>
+				{/* <table className={styles['decklist']}>
 					<tbody>
 						<CardTableRows deck={deck} setImageSource={setImageSource} />
 					</tbody>
-				</table>
+				</table> */}
 			</div>
 		</div>
 	);
