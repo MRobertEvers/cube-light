@@ -3,9 +3,10 @@ import path from 'path';
 import { CardDatabase } from './database/cards/database';
 import { Database } from './database/app/database';
 
-import { deckAPI } from './application/deck/[id]';
-import { cardsAPI } from './application/deck/[id]/cards';
+import { deckAPI } from './application/decks/[id]';
+import { cardsAPI } from './application/decks/[id]/cards';
 import { suggestAPI } from './application/suggest';
+import { decksAPI } from './application/decks';
 
 const PORT = 4040;
 
@@ -15,6 +16,7 @@ const db = new Database('database.sqlite');
 const app = express();
 
 app.use(deckAPI(db, cDb));
+app.use(decksAPI(db, cDb));
 app.use(cardsAPI(db, cDb));
 app.use(suggestAPI(cDb));
 

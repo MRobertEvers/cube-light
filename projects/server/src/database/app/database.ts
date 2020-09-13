@@ -24,10 +24,6 @@ export class Database {
 
 		this.Deck = DefineDeckModel(this.db);
 		this.DeckCard = DefineDeckCardModel(this.db, this.Deck);
-
-		this.Deck.upsert(<Deck>{
-			Name: 'Base Deck'
-		});
 	}
 
 	public async queryCardsByName(name: string): Promise<CardInfo[]> {
