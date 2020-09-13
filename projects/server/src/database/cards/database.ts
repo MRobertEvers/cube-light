@@ -36,7 +36,7 @@ export class CardDatabase {
 			return [];
 		}
 
-		const query = this.db.query(`SELECT ${CARD_DATABASE_COLUMNS} FROM cards WHERE name LIKE ? COLLATE NOCASE`, {
+		const query = this.db.query(`SELECT name FROM cards WHERE name LIKE ? COLLATE NOCASE`, {
 			replacements: [`%${nameStub}%`]
 		}) as Promise<[CardInfo[], any]>;
 		const [result] = await query;

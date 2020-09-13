@@ -4,7 +4,7 @@
 		"sourceMap": true,
 		"module": "CommonJS",
 		"esModuleInterop": true,
-		"target": "ES6"
+		"target": "ES2017"
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules"]
