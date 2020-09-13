@@ -10,14 +10,14 @@ export function deckAPI(database: Database, cardDatabase: CardDatabase): Router 
 	const { Deck, DeckCard } = database;
 	const app = Router();
 
-	app.options('/deck/:id', async (req: Request, res: Response) => {
+	app.options('/decks/:id', async (req: Request, res: Response) => {
 		res.status(200);
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 		res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST');
 		res.send();
 	});
-	app.get('/deck/:id', async (req: Request, res: Response) => {
+	app.get('/decks/:id', async (req: Request, res: Response) => {
 		const { id } = req.params;
 		const result = await Deck.findOne({
 			where: {

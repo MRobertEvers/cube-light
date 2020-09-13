@@ -16,7 +16,7 @@ export type FetchDeckResponse = {
 };
 
 export async function fetchDeck(deckId: string): Promise<FetchDeckResponse> {
-	const API_CALL = `${API_URI}/deck/${deckId}`;
+	const API_CALL = `${API_URI}/decks/${deckId}`;
 	const API_OPTIONS = {
 		method: 'GET' as 'GET'
 	};

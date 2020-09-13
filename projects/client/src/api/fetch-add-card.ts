@@ -16,7 +16,7 @@ export async function fetchAddCard(deckId: string, cardName: string): Promise<Ad
 			body: body
 		};
 
-		xhrFetch(`${API_URI}/deck/${deckId}/cards`, options, (xhr: XMLHttpRequest) => {
+		xhrFetch(`${API_URI}/decks/${deckId}/cards`, options, (xhr: XMLHttpRequest) => {
 			const state = xhr.readyState;
 			switch (state) {
 				case XMLHttpRequest.OPENED:

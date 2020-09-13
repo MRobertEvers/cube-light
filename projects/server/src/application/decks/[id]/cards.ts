@@ -9,14 +9,14 @@ export function cardsAPI(database: Database, cardDatabase: CardDatabase) {
 	const app = Router();
 
 	app.use(bodyParser.json());
-	app.options('/deck/:id/cards', async (req: Request, res: Response) => {
+	app.options('/decks/:id/cards', async (req: Request, res: Response) => {
 		res.status(200);
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 		res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST');
 		res.send();
 	});
-	app.post('/deck/:id/cards', async (req: Request, res: Response) => {
+	app.post('/decks/:id/cards', async (req: Request, res: Response) => {
 		const { id } = req.params;
 		const { cardName, action = 'add', count = 1 } = req.body as {
 			cardName: string;
