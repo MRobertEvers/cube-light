@@ -13,7 +13,7 @@ export function DecklistGroup(props: { group: DeckGroupData; name: string }) {
 				<div className={styles['body']}>
 					<ul>
 						{group.cards.map((card) => {
-							return <li>{card.name}</li>;
+							return <li key={card.name}>{card.name}</li>;
 						})}
 					</ul>
 				</div>
