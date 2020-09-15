@@ -15,25 +15,27 @@
 	border-top-left-radius: 6px;
 	border-bottom-left-radius: 6px;
 	overflow: hidden;
+	background: var(--theme-dark);
+	text-align: left;
 	display: flex;
+	justify-content: center;
 }
 
 .tab h3 {
-	font-size: 12px;
+	font-size: 16px;
 	letter-spacing: 1px;
-	background: var(--theme-dark);
 	color: var(--theme-light);
-	padding: 20px 10px;
+	padding: 12px 10px;
 	margin: 0;
 	line-height: 24px;
-	writing-mode: vertical-lr;
+	writing-mode: vertical-rl;
 	text-orientation: mixed;
 	min-height: 120px;
+	/* Bug in firefox; it fails to calculate the size right and results in all sorts of crazy. */
+	width: 24px;
 }
 
 .tab h3 {
-	/* Abs positioning makes it not take up vert space */
-
 	/* Rotate from top left corner (not default) */
 	transform: rotate(180deg);
 }
@@ -55,4 +57,20 @@
 	border: 1px solid var(--theme-dark);
 	margin: 4px;
 	cursor: pointer;
+	transition: box-shadow 0.1s;
+}
+
+.body ul > li:hover {
+	padding: 4px;
+	border-radius: 6px;
+	border: 1px solid var(--theme-dark);
+	margin: 4px;
+	cursor: pointer;
+	box-shadow: 0 0 4px rgba(var(--theme-dark-tuple), 0.4);
+}
+
+.item-count {
+	padding-right: 12px;
+	font-size: 20px;
+	font-weight: bold;
 }

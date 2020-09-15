@@ -1,13 +1,17 @@
 import { NextPage } from 'next';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
+import { useCallback, useState } from 'react';
 import { Page } from '../../components/Page/Page';
 import { Decklist } from '../../components/Decklist/Decklist';
 import { CardAdder } from './components/CardAdder';
 import { fetchSortedDeck } from '../../workers/deck.functions';
 import { useQueryState } from '../../hooks/useQueryParam';
 import type { GetDeckResponse } from '../../workers/deck.types';
+import { FetchDeckCardResponse } from '../../api/fetch-deck';
+import { EditCardModal } from '../../components/EditCard';
 
 import styles from './home.module.css';
+import { fetchSetCard } from '../../api/fetch-set-card';
 
 export type WorkoutProps = {
 	initialDeckData: GetDeckResponse;
@@ -31,8 +35,31 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 		{ initialData: initialDeckData }
 	);
 
+	const [editCard, setEditCard] = useState(null as FetchDeckCardResponse | null);
+	const onCardClick = useCallback((card: FetchDeckCardResponse) => {
+		setEditCard(card);
+	}, []);
+
 	return (
 		<Page>
+			{editCard && (
+				<div className={styles['modal-container']}>
+					<div className={styles['modal-container-contents']}>
+						<EditCardModal
+							onSubmit={(card) => {
+								async function send() {
+									await fetchSetCard('1', card.name, 'set', parseInt(card.count));
+									setEditCard(null);
+									mutate('1');
+								}
+								send();
+							}}
+							onCancel={() => setEditCard(null)}
+							card={editCard}
+						/>
+					</div>
+				</div>
+			)}
 			<div className={styles['index-container-top']}>{editMode && <CardAdder />}</div>
 			<div className={styles['index-container']}>
 				<div>
@@ -43,7 +70,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 						<button onClick={() => setEditMode(!editMode)}>Edit</button>
 					</div>
 				</div>
-				{data && <Decklist name={data.name} deck={data.deck} />}
+				{data && <Decklist name={data.name} deck={data.deck} onCardClick={onCardClick} />}
 			</div>
 		</Page>
 	);

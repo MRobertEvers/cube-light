@@ -3,6 +3,8 @@ import {
 	GetSuggestionsResponse,
 	AddCardCommand,
 	AddCardResponse,
+	SetCardCommand,
+	SetCardResponse,
 	GetDeckCommand,
 	GetDeckResponse
 } from './deck.types';
@@ -37,6 +39,15 @@ export async function fetchSortedSuggestions(messageData: GetSuggestionsCommand)
 }
 
 export async function fetchAddCardCommand(messageData: AddCardCommand): Promise<AddCardResponse> {
+	const { cardName, type: messageType } = messageData;
+	const result = await fetchAddCard('1', cardName);
+
+	return {
+		type: messageType
+	};
+}
+
+export async function fetchSetCardCommand(messageData: SetCardCommand): Promise<SetCardResponse> {
 	const { cardName, type: messageType } = messageData;
 	const result = await fetchAddCard('1', cardName);
 

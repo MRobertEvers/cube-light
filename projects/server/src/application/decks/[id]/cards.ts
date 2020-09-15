@@ -90,12 +90,16 @@ export function cardsAPI(database: Database, cardDatabase: CardDatabase) {
 				break;
 			case 'set':
 				if (card) {
-					await DeckCard.upsert({
-						DeckCardId: card.DeckCardId,
-						DeckId: id,
-						Uuid: cards[0].scryfallId,
-						Count: count
-					});
+					if (count <= 0) {
+						await card.destroy();
+					} else {
+						await DeckCard.upsert({
+							DeckCardId: card.DeckCardId,
+							DeckId: id,
+							Uuid: cards[0].scryfallId,
+							Count: count
+						});
+					}
 				} else {
 					await DeckCard.upsert({
 						DeckId: id,

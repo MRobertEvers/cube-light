@@ -3,9 +3,10 @@ import {
 	GetSuggestionsCommand,
 	DeckWorkerCommand,
 	DeckWorkerResponse,
-	GetDeckCommand
+	GetDeckCommand,
+	SetCardCommand
 } from './deck.types';
-import { fetchSortedSuggestions, fetchAddCardCommand, fetchSortedDeck } from './deck.functions';
+import { fetchSortedSuggestions, fetchAddCardCommand, fetchSetCardCommand, fetchSortedDeck } from './deck.functions';
 
 function postResult(result: DeckWorkerResponse) {
 	postMessage(result);
@@ -28,6 +29,13 @@ onmessage = async (event: MessageEvent) => {
 			{
 				const messageData = event.data as AddCardCommand;
 				const result = await fetchAddCardCommand(messageData);
+				postResult(result);
+			}
+			break;
+		case 'set':
+			{
+				const messageData = event.data as SetCardCommand;
+				const result = await fetchSetCardCommand(messageData);
 				postResult(result);
 			}
 			break;

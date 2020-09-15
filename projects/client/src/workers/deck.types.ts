@@ -1,4 +1,5 @@
 import type { FetchDeckResponse, FetchDeckCardResponse } from '../api/fetch-deck';
+import { SetCardAction } from '../api/fetch-set-card';
 
 export type GetSuggestionsCommand = {
 	type: 'suggest';
@@ -16,6 +17,17 @@ export type AddCardCommand = {
 };
 export type AddCardResponse = {
 	type: 'add';
+};
+
+export type SetCardCommand = {
+	type: 'set';
+	cardName: string;
+	action: SetCardAction;
+	count: number;
+};
+
+export type SetCardResponse = {
+	type: 'set';
 };
 
 export type GetDeckCommand = {
@@ -38,5 +50,5 @@ export type GetDeckResponse = FetchDeckResponse & {
 	deck: DeckMappedData;
 };
 
-export type DeckWorkerCommand = GetSuggestionsCommand | AddCardCommand | GetDeckCommand;
-export type DeckWorkerResponse = GetSuggestionsResponse | AddCardResponse | GetDeckResponse;
+export type DeckWorkerCommand = GetSuggestionsCommand | AddCardCommand | SetCardCommand | GetDeckCommand;
+export type DeckWorkerResponse = GetSuggestionsResponse | AddCardResponse | SetCardResponse | GetDeckResponse;

@@ -1,9 +1,15 @@
 import { DeckGroupData } from '../../workers/deck.types';
+import { FetchDeckCardResponse } from '../../api/fetch-deck';
 
 import styles from './decklist-group.module.css';
 
-export function DecklistGroup(props: { group: DeckGroupData; name: string }) {
-	const { group, name } = props;
+export type DecklistGroupProps = {
+	group: DeckGroupData;
+	name: string;
+	onCardClick?: (card: FetchDeckCardResponse) => void;
+};
+export function DecklistGroup(props: DecklistGroupProps) {
+	const { group, name, onCardClick } = props;
 	return (
 		<div className={styles['container']}>
 			<div className={styles['contents']}>
@@ -13,7 +19,12 @@ export function DecklistGroup(props: { group: DeckGroupData; name: string }) {
 				<div className={styles['body']}>
 					<ul>
 						{group.cards.map((card) => {
-							return <li key={card.name}>{card.name}</li>;
+							return (
+								<li key={card.name} onClick={() => onCardClick?.(card)}>
+									<span className={styles['item-count']}>{card.count}</span>
+									{card.name}
+								</li>
+							);
 						})}
 					</ul>
 				</div>

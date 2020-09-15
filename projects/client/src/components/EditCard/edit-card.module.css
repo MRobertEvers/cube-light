@@ -1,0 +1,17 @@
+.container {
+	background-color: var(--theme-light);
+	box-shadow: 0 0 4px rgba(var(--theme-dark-tuple), 0.4);
+	min-width: 240px;
+	padding: 5px;
+}
+
+.contents {
+	margin: 10px;
+}
+
+.header {
+	border-bottom: 1px solid black;
+}
+
+.body {
+}

@@ -121,10 +121,11 @@ export type DecklistCardInfo = FetchDeckCardResponse;
 type DecklistProps = {
 	name: string;
 	deck: DeckMappedData;
+	onCardClick?: (card: DecklistCardInfo) => void;
 };
 
 export function Decklist(props: DecklistProps) {
-	const { name, deck } = props;
+	const { name, deck, onCardClick } = props;
 	const [imageSource, setImageSource] = useState(
 		null as { card: DecklistCardInfo; position: { x: number; y: number } } | null
 	);
@@ -176,7 +177,9 @@ export function Decklist(props: DecklistProps) {
 				</div>
 				<div className={styles['decklist-groups']}>
 					{Object.keys(deck.cardCategories).map((group) => {
-						return <DecklistGroup name={group} group={deck.cardCategories[group]} />;
+						return (
+							<DecklistGroup name={group} group={deck.cardCategories[group]} onCardClick={onCardClick} />
+						);
 					})}
 				</div>
 			</div>
