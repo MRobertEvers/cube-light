@@ -77,7 +77,7 @@ export async function fetchSortedDeck(messageData: GetDeckCommand): Promise<GetD
 			};
 		}
 
-		const count = parseInt(card.count);
+		const count = card.count;
 
 		deckCards[card.types].count += count;
 		deckCards[card.types].cards.push(card);

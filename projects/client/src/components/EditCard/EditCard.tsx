@@ -26,7 +26,7 @@ export function EditCardModal(props: EditCardModalProps) {
 
 	useEffect(() => {
 		if (card) {
-			setCount(parseInt(card.count));
+			setCount(card.count);
 		}
 	}, [card]);
 
@@ -44,7 +44,7 @@ export function EditCardModal(props: EditCardModalProps) {
 						onCountDown={() => setCount((c) => (c > 0 ? c - 1 : c))}
 						onCountUp={() => setCount((c) => c + 1)}
 					/>
-					<button onClick={() => onSubmit({ ...card, count: count.toString() })}>Ok</button>
+					<button onClick={() => onSubmit({ ...card, count: count })}>Ok</button>
 					<button onClick={() => onCancel()}>Cancel</button>
 				</div>
 			</div>

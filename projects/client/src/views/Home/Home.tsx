@@ -48,7 +48,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 						<EditCardModal
 							onSubmit={(card) => {
 								async function send() {
-									await fetchSetCard('1', card.name, 'set', parseInt(card.count));
+									await fetchSetCard('1', card.name, 'set', card.count);
 									setEditCard(null);
 									mutate('1');
 								}
