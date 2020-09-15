@@ -41,7 +41,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 	}, []);
 
 	return (
-		<Page>
+		<Page title={'Home'}>
 			{editCard && (
 				<div className={styles['modal-container']}>
 					<div className={styles['modal-container-contents']}>
