@@ -7,4 +7,11 @@
 .header-content {
 	max-width: var(--max-width);
 	margin: auto;
+	height: 100%;
+}
+
+.header-content a {
+	text-decoration: none;
+	color: white;
+	height: 100%;
 }

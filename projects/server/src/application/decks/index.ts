@@ -17,12 +17,17 @@ export function decksAPI(database: Database, cardDatabase: CardDatabase) {
 		res.send();
 	});
 	app.get('/decks', async (req: Request, res: Response) => {
-		const { pageStartQ = '0', pageSizeQ = '15' } = req.params;
-		const pageStart = parseInt(pageStartQ);
-		const pageSize = parseInt(pageSizeQ);
+		const { pageStart = '0', pageSize = '15' } = req.params;
+		const pageStartVal = parseInt(pageStart);
+		const pageSizeVal = parseInt(pageSize);
 
 		res.setHeader('Access-Control-Allow-Origin', '*');
-		if (typeof pageStart !== 'number' || typeof pageSize !== 'number' || pageStart < 0 || pageSize <= 0) {
+		if (
+			typeof pageStartVal !== 'number' ||
+			typeof pageSizeVal !== 'number' ||
+			pageStartVal < 0 ||
+			pageSizeVal <= 0
+		) {
 			res.sendStatus(400);
 			return;
 		}
@@ -30,10 +35,10 @@ export function decksAPI(database: Database, cardDatabase: CardDatabase) {
 		const decks = await Deck.findAll({
 			where: {
 				DeckId: {
-					[Op.gte]: pageStart
+					[Op.gte]: pageStartVal
 				}
 			},
-			limit: pageSize
+			limit: pageSizeVal
 		});
 
 		const response = decks.map((deck) => {
