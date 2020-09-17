@@ -71,7 +71,14 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 	);
 };
 
-export async function getServerSideProps(context) {
+export async function getStaticPaths() {
+	return {
+		paths: [{ params: { id: '1' } }],
+		fallback: false
+	};
+}
+
+export async function getStaticProps(context) {
 	const deckId = context.params.id || '1';
 	const data = await fetchSortedDeck({ deckId: deckId, type: 'deck' });
 

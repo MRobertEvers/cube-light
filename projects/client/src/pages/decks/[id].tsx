@@ -1,1 +1,1 @@
-export { default, getServerSideProps } from '../../views/Deck';
+export { default, getStaticProps, getStaticPaths } from '../../views/Deck';

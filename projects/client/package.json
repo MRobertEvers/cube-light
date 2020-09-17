@@ -5,7 +5,9 @@
 	"main": "index.js",
 	"scripts": {
 		"start": "next dev",
-		"start:prod": "next build && next start"
+		"start:prod": "next build && next start",
+		"build": "next build && next export && npm run build:sw",
+		"build:sw": "tsc --project ./service-worker"
 	},
 	"author": "",
 	"license": "ISC",

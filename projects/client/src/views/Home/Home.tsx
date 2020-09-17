@@ -42,7 +42,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 	);
 };
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
 	const data = await fetchDecks();
 
 	return { props: { initialDeckData: data } };
