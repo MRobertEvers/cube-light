@@ -34,12 +34,12 @@ const KEY = {
 };
 
 export function CardAdder() {
-	const [suggestions, setSuggestions] = useState({ sorted: [], set: new Set() });
+	const [suggestions, setSuggestions] = useState({ sorted: [] as string[], set: new Set() });
 	const [isWaiting, setIsWaiting] = useState(false);
-	const [suggestDebounceTimer, setSuggestDebounceTimer] = useState(null);
+	const [suggestDebounceTimer, setSuggestDebounceTimer] = useState(null as number | null);
 	const [addItemText, setAddItemText] = useState('');
-	const addItemInputRef = useRef(null);
-	const itemCountRef = useRef(null);
+	const addItemInputRef = useRef<HTMLInputElement>(null);
+	const itemCountRef = useRef<HTMLSelectElement>(null);
 
 	const postToWorker = useDeckWorker((e: DeckWorkerResponse) => {
 		if (e.type === 'suggest') {
@@ -93,7 +93,7 @@ export function CardAdder() {
 							if (suggestDebounceTimer) {
 								clearTimeout(suggestDebounceTimer);
 							}
-							const timer = setTimeout(() => {
+							const timer: any = setTimeout(() => {
 								if (newText.length > 3) {
 									setIsWaiting(true);
 									postToWorker({ type: 'suggest', payload: newText });
