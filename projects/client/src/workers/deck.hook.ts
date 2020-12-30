@@ -58,6 +58,8 @@ export function useDeckWorker(onmessage: DeckWorkerOnMessage): (message: DeckWor
 	}, [worker]);
 
 	return (message: DeckWorkerCommand) => {
-		worker.postMessage(message);
+		if (worker !== undefined) {
+			worker.postMessage(message);
+		}
 	};
 }
