@@ -1,5 +1,5 @@
 import { useMemo, useEffect } from 'react';
-import { OnMessageResponseHandler, Message } from './utils/workerToolkit';
+import { OnMessageResponseHandler, Message } from './utils/messageToolkit';
 
 const globalWorker: {
 	worker?: Worker;

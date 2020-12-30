@@ -4,9 +4,9 @@ import {
 	fetchSetCardCommand,
 	fetchSortedDeck
 } from './deck.functions';
-import { createHandler } from './utils/workerToolkit';
+import { createHandler } from './utils/messageToolkit';
 import { DeckWorkerMessages } from './deck.worker.messages';
-import { createOnMessageHandler } from './utils/workerToolkitDefault';
+import { createOnMessageHandler } from './utils/workerToolkit';
 
 const handler = createHandler((builder) => {
 	builder.addCase(DeckWorkerMessages.getSuggestions, async (message) => {

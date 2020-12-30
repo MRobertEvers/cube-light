@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import { Header } from '../Header/Header';
 
 export function NextPage(
 	props: React.PropsWithChildren<{

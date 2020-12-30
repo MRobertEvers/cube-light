@@ -1,6 +1,6 @@
 import { FetchDeckCardResponse, FetchDeckResponse } from '../api/fetch-deck';
 import { SetCardAction } from '../api/fetch-set-card';
-import { createMessage } from './utils/workerToolkit';
+import { createMessage } from './utils/messageToolkit';
 
 export type DeckGroupData = {
 	count: number;

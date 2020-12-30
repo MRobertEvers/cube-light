@@ -6,7 +6,7 @@ import EnterIcon from '../../../../components/Icons/EnterIcon';
 import AlertIcon from '../../../../components/Icons/AlertIcon';
 
 import styles from './card-adder.module.css';
-import { createResponseHandler } from '../../../../workers/utils/workerToolkit';
+import { createResponseHandler } from '../../../../workers/utils/messageToolkit';
 import { DeckWorkerMessages } from '../../../../workers/deck.worker.messages';
 
 const KEY = {
