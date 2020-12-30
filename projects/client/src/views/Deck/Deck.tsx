@@ -5,11 +5,11 @@ import { Decklist } from '../../components/Decklist/Decklist';
 import { CardAdder } from './components/CardAdder';
 import { fetchSortedDeck } from '../../workers/deck.functions';
 import { useQueryState } from '../../hooks/useQueryParam';
-import type { GetDeckResponse } from '../../workers/deck.types';
 import { FetchDeckCardResponse } from '../../api/fetch-deck';
 import { EditCardModal } from '../../components/EditCard';
 import { fetchSetCard } from '../../api/fetch-set-card';
 import { Modal } from './components/Modal';
+import { GetDeckResponse } from '../../workers/deck.worker.messages';
 
 import styles from './deck.module.css';
 
@@ -31,7 +31,7 @@ export function Deck(props: DeckProps) {
 	const { data, error } = useSWR(
 		deckId,
 		async (key: string) => {
-			return await fetchSortedDeck({ deckId: key, type: 'deck' });
+			return await fetchSortedDeck(key);
 		},
 		{ initialData: initialDeckData }
 	);
@@ -51,7 +51,11 @@ export function Deck(props: DeckProps) {
 		<Page>
 			{editCard && (
 				<Modal>
-					<EditCardModal onSubmit={onSubmitChange} onCancel={() => setEditCard(null)} card={editCard} />
+					<EditCardModal
+						onSubmit={onSubmitChange}
+						onCancel={() => setEditCard(null)}
+						card={editCard}
+					/>
 				</Modal>
 			)}
 			<div className={styles['index-container-top']}>{editMode && <CardAdder />}</div>

@@ -1,16 +1,14 @@
-interface Message<T, Response = void, Key extends string = string> {
-	readonly type: Key;
+export interface Message<T, Response = void> {
+	readonly type: string;
 	payload: T;
 }
 
-interface MessageCreator<T, Response = void, Key extends string = string> {
-	(payload: T): Message<T, Response, Key>;
-	readonly type: Key;
+export interface MessageCreator<T, Response = void> {
+	(payload: T): Message<T, Response>;
+	readonly type: string;
 }
 
-export function createMessage<T, Response, Key extends string = string>(
-	name: Key
-): MessageCreator<T, Response, Key> {
+export function createMessage<T, Response = void>(name: string): MessageCreator<T, Response> {
 	const creator = (payload: T) => {
 		return {
 			type: name,
@@ -22,20 +20,20 @@ export function createMessage<T, Response, Key extends string = string>(
 	return creator;
 }
 
-type MessageHandler<T, Response = void, Key extends string = string> =
-	| ((msg: Message<T, Response, Key>) => Response)
-	| ((msg: Message<T, Response, Key>) => Promise<Response>);
+type MessageHandler<T, Response = void> =
+	| ((msg: Message<T, Response>) => Response)
+	| ((msg: Message<T, Response>) => Promise<Response>);
 
 class MessageHandlerMapBuilder {
-	private messageHandlerMap: { [x: string]: MessageHandler<any, any, any> };
+	private messageHandlerMap: { [x: string]: MessageHandler<any, any> };
 
-	constructor(initialHandlers: { [x: string]: MessageHandler<any, any, any> }) {
+	constructor(initialHandlers: { [x: string]: MessageHandler<any, any> }) {
 		this.messageHandlerMap = initialHandlers;
 	}
 
-	addCase<T, Response = void, Key extends string = string>(
-		gen: MessageCreator<T, Response, Key>,
-		handler: MessageHandler<T, Response, Key>
+	addCase<T, Response = void>(
+		gen: MessageCreator<T, Response>,
+		handler: MessageHandler<T, Response>
 	): MessageHandlerMapBuilder {
 		this.messageHandlerMap[gen.type] = handler;
 
@@ -44,15 +42,15 @@ class MessageHandlerMapBuilder {
 }
 
 class MessageResponseHandlerMapBuilder {
-	private messageHandlerMap: { [x: string]: MessageHandler<any, any, any> };
+	private messageHandlerMap: { [x: string]: MessageHandler<any, any> };
 
-	constructor(initialHandlers: { [x: string]: MessageHandler<any, any, any> }) {
+	constructor(initialHandlers: { [x: string]: MessageHandler<any, any> }) {
 		this.messageHandlerMap = initialHandlers;
 	}
 
-	addCase<T, Response = void, Key extends string = string>(
-		gen: MessageCreator<T, Response, Key>,
-		handler: MessageHandler<Response, void, Key>
+	addCase<T, Response = void>(
+		gen: MessageCreator<T, Response>,
+		handler: MessageHandler<Response, void>
 	): MessageResponseHandlerMapBuilder {
 		this.messageHandlerMap[gen.type] = handler;
 
@@ -60,20 +58,16 @@ class MessageResponseHandlerMapBuilder {
 	}
 }
 export interface OnMessageHandler {
-	<T, Response = void, Key extends string = string>(msg: Message<T, Response, Key>): Promise<
-		Message<Response, void, Key> | undefined
-	>;
+	<T, Response = void>(msg: Message<T, Response>): Promise<Message<Response, void> | undefined>;
 }
 
 export interface OnMessageResponseHandler {
-	<T, Response = void, Key extends string = string>(
-		msg: Message<Response, void, Key>
-	): Promise<void>;
+	<T, Response = void>(msg: Message<Response, void>): Promise<void>;
 }
 function createHandleMessage(map: { [x: string]: MessageHandler<any, any> }): OnMessageHandler {
 	const handler: OnMessageHandler = async <T, Response, Key extends string>(
-		msg: Message<T, Response, Key>
-	): Promise<Message<Response, void, Key> | undefined> => {
+		msg: Message<T, Response>
+	): Promise<Message<Response, void> | undefined> => {
 		if (msg.type in map) {
 			const cb: MessageHandler<T, Response> = map[msg.type];
 

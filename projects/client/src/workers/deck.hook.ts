@@ -1,11 +1,9 @@
 import { useMemo, useEffect } from 'react';
-import { DeckWorkerCommand, DeckWorkerResponse } from './deck.types';
-
-type DeckWorkerOnMessage = (e: DeckWorkerResponse) => void;
+import { OnMessageResponseHandler, Message } from './utils/workerToolkit';
 
 const globalWorker: {
 	worker?: Worker;
-	listeners: Set<DeckWorkerOnMessage>;
+	listeners: Set<OnMessageResponseHandler>;
 } = {
 	listeners: new Set()
 };
@@ -20,7 +18,9 @@ const globalWorker: {
  *
  * THIS IS SAFE TO CALL MORE THAN ONCE!
  */
-export function useDeckWorker(onmessage: DeckWorkerOnMessage): (message: DeckWorkerCommand) => void {
+export function useDeckWorker(
+	onmessage: OnMessageResponseHandler
+): <T, R>(message: Message<T, R>) => void {
 	const worker = useMemo(() => {
 		if (typeof Worker !== 'undefined') {
 			if (!globalWorker.worker) {
@@ -57,7 +57,7 @@ export function useDeckWorker(onmessage: DeckWorkerOnMessage): (message: DeckWor
 		};
 	}, [worker]);
 
-	return (message: DeckWorkerCommand) => {
+	return <T, R>(message: Message<T, R>) => {
 		if (worker !== undefined) {
 			worker.postMessage(message);
 		}

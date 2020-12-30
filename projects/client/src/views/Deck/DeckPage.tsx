@@ -1,8 +1,8 @@
 import { NextPage as NextPageType, GetStaticPropsContext } from 'next';
 import { NextPage } from '../../components/Page/NextPage';
 import { fetchSortedDeck } from '../../workers/deck.functions';
-import type { GetDeckResponse } from '../../workers/deck.types';
 import { Deck } from './Deck';
+import { GetDeckResponse } from '../../workers/deck.worker.messages';
 
 export type DeckPageProps = {
 	initialDeckData: GetDeckResponse;
@@ -27,7 +27,7 @@ export async function getStaticPaths() {
 
 export async function getStaticProps(context: GetStaticPropsContext) {
 	const deckId = (context.params?.id as string) || '1';
-	const data = await fetchSortedDeck({ deckId: deckId, type: 'deck' });
+	const data = await fetchSortedDeck(deckId);
 
 	return { props: { initialDeckData: data, deckId: deckId } };
 }

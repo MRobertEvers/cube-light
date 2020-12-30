@@ -1,12 +1,13 @@
-import { useState, useRef } from 'preact/hooks';
+import { useState, useRef, useMemo } from 'preact/hooks';
 import { mutate } from 'swr';
 import { Spinner } from '../../../../components/Spinner/Spinner';
-import { DeckWorkerResponse } from '../../../../workers/deck.types';
 import { useDeckWorker } from '../../../../workers/deck.hook';
 import EnterIcon from '../../../../components/Icons/EnterIcon';
 import AlertIcon from '../../../../components/Icons/AlertIcon';
 
 import styles from './card-adder.module.css';
+import { createResponseHandler } from '../../../../workers/utils/workerToolkit';
+import { DeckWorkerMessages } from '../../../../workers/deck.worker.messages';
 
 const KEY = {
 	BACKSPACE: 8,
@@ -41,20 +42,26 @@ export function CardAdder() {
 	const addItemInputRef = useRef<HTMLInputElement>(null);
 	const itemCountRef = useRef<HTMLSelectElement>(null);
 
-	const postToWorker = useDeckWorker((e: DeckWorkerResponse) => {
-		if (e.type === 'suggest') {
-			setSuggestions(e);
-		} else {
-			if (addItemInputRef.current) {
-				addItemInputRef.current.focus();
-			}
-			setAddItemText('');
-			setSuggestions({ sorted: [], set: new Set() });
-			mutate('1');
-		}
+	const workerResponseHandler = useMemo(() => {
+		return createResponseHandler((builder) => {
+			builder.addCase(DeckWorkerMessages.getSuggestions, (response) => {
+				setSuggestions(response.payload);
+				setIsWaiting(false);
+			});
+			builder.addCase(DeckWorkerMessages.addCard, async (response) => {
+				if (addItemInputRef.current) {
+					addItemInputRef.current.focus();
+				}
+				setAddItemText('');
+				setSuggestions({ sorted: [], set: new Set() });
+				setIsWaiting(false);
+				await mutate('1');
+			});
+			return builder;
+		});
+	}, []);
 
-		setIsWaiting(false);
-	});
+	const postToWorker = useDeckWorker(workerResponseHandler);
 
 	let isOkToSubmit = false;
 	let comboboxIndicator;
@@ -96,7 +103,7 @@ export function CardAdder() {
 							const timer: any = setTimeout(() => {
 								if (newText.length > 3) {
 									setIsWaiting(true);
-									postToWorker({ type: 'suggest', payload: newText });
+									postToWorker(DeckWorkerMessages.getSuggestions(newText));
 								} else {
 									setSuggestions({ sorted: [], set: new Set() });
 								}
@@ -116,11 +123,8 @@ export function CardAdder() {
 					className={styles['submit-button']}
 					disabled={!isOkToSubmit}
 					onClick={() => {
-						postToWorker({
-							type: 'add',
-							cardName: addItemText
-						});
 						setIsWaiting(true);
+						postToWorker(DeckWorkerMessages.addCard(addItemText));
 					}}
 				>
 					{isWaiting ? <Spinner /> : 'Submit'}

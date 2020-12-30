@@ -1,26 +1,19 @@
-import {
-	GetSuggestionsCommand,
-	GetSuggestionsResponse,
-	AddCardCommand,
-	AddCardResponse,
-	SetCardCommand,
-	SetCardResponse,
-	GetDeckCommand,
-	GetDeckResponse
-} from './deck.types';
 import { fetchSuggestions } from '../api/fetch-suggestions';
 import { fetchAddCard } from '../api/fetch-add-card';
 import { fetchDeck } from '../api/fetch-deck';
+import { GetDeckResponse } from './deck.worker.messages';
+import { fetchSetCard, SetCardAction } from '../api/fetch-set-card';
 
-export async function fetchSortedSuggestions(messageData: GetSuggestionsCommand): Promise<GetSuggestionsResponse> {
-	const { payload, type: messageType } = messageData;
-	const suggestionArray = await fetchSuggestions(payload);
+export async function fetchSortedSuggestions(
+	search: string
+): Promise<{ sorted: string[]; set: Set<string> }> {
+	const suggestionArray = await fetchSuggestions(search);
 
 	const deduped = new Set(suggestionArray);
 	const dedupedArray = Array.from(deduped).sort();
 	const front = [];
 	const back = [];
-	const testName = messageData.payload.toLowerCase();
+	const testName = search.toLowerCase();
 	for (const name of dedupedArray) {
 		if (name.toLowerCase().indexOf(testName) === 0) {
 			front.push(name);
@@ -30,7 +23,6 @@ export async function fetchSortedSuggestions(messageData: GetSuggestionsCommand)
 	}
 	const sorted = front.concat(back);
 	const result = {
-		type: messageType,
 		sorted: sorted,
 		set: new Set(sorted.map((item) => item.toLowerCase()))
 	};
@@ -38,27 +30,19 @@ export async function fetchSortedSuggestions(messageData: GetSuggestionsCommand)
 	return result;
 }
 
-export async function fetchAddCardCommand(messageData: AddCardCommand): Promise<AddCardResponse> {
-	const { cardName, type: messageType } = messageData;
-	const result = await fetchAddCard('1', cardName);
-
-	return {
-		type: messageType
-	};
+export async function fetchAddCardCommand(cardName: string): Promise<void> {
+	await fetchAddCard('1', cardName);
 }
 
-export async function fetchSetCardCommand(messageData: SetCardCommand): Promise<SetCardResponse> {
-	const { cardName, type: messageType } = messageData;
-	const result = await fetchAddCard('1', cardName);
-
-	return {
-		type: messageType
-	};
+export async function fetchSetCardCommand(
+	cardName: string,
+	action: SetCardAction,
+	count: number
+): Promise<void> {
+	await fetchSetCard('1', cardName, action, count);
 }
 
-export async function fetchSortedDeck(messageData: GetDeckCommand): Promise<GetDeckResponse> {
-	const { deckId, type: messageType } = messageData;
-
+export async function fetchSortedDeck(deckId: string): Promise<GetDeckResponse> {
 	const data = await fetchDeck(deckId);
 
 	const { cards } = data;
@@ -85,10 +69,8 @@ export async function fetchSortedDeck(messageData: GetDeckCommand): Promise<GetD
 		deck.count += count;
 	}
 
-	// Avoid duplicating the response.
-	const response = data as GetDeckResponse;
-	response.type = messageType;
-	response.deck = deck;
-
-	return response;
+	return {
+		...data,
+		deck: deck
+	};
 }
