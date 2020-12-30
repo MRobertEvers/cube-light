@@ -6,11 +6,37 @@ import {
 	GetDeckCommand,
 	SetCardCommand
 } from './deck.types';
-import { fetchSortedSuggestions, fetchAddCardCommand, fetchSetCardCommand, fetchSortedDeck } from './deck.functions';
+import {
+	fetchSortedSuggestions,
+	fetchAddCardCommand,
+	fetchSetCardCommand,
+	fetchSortedDeck
+} from './deck.functions';
+import { createHandler, createMessage, createResponseHandler } from './utils/workerToolkit';
 
 function postResult(result: DeckWorkerResponse) {
 	postMessage(result);
 }
+
+const DeckWorkerMessages = {
+	getSuggestions: createMessage<string, string>('getSuggestions')
+};
+
+const handler = createHandler((builder) => {
+	builder.addCase(DeckWorkerMessages.getSuggestions, async (message) => {
+		const result = await fetchSortedSuggestions(message.payload);
+		postResult(result);
+	});
+
+	return builder;
+});
+
+const responseHandler = createResponseHandler((builder) => {
+	builder.addCase(DeckWorkerMessages.getSuggestions, async (resp) => {
+		resp.type;
+	});
+	return builder;
+});
 
 // This is the service worker entry point.
 onmessage = async (event: MessageEvent) => {
