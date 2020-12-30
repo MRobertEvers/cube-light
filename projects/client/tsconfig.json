@@ -9,7 +9,7 @@
 		"lib": ["DOM", "WebWorker"],
 		"allowJs": true,
 		"skipLibCheck": true,
-		"strict": false,
+		"strict": true,
 		"forceConsistentCasingInFileNames": true,
 		"noEmit": true,
 		"moduleResolution": "node",

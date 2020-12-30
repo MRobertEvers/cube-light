@@ -1,20 +1,15 @@
-import Head from 'next/head';
+import { PropsWithChildren } from 'react';
 import { Header } from '../Header/Header';
 
-export function Page(
-	props: React.PropsWithChildren<{
-		title?: string;
-	}>
-) {
-	const { children, title } = props;
-	const displayTitle = title || 'My App';
+type PageProps = PropsWithChildren<{}>;
+
+export function Page(props: PageProps) {
+	const { children } = props;
+
 	return (
-		<div>
-			<Head>
-				<title>{displayTitle}</title>
-			</Head>
+		<>
 			<Header />
 			{children}
-		</div>
+		</>
 	);
 }

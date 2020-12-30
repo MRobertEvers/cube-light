@@ -1,1 +1,1 @@
-export { default, getStaticProps, getStaticPaths } from './Deck';
+export { default, getStaticProps, getStaticPaths } from './DeckPage';

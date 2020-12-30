@@ -14,12 +14,12 @@ import { Modal } from './components/Modal';
 
 import styles from './deck.module.css';
 
-export type WorkoutProps = {
-	initialDeckData: GetDeckResponse;
+export type DeckProps = {
+	initialDeckData?: GetDeckResponse;
 	deckId: string;
 };
 
-const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
+export function Deck(props: DeckProps) {
 	const { initialDeckData, deckId } = props;
 
 	const [editMode, setEditMode] = useQueryState('edit', {
@@ -49,7 +49,7 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 	}, []);
 
 	return (
-		<Page title={'Home'}>
+		<Page>
 			{editCard && (
 				<Modal>
 					<EditCardModal onSubmit={onSubmitChange} onCancel={() => setEditCard(null)} card={editCard} />
@@ -69,20 +69,4 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 			</div>
 		</Page>
 	);
-};
-
-export async function getStaticPaths() {
-	return {
-		paths: [{ params: { id: '1' } }],
-		fallback: false
-	};
 }
-
-export async function getStaticProps(context) {
-	const deckId = context.params.id || '1';
-	const data = await fetchSortedDeck({ deckId: deckId, type: 'deck' });
-
-	return { props: { initialDeckData: data, deckId: deckId } };
-}
-
-export default Index;

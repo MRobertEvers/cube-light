@@ -1,34 +1,30 @@
 import { NextPage } from 'next';
 import Link from 'next/link';
-import useSWR, { mutate } from 'swr';
-import { useCallback, useState } from 'react';
+import useSWR from 'swr';
 import { Page } from '../../components/Page/Page';
-import { FetchDeckCardResponse } from '../../api/fetch-deck';
-import { fetchSetCard } from '../../api/fetch-set-card';
 import { fetchDecks, FetchDecksResponse } from '../../api/fetch-decks';
 
 import styles from './home.module.css';
 
-export type WorkoutProps = {
-	initialDeckData: FetchDecksResponse;
-	deckId: string;
+export type HomeProps = {
+	initialData?: FetchDecksResponse;
 };
 
-const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
-	const { initialDeckData, deckId } = props;
+export function Home(props: HomeProps) {
+	const { initialData } = props;
 
 	const { data, error } = useSWR(
 		'decks',
 		async (key: string) => {
 			return await fetchDecks();
 		},
-		{ initialData: initialDeckData }
+		{ initialData: initialData }
 	);
 
 	return (
-		<Page title={'Home'}>
+		<Page>
 			<ul>
-				{data.map((deck) => {
+				{data?.map((deck) => {
 					return (
 						<li>
 							<Link href="/decks/[id]" as={`/decks/${deck.deckId}`}>
@@ -40,12 +36,4 @@ const Index: NextPage<WorkoutProps> = (props: WorkoutProps) => {
 			</ul>
 		</Page>
 	);
-};
-
-export async function getStaticProps() {
-	const data = await fetchDecks();
-
-	return { props: { initialDeckData: data } };
 }
-
-export default Index;
