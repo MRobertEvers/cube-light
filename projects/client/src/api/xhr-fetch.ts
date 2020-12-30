@@ -1,6 +1,10 @@
 import { XHRFetchInit } from './xhr-fetch.types';
 
-export function xhrFetch(url: string, options?: XHRFetchInit, onreadystatechange?: (xhr: XMLHttpRequest) => any) {
+export function xhrFetch(
+	url: string,
+	options?: XHRFetchInit,
+	onreadystatechange?: (xhr: XMLHttpRequest) => any
+) {
 	const { method, headers, body, credentials } = options || {};
 
 	const request = new XMLHttpRequest();
@@ -11,14 +15,14 @@ export function xhrFetch(url: string, options?: XHRFetchInit, onreadystatechange
 	// request.responseType = "json";
 	// Just use the default type ('text') and JSON.parse it if you need json.
 	request.onreadystatechange = function () {
-		onreadystatechange(request);
+		onreadystatechange?.(request);
 	};
 
 	request.open(method || 'GET', url);
 
 	const requestHeaders = headers || {};
 	for (const header in requestHeaders) {
-		request.setRequestHeader(header, headers[header]);
+		request.setRequestHeader(header, requestHeaders[header]);
 	}
 
 	request.send(body);

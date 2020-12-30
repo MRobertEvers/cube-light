@@ -1,4 +1,5 @@
 import { API_URI } from '../config/api-url';
+import { fetchTimeout } from './utils';
 
 export type SetCardResponse = null;
 export type SetCardAction = 'add' | 'remove' | 'set';
@@ -8,21 +9,17 @@ export async function fetchSetCard(
 	action: SetCardAction,
 	count: number
 ): Promise<SetCardResponse> {
-	const body = JSON.stringify({
-		cardName: cardName,
-		action: action,
-		count: count
-	});
-
-	const options = {
-		method: 'POST' as 'POST',
+	const request = await fetchTimeout(`${API_URI}/decks/${deckId}/cards`, {
+		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json;charset=UTF-8'
 		},
-		body: body
-	};
-
-	const request = await fetch(`${API_URI}/decks/${deckId}/cards`, options);
+		body: JSON.stringify({
+			cardName: cardName,
+			action: action,
+			count: count
+		})
+	});
 
 	return null;
 }

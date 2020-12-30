@@ -1,4 +1,3 @@
-import { NextPage } from 'next';
 import useSWR, { mutate } from 'swr';
 import { useCallback, useState } from 'react';
 import { Page } from '../../components/Page/Page';
@@ -45,7 +44,7 @@ export function Deck(props: DeckProps) {
 	const onSubmitChange = useCallback(async (card: FetchDeckCardResponse) => {
 		await fetchSetCard(deckId, card.name, 'set', card.count);
 		setEditCard(null);
-		mutate(deckId);
+		await mutate(deckId);
 	}, []);
 
 	return (
