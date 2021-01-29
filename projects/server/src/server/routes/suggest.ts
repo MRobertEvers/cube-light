@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
-import { CardDatabase } from '../database/cards/database';
+import { CardDatabase } from '../../database/cards/database';
 
-export function suggestAPI(cardDatabase: CardDatabase) {
+export function createSuggestRoutes(cardDatabase: CardDatabase) {
 	const app = Router();
 
 	app.get('/suggest', async (req: Request, res: Response) => {

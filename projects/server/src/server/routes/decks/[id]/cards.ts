@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import bodyParser from 'body-parser';
 import { Request, Response } from 'express';
-import { Database } from '../../../database/app/database';
-import { CardDatabase } from '../../../database/cards/database';
+import { Database } from '../../../../database/app/database';
+import { CardDatabase } from '../../../../database/cards/database';
 
-export function cardsAPI(database: Database, cardDatabase: CardDatabase) {
+export function createCardsAPI(database: Database, cardDatabase: CardDatabase) {
 	const { Deck, DeckCard } = database;
 	const app = Router();
 

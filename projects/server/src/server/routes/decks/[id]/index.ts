@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
-import { Database } from '../../../database/app/database';
-import { CardDatabase, CardInfo } from '../../../database/cards/database';
-import { fetchCardDataByScryFallIds, ScryfallCardInfo } from '../../../external/scryfall';
-import { Mapped } from '../../../utils/templates.types';
-import type { Deck } from '../../../database/app/tables/deck';
+import { Database } from '../../../../database/app/database';
+import { CardDatabase, CardInfo } from '../../../../database/cards/database';
+import { fetchCardDataByScryFallIds, ScryfallCardInfo } from '../../../../external/scryfall';
+import { Mapped } from '../../../../utils/templates.types';
+import type { Deck } from '../../../../database/app/tables/deck';
 
-export function deckAPI(database: Database, cardDatabase: CardDatabase): Router {
+export function createDeckAPI(database: Database, cardDatabase: CardDatabase): Router {
 	const { Deck, DeckCard } = database;
 	const app = Router();
 
@@ -36,7 +36,9 @@ export function deckAPI(database: Database, cardDatabase: CardDatabase): Router 
 			return map;
 		}, {});
 
-		const cardImages = await fetchCardDataByScryFallIds(cardInfos.map((card) => card.scryfallId));
+		const cardImages = await fetchCardDataByScryFallIds(
+			cardInfos.map((card) => card.scryfallId)
+		);
 		const cardImagesMapped: Mapped<ScryfallCardInfo> = cardImages.data.reduce((map, card) => {
 			map[card.id] = card;
 			return map;

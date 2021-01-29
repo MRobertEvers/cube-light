@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 
-import { Database } from '../../database/app/database';
-import { CardDatabase } from '../../database/cards/database';
+import { Database } from '../../../database/app/database';
+import { CardDatabase } from '../../../database/cards/database';
 import { Op } from 'sequelize';
 
-export function decksAPI(database: Database, cardDatabase: CardDatabase) {
+export function createDecksAPI(database: Database, cardDatabase: CardDatabase) {
 	const { Deck } = database;
 
 	const app = Router();
