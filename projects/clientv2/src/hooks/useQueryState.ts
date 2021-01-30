@@ -63,10 +63,10 @@ export function useQueryState<T = string>(
 			// e.g. /views/[view] rather than /views/my-view
 			const [asPath] = window.location.href.split(/\?|#/, 1);
 
-			window.history.pushState(Math.random(), '', `${asPath}?${query.toString()}`);
+			window.history.pushState({}, '', `${asPath}?${query.toString()}`);
 			setValue(newValue);
 		},
-		[key]
+		[key, value, setValue]
 	);
 
 	React.useEffect(() => {
@@ -78,7 +78,7 @@ export function useQueryState<T = string>(
 		return () => {
 			window.removeEventListener('popstate', onStateChange);
 		};
-	}, []);
+	}, [key, value, setValue]);
 
 	return [value, update];
 }

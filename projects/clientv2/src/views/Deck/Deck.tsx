@@ -24,10 +24,11 @@ export type DeckProps = {
 
 export function Deck(props: DeckProps) {
 	const { initialDeckData, deckId } = props;
-	const [editMode, setEditMode] = useQueryState('edit', {
+	const [isEditMode, setIsEditMode] = useQueryState('edit', {
 		parse: (value: string) => value === 'true',
 		serialize: (value: boolean) => value.toString()
 	});
+	const [editCard, setEditCard] = useState(null as FetchDeckCardResponse | null);
 
 	const { data, error } = useSWR(
 		deckId,
@@ -35,16 +36,6 @@ export function Deck(props: DeckProps) {
 			return await fetchSortedDeck(key);
 		},
 		{ initialData: initialDeckData }
-	);
-
-	const [editCard, setEditCard] = useState(null as FetchDeckCardResponse | null);
-	const onCardClick = useCallback(
-		(card: FetchDeckCardResponse) => {
-			if (editMode) {
-				setEditCard(card);
-			}
-		},
-		[editMode]
 	);
 
 	const onSubmitChange = useCallback(async (card: FetchDeckCardResponse) => {
@@ -91,15 +82,23 @@ export function Deck(props: DeckProps) {
 							</span>
 							<Button
 								className={styles['edit-deck-button']}
-								onClick={() => setEditMode((prev) => !prev)}
+								onClick={() => setIsEditMode((prev) => !prev)}
 							>
-								{editMode ? 'Edit deck' : 'wow'}
+								{isEditMode ? 'Edit deck' : 'wow'}
 							</Button>
 						</div>
 					</div>
 					<DeckStatsSummary deck={data} />
 				</div>
-				{data && <Decklist name={data.name} deck={data.deck} onCardClick={onCardClick} />}
+				<Decklist
+					name={data.name}
+					deck={data.deck}
+					onCardClick={(card: FetchDeckCardResponse) => {
+						if (isEditMode) {
+							setEditCard(card);
+						}
+					}}
+				/>
 			</div>
 		</Page>
 	);

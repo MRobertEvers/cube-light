@@ -148,19 +148,22 @@ export function Decklist(props: DecklistProps) {
 		}
 	}
 
-	const onCardEvent = useCallback((event: CardInteractionEvent) => {
-		switch (event.type) {
-			case CardInteractionEventType.CLICK:
-				onCardClick?.(event.payload);
-				break;
-			case CardInteractionEventType.HOVER:
-				setImageSource(event.payload);
-				break;
-			case CardInteractionEventType.LEAVE:
-				setImageSource(null);
-				break;
-		}
-	}, []);
+	const onCardEvent = useCallback(
+		(event: CardInteractionEvent) => {
+			switch (event.type) {
+				case CardInteractionEventType.CLICK:
+					onCardClick?.(event.payload);
+					break;
+				case CardInteractionEventType.HOVER:
+					setImageSource(event.payload);
+					break;
+				case CardInteractionEventType.LEAVE:
+					setImageSource(null);
+					break;
+			}
+		},
+		[onCardClick, setImageSource]
+	);
 
 	return (
 		<div className={styles['body']}>

@@ -56,6 +56,7 @@ export function DecklistCategory(props: DecklistCategoryProps) {
 						<td>{card.count}</td>
 						<td>
 							<a
+								onClick={(e) => e.preventDefault()}
 								onMouseLeave={() =>
 									onCardEvent?.({
 										type: CardInteractionEventType.LEAVE,
