@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
-import { FetchDeckCardResponse } from '../../api/fetch-deck';
+import { FetchDeckCardResponse } from '../../api/fetch-api-deck';
 
 import styles from './edit-card.module.css';
 

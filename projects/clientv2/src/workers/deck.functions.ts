@@ -1,13 +1,13 @@
-import { fetchSuggestions } from '../api/fetch-suggestions';
-import { fetchAddCard } from '../api/fetch-add-card';
-import { fetchDeck } from '../api/fetch-deck';
+import { fetchAPIAddCard } from '../api/fetch-api-add-card';
+import { fetchAPIDeck } from '../api/fetch-api-deck';
+import { fetchAPISetCard, SetCardAction } from '../api/fetch-api-set-card';
+import { fetchAPISuggestions } from '../api/fetch-api-suggestions';
 import { GetDeckResponse } from './deck.worker.messages';
-import { fetchSetCard, SetCardAction } from '../api/fetch-set-card';
 
 export async function fetchSortedSuggestions(
 	search: string
 ): Promise<{ sorted: string[]; set: Set<string> }> {
-	const suggestionArray = await fetchSuggestions(search);
+	const suggestionArray = await fetchAPISuggestions(search);
 
 	const deduped = new Set(suggestionArray);
 	const dedupedArray = Array.from(deduped).sort();
@@ -31,7 +31,7 @@ export async function fetchSortedSuggestions(
 }
 
 export async function fetchAddCardCommand(cardName: string): Promise<void> {
-	await fetchAddCard('1', cardName);
+	await fetchAPIAddCard('1', cardName);
 }
 
 export async function fetchSetCardCommand(
@@ -39,11 +39,11 @@ export async function fetchSetCardCommand(
 	action: SetCardAction,
 	count: number
 ): Promise<void> {
-	await fetchSetCard('1', cardName, action, count);
+	await fetchAPISetCard('1', cardName, action, count);
 }
 
 export async function fetchSortedDeck(deckId: string): Promise<GetDeckResponse> {
-	const data = await fetchDeck(deckId);
+	const data = await fetchAPIDeck(deckId);
 
 	const { cards } = data;
 

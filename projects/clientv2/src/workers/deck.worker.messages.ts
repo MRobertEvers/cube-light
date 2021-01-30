@@ -1,5 +1,5 @@
-import { FetchDeckCardResponse, FetchDeckResponse } from '../api/fetch-deck';
-import { SetCardAction } from '../api/fetch-set-card';
+import { FetchDeckCardResponse, FetchDeckResponse } from '../api/fetch-api-deck';
+import { SetCardAction } from '../api/fetch-api-set-card';
 import { createMessage } from './utils/messageToolkit';
 
 export type DeckGroupData = {

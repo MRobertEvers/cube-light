@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import useSWR from 'swr';
+import { fetchAPIDecks, FetchDecksResponse } from '../../api/fetch-api-decks';
 import { Page } from '../../components/Page/Page';
-import { fetchDecks, FetchDecksResponse } from '../../api/fetch-decks';
 
 import styles from './home.module.css';
 
@@ -14,7 +14,7 @@ export function Home(props: HomeProps) {
 	const { initialData } = props;
 
 	const { data, error } = useSWR('decks', async (key: string) => {
-		return await fetchDecks();
+		return await fetchAPIDecks();
 	});
 
 	return (

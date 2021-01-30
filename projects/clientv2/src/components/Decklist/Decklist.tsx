@@ -1,12 +1,12 @@
 import React from 'react';
 import { useState } from 'react';
+import { SpotlightCard } from './SpotlightCard';
+import { DecklistGroup } from './DecklistGroup';
+import { DeckMappedData } from '../../workers/deck.worker.messages';
+import { FetchDeckCardResponse } from '../../api/fetch-api-deck';
 
 import manaStyles from './mana.module.css';
 import styles from './decklist.module.css';
-import { SpotlightCard } from './SpotlightCard';
-import { FetchDeckCardResponse } from '../../api/fetch-deck';
-import { DecklistGroup } from './DecklistGroup';
-import { DeckMappedData } from '../../workers/deck.worker.messages';
 
 const colorMap: { [x: string]: string } = {
 	W: 'rgb(252, 248, 219)',

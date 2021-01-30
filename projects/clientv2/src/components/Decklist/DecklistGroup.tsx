@@ -1,5 +1,5 @@
 import React from 'react';
-import { FetchDeckCardResponse } from '../../api/fetch-deck';
+import { FetchDeckCardResponse } from '../../api/fetch-api-deck';
 import { DeckGroupData } from '../../workers/deck.worker.messages';
 
 import styles from './decklist-group.module.css';

@@ -5,11 +5,11 @@ import { Page } from '../../components/Page/Page';
 import { Decklist } from '../../components/Decklist/Decklist';
 import { CardAdder } from './components/CardAdder';
 import { fetchSortedDeck } from '../../workers/deck.functions';
-import { FetchDeckCardResponse } from '../../api/fetch-deck';
 import { EditCardModal } from '../../components/EditCard';
-import { fetchSetCard } from '../../api/fetch-set-card';
 import { Modal } from './components/Modal';
 import { GetDeckResponse } from '../../workers/deck.worker.messages';
+import { FetchDeckCardResponse } from '../../api/fetch-api-deck';
+import { fetchAPISetCard } from '../../api/fetch-api-set-card';
 
 import styles from './deck.module.css';
 
@@ -42,7 +42,7 @@ export function Deck(props: DeckProps) {
 	}, []);
 
 	const onSubmitChange = useCallback(async (card: FetchDeckCardResponse) => {
-		await fetchSetCard(deckId, card.name, 'set', card.count);
+		await fetchAPISetCard(deckId, card.name, 'set', card.count);
 		setEditCard(null);
 		await mutate(deckId);
 	}, []);
