@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"outDir": "./dist",
+		"sourceMap": true,
+		"module": "CommonJS",
+		"jsx": "react",
+		"esModuleInterop": true,
+		"target": "ES6",
+		"lib": ["DOM", "WebWorker", "ESNext"],
+		"allowJs": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"forceConsistentCasingInFileNames": true,
+		"noEmit": false,
+		"moduleResolution": "node",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"noImplicitAny": false
+	},
+	"include": ["src", "custom.d.ts"],
+	"exclude": ["node_modules"]
+}
