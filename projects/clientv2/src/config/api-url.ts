@@ -1,1 +1,3 @@
-export const API_URI = 'http://192.168.1.128:4040';
+import { BACKEND_HOST_URI } from '../globals';
+
+export const API_URI = `${BACKEND_HOST_URI}`;

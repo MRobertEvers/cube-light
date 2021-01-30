@@ -3,7 +3,7 @@
  *
  * The webpack pipeline uses this to get the environment variable, which is then built into the bundle.
  */
-const BACKEND_HOST_URI = process.env['BACKEND_HOST_URI'] || 'http://localhost:4040';
+const BACKEND_HOST_URI = 'http://localhost:4040';
 
 module.exports = {
 	BACKEND_HOST_URI: BACKEND_HOST_URI
