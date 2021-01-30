@@ -3,7 +3,6 @@ import { useCallback, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import { Page } from '../../components/Page/Page';
 import { Decklist } from '../../components/Decklist/Decklist';
-import { CardAdder } from './components/CardAdder';
 import { fetchSortedDeck } from '../../workers/deck.functions';
 import { EditCardModal } from '../../components/EditCard';
 import { Modal } from './components/Modal';
@@ -16,6 +15,7 @@ import { Button } from '../../components/Button/Button';
 import { LoadingIndicator } from '../../components/LoadingIndicator';
 import { DeckStatsSummary } from './components/DeckStatsSummary/DeckStatsSummary';
 import { toFriendlyDate } from '../../utils/to-friendly-date';
+import { useQueryState } from 'src/hooks/useQueryState';
 
 export type DeckProps = {
 	initialDeckData?: GetDeckResponse;
@@ -24,13 +24,10 @@ export type DeckProps = {
 
 export function Deck(props: DeckProps) {
 	const { initialDeckData, deckId } = props;
-	const editMode = false;
-	// const [editMode, setEditMode] = useQueryState('edit', {
-	// 	history: 'push',
-	// 	shallow: true,
-	// 	parse: (value: string) => value === 'true',
-	// 	serialize: (value: boolean) => value.toString()
-	// });
+	const [editMode, setEditMode] = useQueryState('edit', {
+		parse: (value: string) => value === 'true',
+		serialize: (value: boolean) => value.toString()
+	});
 
 	const { data, error } = useSWR(
 		deckId,
@@ -41,9 +38,14 @@ export function Deck(props: DeckProps) {
 	);
 
 	const [editCard, setEditCard] = useState(null as FetchDeckCardResponse | null);
-	const onCardClick = useCallback((card: FetchDeckCardResponse) => {
-		setEditCard(card);
-	}, []);
+	const onCardClick = useCallback(
+		(card: FetchDeckCardResponse) => {
+			if (editMode) {
+				setEditCard(card);
+			}
+		},
+		[editMode]
+	);
 
 	const onSubmitChange = useCallback(async (card: FetchDeckCardResponse) => {
 		await fetchAPISetCard(deckId, card.name, 'set', card.count);
@@ -87,7 +89,12 @@ export function Deck(props: DeckProps) {
 									{toFriendlyDate(data.lastEdit.toString())}
 								</span>
 							</span>
-							<Button style={{ width: '100%', margin: '16px 0' }}>Edit deck</Button>
+							<Button
+								className={styles['edit-deck-button']}
+								onClick={() => setEditMode((prev) => !prev)}
+							>
+								{editMode ? 'Edit deck' : 'wow'}
+							</Button>
 						</div>
 					</div>
 					<DeckStatsSummary deck={data} />

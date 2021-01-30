@@ -4,13 +4,39 @@ import { DeckGroupData } from '../../workers/deck.worker.messages';
 
 import styles from './decklist-group.module.css';
 
+export enum CardInteractionEventType {
+	CLICK = 'CardInteractionEvent/CLICK',
+	HOVER = 'CardInteractionEvent/HOVER',
+	LEAVE = 'CardInteractionEvent/LEAVE'
+}
+
+export type CardInteractionEvent =
+	| {
+			type: CardInteractionEventType.CLICK;
+			payload: FetchDeckCardResponse;
+	  }
+	| {
+			type: CardInteractionEventType.LEAVE;
+			payload: FetchDeckCardResponse;
+	  }
+	| {
+			type: CardInteractionEventType.HOVER;
+			payload: {
+				card: FetchDeckCardResponse;
+				position: {
+					x: number;
+					y: number;
+				};
+			};
+	  };
+
 export type DecklistCategoryProps = {
 	group: DeckGroupData;
 	name: string;
-	onCardClick?: (card: FetchDeckCardResponse) => void;
+	onCardEvent?: (event: CardInteractionEvent) => void;
 };
 export function DecklistCategory(props: DecklistCategoryProps) {
-	const { group, name, onCardClick } = props;
+	const { group, name, onCardEvent } = props;
 	return (
 		<>
 			<tr className={styles['category-header']}>
@@ -18,10 +44,38 @@ export function DecklistCategory(props: DecklistCategoryProps) {
 			</tr>
 			{group.cards.map((card) => {
 				return (
-					<tr key={card.name} onClick={() => onCardClick?.(card)}>
+					<tr
+						key={card.name}
+						onClick={() =>
+							onCardEvent?.({
+								type: CardInteractionEventType.CLICK,
+								payload: card
+							})
+						}
+					>
 						<td>{card.count}</td>
 						<td>
-							<a rel="popover" href={card.name}>
+							<a
+								onMouseLeave={() =>
+									onCardEvent?.({
+										type: CardInteractionEventType.LEAVE,
+										payload: card
+									})
+								}
+								onMouseOver={(e) => {
+									const node = e.currentTarget.getBoundingClientRect();
+									onCardEvent?.({
+										type: CardInteractionEventType.HOVER,
+										payload: {
+											card,
+											position: {
+												x: node.left,
+												y: node.bottom
+											}
+										}
+									});
+								}}
+							>
 								{card.name}
 							</a>
 						</td>
@@ -37,16 +91,21 @@ export type DecklistGroupProps = {
 		name: string;
 		groupData: DeckGroupData;
 	}>;
-	onCardClick?: (card: FetchDeckCardResponse) => void;
+	onCardEvent?: (event: CardInteractionEvent) => void;
 };
 export function DecklistGroup(props: DecklistGroupProps) {
-	const { groups, onCardClick } = props;
+	const { groups, onCardEvent } = props;
 	return (
 		<table className={styles['decklist-groups']}>
 			<tbody>
 				{groups.map(({ groupData, name }) => {
 					return (
-						<DecklistCategory name={name} group={groupData} onCardClick={onCardClick} />
+						<DecklistCategory
+							key={name}
+							name={name}
+							group={groupData}
+							onCardEvent={onCardEvent}
+						/>
 					);
 				})}
 			</tbody>

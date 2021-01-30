@@ -53,15 +53,21 @@
 	box-sizing: border-box;
 }
 
+.edit-deck-button {
+	width: 100%;
+	margin: 16px auto !important;
+}
+
 @media (max-width: 680px) {
 	.banner {
 		display: flex;
-		margin: 0px;
+		margin: 12px;
 	}
 
 	.banner-info {
 		text-align: center;
 		margin: auto 12px;
+		flex-grow: 1;
 	}
 
 	.index-container {
@@ -73,12 +79,18 @@
 		width: unset;
 		max-width: 120px;
 		min-width: 80px;
+		flex-basis: 33%;
 	}
 
 	.avatar img {
 		display: block;
 		margin: auto;
 		border-radius: 50%;
+	}
+
+	.edit-deck-button {
+		max-width: 240px;
+		display: block;
 	}
 }
 

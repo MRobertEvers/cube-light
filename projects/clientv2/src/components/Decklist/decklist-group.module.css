@@ -1,6 +1,7 @@
 .decklist-groups > tbody > tr > td > a {
 	text-decoration: none;
 	color: rgb(0, 0, 238);
+	cursor: pointer;
 }
 
 .decklist-groups > tbody > tr > td > a:hover {

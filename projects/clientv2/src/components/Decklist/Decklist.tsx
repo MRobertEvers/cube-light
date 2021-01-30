@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useState } from 'react';
 import { SpotlightCard } from './SpotlightCard';
-import { DecklistGroup } from './DecklistGroup';
+import { CardInteractionEvent, CardInteractionEventType, DecklistGroup } from './DecklistGroup';
 import { DeckMappedData } from '../../workers/deck.worker.messages';
 import { FetchDeckCardResponse } from '../../api/fetch-api-deck';
 
@@ -148,6 +148,20 @@ export function Decklist(props: DecklistProps) {
 		}
 	}
 
+	const onCardEvent = useCallback((event: CardInteractionEvent) => {
+		switch (event.type) {
+			case CardInteractionEventType.CLICK:
+				onCardClick?.(event.payload);
+				break;
+			case CardInteractionEventType.HOVER:
+				setImageSource(event.payload);
+				break;
+			case CardInteractionEventType.LEAVE:
+				setImageSource(null);
+				break;
+		}
+	}, []);
+
 	return (
 		<div className={styles['body']}>
 			<div
@@ -176,7 +190,7 @@ export function Decklist(props: DecklistProps) {
 			<div className={styles['decklist-container']}>
 				<div className={styles['decklist-spotlight']}>
 					{spotlightCards.map((card) => (
-						<SpotlightCard card={card} />
+						<SpotlightCard key={card.name} card={card} />
 					))}
 				</div>
 				<div className={styles['deck-list']}>
@@ -187,7 +201,7 @@ export function Decklist(props: DecklistProps) {
 								name: groupName,
 								groupData: deck.cardCategories[groupName]
 							}))}
-						onCardClick={onCardClick}
+						onCardEvent={onCardEvent}
 					/>
 					<DecklistGroup
 						groups={Object.keys(deck.cardCategories)
@@ -196,7 +210,7 @@ export function Decklist(props: DecklistProps) {
 								name: groupName,
 								groupData: deck.cardCategories[groupName]
 							}))}
-						onCardClick={onCardClick}
+						onCardEvent={onCardEvent}
 					/>
 				</div>
 			</div>
