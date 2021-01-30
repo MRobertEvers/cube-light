@@ -23,7 +23,7 @@ export function Home(props: HomeProps) {
 				{data?.map((deck) => {
 					return (
 						<li>
-							<Link to={`/decks/${deck.deckId}`}>
+							<Link to={`/deck/${deck.deckId}`}>
 								<a>{deck.name}</a>
 							</Link>
 						</li>
