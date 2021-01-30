@@ -12,6 +12,7 @@ export type FetchDeckResponse = {
 	name: string;
 	icon: string;
 	cards: FetchDeckCardResponse[];
+	lastEdit: string;
 };
 
 export async function fetchAPIDeck(deckId: string): Promise<FetchDeckResponse> {

@@ -12,6 +12,10 @@ import { FetchDeckCardResponse } from '../../api/fetch-api-deck';
 import { fetchAPISetCard } from '../../api/fetch-api-set-card';
 
 import styles from './deck.module.css';
+import { Button } from '../../components/Button/Button';
+import { LoadingIndicator } from '../../components/LoadingIndicator';
+import { DeckStatsSummary } from './components/DeckStatsSummary/DeckStatsSummary';
+import { toFriendlyDate } from '../../utils/to-friendly-date';
 
 export type DeckProps = {
 	initialDeckData?: GetDeckResponse;
@@ -47,6 +51,14 @@ export function Deck(props: DeckProps) {
 		await mutate(deckId);
 	}, []);
 
+	if (!data) {
+		return (
+			<Page>
+				<LoadingIndicator />
+			</Page>
+		);
+	}
+
 	return (
 		<Page>
 			{editCard && (
@@ -58,15 +70,27 @@ export function Deck(props: DeckProps) {
 					/>
 				</Modal>
 			)}
-			<div className={styles['index-container-top']}>{editMode && <CardAdder />}</div>
+			<div className={styles['index-container-top']}></div>
 			<div className={styles['index-container']}>
-				<div>
-					<div className={styles['avatar']}>
-						<div className={styles['square']}>
-							{data && <img width={260} height={260} src={data.icon} />}
+				<div className={styles['banner-container']}>
+					<div className={styles['banner']}>
+						<div className={styles['avatar']}>
+							<div className={styles['square']}>
+								{data && <img width={260} height={260} src={data.icon} />}
+							</div>
 						</div>
-						<button>Edit</button>
+						<div className={styles['banner-info']}>
+							<h2 className={styles['banner-title']}>{data.name}</h2>
+							<span className={styles['banner-sub-title']}>
+								Updated{' '}
+								<span className={styles['banner-sub-title-emphasis']}>
+									{toFriendlyDate(data.lastEdit.toString())}
+								</span>
+							</span>
+							<Button style={{ width: '100%', margin: '16px 0' }}>Edit deck</Button>
+						</div>
 					</div>
+					<DeckStatsSummary deck={data} />
 				</div>
 				{data && <Decklist name={data.name} deck={data.deck} onCardClick={onCardClick} />}
 			</div>

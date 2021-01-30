@@ -1,7 +1,11 @@
 import * as React from 'react';
+import { LogoIcon } from '../LogoIcon/LogoIcon';
 import styles from './loading-indicator.module.css';
 
-type LoadingIndicator = React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
+type LoadingIndicator = React.DetailedHTMLProps<
+	React.HTMLAttributes<HTMLDivElement>,
+	HTMLDivElement
+>;
 
 export function LoadingIndicator(props: LoadingIndicator) {
 	const { className, ...otherProps } = props;
@@ -11,5 +15,9 @@ export function LoadingIndicator(props: LoadingIndicator) {
 		classes += ` ${className}`;
 	}
 
-	return <span {...otherProps} className={classes} />;
+	return (
+		<div className={styles['loading-indicator-container']}>
+			<LogoIcon {...otherProps} className={classes} />
+		</div>
+	);
 }

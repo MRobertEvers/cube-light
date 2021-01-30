@@ -1,0 +1,28 @@
+.default-button {
+	border: 1px solid rgb(229, 229, 229);
+	min-width: 120px;
+	min-height: 32px;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif,
+		'Apple Color Emoji', 'Segoe UI Emoji';
+	font-weight: 600;
+	color: rgb(38, 38, 38);
+	font-size: 16px;
+	margin: auto;
+	border-radius: 4px;
+	transition: all 0.2s;
+	background-color: white;
+}
+
+.default-button:enabled {
+	cursor: pointer;
+}
+
+.default-button:hover:enabled {
+	border: 1px solid rgb(153, 153, 153);
+	background-color: rgb(243, 244, 246);
+}
+
+.default-button:focus:enabled {
+	outline: none;
+	border: 1px solid rgb(128, 128, 128);
+}

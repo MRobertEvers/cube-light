@@ -1,5 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Logo } from '../Logo/Logo';
+import { LogoIcon } from '../LogoIcon/LogoIcon';
+
 import styles from './header.module.css';
 
 export function Header() {
@@ -7,7 +10,7 @@ export function Header() {
 		<nav className={styles['header']}>
 			<section className={styles['header-content']}>
 				<Link to="/">
-					<h2 style={{ margin: 0 }}>CubeLite</h2>
+					<LogoIcon style={{ height: '44px' }} />
 				</Link>
 			</section>
 		</nav>

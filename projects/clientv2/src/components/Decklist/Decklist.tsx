@@ -168,28 +168,36 @@ export function Decklist(props: DecklistProps) {
 					></img>
 				)}
 			</div>
-			<div className={styles['deck-header']}>
+			{/* <div className={styles['deck-header']}>
 				<div className={styles['deck-header-container']}>
 					<h2 className={styles['deck-title']}>{name}</h2>
-					{/* <div className={styles['deck-card-count']}>{deck.count}</div> */}
 				</div>
-			</div>
+			</div> */}
 			<div className={styles['decklist-container']}>
 				<div className={styles['decklist-spotlight']}>
 					{spotlightCards.map((card) => (
 						<SpotlightCard card={card} />
 					))}
 				</div>
-				<div className={styles['decklist-groups']}>
-					{Object.keys(deck.cardCategories).map((group) => {
-						return (
-							<DecklistGroup
-								name={group}
-								group={deck.cardCategories[group]}
-								onCardClick={onCardClick}
-							/>
-						);
-					})}
+				<div className={styles['deck-list']}>
+					<DecklistGroup
+						groups={Object.keys(deck.cardCategories)
+							.filter((x) => x.indexOf('Land') === -1)
+							.map((groupName) => ({
+								name: groupName,
+								groupData: deck.cardCategories[groupName]
+							}))}
+						onCardClick={onCardClick}
+					/>
+					<DecklistGroup
+						groups={Object.keys(deck.cardCategories)
+							.filter((x) => x.indexOf('Land') !== -1)
+							.map((groupName) => ({
+								name: groupName,
+								groupData: deck.cardCategories[groupName]
+							}))}
+						onCardClick={onCardClick}
+					/>
 				</div>
 			</div>
 		</div>

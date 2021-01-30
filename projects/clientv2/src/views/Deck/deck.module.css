@@ -9,8 +9,26 @@
 	max-width: var(--max-width);
 }
 
-.avatar {
+.banner {
 	margin: 12px;
+	/* margin-top: -32px !important; */
+	flex-basis: 25%;
+}
+
+.banner-title {
+	font-weight: 400;
+	margin: 4px 0;
+}
+
+.banner-sub-title {
+	font-size: 14px;
+	opacity: 0.7;
+}
+.banner-sub-title-emphasis {
+	font-weight: 600;
+}
+
+.avatar {
 	min-width: 160px;
 }
 
@@ -35,7 +53,17 @@
 	box-sizing: border-box;
 }
 
-@media (max-width: 866px) {
+@media (max-width: 680px) {
+	.banner {
+		display: flex;
+		margin: 0px;
+	}
+
+	.banner-info {
+		text-align: center;
+		margin: auto 12px;
+	}
+
 	.index-container {
 		flex-direction: column;
 	}

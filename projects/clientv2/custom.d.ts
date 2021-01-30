@@ -11,6 +11,11 @@ declare module '*.svg' {
 	export default content;
 }
 
+declare module '*.png' {
+	const content: string;
+	export default content;
+}
+
 declare module 'worker-loader!*' {
 	class WebpackWorker extends Worker {
 		constructor();

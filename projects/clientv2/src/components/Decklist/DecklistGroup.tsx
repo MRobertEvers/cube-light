@@ -4,32 +4,52 @@ import { DeckGroupData } from '../../workers/deck.worker.messages';
 
 import styles from './decklist-group.module.css';
 
-export type DecklistGroupProps = {
+export type DecklistCategoryProps = {
 	group: DeckGroupData;
 	name: string;
 	onCardClick?: (card: FetchDeckCardResponse) => void;
 };
-export function DecklistGroup(props: DecklistGroupProps) {
+export function DecklistCategory(props: DecklistCategoryProps) {
 	const { group, name, onCardClick } = props;
 	return (
-		<div className={styles['container']}>
-			<div className={styles['contents']}>
-				<div className={styles['tab']}>
-					<h3>{`${name} (${group.count})`}</h3>
-				</div>
-				<div className={styles['body']}>
-					<ul>
-						{group.cards.map((card) => {
-							return (
-								<li key={card.name} onClick={() => onCardClick?.(card)}>
-									<span className={styles['item-count']}>{card.count}</span>
-									{card.name}
-								</li>
-							);
-						})}
-					</ul>
-				</div>
-			</div>
-		</div>
+		<>
+			<tr className={styles['category-header']}>
+				<th colSpan={2}>{`${name} (${group.count})`}</th>
+			</tr>
+			{group.cards.map((card) => {
+				return (
+					<tr key={card.name} onClick={() => onCardClick?.(card)}>
+						<td>{card.count}</td>
+						<td>
+							<a rel="popover" href={card.name}>
+								{card.name}
+							</a>
+						</td>
+					</tr>
+				);
+			})}
+		</>
+	);
+}
+
+export type DecklistGroupProps = {
+	groups: Array<{
+		name: string;
+		groupData: DeckGroupData;
+	}>;
+	onCardClick?: (card: FetchDeckCardResponse) => void;
+};
+export function DecklistGroup(props: DecklistGroupProps) {
+	const { groups, onCardClick } = props;
+	return (
+		<table className={styles['decklist-groups']}>
+			<tbody>
+				{groups.map(({ groupData, name }) => {
+					return (
+						<DecklistCategory name={name} group={groupData} onCardClick={onCardClick} />
+					);
+				})}
+			</tbody>
+		</table>
 	);
 }

@@ -1,0 +1,57 @@
+.deck-stats-summary-container {
+	list-style-position: outside;
+	list-style-type: none;
+	line-height: 18px;
+	margin: 0;
+	padding: 12px 0;
+	text-align: center;
+}
+
+.list-item {
+	text-align: center;
+}
+
+.focus-item {
+	font-weight: 600;
+}
+
+.item {
+	text-align: center;
+}
+
+.item + .item span::before {
+	content: ' - ';
+}
+
+@media (max-width: 680px) {
+	.deck-stats-summary-container {
+		list-style-position: outside;
+		list-style-type: none;
+		line-height: 18px;
+		display: flex;
+		justify-content: space-around;
+		margin: 0;
+		padding: 0;
+		border-top: 1px solid rgb(219, 219, 219);
+		border-bottom: 1px solid rgb(219, 219, 219);
+	}
+
+	.list-item {
+		text-align: center;
+	}
+
+	.focus-item {
+		font-weight: 600;
+		display: block;
+	}
+
+	.item {
+		padding: 12px 0;
+
+		text-align: center;
+	}
+
+	.item + .item span::before {
+		content: '';
+	}
+}

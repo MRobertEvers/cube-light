@@ -19,7 +19,10 @@ module.exports = {
 	resolve: {
 		extensions: ['.ts', '.tsx', '.js', '.jsx'],
 		// Absolute paths to where modules can be resolved.
-		modules: [sourceDirectory, modulesDirectory]
+		modules: [sourceDirectory, modulesDirectory],
+		alias: {
+			src: sourceDirectory
+		}
 	},
 	output: {
 		publicPath: '/',
@@ -48,12 +51,31 @@ module.exports = {
 			},
 			{
 				// https://webpack.js.org/loaders/style-loader/#injecttype
+				// https://github.com/webpack-contrib/css-loader#scope
 				test: /\.css$/,
 				use: [
-					{ loader: 'style-loader', options: { injectType: 'singletonStyleTag' } },
-					{ loader: 'css-loader', options: { modules: true } }
+					{ loader: 'style-loader' },
+					{
+						loader: 'css-loader',
+						options: {
+							modules: {
+								localIdentName: '[path][name]__[local]--[hash:base64:5]'
+							}
+						}
+					}
 				],
 				include: [sourceDirectory]
+			},
+			{
+				test: /.*\.(gif|png|jpg|jpeg|mp4)$/i,
+				use: [
+					{
+						loader: 'file-loader',
+						options: {
+							name: 'images/[name].[ext]'
+						}
+					}
+				]
 			},
 			{
 				test: /.*\.svgi$/i,

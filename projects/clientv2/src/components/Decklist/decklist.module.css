@@ -2,11 +2,11 @@
 	flex-grow: 1;
 	display: flex;
 	flex-direction: column;
+	font-size: 0.9rem;
 }
 
-.deck-header {
-	border-bottom: 1px solid var(--theme-dark2);
-	margin: 12px;
+.deck-list {
+	column-count: 2;
 }
 
 .deck-header-container {
@@ -32,16 +32,16 @@
 	padding: 12px 6px;
 }
 
-.decklist-container {
-	margin: 12px 40px;
-}
-
 .decklist-spotlight {
 	display: flex;
 	flex-wrap: wrap;
 }
 
-@media (max-width: 866px) {
+@media (max-width: 680px) {
+	.deck-list {
+		column-count: unset;
+	}
+
 	.deck-header {
 		border: none;
 		margin: 0;

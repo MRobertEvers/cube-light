@@ -61,6 +61,17 @@ module.exports = {
 				include: [sourceDirectory]
 			},
 			{
+				test: /.*\.(gif|png|jpg|jpeg|mp4)$/i,
+				use: [
+					{
+						loader: 'file-loader',
+						options: {
+							name: 'images/[name].[ext]'
+						}
+					}
+				]
+			},
+			{
 				test: /.*\.svgi$/i,
 				use: [
 					{
