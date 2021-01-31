@@ -10,8 +10,45 @@
 }
 
 .header {
+	padding: 2px;
+	margin: 4px 0;
 	border-bottom: 1px solid black;
 }
 
 .body {
+}
+
+.group-counter {
+	/* display: flex; */
+	width: 100%;
+}
+
+.group-counter > tbody > tr > td:last-child {
+	/* display: flex; */
+	text-align: right;
+}
+
+.input {
+	-moz-appearance: textfield;
+	height: 24px;
+	border: none;
+	padding: 2px;
+	box-sizing: border-box;
+	width: 48px;
+	outline: none;
+	background-color: transparent;
+	border-bottom: 1px solid rgb(219, 219, 219);
+}
+
+.input:focus {
+	border-bottom: 2px solid rgb(200, 200, 200);
+}
+
+.input-button {
+	margin: 4px;
+}
+
+.group-counter-buttons {
+	display: flex;
+	justify-content: space-between;
 }

@@ -1,16 +1,45 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
 import { FetchDeckCardResponse } from '../../api/fetch-api-deck';
+import { Button } from '../Button/Button';
 
 import styles from './edit-card.module.css';
 
-function Counter(props: { count: number; onCountUp: () => void; onCountDown: () => void }) {
-	const { count, onCountDown, onCountUp } = props;
+function Counter(props: { count: number; setCount: (x: number) => void }) {
+	const { count, setCount } = props;
 	return (
 		<div>
-			<button onClick={() => onCountDown()}>-</button>
-			<span>{count}</span>
-			<button onClick={() => onCountUp()}>+</button>
+			<Button
+				className={styles['input-button']}
+				style={{
+					width: '28px',
+					minWidth: '0px'
+				}}
+				onClick={() => setCount(count - 1)}
+			>
+				-
+			</Button>
+			<input
+				className={styles['input']}
+				type="number"
+				value={count}
+				onChange={(e) => {
+					const newValue = parseInt(e.target.value);
+					if (!isNaN(newValue)) {
+						setCount(newValue);
+					}
+				}}
+			/>
+			<Button
+				className={styles['input-button']}
+				style={{
+					width: '28px',
+					minWidth: '0px'
+				}}
+				onClick={() => setCount(count + 1)}
+			>
+				+
+			</Button>
 		</div>
 	);
 }
@@ -39,13 +68,22 @@ export function EditCardModal(props: EditCardModalProps) {
 			<div className={styles['contents']}>
 				<h2 className={styles['header']}>{card.name}</h2>
 				<div className={styles['body']}>
-					<Counter
-						count={count}
-						onCountDown={() => setCount((c) => (c > 0 ? c - 1 : c))}
-						onCountUp={() => setCount((c) => c + 1)}
-					/>
-					<button onClick={() => onSubmit({ ...card, count: count })}>Ok</button>
-					<button onClick={() => onCancel()}>Cancel</button>
+					<table className={styles['group-counter']}>
+						<tbody>
+							<tr>
+								<td>
+									<span>Main deck</span>
+								</td>
+								<td>
+									<Counter count={count} setCount={setCount} />
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<div className={styles['group-counter-buttons']}>
+						<Button onClick={() => onSubmit({ ...card, count: count })}>Ok</Button>
+						<Button onClick={() => onCancel()}>Cancel</Button>
+					</div>
 				</div>
 			</div>
 		</div>
