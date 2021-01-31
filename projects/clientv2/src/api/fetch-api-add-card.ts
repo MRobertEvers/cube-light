@@ -1,7 +1,7 @@
 import { API_URI } from '../config/api-url';
 import { fetchTimeout } from './utils';
 
-export type AddCardResponse = null;
+export type AddCardResponse = boolean;
 export async function fetchAPIAddCard(deckId: string, cardName: string): Promise<AddCardResponse> {
 	const request = await fetchTimeout(`${API_URI}/decks/${deckId}/cards`, {
 		method: 'POST',
@@ -13,5 +13,5 @@ export async function fetchAPIAddCard(deckId: string, cardName: string): Promise
 		})
 	});
 
-	return request.json() as Promise<AddCardResponse>;
+	return request.ok as AddCardResponse;
 }

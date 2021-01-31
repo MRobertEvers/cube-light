@@ -7,8 +7,11 @@ import EnterIcon from '../../../../components/Icons/EnterIcon';
 import AlertIcon from '../../../../components/Icons/AlertIcon';
 import { createResponseHandler } from '../../../../workers/utils/messageToolkit';
 import { DeckWorkerMessages } from '../../../../workers/deck.worker.messages';
+import { Button } from 'src/components/Button/Button';
+import { Counter } from 'src/components/Counter/Counter';
 
 import styles from './card-adder.module.css';
+import { useOnClickedAway } from 'src/hooks/useOnClickedAway';
 
 const KEY = {
 	BACKSPACE: 8,
@@ -35,11 +38,17 @@ const KEY = {
 	UP: 38
 };
 
-export function CardAdder() {
+export function AddCard() {
 	const [suggestions, setSuggestions] = useState({ sorted: [] as string[], set: new Set() });
 	const [isWaiting, setIsWaiting] = useState(false);
 	const [suggestDebounceTimer, setSuggestDebounceTimer] = useState(null as number | null);
 	const [addItemText, setAddItemText] = useState('');
+	const [isDropdownVisible, setIsDropDownVisible] = useState(false);
+
+	const comboboxRef = useOnClickedAway(() => {
+		setIsDropDownVisible(false);
+	});
+
 	const addItemInputRef = useRef<HTMLInputElement>(null);
 	const itemCountRef = useRef<HTMLSelectElement>(null);
 
@@ -48,6 +57,7 @@ export function CardAdder() {
 			builder.addCase(DeckWorkerMessages.getSuggestions, (response) => {
 				setSuggestions(response.payload);
 				setIsWaiting(false);
+				setIsDropDownVisible(true);
 			});
 			builder.addCase(DeckWorkerMessages.addCard, async (response) => {
 				if (addItemInputRef.current) {
@@ -82,7 +92,7 @@ export function CardAdder() {
 	return (
 		<div className={styles['combobox']}>
 			<div className={styles['combobox-bar']}>
-				<div className={styles['combobox-input']}>
+				<div ref={comboboxRef} className={styles['combobox-input']}>
 					<div className={styles['combobox-submit']}>{comboboxIndicator}</div>
 					<input
 						ref={addItemInputRef}
@@ -112,55 +122,65 @@ export function CardAdder() {
 							setSuggestDebounceTimer(timer);
 						}}
 					/>
+					{isDropdownVisible && (
+						<ul className={styles['suggestions']}>
+							{suggestions.sorted.map((suggestion, index) => (
+								<li
+									tabIndex={index + 1}
+									key={suggestion}
+									onClick={() => {
+										setAddItemText(suggestion);
+										setIsDropDownVisible(false);
+									}}
+									onFocus={() => {
+										setAddItemText(suggestion);
+									}}
+									onKeyDown={(e) => {
+										if (e.keyCode === KEY.ENTER) {
+											if (itemCountRef.current) {
+												itemCountRef.current.focus();
+											}
+										}
+									}}
+									onKeyDownCapture={(e) => {
+										if (e.keyCode === KEY.BACKSPACE) {
+											// addItemInputRef.current.focus();
+											setAddItemText((prev) =>
+												prev.substr(0, prev.length - 1)
+											);
+											e.preventDefault();
+										}
+									}}
+								>
+									{suggestion}
+								</li>
+							))}
+						</ul>
+					)}
 				</div>
-				<select ref={itemCountRef} className={styles['combobox-count']}>
-					<option>1</option>
-					<option>2</option>
-					<option>3</option>
-					<option>4</option>
-				</select>
-
-				<button
-					className={styles['submit-button']}
-					disabled={!isOkToSubmit}
-					onClick={() => {
-						setIsWaiting(true);
-						postToWorker(DeckWorkerMessages.addCard(addItemText));
-					}}
-				>
-					{isWaiting ? <Spinner /> : 'Submit'}
-				</button>
 			</div>
-			<ul className={styles['suggestions']}>
-				{suggestions.sorted.map((suggestion, index) => (
-					<li
-						tabIndex={index + 1}
-						key={suggestion}
-						onClick={() => {
-							setAddItemText(suggestion);
-						}}
-						onFocus={() => {
-							setAddItemText(suggestion);
-						}}
-						onKeyDown={(e) => {
-							if (e.keyCode === KEY.ENTER) {
-								if (itemCountRef.current) {
-									itemCountRef.current.focus();
-								}
-							}
-						}}
-						onKeyDownCapture={(e) => {
-							if (e.keyCode === KEY.BACKSPACE) {
-								// addItemInputRef.current.focus();
-								setAddItemText((prev) => prev.substr(0, prev.length - 1));
-								e.preventDefault();
-							}
-						}}
-					>
-						{suggestion}
-					</li>
-				))}
-			</ul>
+			<table className={styles['group-counter']}>
+				<tbody>
+					<tr>
+						<td>
+							<span>Main deck</span>
+						</td>
+						<td>
+							<Counter count={1} setCount={() => {}} />
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<Button
+				disabled={!isOkToSubmit}
+				onClick={() => {
+					setIsWaiting(true);
+					postToWorker(DeckWorkerMessages.addCard(addItemText));
+				}}
+			>
+				{isWaiting ? <Spinner /> : 'Submit'}
+			</Button>
 		</div>
 	);
 }

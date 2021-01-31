@@ -2,21 +2,64 @@ import React from 'react';
 import { useCallback, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import { Page } from '../../components/Page/Page';
-import { Decklist } from '../../components/Decklist/Decklist';
+import { Decklist } from './components/Decklist/Decklist';
 import { fetchSortedDeck } from '../../workers/deck.functions';
-import { EditCardModal } from '../../components/EditCard';
+import { EditCardModal } from './components/EditCard';
 import { Modal } from './components/Modal';
 import { GetDeckResponse } from '../../workers/deck.worker.messages';
 import { FetchDeckCardResponse } from '../../api/fetch-api-deck';
 import { fetchAPISetCard } from '../../api/fetch-api-set-card';
-
-import styles from './deck.module.css';
 import { Button } from '../../components/Button/Button';
 import { LoadingIndicator } from '../../components/LoadingIndicator';
 import { DeckStatsSummary } from './components/DeckStatsSummary/DeckStatsSummary';
 import { toFriendlyDate } from '../../utils/to-friendly-date';
 import { useQueryState } from 'src/hooks/useQueryState';
+import { reducer, initialState, Actions, DeckState } from './deck-state';
+import { AddCard } from './components/AddCard';
+import { useAsyncReducer } from 'src/hooks/useAsyncReducer';
 
+import styles from './deck.module.css';
+
+export type DeckControlButtonsProps = {
+	state: DeckState;
+	dispatch: any;
+
+	// TODO: Better way to sync state and url?
+	isEditMode: boolean;
+	setIsEditMode: any;
+};
+
+export function DeckControlButtons(props: DeckControlButtonsProps) {
+	const { state, dispatch, isEditMode, setIsEditMode } = props;
+
+	return (
+		<>
+			{!isEditMode ? (
+				<Button
+					className={styles['edit-deck-button']}
+					onClick={() => setIsEditMode(!isEditMode)}
+				>
+					Edit deck
+				</Button>
+			) : (
+				<>
+					<Button
+						className={styles['edit-deck-button']}
+						onClick={() => dispatch(Actions.setViewAddCard(true))}
+					>
+						Add card
+					</Button>
+					<Button
+						className={styles['edit-deck-button']}
+						onClick={() => setIsEditMode(!isEditMode)}
+					>
+						Ok
+					</Button>
+				</>
+			)}
+		</>
+	);
+}
 export type DeckProps = {
 	initialDeckData?: GetDeckResponse;
 	deckId: string;
@@ -24,11 +67,13 @@ export type DeckProps = {
 
 export function Deck(props: DeckProps) {
 	const { initialDeckData, deckId } = props;
+	const [state, dispatch] = useAsyncReducer(reducer, initialState);
+	const { viewEditCard, viewAddCard } = state;
+
 	const [isEditMode, setIsEditMode] = useQueryState('edit', {
 		parse: (value: string) => value === 'true',
 		serialize: (value: boolean) => value.toString()
 	});
-	const [editCard, setEditCard] = useState(null as FetchDeckCardResponse | null);
 
 	const { data, error } = useSWR(
 		deckId,
@@ -40,7 +85,7 @@ export function Deck(props: DeckProps) {
 
 	const onSubmitChange = useCallback(async (card: FetchDeckCardResponse) => {
 		await fetchAPISetCard(deckId, card.name, 'set', card.count);
-		setEditCard(null);
+		dispatch(Actions.setEditCard(null));
 		await mutate(deckId);
 	}, []);
 
@@ -54,15 +99,19 @@ export function Deck(props: DeckProps) {
 
 	return (
 		<Page>
-			{editCard && (
+			{viewEditCard ? (
 				<Modal>
 					<EditCardModal
 						onSubmit={onSubmitChange}
-						onCancel={() => setEditCard(null)}
-						card={editCard}
+						onCancel={() => dispatch(Actions.setEditCard(null))}
+						card={viewEditCard}
 					/>
 				</Modal>
-			)}
+			) : viewAddCard ? (
+				<Modal>
+					<AddCard />
+				</Modal>
+			) : undefined}
 			<div className={styles['index-container-top']}></div>
 			<div className={styles['index-container']}>
 				<div className={styles['banner-container']}>
@@ -80,14 +129,14 @@ export function Deck(props: DeckProps) {
 									{toFriendlyDate(data.lastEdit.toString())}
 								</span>
 							</span>
-							<Button
-								className={styles['edit-deck-button']}
-								onClick={() => setIsEditMode((prev) => !prev)}
-							>
-								{isEditMode ? 'Edit deck' : 'wow'}
-							</Button>
 						</div>
 					</div>
+					<DeckControlButtons
+						state={state}
+						dispatch={dispatch}
+						isEditMode={!!isEditMode}
+						setIsEditMode={setIsEditMode}
+					/>
 					<DeckStatsSummary deck={data} />
 				</div>
 				<Decklist
@@ -95,7 +144,7 @@ export function Deck(props: DeckProps) {
 					deck={data.deck}
 					onCardClick={(card: FetchDeckCardResponse) => {
 						if (isEditMode) {
-							setEditCard(card);
+							dispatch(Actions.setEditCard(card));
 						}
 					}}
 				/>

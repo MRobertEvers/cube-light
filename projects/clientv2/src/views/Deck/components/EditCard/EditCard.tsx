@@ -1,48 +1,10 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
-import { FetchDeckCardResponse } from '../../api/fetch-api-deck';
-import { Button } from '../Button/Button';
+import { Counter } from 'src/components/Counter/Counter';
+import { FetchDeckCardResponse } from '../../../../api/fetch-api-deck';
+import { Button } from '../../../../components/Button/Button';
 
 import styles from './edit-card.module.css';
-
-function Counter(props: { count: number; setCount: (x: number) => void }) {
-	const { count, setCount } = props;
-	return (
-		<div>
-			<Button
-				className={styles['input-button']}
-				style={{
-					width: '28px',
-					minWidth: '0px'
-				}}
-				onClick={() => setCount(count - 1)}
-			>
-				-
-			</Button>
-			<input
-				className={styles['input']}
-				type="number"
-				value={count}
-				onChange={(e) => {
-					const newValue = parseInt(e.target.value);
-					if (!isNaN(newValue)) {
-						setCount(newValue);
-					}
-				}}
-			/>
-			<Button
-				className={styles['input-button']}
-				style={{
-					width: '28px',
-					minWidth: '0px'
-				}}
-				onClick={() => setCount(count + 1)}
-			>
-				+
-			</Button>
-		</div>
-	);
-}
 
 export type EditCardModalProps = {
 	card: FetchDeckCardResponse | null;

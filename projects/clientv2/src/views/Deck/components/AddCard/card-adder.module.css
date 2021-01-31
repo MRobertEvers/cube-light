@@ -4,6 +4,7 @@
 	background-color: var(--theme-green);
 	padding: 12px;
 	border: 1px solid var(--theme-dark2);
+	background-color: white;
 }
 
 .combobox-bar {
@@ -17,6 +18,8 @@
 .combobox-input {
 	position: relative;
 	flex-grow: 1;
+}
+.combobox-input input {
 }
 
 .combobox-submit {
@@ -51,20 +54,25 @@
 }
 
 .combobox input[type='search'] {
+	-moz-appearance: textfield;
+	border: none;
+	padding: 2px;
+	box-sizing: border-box;
+	width: 48px;
+	outline: none;
+	background-color: transparent;
+	border-bottom: 1px solid rgb(219, 219, 219);
+
 	resize: none;
 	width: 100%;
 	box-sizing: border-box;
-	border: 1px solid #abaeb1;
-	border-radius: 2px;
 	font-size: 14px;
 	padding: 4px;
-	background-color: #cecaca;
 	font-size: 16px;
 }
 
 .combobox input[type='search']:focus {
 	background-color: white;
-	border: 1px solid #838383;
 	outline: none;
 }
 
@@ -72,6 +80,8 @@
 	list-style-type: none;
 	margin: 0;
 	max-height: 120px;
+	position: absolute;
+	background-color: white;
 	height: 120px;
 	overflow: auto;
 	padding: 0px;

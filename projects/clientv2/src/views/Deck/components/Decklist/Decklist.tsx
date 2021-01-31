@@ -2,8 +2,8 @@ import React, { useCallback } from 'react';
 import { useState } from 'react';
 import { SpotlightCard } from './SpotlightCard';
 import { CardInteractionEvent, CardInteractionEventType, DecklistGroup } from './DecklistGroup';
-import { DeckMappedData } from '../../workers/deck.worker.messages';
-import { FetchDeckCardResponse } from '../../api/fetch-api-deck';
+import { DeckMappedData } from '../../../../workers/deck.worker.messages';
+import { FetchDeckCardResponse } from '../../../../api/fetch-api-deck';
 
 import styles from './decklist.module.css';
 

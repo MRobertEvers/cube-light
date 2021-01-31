@@ -1,4 +1,5 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const WorkerPlugin = require('worker-plugin');
 const path = require('path');
 const webpack = require('webpack');
 const buildOptions = require('../build-config-options');
@@ -35,6 +36,9 @@ module.exports = {
 		}),
 		new webpack.DefinePlugin({
 			__SYS_BACKEND_HOST_URI__: JSON.stringify(BACKEND_HOST_URI)
+		}),
+		new WorkerPlugin({
+			globalObject: 'self'
 		})
 	],
 	module: {
