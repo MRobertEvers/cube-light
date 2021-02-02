@@ -19,10 +19,14 @@ import { AddCard } from './components/AddCard';
 import { useAsyncReducer } from 'src/hooks/useAsyncReducer';
 
 import styles from './deck.module.css';
+import { AddCardEventType } from './components/AddCard/AddCard';
+import { fetchAPIDeleteDeck } from 'src/api/fetch-api-delete-deck';
+import { useHistory } from 'react-router-dom';
 
 export type DeckControlButtonsProps = {
 	state: DeckState;
 	dispatch: any;
+	deckId: string;
 
 	// TODO: Better way to sync state and url?
 	isEditMode: boolean;
@@ -30,7 +34,9 @@ export type DeckControlButtonsProps = {
 };
 
 export function DeckControlButtons(props: DeckControlButtonsProps) {
-	const { state, dispatch, isEditMode, setIsEditMode } = props;
+	const { state, dispatch, isEditMode, setIsEditMode, deckId } = props;
+
+	const router = useHistory();
 
 	return (
 		<>
@@ -54,6 +60,15 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 						onClick={() => setIsEditMode(!isEditMode)}
 					>
 						Ok
+					</Button>
+					<Button
+						className={styles['delete-deck-button']}
+						onClick={async () => {
+							await fetchAPIDeleteDeck(deckId);
+							router.push('/');
+						}}
+					>
+						Delete
 					</Button>
 				</>
 			)}
@@ -109,7 +124,19 @@ export function Deck(props: DeckProps) {
 				</Modal>
 			) : viewAddCard ? (
 				<Modal>
-					<AddCard />
+					<AddCard
+						deckId={deckId}
+						onEvent={(e) => {
+							switch (e.type) {
+								case AddCardEventType.CLOSE:
+									dispatch(Actions.setViewAddCard(false));
+									break;
+								case AddCardEventType.SUBMIT:
+									dispatch(Actions.setViewAddCard(false));
+									break;
+							}
+						}}
+					/>
 				</Modal>
 			) : undefined}
 			<div className={styles['index-container-top']}></div>
@@ -132,6 +159,7 @@ export function Deck(props: DeckProps) {
 						</div>
 					</div>
 					<DeckControlButtons
+						deckId={deckId}
 						state={state}
 						dispatch={dispatch}
 						isEditMode={!!isEditMode}

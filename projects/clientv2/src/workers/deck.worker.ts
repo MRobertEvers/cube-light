@@ -18,12 +18,13 @@ const handler = createHandler((builder) => {
 		return result;
 	});
 	builder.addCase(DeckWorkerMessages.addCard, async (message) => {
-		const result = await fetchAddCardCommand(message.payload);
+		const { deckId, cardName, count } = message.payload;
+		const result = await fetchAddCardCommand(deckId, cardName, count);
 		return result;
 	});
 	builder.addCase(DeckWorkerMessages.setCard, async (message) => {
-		const { cardName, action, count } = message.payload;
-		const result = await fetchSetCardCommand(cardName, action, count);
+		const { deckId, cardName, action, count } = message.payload;
+		const result = await fetchSetCardCommand(deckId, cardName, action, count);
 		return result;
 	});
 	return builder;

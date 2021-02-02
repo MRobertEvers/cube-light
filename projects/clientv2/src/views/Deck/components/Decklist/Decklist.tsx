@@ -1,11 +1,11 @@
 import React, { useCallback } from 'react';
 import { useState } from 'react';
-import { SpotlightCard } from './SpotlightCard';
 import { CardInteractionEvent, CardInteractionEventType, DecklistGroup } from './DecklistGroup';
 import { DeckMappedData } from '../../../../workers/deck.worker.messages';
 import { FetchDeckCardResponse } from '../../../../api/fetch-api-deck';
 
 import styles from './decklist.module.css';
+import { SpotlightCard } from 'src/widgets/SpotlightCard/SpotlightCard';
 
 export type DecklistCardInfo = FetchDeckCardResponse;
 type DecklistProps = {
@@ -80,7 +80,7 @@ export function Decklist(props: DecklistProps) {
 			<div className={styles['decklist-container']}>
 				<div className={styles['decklist-spotlight']}>
 					{spotlightCards.map((card) => (
-						<SpotlightCard key={card.name} card={card} />
+						<SpotlightCard key={card.name} art={card.art} name={card.name} />
 					))}
 				</div>
 				<div className={styles['deck-list']}>

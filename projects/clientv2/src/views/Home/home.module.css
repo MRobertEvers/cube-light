@@ -1,0 +1,8 @@
+.home-container {
+	max-width: var(--max-width);
+	margin: auto;
+}
+
+.header-button {
+	margin: auto 8px;
+}

@@ -9,7 +9,7 @@ export type DeckState = {
 
 export const initialState: DeckState = {
 	viewEditCard: null,
-	viewAddCard: true
+	viewAddCard: false
 };
 
 export const Actions = {

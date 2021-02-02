@@ -37,7 +37,10 @@ export function EditCardModal(props: EditCardModalProps) {
 									<span>Main deck</span>
 								</td>
 								<td>
-									<Counter count={count} setCount={setCount} />
+									<Counter
+										count={count}
+										setCount={(c) => (c >= 0 ? setCount(c) : {})}
+									/>
 								</td>
 							</tr>
 						</tbody>

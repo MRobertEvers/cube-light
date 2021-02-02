@@ -30,16 +30,21 @@ export async function fetchSortedSuggestions(
 	return result;
 }
 
-export async function fetchAddCardCommand(cardName: string): Promise<void> {
-	await fetchAPIAddCard('1', cardName);
+export async function fetchAddCardCommand(
+	deckId: string,
+	cardName: string,
+	count = 1
+): Promise<void> {
+	await fetchAPIAddCard(deckId, cardName, count);
 }
 
 export async function fetchSetCardCommand(
+	deckId: string,
 	cardName: string,
 	action: SetCardAction,
 	count: number
 ): Promise<void> {
-	await fetchAPISetCard('1', cardName, action, count);
+	await fetchAPISetCard(deckId, cardName, action, count);
 }
 
 export async function fetchSortedDeck(deckId: string): Promise<GetDeckResponse> {

@@ -2,14 +2,16 @@ import React from 'react';
 import { PropsWithChildren } from 'react';
 import { Header } from '../Header/Header';
 
-type PageProps = PropsWithChildren<{}>;
+type PageProps = PropsWithChildren<{
+	header?: React.ReactNode;
+}>;
 
 export function Page(props: PageProps) {
-	const { children } = props;
+	const { header, children } = props;
 
 	return (
 		<>
-			<Header />
+			<Header>{header}</Header>
 			{children}
 		</>
 	);

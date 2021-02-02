@@ -107,3 +107,16 @@
 	border-bottom: 1px solid #cecaca;
 	font-weight: bold;
 }
+
+.group-counter {
+	width: 100%;
+}
+
+.group-counter > tbody > tr > td:last-child {
+	/* display: flex; */
+	text-align: right;
+}
+
+.modal-buttons {
+	display: flex;
+}

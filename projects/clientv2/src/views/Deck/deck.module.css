@@ -55,7 +55,23 @@
 
 .edit-deck-button {
 	width: 100%;
+	min-width: unset !important;
 	margin: 16px auto !important;
+}
+
+.edit-deck-button + .edit-deck-button {
+	margin-top: 0 !important;
+}
+
+.delete-deck-button {
+	border: 1px solid rgb(255, 74, 74);
+	color: rgb(255, 74, 74);
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+}
+
+.delete-deck-button:hover {
+	border: 1px solid rgb(255, 74, 74) !important;
 }
 
 @media (max-width: 680px) {

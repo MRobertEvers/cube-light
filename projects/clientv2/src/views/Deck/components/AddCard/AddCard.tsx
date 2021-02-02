@@ -12,6 +12,8 @@ import { Counter } from 'src/components/Counter/Counter';
 
 import styles from './card-adder.module.css';
 import { useOnClickedAway } from 'src/hooks/useOnClickedAway';
+import { useAsyncReducer } from 'src/hooks/useAsyncReducer';
+import { Actions, initialState, reducer } from './add-card-state';
 
 const KEY = {
 	BACKSPACE: 8,
@@ -38,15 +40,35 @@ const KEY = {
 	UP: 38
 };
 
-export function AddCard() {
-	const [suggestions, setSuggestions] = useState({ sorted: [] as string[], set: new Set() });
+export enum AddCardEventType {
+	SUBMIT = 'AddCardEvent/SUBMIT',
+	CLOSE = 'AddCardEvent/CLOSE'
+}
+
+export type AddCardEvent = {
+	type: AddCardEventType;
+};
+
+export interface AddCardProps {
+	deckId: string;
+	onEvent: (e: AddCardEvent) => void;
+}
+
+export function AddCard(props: AddCardProps) {
+	const { deckId, onEvent } = props;
+
 	const [isWaiting, setIsWaiting] = useState(false);
 	const [suggestDebounceTimer, setSuggestDebounceTimer] = useState(null as number | null);
-	const [addItemText, setAddItemText] = useState('');
-	const [isDropdownVisible, setIsDropDownVisible] = useState(false);
 
+	const [state, dispatch] = useAsyncReducer(reducer, initialState);
+	const {
+		suggestionsData: suggestions,
+		viewIsDropDownVisible,
+		viewAddItemText,
+		viewAddItemCount
+	} = state;
 	const comboboxRef = useOnClickedAway(() => {
-		setIsDropDownVisible(false);
+		dispatch(Actions.setViewIsDropDownVisible(false));
 	});
 
 	const addItemInputRef = useRef<HTMLInputElement>(null);
@@ -55,18 +77,19 @@ export function AddCard() {
 	const workerResponseHandler = useMemo(() => {
 		return createResponseHandler((builder) => {
 			builder.addCase(DeckWorkerMessages.getSuggestions, (response) => {
-				setSuggestions(response.payload);
+				dispatch(Actions.setSuggestionsData(response.payload));
 				setIsWaiting(false);
-				setIsDropDownVisible(true);
+				dispatch(Actions.setViewIsDropDownVisible(true));
 			});
 			builder.addCase(DeckWorkerMessages.addCard, async (response) => {
 				if (addItemInputRef.current) {
 					addItemInputRef.current.focus();
 				}
-				setAddItemText('');
-				setSuggestions({ sorted: [], set: new Set() });
+				dispatch(Actions.setViewAddItemText(''));
+				dispatch(Actions.setSuggestionsData({ sorted: [], set: new Set() }));
 				setIsWaiting(false);
-				await mutate('1');
+				await mutate(deckId);
+				onEvent({ type: AddCardEventType.SUBMIT });
 			});
 			return builder;
 		});
@@ -78,8 +101,8 @@ export function AddCard() {
 	let comboboxIndicator;
 	if (isWaiting) {
 		comboboxIndicator = <Spinner />;
-	} else if (addItemText) {
-		if (suggestions.set.size === 1 || suggestions.set.has(addItemText.toLowerCase())) {
+	} else if (viewAddItemText) {
+		if (suggestions.set.size === 1 || suggestions.set.has(viewAddItemText.toLowerCase())) {
 			isOkToSubmit = true;
 			comboboxIndicator = <EnterIcon className={styles['combobox-input-alert']} />;
 		} else {
@@ -98,16 +121,16 @@ export function AddCard() {
 						ref={addItemInputRef}
 						onKeyDown={(e) => {
 							if (e.which === KEY.TAB && suggestions.sorted.length === 1) {
-								setAddItemText(suggestions.sorted[0]);
+								dispatch(Actions.setViewAddItemText(suggestions.sorted[0]));
 							}
 						}}
 						tabIndex={1}
 						type="search"
-						value={addItemText}
+						value={viewAddItemText}
 						placeholder="Card name"
 						onChange={(e) => {
 							const newText = e.target.value;
-							setAddItemText(newText);
+							dispatch(Actions.setViewAddItemText(newText));
 							if (suggestDebounceTimer) {
 								clearTimeout(suggestDebounceTimer);
 							}
@@ -116,24 +139,27 @@ export function AddCard() {
 									setIsWaiting(true);
 									postToWorker(DeckWorkerMessages.getSuggestions(newText));
 								} else {
-									setSuggestions({ sorted: [], set: new Set() });
+									dispatch(
+										Actions.setSuggestionsData({ sorted: [], set: new Set() })
+									);
+									dispatch(Actions.setViewIsDropDownVisible(false));
 								}
 							}, 500);
 							setSuggestDebounceTimer(timer);
 						}}
 					/>
-					{isDropdownVisible && (
+					{viewIsDropDownVisible && (
 						<ul className={styles['suggestions']}>
 							{suggestions.sorted.map((suggestion, index) => (
 								<li
 									tabIndex={index + 1}
 									key={suggestion}
 									onClick={() => {
-										setAddItemText(suggestion);
-										setIsDropDownVisible(false);
+										dispatch(Actions.setViewAddItemText(suggestion));
+										dispatch(Actions.setViewIsDropDownVisible(false));
 									}}
 									onFocus={() => {
-										setAddItemText(suggestion);
+										dispatch(Actions.setViewAddItemText(suggestion));
 									}}
 									onKeyDown={(e) => {
 										if (e.keyCode === KEY.ENTER) {
@@ -145,8 +171,13 @@ export function AddCard() {
 									onKeyDownCapture={(e) => {
 										if (e.keyCode === KEY.BACKSPACE) {
 											// addItemInputRef.current.focus();
-											setAddItemText((prev) =>
-												prev.substr(0, prev.length - 1)
+											dispatch(
+												Actions.setViewAddItemText(
+													viewAddItemText.substr(
+														0,
+														viewAddItemText.length - 1
+													)
+												)
 											);
 											e.preventDefault();
 										}
@@ -166,21 +197,33 @@ export function AddCard() {
 							<span>Main deck</span>
 						</td>
 						<td>
-							<Counter count={1} setCount={() => {}} />
+							<Counter
+								count={viewAddItemCount}
+								setCount={(c) => dispatch(Actions.setViewAddItemCount(c))}
+							/>
 						</td>
 					</tr>
 				</tbody>
 			</table>
 
-			<Button
-				disabled={!isOkToSubmit}
-				onClick={() => {
-					setIsWaiting(true);
-					postToWorker(DeckWorkerMessages.addCard(addItemText));
-				}}
-			>
-				{isWaiting ? <Spinner /> : 'Submit'}
-			</Button>
+			<div className={styles['modal-buttons']}>
+				<Button
+					disabled={!isOkToSubmit}
+					onClick={() => {
+						setIsWaiting(true);
+						postToWorker(
+							DeckWorkerMessages.addCard({
+								deckId: deckId,
+								cardName: viewAddItemText,
+								count: viewAddItemCount
+							})
+						);
+					}}
+				>
+					{isWaiting ? <Spinner /> : 'Ok'}
+				</Button>
+				<Button onClick={() => onEvent({ type: AddCardEventType.CLOSE })}>Cancel</Button>
+			</div>
 		</div>
 	);
 }

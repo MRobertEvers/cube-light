@@ -3,6 +3,7 @@ import { API_URI } from '../config/api-url';
 export type FetchDecksDeckResponse = {
 	deckId: number;
 	name: string;
+	art: string;
 };
 export type FetchDecksResponse = Array<FetchDecksDeckResponse>;
 
