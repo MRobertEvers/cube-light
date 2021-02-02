@@ -4,6 +4,9 @@ import { DeckCard } from './deck-card';
 export class Deck extends Sequelize.Model {
 	public DeckId!: number;
 	public Name!: string;
+	public Art?: string;
+
+	public UpdatedAt!: Date;
 
 	// This is the table name of deck-card
 	public readonly Deck_Cards?: DeckCard[];
@@ -22,6 +25,9 @@ export function DefineDeckModel(database: Sequelize.Sequelize): typeof Deck {
 			},
 			Name: {
 				type: Sequelize.STRING(1024)
+			},
+			Art: {
+				type: Sequelize.STRING(1024)
 			}
 		},
 		{
@@ -29,11 +35,6 @@ export function DefineDeckModel(database: Sequelize.Sequelize): typeof Deck {
 			updatedAt: 'UpdatedAt'
 		}
 	);
-
-	Model.upsert({
-		DeckId: 1,
-		Name: 'Mono Blue'
-	});
 
 	return Model;
 }

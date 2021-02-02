@@ -14,7 +14,15 @@ export class Database {
 	public Deck: typeof Deck;
 	public DeckCard: typeof DeckCard;
 
-	constructor(sqlite: string) {
+	public static async createDatabase(sqlite: string) {
+		const db = new Database(sqlite);
+
+		await db.initialize();
+
+		return db;
+	}
+
+	private constructor(sqlite: string) {
 		// this.sqlite = sqlite;
 
 		this.db = new Sequelize({
@@ -26,10 +34,29 @@ export class Database {
 		this.DeckCard = DefineDeckCardModel(this.db, this.Deck);
 	}
 
+	public async initialize() {
+		const tables = [this.Deck, this.DeckCard];
+
+		for (const table of tables) {
+			await table.sync({ force: false, alter: true });
+		}
+
+		if (
+			!(await this.Deck.findOne({
+				where: {
+					Name: 'Mono Blue'
+				}
+			}))
+		)
+			await this.Deck.upsert({
+				Name: 'Mono Blue'
+			});
+	}
+
 	public async queryCardsByName(name: string): Promise<CardInfo[]> {
-		const query = this.db.query(`SELECT name, uuid, scryfallId  FROM cards WHERE name='${name}'`) as Promise<
-			[CardInfo[], any]
-		>;
+		const query = this.db.query(
+			`SELECT name, uuid, scryfallId  FROM cards WHERE name='${name}'`
+		) as Promise<[CardInfo[], any]>;
 		const [result] = await query;
 
 		return result;

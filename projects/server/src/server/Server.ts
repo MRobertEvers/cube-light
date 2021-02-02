@@ -1,13 +1,4 @@
-import express from 'express';
 import http from 'http';
-import path from 'path';
-import { CardDatabase } from '../database/cards/database';
-import { Database } from '../database/app/database';
-
-const PORT = 4040;
-
-const cDb = new CardDatabase(path.join(__dirname, '../assets/AllPrintings.sqlite'));
-const db = new Database('database.sqlite');
 
 interface ServerConfig {
 	host: string;

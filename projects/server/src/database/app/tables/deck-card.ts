@@ -9,7 +9,10 @@ export class DeckCard extends Sequelize.Model {
 }
 
 export const TABLE_NAME = 'Deck_Card';
-export function DefineDeckCardModel(database: Sequelize.Sequelize, deckTable: typeof Deck): typeof DeckCard {
+export function DefineDeckCardModel(
+	database: Sequelize.Sequelize,
+	deckTable: typeof Deck
+): typeof DeckCard {
 	const Model = <typeof DeckCard>database.define(
 		TABLE_NAME,
 		{
@@ -36,7 +39,8 @@ export function DefineDeckCardModel(database: Sequelize.Sequelize, deckTable: ty
 	);
 
 	deckTable.hasMany(Model, {
-		foreignKey: 'DeckId'
+		foreignKey: 'DeckId',
+		onDelete: 'CASCADE'
 	});
 
 	return Model;

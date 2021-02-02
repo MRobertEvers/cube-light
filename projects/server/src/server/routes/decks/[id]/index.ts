@@ -14,7 +14,7 @@ export function createDeckAPI(database: Database, cardDatabase: CardDatabase): R
 		res.status(200);
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-		res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST');
+		res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
 		res.send();
 	});
 	app.get('/decks/:id', async (req: Request, res: Response) => {
@@ -36,10 +36,11 @@ export function createDeckAPI(database: Database, cardDatabase: CardDatabase): R
 			return map;
 		}, {});
 
-		const cardImages = await fetchCardDataByScryFallIds(
-			cardInfos.map((card) => card.scryfallId)
-		);
-		const cardImagesMapped: Mapped<ScryfallCardInfo> = cardImages.data.reduce((map, card) => {
+		const cardImages =
+			cardInfos.length > 0
+				? (await fetchCardDataByScryFallIds(cardInfos.map((card) => card.scryfallId))).data
+				: [];
+		const cardImagesMapped: Mapped<ScryfallCardInfo> = cardImages.reduce((map, card) => {
 			map[card.id] = card;
 			return map;
 		}, {});
@@ -62,11 +63,30 @@ export function createDeckAPI(database: Database, cardDatabase: CardDatabase): R
 		res.send(
 			JSON.stringify({
 				name: data.Name,
-				icon: cardData ? cardData[0].art : null,
-				cards: cardData
+				icon: cardData.length > 0 ? cardData[0].art : null,
+				cards: cardData,
+				lastEdit: data.UpdatedAt
 			})
 		);
 	});
+	app.delete('/decks/:id', async (req: Request, res: Response) => {
+		const { id } = req.params;
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+		res.setHeader('Content-Type', 'application/json');
 
+		await Deck.destroy({
+			where: {
+				DeckId: id
+			}
+		});
+
+		res.status(200);
+		res.send(
+			JSON.stringify({
+				success: true
+			})
+		);
+	});
 	return app;
 }

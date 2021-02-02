@@ -13,7 +13,7 @@ const PORT = 4040;
 
 async function main() {
 	const cDb = new CardDatabase(path.join(__dirname, '../assets/AllPrintings.sqlite'));
-	const db = new Database('database.sqlite');
+	const db = await Database.createDatabase('database.sqlite');
 
 	const app = express();
 

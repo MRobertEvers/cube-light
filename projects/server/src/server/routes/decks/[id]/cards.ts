@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import { Request, Response } from 'express';
 import { Database } from '../../../../database/app/database';
 import { CardDatabase } from '../../../../database/cards/database';
+import { fetchCardDataByScryFallIds } from '../../../../external/scryfall';
 
 export function createCardsAPI(database: Database, cardDatabase: CardDatabase) {
 	const { Deck, DeckCard } = database;
@@ -30,14 +31,14 @@ export function createCardsAPI(database: Database, cardDatabase: CardDatabase) {
 			res.sendStatus(400);
 			return;
 		}
-		const result = await Deck.findOne({
+		const deck = await Deck.findOne({
 			where: {
 				DeckId: id
 			},
 			include: [DeckCard]
 		});
 
-		if (!result) {
+		if (!deck) {
 			res.sendStatus(404);
 			return;
 		}
@@ -47,28 +48,41 @@ export function createCardsAPI(database: Database, cardDatabase: CardDatabase) {
 			res.sendStatus(404);
 			return;
 		}
+		const cardData = cards[0];
 		const card = await DeckCard.findOne({
 			where: {
 				DeckId: id,
-				Uuid: cards[0].scryfallId
+				Uuid: cardData.uuid
 			}
 		});
 
 		switch (action) {
 			case 'add':
-				if (card) {
-					await DeckCard.upsert({
-						DeckCardId: card.DeckCardId,
-						DeckId: id,
-						Uuid: cards[0].scryfallId,
-						Count: card.Count + 1
-					});
-				} else {
-					await DeckCard.upsert({
-						DeckId: id,
-						Uuid: cards[0].scryfallId,
-						Count: 1
-					});
+				{
+					if (card) {
+						await DeckCard.upsert({
+							DeckCardId: card.DeckCardId,
+							DeckId: id,
+							Uuid: cardData.scryfallId,
+							Count: card.Count + count
+						});
+					} else {
+						await DeckCard.upsert({
+							DeckId: id,
+							Uuid: cardData.scryfallId,
+							Count: count
+						});
+					}
+
+					if (!deck.Art) {
+						const arts = await fetchCardDataByScryFallIds([cardData.scryfallId]);
+						if (arts.data.length > 0) {
+							await Deck.upsert({
+								DeckId: deck.DeckId,
+								Art: arts.data[0].image_uris.art_crop
+							});
+						}
+					}
 				}
 				break;
 			case 'remove':
@@ -79,7 +93,7 @@ export function createCardsAPI(database: Database, cardDatabase: CardDatabase) {
 						await DeckCard.upsert({
 							DeckCardId: card.DeckCardId,
 							DeckId: id,
-							Uuid: cards[0].scryfallId,
+							Uuid: cardData.scryfallId,
 							Count: card.Count - count
 						});
 					}
@@ -96,14 +110,14 @@ export function createCardsAPI(database: Database, cardDatabase: CardDatabase) {
 						await DeckCard.upsert({
 							DeckCardId: card.DeckCardId,
 							DeckId: id,
-							Uuid: cards[0].scryfallId,
+							Uuid: cardData.scryfallId,
 							Count: count
 						});
 					}
 				} else {
 					await DeckCard.upsert({
 						DeckId: id,
-						Uuid: cards[0].scryfallId,
+						Uuid: cardData.scryfallId,
 						Count: count
 					});
 				}
