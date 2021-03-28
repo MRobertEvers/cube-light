@@ -4,10 +4,10 @@ import path from 'path';
 
 import { Database } from './database/app/database';
 import { CardDatabase } from './database/cards/database';
-import { createSuggestRoutes } from './server/routes/suggest';
-import { createDeckAPI } from './server/routes/decks/[id]';
-import { createDecksAPI } from './server/routes/decks';
-import { createCardsAPI } from './server/routes/decks/[id]/cards';
+import { createSuggestRoutes } from './server/v1/routes/suggest';
+import { createDeckAPI } from './server/v1/routes/decks/[id]';
+import { createDecksAPI } from './server/v1/routes/decks';
+import { createCardsAPI } from './server/v1/routes/decks/[id]/cards';
 
 const PORT = 4040;
 
@@ -21,10 +21,6 @@ async function main() {
 	app.use(createDecksAPI(db, cDb));
 	app.use(createCardsAPI(db, cDb));
 	app.use(createSuggestRoutes(cDb));
-
-	app.listen(PORT, () => {
-		console.log(`Listening on port ${PORT}`);
-	});
 
 	const server = new Server(
 		{

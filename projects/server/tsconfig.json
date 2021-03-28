@@ -6,6 +6,6 @@
 		"esModuleInterop": true,
 		"target": "ES2017"
 	},
-	"include": ["src/**/*"],
+	"include": ["src/**/*", "tools/**/*"],
 	"exclude": ["node_modules"]
 }

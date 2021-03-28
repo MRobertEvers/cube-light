@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import bodyParser from 'body-parser';
 import { Request, Response } from 'express';
-import { Database } from '../../../../database/app/database';
-import { CardDatabase } from '../../../../database/cards/database';
-import { fetchCardDataByScryFallIds } from '../../../../external/scryfall';
+import { Database } from '../../../../../database/app/database';
+import { CardDatabase } from '../../../../../database/cards/database';
+import { fetchCardDataByScryFallIds } from '../../../../../external/scryfall';
 
 export function createCardsAPI(database: Database, cardDatabase: CardDatabase) {
 	const { Deck, DeckCard } = database;

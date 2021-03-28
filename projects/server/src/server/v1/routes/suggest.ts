@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
-import { CardDatabase } from '../../database/cards/database';
+import { CardDatabase } from '../../../database/cards/database';
 
 export function createSuggestRoutes(cardDatabase: CardDatabase) {
 	const app = Router();

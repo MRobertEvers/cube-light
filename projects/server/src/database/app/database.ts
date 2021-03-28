@@ -34,7 +34,7 @@ export class Database {
 		this.DeckCard = DefineDeckCardModel(this.db, this.Deck);
 	}
 
-	public async initialize() {
+	private async initialize() {
 		const tables = [this.Deck, this.DeckCard];
 
 		for (const table of tables) {

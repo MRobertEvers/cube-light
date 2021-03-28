@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
-import { Database } from '../../../../database/app/database';
-import { CardDatabase, CardInfo } from '../../../../database/cards/database';
-import { fetchCardDataByScryFallIds, ScryfallCardInfo } from '../../../../external/scryfall';
-import { Mapped } from '../../../../utils/templates.types';
-import type { Deck } from '../../../../database/app/tables/deck';
+import { Database } from '../../../../../database/app/database';
+import { CardDatabase, CardInfo } from '../../../../../database/cards/database';
+import { fetchCardDataByScryFallIds, ScryfallCardInfo } from '../../../../../external/scryfall';
+import { Mapped } from '../../../../../utils/templates.types';
+import type { Deck } from '../../../../../database/app/tables/deck';
 
 export function createDeckAPI(database: Database, cardDatabase: CardDatabase): Router {
 	const { Deck, DeckCard } = database;
