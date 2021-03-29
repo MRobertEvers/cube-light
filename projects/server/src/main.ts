@@ -2,25 +2,22 @@ import express from 'express';
 import { Server } from './server/Server';
 import path from 'path';
 
-import { Database } from './database/app/database';
 import { CardDatabase } from './database/cards/database';
-import { createSuggestRoutes } from './server/v1/routes/suggest';
-import { createDeckAPI } from './server/v1/routes/decks/[id]';
-import { createDecksAPI } from './server/v1/routes/decks';
-import { createCardsAPI } from './server/v1/routes/decks/[id]/cards';
+import { Database } from './database/main/Database';
+import { MessageBus } from './message/MessageBus';
+import { Services } from './app/services/Services';
 
 const PORT = 4040;
 
 async function main() {
-	const cDb = new CardDatabase(path.join(__dirname, '../assets/AllPrintings.sqlite'));
-	const db = await Database.createDatabase('database.sqlite');
+	const messageBus = new MessageBus();
+
+	const cardDatabase = new CardDatabase(path.join(__dirname, '../assets/AllPrintings.sqlite'));
+	const database = await Database.connect('database.sqlite');
 
 	const app = express();
 
-	app.use(createDeckAPI(db, cDb));
-	app.use(createDecksAPI(db, cDb));
-	app.use(createCardsAPI(db, cDb));
-	app.use(createSuggestRoutes(cDb));
+	const services = new Services(messageBus);
 
 	const server = new Server(
 		{
