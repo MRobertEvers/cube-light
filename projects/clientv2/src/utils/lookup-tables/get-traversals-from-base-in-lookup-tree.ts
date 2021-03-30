@@ -1,5 +1,3 @@
-import { deepMergeEx } from './legacy/get-start-tree-from-root';
-
 export function compareExact(char: string) {
 	return [char];
 }

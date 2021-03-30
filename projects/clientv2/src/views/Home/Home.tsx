@@ -7,7 +7,7 @@ import useSWR from 'swr';
 import { fetchAPIDecks, FetchDecksResponse } from '../../api/fetch-api-decks';
 import { Page } from '../../components/Page/Page';
 import { Modal } from '../Deck/components/Modal';
-import { NewDeckModal } from './components/NewDeck';
+import { NewDeckModal, NewDeckModalEvent, NewDeckModalEventType } from './components/NewDeck';
 
 import styles from './home.module.css';
 
@@ -35,10 +35,14 @@ export function Home(props: HomeProps) {
 			{isShowModal && (
 				<Modal>
 					<NewDeckModal
-						onSubmit={async (name: string) => {
-							const deckData = await fetchAPICreateDeck(name);
+						onEvent={async (e: NewDeckModalEvent) => {
+							if (e.type === NewDeckModalEventType.CLOSE) {
+								setIsShowModal(false);
+							} else {
+								const deckData = await fetchAPICreateDeck(e.payload);
 
-							router.push(`/deck/${deckData.deckId}`);
+								router.push(`/deck/${deckData.deckId}`);
+							}
 						}}
 					/>
 				</Modal>
