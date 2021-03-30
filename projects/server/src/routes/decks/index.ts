@@ -1,23 +1,31 @@
 import { json, Router } from 'express';
 import type { Request, Response } from 'express';
 
-import { Database } from '../../../database/app/database';
-import { CardDatabase } from '../../../database/cards/database';
 import { Op } from 'sequelize';
+import { CardDatabase } from '../../database/cards/database';
+import { Database } from '../../database/app/database';
+import { PathBuilder } from '../../utils/PathBuilder';
+import { createRoutesDecksId } from './[id]';
 
-export function createDecksAPI(database: Database, cardDatabase: CardDatabase) {
+export function createRoutesDecks(
+	pathBuilder: PathBuilder,
+	database: Database,
+	cardDatabase: CardDatabase
+) {
 	const { Deck } = database;
-
 	const app = Router();
+
+	const routePath = pathBuilder.pathAt('/');
+
 	app.use(json());
-	app.options('/decks', async (req: Request, res: Response) => {
+	app.options(routePath, async (req: Request, res: Response) => {
 		res.status(200);
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 		res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
 		res.send();
 	});
-	app.post('/decks', async (req: Request, res: Response) => {
+	app.post(routePath, async (req: Request, res: Response) => {
 		const { name } = req.body;
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -33,7 +41,7 @@ export function createDecksAPI(database: Database, cardDatabase: CardDatabase) {
 			})
 		);
 	});
-	app.get('/decks', async (req: Request, res: Response) => {
+	app.get(routePath, async (req: Request, res: Response) => {
 		const { pageStart = '0', pageSize = '15' } = req.params;
 		const pageStartVal = parseInt(pageStart);
 		const pageSizeVal = parseInt(pageSize);
@@ -70,5 +78,9 @@ export function createDecksAPI(database: Database, cardDatabase: CardDatabase) {
 		res.setHeader('Content-Type', 'application/json');
 		res.send(JSON.stringify(response));
 	});
+
+	const builder = pathBuilder.routes('/:id');
+	app.use(createRoutesDecksId(builder, database, cardDatabase));
+
 	return app;
 }

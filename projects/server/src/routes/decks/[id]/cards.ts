@@ -1,23 +1,29 @@
-import { Router } from 'express';
-import bodyParser from 'body-parser';
+import { Router, json } from 'express';
 import { Request, Response } from 'express';
-import { Database } from '../../../../database/app/database';
-import { CardDatabase } from '../../../../database/cards/database';
-import { fetchCardDataByScryFallIds } from '../../../../external/scryfall';
+import { Database } from '../../../database/app/database';
+import { CardDatabase } from '../../../database/cards/database';
+import { fetchCardDataByScryFallIds } from '../../../external/scryfall';
+import { PathBuilder } from '../../../utils/PathBuilder';
 
-export function createCardsAPI(database: Database, cardDatabase: CardDatabase) {
+export function createRoutesDecksIdCards(
+	pathBuilder: PathBuilder,
+	database: Database,
+	cardDatabase: CardDatabase
+) {
 	const { Deck, DeckCard } = database;
 	const app = Router();
 
-	app.use(bodyParser.json());
-	app.options('/decks/:id/cards', async (req: Request, res: Response) => {
+	const routePath = pathBuilder.pathAt('/');
+
+	app.use(json());
+	app.options(routePath, async (req: Request, res: Response) => {
 		res.status(200);
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 		res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST');
 		res.send();
 	});
-	app.post('/decks/:id/cards', async (req: Request, res: Response) => {
+	app.post(routePath, async (req: Request, res: Response) => {
 		const { id } = req.params;
 		const { cardName, action = 'add', count = 1 } = req.body as {
 			cardName: string;

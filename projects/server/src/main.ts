@@ -4,23 +4,19 @@ import path from 'path';
 
 import { Database } from './database/app/database';
 import { CardDatabase } from './database/cards/database';
-import { createSuggestRoutes } from './server/routes/suggest';
-import { createDeckAPI } from './server/routes/decks/[id]';
-import { createDecksAPI } from './server/routes/decks';
-import { createCardsAPI } from './server/routes/decks/[id]/cards';
+import { createRoutes } from './routes/routes';
 
 const PORT = 4040;
 
+const CARD_DATABASE_PATH = path.join(__dirname, './assets/AllPrintings.sqlite');
+
 async function main() {
-	const cDb = new CardDatabase(path.join(__dirname, '../assets/AllPrintings.sqlite'));
+	const cDb = new CardDatabase(CARD_DATABASE_PATH);
 	const db = await Database.createDatabase('database.sqlite');
 
 	const app = express();
 
-	app.use(createDeckAPI(db, cDb));
-	app.use(createDecksAPI(db, cDb));
-	app.use(createCardsAPI(db, cDb));
-	app.use(createSuggestRoutes(cDb));
+	app.use(createRoutes(db, cDb));
 
 	app.listen(PORT, () => {
 		console.log(`Listening on port ${PORT}`);
