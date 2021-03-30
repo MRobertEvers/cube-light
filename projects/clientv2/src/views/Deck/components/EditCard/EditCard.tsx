@@ -1,14 +1,14 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
 import { Counter } from 'src/components/Counter/Counter';
-import { FetchDeckCardResponse } from '../../../../api/fetch-api-deck';
+import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
 import { Button } from '../../../../components/Button/Button';
 
 import styles from './edit-card.module.css';
 
 export type EditCardModalProps = {
-	card: FetchDeckCardResponse | null;
-	onSubmit: (card: FetchDeckCardResponse) => void;
+	card: FetchAPIDeckCardResponse | null;
+	onSubmit: (card: FetchAPIDeckCardResponse) => void;
 	onCancel: () => void;
 };
 export function EditCardModal(props: EditCardModalProps) {

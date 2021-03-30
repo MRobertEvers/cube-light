@@ -1,10 +1,10 @@
-import { FetchDeckCardResponse, FetchDeckResponse } from '../api/fetch-api-deck';
+import { FetchAPIDeckCardResponse, FetchAPIDeckResponse } from '../api/fetch-api-deck';
 import { SetCardAction } from '../api/fetch-api-set-card';
 import { createMessage } from './utils/messageToolkit';
 
 export type DeckGroupData = {
 	count: number;
-	cards: FetchDeckCardResponse[];
+	cards: FetchAPIDeckCardResponse[];
 };
 
 export type DeckMappedData = {
@@ -14,7 +14,7 @@ export type DeckMappedData = {
 	};
 };
 
-export type GetDeckResponse = FetchDeckResponse & { deck: DeckMappedData };
+export type GetDeckResponse = FetchAPIDeckResponse & { deck: DeckMappedData };
 
 export const DeckWorkerMessages = {
 	getSuggestions: createMessage<string, { sorted: string[]; set: Set<string> }>('getSuggestions'),
@@ -25,5 +25,6 @@ export const DeckWorkerMessages = {
 		action: SetCardAction;
 		count: number;
 	}>('setCard'),
-	getDeck: createMessage<string, GetDeckResponse>('getDeck')
+	getDeck: createMessage<string, GetDeckResponse>('getDeck'),
+	getLookupTree: createMessage<string[], any>('getLookupTree')
 };

@@ -7,6 +7,7 @@ import {
 import { createHandler } from './utils/messageToolkit';
 import { DeckWorkerMessages } from './deck.worker.messages';
 import { createOnMessageHandler } from './utils/workerToolkit';
+import { createNameLookupTree } from 'src/utils/create-name-lookup-tree';
 
 const handler = createHandler((builder) => {
 	builder.addCase(DeckWorkerMessages.getSuggestions, async (message) => {
@@ -26,6 +27,9 @@ const handler = createHandler((builder) => {
 		const { deckId, cardName, action, count } = message.payload;
 		const result = await fetchSetCardCommand(deckId, cardName, action, count);
 		return result;
+	});
+	builder.addCase(DeckWorkerMessages.getLookupTree, async (message) => {
+		return createNameLookupTree(message.payload);
 	});
 	return builder;
 });

@@ -1,3 +1,8 @@
+import { fetchAPINameLookup } from 'src/api/fetch-api-get-card-names-lookup';
+import {
+	getFirstNCompletionsFromLookupTree,
+	getStartTreeFromRoot
+} from 'src/utils/iter-completion-list-from-lookup-tree';
 import { fetchAPIAddCard } from '../api/fetch-api-add-card';
 import { fetchAPIDeck } from '../api/fetch-api-deck';
 import { fetchAPISetCard, SetCardAction } from '../api/fetch-api-set-card';
@@ -7,24 +12,15 @@ import { GetDeckResponse } from './deck.worker.messages';
 export async function fetchSortedSuggestions(
 	search: string
 ): Promise<{ sorted: string[]; set: Set<string> }> {
-	const suggestionArray = await fetchAPISuggestions(search);
+	// TODO: Better way to do this?
+	const fullTree = await fetchAPINameLookup();
 
-	const deduped = new Set(suggestionArray);
-	const dedupedArray = Array.from(deduped).sort();
-	const front: string[] = [];
-	const back: string[] = [];
-	const testName = search.toLowerCase();
-	for (const name of dedupedArray) {
-		if (name.toLowerCase().indexOf(testName) === 0) {
-			front.push(name);
-		} else {
-			back.push(name);
-		}
-	}
-	const sorted = front.concat(back);
+	const tree = getStartTreeFromRoot(search, fullTree);
+	const suggestions = getFirstNCompletionsFromLookupTree(10, search, tree);
+
 	const result = {
-		sorted: sorted,
-		set: new Set(sorted.map((item) => item.toLowerCase()))
+		sorted: suggestions,
+		set: new Set(suggestions.map((item) => item.toLowerCase()))
 	};
 
 	return result;

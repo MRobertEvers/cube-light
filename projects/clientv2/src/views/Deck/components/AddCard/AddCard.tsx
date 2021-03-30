@@ -13,7 +13,7 @@ import { Counter } from 'src/components/Counter/Counter';
 import styles from './card-adder.module.css';
 import { useOnClickedAway } from 'src/hooks/useOnClickedAway';
 import { useAsyncReducer } from 'src/hooks/useAsyncReducer';
-import { Actions, initialState, reducer } from './add-card-state';
+import { Actions, initialState, reducerAddCard } from './add-card-state';
 
 const KEY = {
 	BACKSPACE: 8,
@@ -58,15 +58,15 @@ export function AddCard(props: AddCardProps) {
 	const { deckId, onEvent } = props;
 
 	const [isWaiting, setIsWaiting] = useState(false);
-	const [suggestDebounceTimer, setSuggestDebounceTimer] = useState(null as number | null);
 
-	const [state, dispatch] = useAsyncReducer(reducer, initialState);
+	const [state, dispatch] = useAsyncReducer(reducerAddCard, initialState);
 	const {
 		suggestionsData: suggestions,
 		viewIsDropDownVisible,
 		viewAddItemText,
 		viewAddItemCount
 	} = state;
+
 	const comboboxRef = useOnClickedAway(() => {
 		dispatch(Actions.setViewIsDropDownVisible(false));
 	});
@@ -131,21 +131,15 @@ export function AddCard(props: AddCardProps) {
 						onChange={(e) => {
 							const newText = e.target.value;
 							dispatch(Actions.setViewAddItemText(newText));
-							if (suggestDebounceTimer) {
-								clearTimeout(suggestDebounceTimer);
+
+							if (newText.length > 3) {
+								postToWorker(DeckWorkerMessages.getSuggestions(newText));
+							} else {
+								dispatch(
+									Actions.setSuggestionsData({ sorted: [], set: new Set() })
+								);
+								dispatch(Actions.setViewIsDropDownVisible(false));
 							}
-							const timer: any = setTimeout(() => {
-								if (newText.length > 3) {
-									setIsWaiting(true);
-									postToWorker(DeckWorkerMessages.getSuggestions(newText));
-								} else {
-									dispatch(
-										Actions.setSuggestionsData({ sorted: [], set: new Set() })
-									);
-									dispatch(Actions.setViewIsDropDownVisible(false));
-								}
-							}, 500);
-							setSuggestDebounceTimer(timer);
 						}}
 					/>
 					{viewIsDropDownVisible && (

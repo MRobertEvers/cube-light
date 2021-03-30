@@ -1,6 +1,6 @@
 import { API_URI } from '../config/api-url';
 
-export type FetchDeckCardResponse = {
+export type FetchAPIDeckCardResponse = {
 	name: string;
 	count: number;
 	image: string;
@@ -8,17 +8,17 @@ export type FetchDeckCardResponse = {
 	types: string;
 	manaCost: string;
 };
-export type FetchDeckResponse = {
+export type FetchAPIDeckResponse = {
 	name: string;
 	icon: string;
-	cards: FetchDeckCardResponse[];
+	cards: FetchAPIDeckCardResponse[];
 	lastEdit: string;
 };
 
-export async function fetchAPIDeck(deckId: string): Promise<FetchDeckResponse> {
+export async function fetchAPIDeck(deckId: string): Promise<FetchAPIDeckResponse> {
 	const fetchResult = await fetch(`${API_URI}/decks/${deckId}`, {
 		method: 'GET'
 	});
 
-	return fetchResult.json() as Promise<FetchDeckResponse>;
+	return fetchResult.json() as Promise<FetchAPIDeckResponse>;
 }

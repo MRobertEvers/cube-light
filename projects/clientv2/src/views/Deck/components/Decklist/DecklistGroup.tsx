@@ -1,5 +1,5 @@
 import React from 'react';
-import { FetchDeckCardResponse } from '../../../../api/fetch-api-deck';
+import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
 import { DeckGroupData } from '../../../../workers/deck.worker.messages';
 
 import styles from './decklist-group.module.css';
@@ -13,16 +13,16 @@ export enum CardInteractionEventType {
 export type CardInteractionEvent =
 	| {
 			type: CardInteractionEventType.CLICK;
-			payload: FetchDeckCardResponse;
+			payload: FetchAPIDeckCardResponse;
 	  }
 	| {
 			type: CardInteractionEventType.LEAVE;
-			payload: FetchDeckCardResponse;
+			payload: FetchAPIDeckCardResponse;
 	  }
 	| {
 			type: CardInteractionEventType.HOVER;
 			payload: {
-				card: FetchDeckCardResponse;
+				card: FetchAPIDeckCardResponse;
 				position: {
 					x: number;
 					y: number;

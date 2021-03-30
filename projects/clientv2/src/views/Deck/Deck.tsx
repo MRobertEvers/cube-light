@@ -7,7 +7,7 @@ import { fetchSortedDeck } from '../../workers/deck.functions';
 import { EditCardModal } from './components/EditCard';
 import { Modal } from './components/Modal';
 import { GetDeckResponse } from '../../workers/deck.worker.messages';
-import { FetchDeckCardResponse } from '../../api/fetch-api-deck';
+import { FetchAPIDeckCardResponse } from '../../api/fetch-api-deck';
 import { fetchAPISetCard } from '../../api/fetch-api-set-card';
 import { Button } from '../../components/Button/Button';
 import { LoadingIndicator } from '../../components/LoadingIndicator';
@@ -98,7 +98,7 @@ export function Deck(props: DeckProps) {
 		{ initialData: initialDeckData }
 	);
 
-	const onSubmitChange = useCallback(async (card: FetchDeckCardResponse) => {
+	const onSubmitChange = useCallback(async (card: FetchAPIDeckCardResponse) => {
 		await fetchAPISetCard(deckId, card.name, 'set', card.count);
 		dispatch(Actions.setEditCard(null));
 		await mutate(deckId);
@@ -170,7 +170,7 @@ export function Deck(props: DeckProps) {
 				<Decklist
 					name={data.name}
 					deck={data.deck}
-					onCardClick={(card: FetchDeckCardResponse) => {
+					onCardClick={(card: FetchAPIDeckCardResponse) => {
 						if (isEditMode) {
 							dispatch(Actions.setEditCard(card));
 						}

@@ -1,5 +1,5 @@
 import { ActionReducerMapBuilder, createAction, createReducer } from '@reduxjs/toolkit';
-import { FetchDeckCardResponse } from 'src/api/fetch-api-deck';
+import { FetchAPIDeckCardResponse } from 'src/api/fetch-api-deck';
 
 // Based on "Ariel - Beta Test Questionaire.docx"
 export type AddCardState = {
@@ -45,4 +45,4 @@ function buildReducer(builder: ActionReducerMapBuilder<AddCardState>) {
 		});
 }
 
-export const reducer = createReducer(initialState, buildReducer);
+export const reducerAddCard = createReducer(initialState, buildReducer);

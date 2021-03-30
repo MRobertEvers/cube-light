@@ -2,12 +2,12 @@ import React, { useCallback } from 'react';
 import { useState } from 'react';
 import { CardInteractionEvent, CardInteractionEventType, DecklistGroup } from './DecklistGroup';
 import { DeckMappedData } from '../../../../workers/deck.worker.messages';
-import { FetchDeckCardResponse } from '../../../../api/fetch-api-deck';
+import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
 
 import styles from './decklist.module.css';
 import { SpotlightCard } from 'src/widgets/SpotlightCard/SpotlightCard';
 
-export type DecklistCardInfo = FetchDeckCardResponse;
+export type DecklistCardInfo = FetchAPIDeckCardResponse;
 type DecklistProps = {
 	name: string;
 	deck: DeckMappedData;
@@ -20,7 +20,7 @@ export function Decklist(props: DecklistProps) {
 		null as { card: DecklistCardInfo; position: { x: number; y: number } } | null
 	);
 
-	const spotlightCards: FetchDeckCardResponse[] = [];
+	const spotlightCards: FetchAPIDeckCardResponse[] = [];
 	for (const cardType of Object.keys(deck.cardCategories)) {
 		const { cards } = deck.cardCategories[cardType];
 

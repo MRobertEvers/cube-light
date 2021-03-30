@@ -1,9 +1,8 @@
 import { ActionReducerMapBuilder, createAction, createReducer } from '@reduxjs/toolkit';
-import { FetchDeckCardResponse } from 'src/api/fetch-api-deck';
+import { FetchAPIDeckCardResponse } from 'src/api/fetch-api-deck';
 
-// Based on "Ariel - Beta Test Questionaire.docx"
 export type DeckState = {
-	viewEditCard: FetchDeckCardResponse | null;
+	viewEditCard: FetchAPIDeckCardResponse | null;
 	viewAddCard: boolean;
 };
 
@@ -13,7 +12,7 @@ export const initialState: DeckState = {
 };
 
 export const Actions = {
-	setEditCard: createAction<FetchDeckCardResponse | null>('setEditCard'),
+	setEditCard: createAction<FetchAPIDeckCardResponse | null>('setEditCard'),
 	setViewAddCard: createAction<boolean>('setViewAddCard')
 };
 
