@@ -8,7 +8,7 @@ interface ServerConfig {
 export class Server {
 	private config: ServerConfig;
 	private router: http.RequestListener;
-	private server: http.Server;
+	private server: http.Server | undefined;
 
 	constructor(config: ServerConfig, router: http.RequestListener) {
 		this.router = router;
@@ -29,8 +29,8 @@ export class Server {
 	}
 
 	async stop(): Promise<void> {
-		if (this.server) {
-			return new Promise((resolve, reject) => {
+		return new Promise((resolve, reject) => {
+			if (this.server) {
 				this.server.close((err) => {
 					if (err) {
 						reject(err);
@@ -38,7 +38,7 @@ export class Server {
 						resolve();
 					}
 				});
-			});
-		}
+			}
+		});
 	}
 }

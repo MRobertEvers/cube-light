@@ -1,10 +1,12 @@
 import * as Sequelize from 'sequelize';
 import { DeckCard } from './deck-card';
+import { User } from './user';
 
 export class Deck extends Sequelize.Model {
 	public DeckId!: number;
 	public Name!: string;
 	public Art?: string;
+	public Owner!: number;
 
 	public UpdatedAt!: Date;
 
@@ -28,6 +30,10 @@ export function DefineDeckModel(database: Sequelize.Sequelize): typeof Deck {
 			},
 			Art: {
 				type: Sequelize.STRING(1024)
+			},
+			Owner: {
+				type: Sequelize.INTEGER,
+				allowNull: true
 			}
 		},
 		{

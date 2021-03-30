@@ -1,8 +1,9 @@
 import { exception } from 'console';
 import fs from 'fs';
 import path from 'path';
+import { createNameLookupTree } from '../../src/app/create-name-lookup-tree';
 
-const SRC_PATH = path.resolve('.');
+const SRC_PATH = path.resolve('src');
 const ALLPRINTINGS_JSON_PATH = path.join(SRC_PATH, 'assets/AllPrintings.json');
 
 export type MTGJSONMeta = {
@@ -46,7 +47,7 @@ export type MTGJSONAllPrintings = {
 	data: Record<string, MTGJSONSet>;
 };
 
-function readAllPrintings(): MTGJSONAllPrintings {
+export function readAllPrintings(): MTGJSONAllPrintings {
 	try {
 		return JSON.parse(fs.readFileSync(ALLPRINTINGS_JSON_PATH).toString());
 	} catch {
@@ -54,20 +55,11 @@ function readAllPrintings(): MTGJSONAllPrintings {
 	}
 }
 
-function createNameLookupTree(allPrintings: MTGJSONAllPrintings) {
+function* iterAllPrintingCardNames(allPrintings: MTGJSONAllPrintings): Generator<string> {
 	const lookup: Record<string, any> = {};
 	for (const set of Object.values(allPrintings.data)) {
 		for (const card of set.cards) {
-			let current = lookup;
-			for (const char of card.name) {
-				if (typeof current[char] === 'undefined') {
-					current[char] = {};
-				}
-				current = current[char];
-			}
-
-			// Indicate that there is a card name that stops here.
-			current['$'] = {};
+			yield card.name;
 		}
 	}
 
@@ -81,7 +73,7 @@ function saveLookupTreeToFile(filename: string, lookupTree: any) {
 async function main() {
 	const allPrintingsJson = readAllPrintings();
 
-	const lookupTree = createNameLookupTree(allPrintingsJson);
+	const lookupTree = createNameLookupTree(iterAllPrintingCardNames(allPrintingsJson));
 
 	saveLookupTreeToFile(path.join(SRC_PATH, 'src/public/NameLookup.json'), lookupTree);
 }

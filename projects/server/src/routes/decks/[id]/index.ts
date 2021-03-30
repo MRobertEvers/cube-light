@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
+import { createNameLookupTree } from '../../../app/create-name-lookup-tree';
 import { CardInfo, Database } from '../../../database/app/database';
 import { CardDatabase } from '../../../database/cards/database';
 import { fetchCardDataByScryFallIds, ScryfallCardInfo } from '../../../external/scryfall';
@@ -26,37 +27,43 @@ export function createRoutesDecksId(
 	});
 	app.get(routePath, async (req: Request, res: Response) => {
 		const { id } = req.params;
-		const result = await Deck.findOne({
-			where: {
-				DeckId: id
-			},
+		const deck = await Deck.findByPk(id, {
 			include: [DeckCard]
 		});
 
-		if (!result) {
+		if (!deck) {
 			res.sendStatus(404);
+			return;
 		}
 
-		const cardInfos = await cardDatabase.queryCardInfo(result.Deck_Cards.map((dc) => dc.Uuid));
-		const cardInfosMapped: Mapped<CardInfo> = cardInfos.reduce((map, card) => {
+		// TODO: Typesafe findbypk function
+		const deckCards = deck.Deck_Cards!;
+
+		const cardInfos = await cardDatabase.queryCardInfo(deckCards.map((dc) => dc.Uuid));
+
+		const cardInfosMapped: Record<string, CardInfo> = cardInfos.reduce((map, card) => {
 			map[card.scryfallId] = card;
 			return map;
-		}, {});
+		}, {} as Record<string, CardInfo>);
 
 		const cardImages =
 			cardInfos.length > 0
 				? (await fetchCardDataByScryFallIds(cardInfos.map((card) => card.scryfallId))).data
 				: [];
-		const cardImagesMapped: Mapped<ScryfallCardInfo> = cardImages.reduce((map, card) => {
-			map[card.id] = card;
-			return map;
-		}, {});
+
+		const cardImagesMapped: Record<string, ScryfallCardInfo> = cardImages.reduce(
+			(map, card) => {
+				map[card.id] = card;
+				return map;
+			},
+			{} as Record<string, ScryfallCardInfo>
+		);
 
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 		res.setHeader('Content-Type', 'application/json');
-		const data = result.toJSON() as any;
-		const cardData = data.Deck_Cards.map((card) => {
+
+		const cardData = deckCards.map((card) => {
 			const cardImage = cardImagesMapped[card.Uuid];
 			const cardData = cardInfosMapped[card.Uuid];
 			return {
@@ -69,10 +76,10 @@ export function createRoutesDecksId(
 
 		res.send(
 			JSON.stringify({
-				name: data.Name,
+				name: deck.Name,
 				icon: cardData.length > 0 ? cardData[0].art : null,
 				cards: cardData,
-				lastEdit: data.UpdatedAt
+				lastEdit: deck.UpdatedAt
 			})
 		);
 	});
@@ -94,6 +101,32 @@ export function createRoutesDecksId(
 				success: true
 			})
 		);
+	});
+
+	app.get(pathBuilder.pathAt('/card-names'), async (req: Request, res: Response) => {
+		const { id } = req.params;
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+		res.setHeader('Content-Type', 'application/json');
+
+		const deck = await Deck.findByPk(id, {
+			include: [DeckCard]
+		});
+
+		if (!deck) {
+			res.sendStatus(404);
+			return;
+		}
+
+		// TODO: Typesafe findbypk function
+		const deckCards = deck.Deck_Cards!;
+
+		const cards = await cardDatabase.queryCardInfo(deckCards.map((card) => card.Uuid));
+
+		const lookupTree = createNameLookupTree(cards.map((card) => card.name));
+
+		res.status(200);
+		res.send(JSON.stringify(lookupTree));
 	});
 
 	const builder = pathBuilder.routes('/cards');

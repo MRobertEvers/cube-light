@@ -1,5 +1,6 @@
 import { Router, json } from 'express';
 import { Request, Response } from 'express';
+import { Op } from 'sequelize';
 import { Database } from '../../../database/app/database';
 import { CardDatabase } from '../../../database/cards/database';
 import { fetchCardDataByScryFallIds } from '../../../external/scryfall';
@@ -23,8 +24,55 @@ export function createRoutesDecksIdCards(
 		res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST');
 		res.send();
 	});
+	app.post(pathBuilder.pathAt('/edit'), async (req: Request, res: Response) => {
+		const { id } = req.params;
+
+		const { remove, upsert } = req.body as {
+			remove: string[];
+			upsert: Array<{ uuid: string; count: number }>;
+		};
+
+		const deck = await Deck.findByPk(id, {
+			include: [DeckCard]
+		});
+
+		if (!deck) {
+			res.sendStatus(400);
+			return;
+		}
+
+		const foundUpsertCards = await cardDatabase.queryCardInfo(upsert.map((item) => item.uuid));
+		if (foundUpsertCards.length !== upsert.length) {
+			res.sendStatus(400);
+			return;
+		}
+
+		await DeckCard.bulkCreate(
+			upsert.map(({ uuid, count }) => ({
+				DeckId: id,
+				Uuid: uuid,
+				Count: count
+			}))
+		);
+
+		await DeckCard.destroy({
+			where: {
+				DeckId: id,
+				Uuid: {
+					[Op.in]: remove
+				}
+			}
+		});
+
+		res.status(200);
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+		res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST');
+		res.send();
+	});
 	app.post(routePath, async (req: Request, res: Response) => {
 		const { id } = req.params;
+
 		const { cardName, action = 'add', count = 1 } = req.body as {
 			cardName: string;
 			action?: 'add' | 'remove' | 'set';
