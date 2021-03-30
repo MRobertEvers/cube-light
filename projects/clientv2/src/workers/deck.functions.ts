@@ -1,22 +1,18 @@
 import { fetchAPINameLookup } from 'src/api/fetch-api-get-card-names-lookup';
-import {
-	getFirstNCompletionsFromLookupTree,
-	getStartTreeFromRoot
-} from 'src/utils/iter-completion-list-from-lookup-tree';
+
 import { fetchAPIAddCard } from '../api/fetch-api-add-card';
 import { fetchAPIDeck } from '../api/fetch-api-deck';
 import { fetchAPISetCard, SetCardAction } from '../api/fetch-api-set-card';
-import { fetchAPISuggestions } from '../api/fetch-api-suggestions';
 import { GetDeckResponse } from './deck.worker.messages';
+import { getFirstNMatchesInLookupTree } from 'src/utils/lookup-tables/iter-matches-in-lookup-tree';
 
 export async function fetchSortedSuggestions(
 	search: string
 ): Promise<{ sorted: string[]; set: Set<string> }> {
 	// TODO: Better way to do this?
-	const fullTree = await fetchAPINameLookup();
+	const tree = await fetchAPINameLookup();
 
-	const tree = getStartTreeFromRoot(search, fullTree);
-	const suggestions = getFirstNCompletionsFromLookupTree(10, search, tree);
+	const suggestions = getFirstNMatchesInLookupTree(10, search, tree);
 
 	const result = {
 		sorted: suggestions,

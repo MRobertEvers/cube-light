@@ -131,15 +131,7 @@ export function AddCard(props: AddCardProps) {
 						onChange={(e) => {
 							const newText = e.target.value;
 							dispatch(Actions.setViewAddItemText(newText));
-
-							if (newText.length > 3) {
-								postToWorker(DeckWorkerMessages.getSuggestions(newText));
-							} else {
-								dispatch(
-									Actions.setSuggestionsData({ sorted: [], set: new Set() })
-								);
-								dispatch(Actions.setViewIsDropDownVisible(false));
-							}
+							postToWorker(DeckWorkerMessages.getSuggestions(newText));
 						}}
 					/>
 					{viewIsDropDownVisible && (

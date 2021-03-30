@@ -1,40 +1,5 @@
 const TERMINATION_SYMBOL = '$';
 
-function deepMerge(branchOne: any, branchTwo: any) {
-	if (!branchOne || !branchTwo) {
-		return branchOne || branchTwo;
-	} else {
-		const result = { ...branchTwo };
-
-		for (const [key, followTree] of Object.entries(branchOne)) {
-			const otherTree = branchTwo[key];
-			if (typeof otherTree === 'undefined') {
-				result[key] = followTree;
-			} else {
-				result[key] = deepMerge(otherTree, followTree);
-			}
-		}
-
-		return result;
-	}
-}
-
-export function getStartTreeFromRoot(base: string, lookupTree: any): any {
-	let lookup: any = lookupTree;
-
-	for (const char of base) {
-		const branchOne = lookup[char.toLowerCase()];
-		const branchTwo = lookup[char.toUpperCase()];
-		lookup = deepMerge(branchOne, branchTwo);
-
-		if (typeof lookup === 'undefined') {
-			return {};
-		}
-	}
-
-	return lookup;
-}
-
 export function* iterCompletionListFromLookupTree(
 	base: string,
 	lookupTree: any

@@ -35,7 +35,7 @@ export function Home(props: HomeProps) {
 			{isShowModal && (
 				<Modal>
 					<NewDeckModal
-						onSubmit={async (name) => {
+						onSubmit={async (name: string) => {
 							const deckData = await fetchAPICreateDeck(name);
 
 							router.push(`/deck/${deckData.deckId}`);

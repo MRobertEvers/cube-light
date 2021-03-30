@@ -7,7 +7,7 @@ import {
 import { createHandler } from './utils/messageToolkit';
 import { DeckWorkerMessages } from './deck.worker.messages';
 import { createOnMessageHandler } from './utils/workerToolkit';
-import { createNameLookupTree } from 'src/utils/create-name-lookup-tree';
+import { createNameLookupTree } from 'src/utils/lookup-tables/create-name-lookup-tree';
 
 const handler = createHandler((builder) => {
 	builder.addCase(DeckWorkerMessages.getSuggestions, async (message) => {
