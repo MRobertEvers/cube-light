@@ -22,6 +22,7 @@ import styles from './deck.module.css';
 import { AddCardEventType } from './components/AddCard/AddCard';
 import { fetchAPIDeleteDeck } from 'src/api/fetch-api-delete-deck';
 import { useHistory } from 'react-router-dom';
+import { concatClassNames } from 'src/utils/concat-class-names';
 
 export type DeckControlButtonsProps = {
 	state: DeckState;
@@ -39,7 +40,7 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 	const router = useHistory();
 
 	return (
-		<>
+		<div className={styles['edit-deck-button-container']}>
 			{!isEditMode ? (
 				<Button
 					className={styles['edit-deck-button']}
@@ -62,7 +63,10 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 						Ok
 					</Button>
 					<Button
-						className={styles['delete-deck-button']}
+						className={concatClassNames(
+							styles['edit-deck-button'],
+							styles['delete-deck-button']
+						)}
 						onClick={async () => {
 							await fetchAPIDeleteDeck(deckId);
 							router.push('/');
@@ -72,7 +76,7 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 					</Button>
 				</>
 			)}
-		</>
+		</div>
 	);
 }
 export type DeckProps = {

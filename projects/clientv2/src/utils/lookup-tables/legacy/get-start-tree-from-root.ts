@@ -50,15 +50,15 @@ export function deepMergeEx(...branches: any[]): any | undefined {
 	return result;
 }
 
-export function compareExact(char: string) {
+function compareExact(char: string) {
 	return [char];
 }
 
-export function compareNoCase(char: string) {
+function compareNoCase(char: string) {
 	return [char.toUpperCase(), char.toLowerCase()];
 }
 
-export function compareLaxSpecialCharacters(char: string) {
+function compareLaxSpecialCharacters(char: string) {
 	return [char.toUpperCase(), char.toLowerCase(), ',', "'"];
 }
 

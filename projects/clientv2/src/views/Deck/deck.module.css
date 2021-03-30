@@ -29,7 +29,7 @@
 }
 
 .avatar {
-	min-width: 160px;
+	min-width: 200px;
 }
 
 .square {
@@ -66,8 +66,9 @@
 .delete-deck-button {
 	border: 1px solid rgb(255, 74, 74);
 	color: rgb(255, 74, 74);
-	margin-top: 0 !important;
-	margin-bottom: 0 !important;
+	width: 100%;
+	min-width: unset !important;
+	margin: 16px auto !important;
 }
 
 .delete-deck-button:hover {
@@ -75,6 +76,14 @@
 }
 
 @media (max-width: 680px) {
+	.edit-deck-button-container {
+		display: flex;
+	}
+
+	.edit-deck-button + .edit-deck-button {
+		margin-top: 16px !important;
+	}
+
 	.banner {
 		display: flex;
 		margin: 12px;
