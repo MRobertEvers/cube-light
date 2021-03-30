@@ -106,7 +106,7 @@ export function createRoutesDecksIdCards(
 		const card = await DeckCard.findOne({
 			where: {
 				DeckId: id,
-				Uuid: cardData.uuid
+				Uuid: cardData.scryfallId
 			}
 		});
 

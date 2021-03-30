@@ -1,13 +1,43 @@
 const TERMINATION_SYMBOL = '$';
 
-function deepMerge(branchOne: any, branchTwo: any) {
+/**
+ *
+ * @param base
+ * @param lookupTree
+ * @returns
+ */
+export function getTraversalsFromBaseInLookupTree(
+	base: string,
+	lookupTree: any
+): Array<[string, any]> {
+	let level: [string[], any][] = [[[], lookupTree]];
+	let next: [string[], any][] = [];
+
+	for (const char of base) {
+		const branchKeys = Array.from(new Set(compareLaxSpecialCharacters(char)));
+
+		for (const [traversal, tree] of level) {
+			const branches: [string[], any][] = branchKeys
+				.filter((key) => tree[key])
+				.map((key) => [traversal.concat([key]), tree[key]]);
+			next.push(...branches);
+		}
+
+		level = next;
+		next = [];
+	}
+
+	return level.map(([traversal, tree]) => [traversal.join(''), tree]);
+}
+
+function deepMerge(branchOne: any, branchTwo: any): any | undefined {
 	if (!branchOne || !branchTwo) {
 		return branchOne || branchTwo;
 	} else {
-		const result = { ...branchTwo };
+		const result = { ...branchOne };
 
-		for (const [key, followTree] of Object.entries(branchOne)) {
-			const otherTree = branchTwo[key];
+		for (const [key, followTree] of Object.entries(branchTwo)) {
+			const otherTree = branchOne[key];
 			if (typeof otherTree === 'undefined') {
 				result[key] = followTree;
 			} else {
@@ -26,6 +56,51 @@ export function getStartTreeFromRoot(base: string, lookupTree: any): any {
 		const branchOne = lookup[char.toLowerCase()];
 		const branchTwo = lookup[char.toUpperCase()];
 		lookup = deepMerge(branchOne, branchTwo);
+
+		if (typeof lookup === 'undefined') {
+			return {};
+		}
+	}
+
+	return lookup;
+}
+
+function deepMergeEx(...branches: any[]): any | undefined {
+	const cleaned = branches.filter(Boolean);
+
+	if (cleaned.length === 0) {
+		return undefined;
+	}
+
+	const [first, ...others] = cleaned;
+
+	let result = first;
+	for (const other of others) {
+		result = deepMerge(result, other);
+	}
+
+	return result;
+}
+
+export function compareNoCase(char: string) {
+	return [char.toUpperCase(), char.toLowerCase()];
+}
+
+export function compareLaxSpecialCharacters(char: string) {
+	return [char.toUpperCase(), char.toLowerCase(), ',', "'"];
+}
+
+export function getStartTreeFromRootEx(
+	base: string,
+	lookupTree: any,
+	equivalentBranches: (char: string) => string[] = compareNoCase
+): any {
+	let lookup: any = lookupTree;
+
+	for (const char of base) {
+		const branchKeys = Array.from(new Set(equivalentBranches(char)));
+		const branches = branchKeys.map((key) => lookup[key]);
+		lookup = deepMergeEx(...branches);
 
 		if (typeof lookup === 'undefined') {
 			return {};
@@ -113,4 +188,12 @@ export function createCompletionListFromLookupTree(base: string, lookupTree: any
 	}
 
 	return words;
+}
+
+export function* iterMatchesInLookupTree(base: string, lookupTree: any): Generator<string> {
+	let traversals = getTraversalsFromBaseInLookupTree(base, lookupTree);
+
+	for (const [traversal, tree] of traversals) {
+		yield* iterCompletionListFromLookupTree(traversal, tree);
+	}
 }
