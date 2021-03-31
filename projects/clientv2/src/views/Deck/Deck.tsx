@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import useSWR, { mutate } from 'swr';
 import { Page } from '../../components/Page/Page';
 import { Decklist } from './components/Decklist/Decklist';
@@ -17,12 +17,13 @@ import { useQueryState } from 'src/hooks/useQueryState';
 import { reducer, initialState, Actions, DeckState } from './deck-state';
 import { AddCard } from './components/AddCard';
 import { useAsyncReducer } from 'src/hooks/useAsyncReducer';
-
-import styles from './deck.module.css';
 import { AddCardEventType } from './components/AddCard/AddCard';
 import { fetchAPIDeleteDeck } from 'src/api/fetch-api-delete-deck';
 import { useHistory } from 'react-router-dom';
 import { concatClassNames } from 'src/utils/concat-class-names';
+
+import styles from './deck.module.css';
+import { CardDetailView } from 'src/widgets/CardDetailView/CardDetailView';
 
 export type DeckControlButtonsProps = {
 	state: DeckState;
@@ -120,11 +121,12 @@ export function Deck(props: DeckProps) {
 		<Page>
 			{viewEditCard ? (
 				<Modal>
-					<EditCardModal
+					<CardDetailView cardUuid={viewEditCard.uuid} />
+					{/* <EditCardModal
 						onSubmit={onSubmitChange}
 						onCancel={() => dispatch(Actions.setEditCard(null))}
 						card={viewEditCard}
-					/>
+					/> */}
 				</Modal>
 			) : viewAddCard ? (
 				<Modal>

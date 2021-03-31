@@ -4,6 +4,7 @@ export type FetchAPIDeckCardResponse = {
 	name: string;
 	count: number;
 	image: string;
+	uuid: string;
 	art: string;
 	types: string;
 	manaCost: string;
