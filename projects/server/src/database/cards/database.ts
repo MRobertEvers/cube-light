@@ -2,12 +2,35 @@ import { Sequelize } from 'sequelize';
 const CARD_DATABASE_KEYS = ['name', 'uuid', 'scryfallId', 'types', 'manaCost'];
 const CARD_DATABASE_COLUMNS = CARD_DATABASE_KEYS.join(',');
 // 'Enchantment' | 'Creature' | 'Instant' | 'Sorcery' | 'Artifact' | 'Planeswalker' | 'Land'
+
+const CARD_DATA_KEYS_DETAILED = [
+	'name',
+	'uuid',
+	'scryfallId',
+	'types',
+	'subtypes',
+	'manaCost',
+	'text',
+	'setCode'
+];
+
 export type CardInfo = {
 	name: string;
 	uuid: string;
 	scryfallId: string;
 	types: string; // Comma separated types above.
 	manaCost: string; // {X}{W}
+};
+
+export type DetailedCardInfo = {
+	name: string;
+	uuid: string;
+	scryfallId: string;
+	types: string; // Comma separated types above.
+	subtypes: string;
+	manaCost: string; // {X}{W}
+	text: string;
+	setCode: string;
 };
 
 export class CardDatabase {
@@ -60,11 +83,25 @@ export class CardDatabase {
 	public async queryCardInfo(uuids: string[]): Promise<CardInfo[]> {
 		//Scryfallid
 		const query = this.db.query(
-			`SELECT ${CARD_DATABASE_COLUMNS} FROM cards WHERE scryfallId COLLATE NOCASE IN (:uuids)`,
+			`SELECT ${CARD_DATABASE_COLUMNS} FROM cards WHERE uuid COLLATE NOCASE IN (:uuids)`,
 			{
 				replacements: { uuids: uuids }
 			}
 		) as Promise<[CardInfo[], any]>;
+
+		const [result] = await query;
+
+		return result;
+	}
+
+	public async getCardDataByUuids(uuids: string[]): Promise<DetailedCardInfo[]> {
+		//Scryfallid
+		const query = this.db.query(
+			`SELECT ${CARD_DATA_KEYS_DETAILED} FROM cards WHERE uuid COLLATE NOCASE IN (:uuids)`,
+			{
+				replacements: { uuids: uuids }
+			}
+		) as Promise<[DetailedCardInfo[], any]>;
 
 		const [result] = await query;
 

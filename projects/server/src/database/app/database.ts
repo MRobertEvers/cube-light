@@ -41,7 +41,7 @@ export class Database {
 		const tables = [this.Deck, this.DeckCard];
 
 		for (const table of tables) {
-			// await table.sync({ force: false, alter: true });
+			await table.sync({ force: false });
 		}
 	}
 }

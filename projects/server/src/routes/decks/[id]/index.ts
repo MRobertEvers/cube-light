@@ -42,7 +42,7 @@ export function createRoutesDecksId(
 		const cardInfos = await cardDatabase.queryCardInfo(deckCards.map((dc) => dc.Uuid));
 
 		const cardInfosMapped: Record<string, CardInfo> = cardInfos.reduce((map, card) => {
-			map[card.scryfallId] = card;
+			map[card.uuid] = card;
 			return map;
 		}, {} as Record<string, CardInfo>);
 
@@ -64,8 +64,8 @@ export function createRoutesDecksId(
 		res.setHeader('Content-Type', 'application/json');
 
 		const cardData = deckCards.map((card) => {
-			const cardImage = cardImagesMapped[card.Uuid];
 			const cardData = cardInfosMapped[card.Uuid];
+			const cardImage = cardImagesMapped[cardData.scryfallId];
 			return {
 				...cardData,
 				image: cardImage?.image_uris.small,

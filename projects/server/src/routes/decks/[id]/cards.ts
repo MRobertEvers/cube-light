@@ -106,7 +106,7 @@ export function createRoutesDecksIdCards(
 		const card = await DeckCard.findOne({
 			where: {
 				DeckId: id,
-				Uuid: cardData.scryfallId
+				Uuid: cardData.uuid
 			}
 		});
 
@@ -117,13 +117,13 @@ export function createRoutesDecksIdCards(
 						await DeckCard.upsert({
 							DeckCardId: card.DeckCardId,
 							DeckId: id,
-							Uuid: cardData.scryfallId,
+							Uuid: cardData.uuid,
 							Count: card.Count + count
 						});
 					} else {
 						await DeckCard.upsert({
 							DeckId: id,
-							Uuid: cardData.scryfallId,
+							Uuid: cardData.uuid,
 							Count: count
 						});
 					}
@@ -147,7 +147,7 @@ export function createRoutesDecksIdCards(
 						await DeckCard.upsert({
 							DeckCardId: card.DeckCardId,
 							DeckId: id,
-							Uuid: cardData.scryfallId,
+							Uuid: cardData.uuid,
 							Count: card.Count - count
 						});
 					}
@@ -164,14 +164,14 @@ export function createRoutesDecksIdCards(
 						await DeckCard.upsert({
 							DeckCardId: card.DeckCardId,
 							DeckId: id,
-							Uuid: cardData.scryfallId,
+							Uuid: cardData.uuid,
 							Count: count
 						});
 					}
 				} else {
 					await DeckCard.upsert({
 						DeckId: id,
-						Uuid: cardData.scryfallId,
+						Uuid: cardData.uuid,
 						Count: count
 					});
 				}
