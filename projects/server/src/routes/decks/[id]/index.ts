@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
 import { createNameLookupTree } from '../../../app/create-name-lookup-tree';
-import { CardInfo, Database } from '../../../database/app/database';
-import { CardDatabase } from '../../../database/cards/database';
-import { fetchCardDataByScryFallIds, ScryfallCardInfo } from '../../../external/scryfall';
+import {
+	DeckOverviewCardInfo,
+	getDeckOverviewCardInfo
+} from '../../../app/get-deck-overview-card-info';
+import { Database } from '../../../database/app/database';
+import { CardDatabase } from '../../../database/cards/CardDatabase';
 import { PathBuilder } from '../../../utils/PathBuilder';
-import { Mapped } from '../../../utils/templates.types';
 import { createRoutesDecksIdCards } from './cards';
 
 export function createRoutesDecksId(
@@ -38,39 +40,24 @@ export function createRoutesDecksId(
 
 		// TODO: Typesafe findbypk function
 		const deckCards = deck.Deck_Cards!;
+		const deckCardsUuids = deckCards.map((dc) => dc.Uuid);
 
-		const cardInfos = await cardDatabase.queryCardInfo(deckCards.map((dc) => dc.Uuid));
+		const cards = await getDeckOverviewCardInfo(deckCardsUuids, cardDatabase);
 
-		const cardInfosMapped: Record<string, CardInfo> = cardInfos.reduce((map, card) => {
+		const cardInfosMapped = cards.reduce((map, card) => {
 			map[card.uuid] = card;
 			return map;
-		}, {} as Record<string, CardInfo>);
-
-		const cardImages =
-			cardInfos.length > 0
-				? (await fetchCardDataByScryFallIds(cardInfos.map((card) => card.scryfallId))).data
-				: [];
-
-		const cardImagesMapped: Record<string, ScryfallCardInfo> = cardImages.reduce(
-			(map, card) => {
-				map[card.id] = card;
-				return map;
-			},
-			{} as Record<string, ScryfallCardInfo>
-		);
+		}, {} as Record<string, DeckOverviewCardInfo>);
 
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 		res.setHeader('Content-Type', 'application/json');
 
-		const cardData = deckCards.map((card) => {
-			const cardData = cardInfosMapped[card.Uuid];
-			const cardImage = cardImagesMapped[cardData.scryfallId];
+		const cardData = deckCards.map((deckCard) => {
+			const cardData = cardInfosMapped[deckCard.Uuid];
 			return {
 				...cardData,
-				image: cardImage?.image_uris.small,
-				art: cardImage?.image_uris.art_crop,
-				count: card.Count
+				count: deckCard.Count
 			};
 		});
 

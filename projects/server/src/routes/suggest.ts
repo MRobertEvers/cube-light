@@ -1,7 +1,7 @@
 import path from 'path';
 import { Router } from 'express';
 import { Request, Response } from 'express';
-import { CardDatabase } from '../database/cards/database';
+import { CardDatabase } from '../database/cards/CardDatabase';
 import { PathBuilder } from '../utils/PathBuilder';
 
 const NAME_LOOKUP_TREE_FILEPATH = path.join(__dirname, '..', 'public', 'NameLookup.json');

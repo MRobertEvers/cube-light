@@ -1,6 +1,7 @@
 import { Router, urlencoded } from 'express';
 import { Request, Response } from 'express';
-import { CardDatabase, DetailedCardInfo } from '../database/cards/database';
+import { getCardsDetails } from '../app/get-cards-details';
+import { CardDatabase, DetailedCardInfo } from '../database/cards/CardDatabase';
 import { PathBuilder } from '../utils/PathBuilder';
 
 export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase) {
@@ -26,9 +27,8 @@ export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase)
 			uuids: string;
 		};
 
-		const names = uuidsListString.split(',');
-
-		const cards = await cardDatabase.getCardDataByUuids(names);
+		const uuids = uuidsListString.split(',');
+		const cards = await getCardsDetails(uuids, cardDatabase);
 
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Content-Type', 'application/json');
@@ -40,21 +40,16 @@ export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase)
 			uuid: string;
 		};
 
-		const cards = await cardDatabase.getCardDataByUuids([uuid]);
+		const [card] = await getCardsDetails([uuid], cardDatabase);
 
-		if (!cards) {
+		if (!card) {
 			res.sendStatus(400);
 			return;
 		}
 
-		const map = cards.reduce((map, item) => {
-			map[item.uuid] = item;
-			return map;
-		}, {} as Record<string, DetailedCardInfo>);
-
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Content-Type', 'application/json');
-		res.send(JSON.stringify(map));
+		res.send(JSON.stringify(card));
 	});
 
 	return app;

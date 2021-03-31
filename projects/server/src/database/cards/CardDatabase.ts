@@ -1,4 +1,7 @@
 import { Sequelize } from 'sequelize';
+import file from 'fs';
+import { SetListLookup } from '../../app/create-set-list-lookup';
+
 const CARD_DATABASE_KEYS = ['name', 'uuid', 'scryfallId', 'types', 'manaCost'];
 const CARD_DATABASE_COLUMNS = CARD_DATABASE_KEYS.join(',');
 // 'Enchantment' | 'Creature' | 'Instant' | 'Sorcery' | 'Artifact' | 'Planeswalker' | 'Land'
@@ -36,11 +39,23 @@ export type DetailedCardInfo = {
 export class CardDatabase {
 	private db: Sequelize;
 
-	constructor(sqlite: string) {
+	private setLookup: SetListLookup;
+
+	constructor(sqlite: string, setLookupPath: string) {
+		if (!file.existsSync(sqlite)) {
+			throw new Error('CardDatabase SQLite not found!' + sqlite);
+		}
+
+		if (!file.existsSync(setLookupPath)) {
+			throw new Error('Set Lookup not found!' + setLookupPath);
+		}
+
 		this.db = new Sequelize({
 			dialect: 'sqlite',
 			storage: sqlite
 		});
+
+		this.setLookup = JSON.parse(file.readFileSync(setLookupPath).toString());
 	}
 
 	public async getCardUuidsByNames(names: string[]): Promise<Record<string, string>> {
@@ -104,6 +119,21 @@ export class CardDatabase {
 		) as Promise<[DetailedCardInfo[], any]>;
 
 		const [result] = await query;
+
+		return result;
+	}
+
+	// [setCode, uuid]
+	public async getCardSets(name: string): Promise<Array<[string, string]>> {
+		const result: Array<[string, string]> = [];
+		const sets = this.setLookup[name];
+		if (!sets) {
+			return [];
+		}
+
+		for (const [setCode, uuids] of Object.entries(sets)) {
+			result.push(...uuids.map((uuid) => [setCode, uuid] as [string, string]));
+		}
 
 		return result;
 	}

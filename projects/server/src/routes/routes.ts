@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { Database } from '../database/app/database';
-import { CardDatabase } from '../database/cards/database';
+import { CardDatabase } from '../database/cards/CardDatabase';
 import { PathBuilder } from '../utils/PathBuilder';
 import { createRoutesCards } from './cards';
 import { createRoutesDecks } from './decks';

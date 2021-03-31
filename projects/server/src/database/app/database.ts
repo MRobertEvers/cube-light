@@ -38,7 +38,7 @@ export class Database {
 	}
 
 	public async initialize() {
-		const tables = [this.Deck, this.DeckCard];
+		const tables = [this.Deck, this.DeckCard, this.User];
 
 		for (const table of tables) {
 			await table.sync({ force: false });

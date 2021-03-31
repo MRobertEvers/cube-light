@@ -6,7 +6,9 @@
 	"scripts": {
 		"build": "tsc && npm run copy-static",
 		"start": "npm run build && node build/src/main.js",
-		"copy-static": "copyfiles -f ./src/public/* ./build/src/public ./src/assets/* ./build/src/assets"
+		"copy-static": "npm run copy-public && npm run copy-assets",
+		"copy-public": "copyfiles -f ./src/assets/* ./build/src/assets",
+		"copy-assets": "copyfiles -f ./src/public/* ./build/src/public"
 	},
 	"author": "",
 	"license": "ISC",

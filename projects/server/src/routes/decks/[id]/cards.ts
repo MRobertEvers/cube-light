@@ -2,7 +2,7 @@ import { Router, json } from 'express';
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import { Database } from '../../../database/app/database';
-import { CardDatabase } from '../../../database/cards/database';
+import { CardDatabase } from '../../../database/cards/CardDatabase';
 import { fetchCardDataByScryFallIds } from '../../../external/scryfall';
 import { PathBuilder } from '../../../utils/PathBuilder';
 

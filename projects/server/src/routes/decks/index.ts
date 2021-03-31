@@ -2,7 +2,7 @@ import { json, Router } from 'express';
 import type { Request, Response } from 'express';
 
 import { Op } from 'sequelize';
-import { CardDatabase } from '../../database/cards/database';
+import { CardDatabase } from '../../database/cards/CardDatabase';
 import { Database } from '../../database/app/database';
 import { PathBuilder } from '../../utils/PathBuilder';
 import { createRoutesDecksId } from './[id]';
