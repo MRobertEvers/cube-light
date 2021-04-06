@@ -1,0 +1,11 @@
+.card-detail-container {
+	background-color: white;
+
+	border: 1px solid rgb(229, 229, 229);
+	border-radius: 4px;
+	padding: 4px;
+}
+
+.card {
+	max-width: 260px;
+}

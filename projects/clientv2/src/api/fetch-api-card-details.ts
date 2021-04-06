@@ -15,8 +15,9 @@ export type FetchAPICardDetailsResponse = {
 	sets: Array<[string, string]>;
 
 	// From Scryfall;
-	image?: string;
-	art?: string;
+	image: string | null;
+	highResImage: string | null;
+	art: string | null;
 };
 
 export async function fetchAPICardDetails(uuid: string): Promise<FetchAPICardDetailsResponse> {

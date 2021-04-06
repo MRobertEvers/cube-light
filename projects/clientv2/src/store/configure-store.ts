@@ -3,7 +3,7 @@ import {
 	EnhancedStore,
 	getDefaultMiddleware
 } from '@reduxjs/toolkit';
-import { combineReducers, ReducersMapObject } from 'redux';
+import { ReducersMapObject } from 'redux';
 import { cardNameLookupSlice } from './card-name-lookup/card-name-lookup.state';
 import { createReducerManager, ReducerManager } from './create-reducer-manager';
 

@@ -1,1 +1,1 @@
-export type RootState = {};
+export type RootState = any & {};

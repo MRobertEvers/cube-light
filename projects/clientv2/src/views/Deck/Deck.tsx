@@ -121,7 +121,7 @@ export function Deck(props: DeckProps) {
 		<Page>
 			{viewEditCard ? (
 				<Modal>
-					<CardDetailView cardUuid={viewEditCard.uuid} />
+					<CardDetailView onEvent={() => {}} cardUuid={viewEditCard.uuid} />
 					{/* <EditCardModal
 						onSubmit={onSubmitChange}
 						onCancel={() => dispatch(Actions.setEditCard(null))}
