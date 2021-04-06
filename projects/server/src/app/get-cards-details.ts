@@ -24,8 +24,9 @@ export type CompleteCardInfo = {
 	sets: Array<[string, string]>;
 
 	// From Scryfall;
-	image?: string;
-	art?: string;
+	image: string | null;
+	highResImage: string | null;
+	art: string | null;
 };
 
 export async function getCardsDetails(
@@ -45,7 +46,10 @@ export async function getCardsDetails(
 
 		return {
 			...card,
-			sets: sets
+			sets: sets,
+			highResImage: card.images?.normal || null,
+			image: card.images?.small || null,
+			art: card.images?.art_crop || null
 		};
 	});
 }

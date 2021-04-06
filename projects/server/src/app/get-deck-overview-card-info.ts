@@ -22,6 +22,7 @@ export type DeckOverviewCardInfo = {
 
 	// From Scryfall;
 	image?: string;
+	images?: ScryfallCardInfo['image_uris'];
 	art?: string;
 };
 
@@ -50,6 +51,7 @@ export async function getDeckOverviewCardInfo(
 		return {
 			...baseCard,
 			image: images?.image_uris.small,
+			images: images?.image_uris,
 			art: images?.image_uris.art_crop
 		};
 	});
