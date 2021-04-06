@@ -62,11 +62,6 @@
 	flex-grow: 1;
 }
 
-.decklist-groups {
-	display: flex;
-	flex-wrap: wrap;
-}
-
 .hover-card {
 	position: absolute;
 }

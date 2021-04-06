@@ -26,6 +26,7 @@
 	/* margin: 12px 40px; */
 	border-collapse: collapse;
 	text-align: left;
+	break-inside: avoid;
 	width: 100%;
 }
 
