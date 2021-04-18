@@ -1,0 +1,19 @@
+.combobox input[type='search'] {
+	-moz-appearance: textfield;
+	box-sizing: border-box;
+	width: 240px;
+	outline: none;
+	background-color: transparent;
+	border: 1px solid rgb(219, 219, 219);
+	border-radius: 4px;
+	font-size: 14px;
+	padding: 1px 4px;
+	height: 32px;
+	vertical-align: top;
+}
+
+.combobox input[type='search']:focus {
+	box-shadow: 0 0 0 1px rgb(219, 219, 219);
+	background-color: white;
+	outline: none;
+}

@@ -100,7 +100,7 @@ export function DecklistGroup(props: DecklistGroupProps) {
 		<>
 			{groups.map(({ groupData, name }) => {
 				return (
-					<table className={styles['decklist-groups']}>
+					<table key={name} className={styles['decklist-groups']}>
 						<tbody>
 							<DecklistCategory
 								key={name}

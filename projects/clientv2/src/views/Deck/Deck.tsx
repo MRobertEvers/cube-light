@@ -24,6 +24,7 @@ import { concatClassNames } from 'src/utils/concat-class-names';
 
 import styles from './deck.module.css';
 import { CardDetailView } from 'src/widgets/CardDetailView/CardDetailView';
+import { DeckBulkEditor } from 'src/widgets/DeckBulkEditor/DeckBulkEditor';
 
 export type DeckControlButtonsProps = {
 	state: DeckState;
@@ -121,12 +122,12 @@ export function Deck(props: DeckProps) {
 		<Page>
 			{viewEditCard ? (
 				<Modal>
-					<CardDetailView onEvent={() => {}} cardUuid={viewEditCard.uuid} />
-					{/* <EditCardModal
+					{/* <CardDetailView onEvent={() => {}} cardUuid={viewEditCard.uuid} /> */}
+					<EditCardModal
 						onSubmit={onSubmitChange}
 						onCancel={() => dispatch(Actions.setEditCard(null))}
 						card={viewEditCard}
-					/> */}
+					/>
 				</Modal>
 			) : viewAddCard ? (
 				<Modal>
@@ -145,6 +146,7 @@ export function Deck(props: DeckProps) {
 					/>
 				</Modal>
 			) : undefined}
+			<DeckBulkEditor deckId={deckId} />
 			<div className={styles['index-container-top']}></div>
 			<div className={styles['index-container']}>
 				<div className={styles['banner-container']}>

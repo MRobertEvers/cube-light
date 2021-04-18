@@ -9,6 +9,7 @@ export type FetchAPIDeckCardResponse = {
 	types: string;
 	manaCost: string;
 };
+
 export type FetchAPIDeckResponse = {
 	name: string;
 	icon: string;

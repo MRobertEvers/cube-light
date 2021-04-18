@@ -1,0 +1,65 @@
+.combobox {
+	position: relative;
+	width: 240px;
+}
+
+.combobox input[type='search'] {
+	-moz-appearance: textfield;
+	box-sizing: border-box;
+	outline: none;
+	width: 100%;
+	background-color: transparent;
+	border: 1px solid rgb(219, 219, 219);
+	border-radius: 4px;
+	font-size: 14px;
+	padding: 1px 4px;
+	height: 32px;
+	vertical-align: top;
+}
+
+.combobox input[type='search']:focus {
+	box-shadow: 0 0 0 1px rgb(219, 219, 219);
+	background-color: white;
+	outline: none;
+}
+
+.suggestions {
+	list-style-type: none;
+	margin: 0;
+	max-height: 120px;
+	position: absolute;
+	width: 100%;
+	background-color: white;
+	max-height: 120px;
+	overflow: auto;
+	padding: 0px;
+	box-sizing: border-box;
+	border-radius: 6px;
+	border-top-right-radius: 0px;
+	border-top-left-radius: 0px;
+	border: 1px solid #cecaca;
+}
+
+.suggestions > li {
+	box-sizing: border-box;
+	padding: 2px;
+	padding-left: 4px;
+	border-bottom: 1px solid #cecaca;
+	cursor: pointer;
+}
+
+.suggestions > li:last-child {
+	border-bottom: none;
+}
+
+.suggestions > li:hover,
+.suggestions > li:focus {
+	padding: 2px;
+	padding-left: 4px;
+	font-weight: bold;
+	outline: none;
+}
+
+.hidden {
+	visibility: hidden;
+}
