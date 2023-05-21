@@ -1,7 +1,6 @@
-import { Router, urlencoded } from 'express';
-import { Request, Response } from 'express';
+import { Request, Response, Router, urlencoded } from 'express';
 import { getCardsDetails } from '../app/get-cards-details';
-import { CardDatabase, DetailedCardInfo } from '../database/cards/CardDatabase';
+import { CardDatabase } from '../database/cards/CardDatabase';
 import { PathBuilder } from '../utils/PathBuilder';
 
 export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase) {

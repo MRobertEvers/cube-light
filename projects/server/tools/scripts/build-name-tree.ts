@@ -16,6 +16,6 @@ async function main() {
 
 	const lookupTree = createNameLookupTree(iterAllPrintingCardNames(allPrintingsJson));
 
-	saveLookupTreeToFile(path.join(SRC_PATH, 'src/public/NameLookup.json'), lookupTree);
+	saveLookupTreeToFile(path.join(SRC_PATH, 'public/NameLookup.json'), lookupTree);
 }
 main();

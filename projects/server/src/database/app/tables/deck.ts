@@ -1,6 +1,5 @@
 import * as Sequelize from 'sequelize';
-import { DeckCard } from './deck-card';
-import { User } from './user';
+import { DeckCard } from './deck_card';
 
 export class Deck extends Sequelize.Model {
 	public DeckId!: number;
@@ -26,7 +25,8 @@ export function DefineDeckModel(database: Sequelize.Sequelize): typeof Deck {
 				autoIncrement: true
 			},
 			Name: {
-				type: Sequelize.STRING(1024)
+				type: Sequelize.STRING(1024),
+				allowNull: false
 			},
 			Art: {
 				type: Sequelize.STRING(1024)

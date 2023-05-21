@@ -13,7 +13,7 @@ const SET_LOOKUP_PATH = path.join(__dirname, './public/SetLookup.json');
 
 async function main() {
 	const cDb = new CardDatabase(CARD_DATABASE_PATH, SET_LOOKUP_PATH);
-	const db = await Database.createDatabase('database.sqlite');
+	const db = await Database.Sqlite('database.sqlite');
 
 	const app = express();
 
