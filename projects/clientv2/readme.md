@@ -205,9 +205,117 @@ A string existing in the MTG catalog is not evidence that it is in the photo. Li
 
 The browser harness blocks requests to the annotation file and saved experiment-result directory during fresh recognition. Evaluation runs afterward in Node. The successful run recorded **zero requests to either blocked fixture source and zero non-GET/HEAD requests**. All image analysis stayed in Chrome. Model/runtime assets and reference images may be downloaded; this is browser-local computation, not a fully offline application. The audit checks a known implementation and is not a general network-security proof.
 
-The experimental path currently needs WebGPU for GLM; the current client's Paddle path uses WASM. The prepared GLM FP16 weight files total approximately 2.2 GB on disk, which is not a measurement of peak browser memory. A 34,299 × 1,536-element Float32 font matrix alone is about 201 MiB, before projections, image buffers and models. Mobile memory use and thermals have not been measured.
+### Model and runtime asset sizes
 
-Some experimental geometry and font comparison still run on the browser's main thread. The integrated adapter preserves the queue and provides stage-aware progress and cancellation. Further production hardening still needs worker isolation where feasible, model/index reuse, reference caching, and testing across devices. The build verifies the installed model assets, and the scanner checks for WebGPU. References currently cover normal layouts and limited frame variants; special layouts, languages, other sleeves, severe glare and non-coplanar cards need additional testing.
+Sizes below are measured from the installed files in [deploy/ocr-assets.json](../../deploy/ocr-assets.json). **MiB means 1,048,576 bytes; GiB means 1,073,741,824 bytes.** File size, transferred bytes, JavaScript heap size and resident process memory are different measurements.
+
+| Deployed asset | Exact bytes | Size | Distribution |
+| --- | ---: | ---: | --- |
+| Paddle v5 mobile detector, ONNX archive | 4,843,520 | 4.62 MiB | GitHub |
+| Paddle v6 small recognizer, ONNX archive | 21,319,680 | 20.33 MiB | GitHub |
+| GLM FP16 decoder external weights | 1,164,318,720 | 1,110.38 MiB | NAS |
+| GLM FP16 token embeddings external weights | 182,452,224 | 174.00 MiB | NAS |
+| GLM FP16 vision encoder external weights | 868,340,736 | 828.11 MiB | NAS |
+| GLM ONNX graph files, tokenizer and configuration combined | 6,175,764 | 5.89 MiB | GitHub |
+| Full card-name catalog | 658,950 | 0.63 MiB | GitHub |
+| Printing/reference identifier catalog | 5,838,595 | 5.57 MiB | GitHub |
+| Beleren title font | 58,180 | 0.06 MiB | GitHub |
+| **All 19 declared runtime assets** | **2,254,006,369** | **2,149.59 MiB / 2.10 GiB** | **37.09 MiB GitHub + 2,112.49 MiB NAS** |
+
+The total is **2.254 GB in decimal units**. GLM's complete model/configuration directory alone is 2,221,287,444 bytes (2,118.38 MiB). The three NAS files are 2,215,111,680 bytes combined. Each exceeds GitHub's normal 100 MiB per-file limit. Small ONNX graph files refer to those external weights; checking in a graph does not make its large weight file optional. The installer verifies both size and SHA-256 before accepting an asset.
+
+These figures exclude the application JavaScript, runtime libraries, reference card images, browser caches, and experimental models that are not deployed. The build contains approximately 27.00 MiB and 25.62 MiB ONNX Runtime Web WASM binaries for different execution paths; presence in `dist` does not mean every path downloads both. OpenCV and other library code also contribute to the scanner JavaScript chunk. Paddle's SDK can load its own runtime assets separately. Needed reference printings are downloaded on demand—the successful scan used 110—but the app does not download the entire printing catalog's images.
+
+The first installation from the NAS copies the large files onto the application host. A fresh browser must then fetch whichever deployed model/runtime assets it needs from that host. Initial NAS installation time, browser download time, model initialization time and recognition time must be budgeted separately. Model weights being cached does not mean the in-memory model session is reused: the current scanner reconstructs its GLM session and disposes it on every scan, and Transformers' application-level browser model cache is disabled in this implementation. HTTP caching is a separate mechanism.
+
+For comparison, the prepared model files from the unsuccessful experiments have these sizes. This table measures model/graph payloads, excluding tokenizer/configuration files and diagnostic tensors; it is **not** a RAM benchmark or a proposal to download all of these in the client.
+
+| Experimental model/export | Prepared model payload | Used in deployed pipeline? |
+| --- | ---: | --- |
+| Paddle v5 English recognizer, ONNX | 7.48 MiB | No |
+| Paddle v5 server recognizer, ONNX | 80.59 MiB | No |
+| Paddle v6 medium recognizer, ONNX | 73.01 MiB | No |
+| Tesseract English best trained data | 14.69 MiB | No |
+| Florence-2 base FT, FP16 vision/embeddings + Q4 encoder/decoder | 340.62 MiB | No |
+| TrOCR small printed, Q8 encoder/decoder | 60.66 MiB | No |
+| MGP-STR, quantized | 143.29 MiB | No |
+| PARSeq, non-autoregressive + refinement | 91.26 MiB | No |
+| PARSeq, autoregressive + refinement | 92.85 MiB | No |
+| Qwen3-VL 2B, Q4F16 decoder/embeddings + FP16 vision | 1,758.43 MiB | No |
+| Visions recognizer ONNX | 1.14 MiB | No |
+| Visions synthetic-font fine-tuned recognizer ONNX | 1.14 MiB | No |
+
+A small model can still perform poorly on blurred titles, and a large model can confidently choose the wrong name. The earlier accuracy tables describe what these specific exports achieved; no runtime-memory ranking was measured for these rejected alternatives.
+
+### Why live memory is much larger than model storage
+
+The code's explicitly sized buffers explain part of the demand, but they are not an exhaustive memory accounting:
+
+- One decoded RGBA copy of the 5712 × 4284 photo occupies **97,880,832 bytes / 93.35 MiB**. ImageBitmap, Canvas, OpenCV input/output matrices and perspective-corrected images may hold additional copies or differently sized surfaces.
+- After excluding 204 `A-` names, the font index contains **34,095 entries**. Its 96 × 16 Float32 descriptors occupy **199.78 MiB**; its 96-element projections add **12.49 MiB**, for **212.26 MiB of typed-array payload per index**, before strings and JavaScript objects.
+- The current light, ink and plane passes build indexes separately. References to an old index going out of scope do not force immediate garbage collection. The ink and plane indexes use the same blur setting and could be reused.
+- ONNX loading can involve downloaded buffers, parsed/converted tensors, WASM linear memory, WebGPU buffers, intermediate activations, decoding state and allocator pools. The model file size is neither peak RAM nor peak GPU-memory usage.
+- The full diagnostic scanner retains per-stage outputs until it returns. The client adapter retains accepted candidates for the queue and releases its object URL afterward, but that does not immediately return all native, WASM or GPU allocations to the operating system.
+
+### Measured runtime memory and responsiveness
+
+The deployed production bundle was profiled on **21 September 2026, Chrome 153.0.8010.52, macOS arm64, Apple M4 Max, 48 GiB RAM**. Two consecutive scans ran in the same fresh browser session against `http://127.0.0.1:3000`, without forcing garbage collection between them. Both still recovered all twelve names with zero accepted false matches. These instrumented timings supplement, rather than replace, the earlier 173.48 s unprofiled benchmark.
+
+| Measurement | First scan | Repeat scan, same tab |
+| --- | ---: | ---: |
+| Measured scan time | 179.52 s | 192.37 s |
+| Correct names / accepted false matches | 12/12 / 0 | 12/12 / 0 |
+| Sampled peak, summed Chrome process RSS | 6.31 GiB | 6.85 GiB |
+| Main-page JavaScript heap sampled peak | 140.6 MiB | 152.5 MiB |
+| GPU helper process sampled peak RSS | 1084.0 MiB | 1425.0 MiB |
+| Summed process RSS after 10 seconds idle | 4.05 GiB | 5.15 GiB |
+| Main-page JS heap after 10 seconds idle | 19.1 MiB | 11.3 MiB |
+| Main-thread tasks longer than 50 ms | 346 | 345 |
+| Longest main-thread task | 11.24 s | 12.82 s |
+| Sum of task duration beyond 50 ms | 74.67 s | 91.82 s |
+| Page-observed encoded transfer bytes | 2.264 GB | 2.228 GB |
+
+The idle browser/fixture baseline before importing the scanner was **1.05 GiB summed RSS**. After the second scan and a separate diagnostic forced garbage collection, summed RSS remained **5.15 GiB**, while the main-page JS heap was only **11.0 MiB**. Reclaiming JavaScript objects therefore did not return the whole process footprint to its initial level. Native/WASM/GPU allocations, pools, code and browser caches are outside that heap number. Two scans are insufficient to establish a leak, a steady-state plateau or a safe maximum queue length.
+
+The repeat scan was approximately **7.2% slower**, despite reference loading/comparison dropping from **13.41 s to 1.21 s**. Font proposal work increased from **83.39 s to 99.44 s**, and GLM work from **34.91 s to 40.80 s**. These two observations do not identify the cause of the slowdown; an allocation/GC trace and a larger repeat-run sample would be needed. The observed multi-gigabyte transfer on the repeat also shows that a second scan is not equivalent to retaining an initialized model in memory.
+
+The long tasks matter for the UI: an 11–13 second task can prevent main-thread input and progress updates during that interval. The reported “sum beyond 50 ms” is the sum of `max(task.duration - 50 ms, 0)` over the scan, not a Lighthouse score or one continuous freeze. The model inference being browser-local does not make all of the surrounding image processing nonblocking.
+
+#### Measurement method and limits
+
+[profile-client-memory.mjs](../../benchmarks/card-ocr/profile-client-memory.mjs) launches an isolated headless Chrome instance and identifies its process tree through the browser DevTools connection. It samples OS RSS roughly every second and the main-page DevTools JavaScript heap roughly every two seconds; 396 process samples were recorded in this session. It also records long tasks and page-observed network transfer counts. The original JPEG is materialized as a Blob URL before the timed scan, and the baseline includes that automation/fixture setup. Model installation is excluded. Normal HTTP caching remains enabled; no Playwright request-routing interception is used. Saved recognition results and annotations are blocked, and scoring occurs after each scan outside the browser.
+
+- **Summed RSS is a process-tree measurement**, including the browser, renderer, GPU helper and utility processes. It excludes the Node profiler and application servers, and excludes the user's other Chrome instance. Shared pages may be counted more than once. It is not unique physical memory attributed solely to the scanner.
+- **GPU-process RSS is CPU-visible resident memory of that process**, not a measurement of all WebGPU/Metal buffer allocations or VRAM. On this unified-memory machine, the two must not be equated. Total GPU allocation and private physical footprint were not directly measured.
+- **JavaScript heap is only the main-page JS heap.** It does not comprehensively account for worker heaps, typed-array backing stores, WASM linear memory, Canvas/image surfaces or GPU allocations. This is why a roughly 150 MiB heap can accompany several GiB of process RSS. See [Chrome's distinction between OS and JS memory](https://developer.chrome.com/docs/devtools/memory-problems).
+- **Peaks are sampled maxima.** Shorter transient spikes may be missed. Memory samples carry the last reported progress label; the following model's setup may begin before another progress event arrives. The raw phase labels are not per-model allocation accounting.
+- **Network counts are page-observed encoded bytes**, not a complete accounting of workers, other browser processes, TLS overhead or every transferred asset. They are useful diagnostics, not a replacement for the exact file manifest.
+- System-wide reported swap usage was **229.44 MiB before and after**. This is a net system counter, not proof that the scan performed no paging or compression.
+
+The compact evidence is [memory-benchmark-summary.json](../../benchmarks/card-ocr/memory-benchmark-summary.json). Raw samples are in the gitignored `photo-results/client-memory-profile.json`. The baseline and memory retained after a scan are part of this experiment, not a guaranteed minimum or maximum device-RAM requirement. No mobile-memory, mobile-thermal, battery, allocation-bandwidth or multi-photo endurance benchmark has been completed.
+
+#### Reproduce this profile
+
+With the production client running and the local benchmark photo present, run from `benchmarks/card-ocr`:
+
+```sh
+# Defaults to the deployed localhost:3000 build and two scans.
+node profile-client-memory.mjs
+node summarize-memory.mjs
+```
+
+`PROFILE_ORIGIN` selects another deployment of the same built assets; `PROFILE_RUNS` selects the number of consecutive scans. The profiler reads the scanner chunk name from `projects/clientv2/dist/assets`, so that local build must correspond to the deployment being profiled. The current OS sampler uses macOS `ps` and `sysctl`, and the harness defaults to this workstation's Chrome executable. It needs adaptation for other platforms. The forced-GC diagnostic runs only after all measured scans and their idle periods.
+
+### Resource tradeoffs to address next
+
+The measured footprint is currently suited to a desktop experiment; a supported minimum RAM specification has not been established. The next engineering changes should be tested for both time and peak/retained memory:
+
+1. **Reuse font indexes and reduce duplicate proposals.** A cached index deliberately retains about 212 MiB of typed arrays, but can avoid repeated rendering, allocation and collection. The ink and plane passes can share one index. Reuse is a latency/idle-memory tradeoff, not a free memory reduction.
+2. **Move heavy CPU phases off the UI thread.** Geometry and glyph comparison need a worker/OffscreenCanvas-compatible implementation or finer yielding. A worker improves responsiveness but does not automatically reduce total memory; copying full images between workers could increase it.
+3. **Choose an explicit model lifetime.** Reusing GLM can avoid repeated weight transfers and initialization, while keeping model memory resident between jobs. Conversely, terminating an isolated processing context between batches may release more resources, at the cost of cold startup. Both policies need repeat-scan measurements.
+4. **Reduce working copies and retained diagnostics.** Close ImageBitmaps, delete OpenCV matrices, dispose tensors, and avoid retaining full intermediate pass outputs when the UI only needs accepted candidates. Disposal calls alone do not prove that browser/native allocators returned memory to the OS; verify with process measurements.
+5. **Validate lighter model/precision options against accuracy.** Smaller weights do not guarantee lower peak memory or preserved recognition. Any quantization, smaller recognizer or reduced resolution must rerun the distinct-name/false-acceptance gate and an independent photo set.
+
 
 ### Reproduce the benchmark
 
@@ -242,10 +350,11 @@ The measured bottleneck is proposal generation and font comparison: together wit
 
 Next, retain model sessions across the client's image queue and precompute/cache reference title features so repeated scans do not reload full reference images. Keep the additional reference and GLM stages selective. Preserve the rejection checks while optimizing; the faster result is not useful if it silently accepts fragments or plausible wrong names.
 
-Before enabling automatic deck additions from the combined method, evaluate a separate photo set containing different phones, sleeves, angles, blur levels, short names, repeated cards and layouts. Report distinct-name recall, instance recall, false acceptances, review rate, cold/warm latency and peak memory separately. The supplied photo now passes; reliability outside this development fixture remains unmeasured.
+Before treating automatic deck additions as broadly reliable, evaluate a separate photo set containing different phones, sleeves, angles, blur levels, short names, repeated cards and layouts. Report distinct-name recall, instance recall, false acceptances, review rate, cold/warm latency and peak memory separately. The supplied photo now passes; reliability outside this development fixture remains unmeasured.
 
 ### Evidence and implementation links
 
+- [Model manifest and exact sizes](../../deploy/ocr-assets.json) and [measured memory/latency profile](../../benchmarks/card-ocr/memory-benchmark-summary.json)
 - [Latest measured result and stage timings](../../benchmarks/card-ocr/experimental-benchmark-summary.json)
 - [Earlier OCR baseline measurements](../../benchmarks/card-ocr/photo-benchmark-summary.json)
 - [Current benchmark report](../../benchmarks/card-ocr/EXPERIMENT-STATUS.md) and [historical research notes](../../benchmarks/card-ocr/EXPERIMENT-HISTORY.md)

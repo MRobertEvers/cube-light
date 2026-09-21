@@ -1,0 +1,254 @@
+{
+  "date": "2026-09-21T23:29:44.059Z",
+  "sourceCommit": "2950a7313ca520f745bba25b61426a9c39665525",
+  "environment": {
+    "browser": "153.0.8010.52",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M4 Max",
+    "ramBytes": 51539607552,
+    "swapBefore": "vm.swapusage: total = 1024.00M  used = 229.44M  free = 794.56M  (encrypted)",
+    "origin": "http://127.0.0.1:3000",
+    "swapAfter": "vm.swapusage: total = 1024.00M  used = 229.44M  free = 794.56M  (encrypted)",
+    "headless": true,
+    "bundle": "experimental-scanner-B2ljTg54.js"
+  },
+  "methodology": {
+    "rssIntervalMs": 1000,
+    "heapIntervalMs": 2000,
+    "forcedGC": "Only after both measured runs; no forced GC between scans",
+    "httpCache": "Normal browser HTTP cache; fixture passed as a Blob URL, no Playwright request routing",
+    "scope": "Isolated Chrome process tree only; excludes Node profiler and frontend/API servers",
+    "rss": "Sum of ps RSS; shared pages can be counted multiple times; not unique physical memory or complete GPU allocation accounting",
+    "heap": "CDP main-page JS heap only; does not comprehensively include workers, ArrayBuffers, WASM or WebGPU allocations",
+    "network": "CDP page-observed encodedDataLength; not a complete worker/OS/TLS traffic accounting",
+    "peaks": "Sampled maxima, not guaranteed instantaneous peaks",
+    "phaseLabels": "Last reported progress phase; following-stage setup can occur before the next progress event",
+    "fixture": "Original JPEG materialized as a Blob URL from automation-supplied bytes before timed scans; baseline includes fixture setup"
+  },
+  "baseline": {
+    "ms": 3417,
+    "bytes": 1131003904,
+    "gpuProcessRssBytes": 144752640
+  },
+  "runs": [
+    {
+      "number": 1,
+      "milliseconds": 179523.80000001192,
+      "names": 12,
+      "falsePositives": 0,
+      "peakProcessRssBytes": 6777651200,
+      "peakJSHeapUsedBytes": 147410356,
+      "peakGPUProcessRssBytes": 1136705536,
+      "idleImmediate": {
+        "ms": 183446,
+        "bytes": 4688150528,
+        "gpuProcessRssBytes": 1133641728
+      },
+      "idleAfter10Seconds": {
+        "ms": 193466,
+        "bytes": 4352606208,
+        "gpuProcessRssBytes": 1126727680
+      },
+      "idleHeapAfter10Seconds": 19985616,
+      "longTasks": {
+        "count": 346,
+        "totalMs": 91967,
+        "blockingMs": 74667,
+        "maxMs": 11236
+      },
+      "observedTransferBytes": 2264071212,
+      "phases": [
+        {
+          "phase": "module-loading",
+          "samples": 2,
+          "peakRssBytes": 2254127104,
+          "peakJSHeapBytes": 40020784
+        },
+        {
+          "phase": "Read visible titles",
+          "samples": 43,
+          "peakRssBytes": 2942042112,
+          "peakJSHeapBytes": 32917100
+        },
+        {
+          "phase": "Title proposals: light",
+          "samples": 21,
+          "peakRssBytes": 3186966528,
+          "peakJSHeapBytes": 47478648
+        },
+        {
+          "phase": "Title proposals: ink",
+          "samples": 37,
+          "peakRssBytes": 4471472128,
+          "peakJSHeapBytes": 56738040
+        },
+        {
+          "phase": "Title proposals: plane",
+          "samples": 15,
+          "peakRssBytes": 4416438272,
+          "peakJSHeapBytes": 41611508
+        },
+        {
+          "phase": "Refine printed-name matches",
+          "samples": 12,
+          "peakRssBytes": 4207296512,
+          "peakJSHeapBytes": 54567052
+        },
+        {
+          "phase": "Load printed titles",
+          "samples": 17,
+          "peakRssBytes": 6777651200,
+          "peakJSHeapBytes": 127538148
+        },
+        {
+          "phase": "Verify ambiguous names",
+          "samples": 29,
+          "peakRssBytes": 4801888256,
+          "peakJSHeapBytes": 147410356
+        },
+        {
+          "phase": "idle-after-scan",
+          "samples": 12,
+          "peakRssBytes": 4688150528,
+          "peakJSHeapBytes": 122375644
+        }
+      ],
+      "timings": [
+        {
+          "engine": "paddle",
+          "totalMs": 36232.39999997616
+        },
+        {
+          "engine": "font-proposals",
+          "totalMs": 83387.20000004768
+        },
+        {
+          "engine": "font-refinement",
+          "totalMs": 11037.699999988079
+        },
+        {
+          "engine": "printed-reference-title-matching",
+          "totalMs": 13409.400000035763
+        },
+        {
+          "engine": "glm-finite-catalog",
+          "totalMs": 34910.19999998808
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "milliseconds": 192374.69999998808,
+      "names": 12,
+      "falsePositives": 0,
+      "peakProcessRssBytes": 7359463424,
+      "peakJSHeapUsedBytes": 159896732,
+      "peakGPUProcessRssBytes": 1494188032,
+      "idleImmediate": {
+        "ms": 385921,
+        "bytes": 5975031808,
+        "gpuProcessRssBytes": 1294204928
+      },
+      "idleAfter10Seconds": {
+        "ms": 395955,
+        "bytes": 5524783104,
+        "gpuProcessRssBytes": 1287290880
+      },
+      "idleHeapAfter10Seconds": 11874260,
+      "longTasks": {
+        "count": 345,
+        "totalMs": 109066,
+        "blockingMs": 91816,
+        "maxMs": 12817
+      },
+      "observedTransferBytes": 2228033006,
+      "phases": [
+        {
+          "phase": "module-loading",
+          "samples": 1,
+          "peakRssBytes": 4724408320,
+          "peakJSHeapBytes": 26287420
+        },
+        {
+          "phase": "Read visible titles",
+          "samples": 46,
+          "peakRssBytes": 5315428352,
+          "peakJSHeapBytes": 33761772
+        },
+        {
+          "phase": "Title proposals: light",
+          "samples": 22,
+          "peakRssBytes": 5639864320,
+          "peakJSHeapBytes": 53353408
+        },
+        {
+          "phase": "Title proposals: ink",
+          "samples": 47,
+          "peakRssBytes": 6498648064,
+          "peakJSHeapBytes": 47657532
+        },
+        {
+          "phase": "Title proposals: plane",
+          "samples": 19,
+          "peakRssBytes": 6501187584,
+          "peakJSHeapBytes": 53267784
+        },
+        {
+          "phase": "Refine printed-name matches",
+          "samples": 12,
+          "peakRssBytes": 6141558784,
+          "peakJSHeapBytes": 53962956
+        },
+        {
+          "phase": "Load printed titles",
+          "samples": 6,
+          "peakRssBytes": 7359463424,
+          "peakJSHeapBytes": 99318816
+        },
+        {
+          "phase": "Verify ambiguous names",
+          "samples": 35,
+          "peakRssBytes": 6009094144,
+          "peakJSHeapBytes": 159896732
+        },
+        {
+          "phase": "idle-after-scan",
+          "samples": 12,
+          "peakRssBytes": 5975031808,
+          "peakJSHeapBytes": 117321856
+        }
+      ],
+      "timings": [
+        {
+          "engine": "paddle",
+          "totalMs": 37858.80000001192
+        },
+        {
+          "engine": "font-proposals",
+          "totalMs": 99437.80000001192
+        },
+        {
+          "engine": "font-refinement",
+          "totalMs": 12596.099999964237
+        },
+        {
+          "engine": "printed-reference-title-matching",
+          "totalMs": 1206.8999999761581
+        },
+        {
+          "engine": "glm-finite-catalog",
+          "totalMs": 40803.200000047684
+        }
+      ]
+    }
+  ],
+  "afterForcedGC": {
+    "ms": 398985,
+    "bytes": 5524750336,
+    "gpuProcessRssBytes": 1287290880,
+    "jsHeapUsedBytes": 11515620
+  },
+  "errors": [],
+  "forbiddenFixtureRequests": []
+}

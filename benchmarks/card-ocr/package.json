@@ -20,7 +20,9 @@
     "score:photo": "node score-photo.mjs",
     "report:experiments": "node report-experiments.mjs",
     "bench:experimental": "node run-experimental.mjs",
-    "bench:experimental:gate": "node run-experimental.mjs --require-target"
+    "bench:experimental:gate": "node run-experimental.mjs --require-target",
+    "bench:memory": "node profile-client-memory.mjs",
+    "summarize:memory": "node summarize-memory.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "3.8.1",
