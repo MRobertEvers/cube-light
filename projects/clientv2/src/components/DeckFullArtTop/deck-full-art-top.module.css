@@ -1,0 +1,27 @@
+.top { position: relative; height: clamp(290px, 34vw, 440px); overflow: hidden; background: var(--deck-wash, #f5f2f0); }
+.desktopArt, .mobileArt { position: absolute; inset: 0; }
+.mobileArt { display: none; }
+.fade {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background: linear-gradient(180deg, rgba(20, 15, 15, 0.53) 0%, rgba(20, 15, 15, 0.08) 38%, var(--deck-wash, #f5f2f0) 100%);
+}
+.content { position: relative; box-sizing: border-box; max-width: var(--max-width); margin: 0 auto; padding: 46px 20px; color: white; text-shadow: 0 2px 7px rgba(0,0,0,.65); pointer-events: none; }
+.title, .titleButton { margin: 0 0 8px; color: white; font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.1; }
+.titleButton { pointer-events: auto; display: block; padding: 0; border: 0; background: none; font-family: inherit; font-weight: 700; text-align: left; cursor: pointer; }
+.titleButton:hover { text-decoration: underline; }
+.subtitle { font-size: 1rem; }
+.mobile { height: 300px; }
+.mobile .desktopArt { display: none; }
+.mobile .mobileArt { display: block; }
+.mobile .content { padding: 28px 18px; }
+.mobile .title, .mobile .titleButton { font-size: 2rem; }
+
+@media (max-width: 680px) {
+	.responsive { height: 300px; }
+	.responsive .desktopArt { display: none; }
+	.responsive .mobileArt { display: block; }
+	.responsive .content { padding: 30px 16px; }
+	.responsive .title, .responsive .titleButton { font-size: 2rem; }
+}

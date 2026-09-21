@@ -6,34 +6,26 @@ import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
 
 import styles from './decklist.module.css';
 import { SpotlightCard } from 'src/widgets/SpotlightCard/SpotlightCard';
+import type { BannerCrop } from '../../../../utils/banner-crop';
+import type { DeckTopStyle } from '../../../../utils/deck-top-style';
+import type { BannerBlend } from '../../../../utils/banner-blend';
 
 export type DecklistCardInfo = FetchAPIDeckCardResponse;
 type DecklistProps = {
 	name: string;
 	deck: DeckMappedData;
+	banner: { art: string | null; name: string } | null;
+	bannerCrop: BannerCrop;
+	bannerBlend?: BannerBlend | null;
+	topStyle: DeckTopStyle;
 	onCardClick?: (card: DecklistCardInfo) => void;
 };
 
 export function Decklist(props: DecklistProps) {
-	const { name, deck, onCardClick } = props;
+	const { deck, banner, bannerCrop, bannerBlend, topStyle, onCardClick } = props;
 	const [imageSource, setImageSource] = useState(
 		null as { card: DecklistCardInfo; position: { x: number; y: number } } | null
 	);
-
-	const spotlightCards: FetchAPIDeckCardResponse[] = [];
-	for (const cardType of Object.keys(deck.cardCategories)) {
-		const { cards } = deck.cardCategories[cardType];
-
-		for (const card of cards) {
-			spotlightCards.push(card);
-			if (spotlightCards.length === 4) {
-				break;
-			}
-		}
-		if (spotlightCards.length === 4) {
-			break;
-		}
-	}
 
 	const onCardEvent = useCallback(
 		(event: CardInteractionEvent) => {
@@ -72,17 +64,10 @@ export function Decklist(props: DecklistProps) {
 					></img>
 				)}
 			</div>
-			{/* <div className={styles['deck-header']}>
-				<div className={styles['deck-header-container']}>
-					<h2 className={styles['deck-title']}>{name}</h2>
-				</div>
-			</div> */}
 			<div className={styles['decklist-container']}>
-				<div className={styles['decklist-spotlight']}>
-					{spotlightCards.map((card) => (
-						<SpotlightCard key={card.name} art={card.art} name={card.name} />
-					))}
-				</div>
+				{banner && topStyle === 'card' && <div className={styles['decklist-spotlight']}>
+					<SpotlightCard art={banner.art} name={banner.name} crop={bannerCrop} bannerBlend={bannerBlend} />
+				</div>}
 				<div className={styles['deck-list']}>
 					<DecklistGroup
 						groups={Object.keys(deck.cardCategories)

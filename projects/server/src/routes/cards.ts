@@ -1,6 +1,8 @@
 import { Request, Response, Router, urlencoded } from 'express';
 import { getCardsDetails } from '../app/get-cards-details';
 import { CardDatabase } from '../database/cards/CardDatabase';
+import { imageBaseUrl } from '../images/image-base-url';
+import { cardImageUrl } from '../images/card-images';
 import { PathBuilder } from '../utils/PathBuilder';
 
 export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase) {
@@ -27,7 +29,7 @@ export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase)
 		};
 
 		const uuids = uuidsListString.split(',');
-		const cards = await getCardsDetails(uuids, cardDatabase);
+		const cards = await getCardsDetails(uuids, cardDatabase, imageBaseUrl(req));
 
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Content-Type', 'application/json');
@@ -39,7 +41,7 @@ export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase)
 			uuid: string;
 		};
 
-		const [card] = await getCardsDetails([uuid], cardDatabase);
+		const [card] = await getCardsDetails([uuid], cardDatabase, imageBaseUrl(req));
 
 		if (!card) {
 			res.sendStatus(400);
@@ -49,6 +51,23 @@ export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase)
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Content-Type', 'application/json');
 		res.send(JSON.stringify(card));
+	});
+
+	app.get(path.pathAt('/printings'), async (req: Request, res: Response) => {
+		const name = req.query.name;
+		if (typeof name !== 'string' || !name.trim() || name.length > 1024) {
+			res.sendStatus(400);
+			return;
+		}
+		const cards = await cardDatabase.queryCardsByName(name.trim());
+		const baseUrl = imageBaseUrl(req);
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.json(cards.map((card) => ({
+			name: card.name,
+			uuid: card.uuid,
+			setCode: card.setCode,
+			art: cardImageUrl(baseUrl, card.scryfallId, 'art_crop')
+		})));
 	});
 
 	return app;

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { fetchAPIDeck } from 'src/api/fetch-api-deck';
-import { fetchAPINameLookup } from 'src/api/fetch-api-get-card-names-lookup';
 import { createNameLookupTree } from 'src/utils/lookup-tables/create-name-lookup-tree';
 import { getFirstNMatchesInLookupTree } from 'src/utils/lookup-tables/iter-matches-in-lookup-tree';
 import { TextInputButtonGroup } from './TextInputButtonGroup/TextInputButtonGroup';
@@ -12,16 +11,11 @@ export interface DeckBulkEditor {
 export function DeckBulkEditor(props: DeckBulkEditor) {
 	const { deckId } = props;
 
-	const [allCardSearchTree, setSearch] = useState({});
 	const [deckSearch, setDeckSearch] = useState({});
 	const [value, setValue] = useState('');
 	const [showSuggestions, setShowSuggestions] = useState(false);
 
 	useEffect(() => {
-		fetchAPINameLookup().then((tree) => {
-			setSearch(tree);
-		});
-
 		fetchAPIDeck(deckId).then((deck) => {
 			setDeckSearch(createNameLookupTree(iterDeckCardNames(deck)));
 		});

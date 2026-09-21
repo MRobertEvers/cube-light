@@ -15,7 +15,7 @@ const buildDirectory = path.join(__dirname, '../../../dist');
  */
 module.exports = {
 	mode: 'development',
-	entry: ['react', 'react-dom', './src/assets/common.css', './src/index.tsx'],
+	entry: ['./src/assets/common.css', './src/index.tsx'],
 	devtool: 'source-map',
 	resolve: {
 		extensions: ['.ts', '.tsx', '.js', '.jsx'],

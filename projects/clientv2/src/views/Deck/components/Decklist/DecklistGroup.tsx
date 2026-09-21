@@ -98,7 +98,8 @@ export function DecklistGroup(props: DecklistGroupProps) {
 	const { groups, onCardEvent } = props;
 	return (
 		<>
-			{groups.map(({ groupData, name }) => {
+			{groups.map((args) => {
+				const { groupData, name } = args;
 				return (
 					<table key={name} className={styles['decklist-groups']}>
 						<tbody>

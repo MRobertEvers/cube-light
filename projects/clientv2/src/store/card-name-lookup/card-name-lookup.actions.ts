@@ -2,15 +2,15 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { fetchAPINameLookup } from 'src/api/fetch-api-get-card-names-lookup';
 
 type ThunkGetCardNameLookupArgs = void;
-type ThunkGetCardNameLookupResult = any;
+type ThunkGetCardNameLookupResult = boolean;
 
 const thunkGetCardNameLookup = createAsyncThunk<
-	ThunkGetCardNameLookupArgs,
-	ThunkGetCardNameLookupResult
+	ThunkGetCardNameLookupResult,
+	ThunkGetCardNameLookupArgs
 >('usersList/getPages', async function getPagesThunk() {
-	const result = await fetchAPINameLookup();
+	await fetchAPINameLookup();
 
-	return result;
+	return true;
 });
 
 export const ActionsCardNameLookup = {

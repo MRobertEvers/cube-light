@@ -1,9 +1,11 @@
 import { json, Router } from 'express';
 import type { Request, Response } from 'express';
 
-import { Op } from 'sequelize';
 import { CardDatabase } from '../../database/cards/CardDatabase';
 import { Database } from '../../database/app/database';
+import { cardImageUrl, localDeckArtUrl } from '../../images/card-images';
+import { imageBaseUrl } from '../../images/image-base-url';
+import { bannerBlendResponse } from './banner-blend';
 import { PathBuilder } from '../../utils/PathBuilder';
 import { createRoutesDecksId } from './[id]';
 
@@ -12,11 +14,11 @@ export function createRoutesDecks(
 	database: Database,
 	cardDatabase: CardDatabase
 ) {
-	const { Deck } = database;
 	const app = Router();
 
 	const routePath = pathBuilder.pathAt('/');
 
+	app.use(pathBuilder.pathAt('/:id/banner-blend'), json({ limit: '6mb' }));
 	app.use(json());
 	app.options(routePath, async (req: Request, res: Response) => {
 		res.status(200);
@@ -30,26 +32,24 @@ export function createRoutesDecks(
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-		const deck = await Deck.create({
-			Name: name
-		});
+		const rowId = await database.createDeck(name);
+		const deckId = (await database.getDeck(String(rowId)))!.PublicId;
 
 		res.status(200);
 		res.send(
 			JSON.stringify({
-				deckId: deck.DeckId
+				deckId
 			})
 		);
 	});
 	app.get(routePath, async (req: Request, res: Response) => {
-		const { pageStart = '0', pageSize = '15' } = req.params;
-		const pageStartVal = parseInt(pageStart);
-		const pageSizeVal = parseInt(pageSize);
+		const pageStartVal = Number(req.query.pageStart ?? 0);
+		const pageSizeVal = Number(req.query.pageSize ?? 15);
 
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		if (
-			typeof pageStartVal !== 'number' ||
-			typeof pageSizeVal !== 'number' ||
+			!Number.isInteger(pageStartVal) ||
+			!Number.isInteger(pageSizeVal) ||
 			pageStartVal < 0 ||
 			pageSizeVal <= 0
 		) {
@@ -57,22 +57,26 @@ export function createRoutesDecks(
 			return;
 		}
 
-		const decks = await Deck.findAll({
-			where: {
-				DeckId: {
-					[Op.gte]: pageStartVal
-				}
-			},
-			limit: pageSizeVal
-		});
+		const decks = await database.listDecks(pageStartVal, pageSizeVal);
 
-		const response = decks.map((deck) => {
+		const response = await Promise.all(decks.map(async (deck) => {
+			let art = localDeckArtUrl(imageBaseUrl(req), deck.Art);
+			if (!art) {
+				const [firstCard] = await database.getDeckCards(String(deck.DeckId));
+				if (firstCard) {
+					const [card] = await cardDatabase.queryCardInfo([firstCard.Uuid]);
+					art = cardImageUrl(imageBaseUrl(req), card?.scryfallId, 'art_crop');
+				}
+			}
 			return {
-				deckId: deck.DeckId,
+				deckId: deck.PublicId,
 				name: deck.Name,
-				art: deck.Art
+				art,
+				bannerBlend: await bannerBlendResponse(database, deck, imageBaseUrl(req)),
+				createdAt: deck.CreatedAt,
+				updatedAt: deck.UpdatedAt
 			};
-		});
+		}));
 
 		res.status(200);
 		res.setHeader('Content-Type', 'application/json');

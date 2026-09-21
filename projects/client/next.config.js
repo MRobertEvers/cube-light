@@ -1,6 +1,7 @@
 const WorkerPlugin = require('worker-plugin');
 module.exports = {
-	webpack(config, { isServer }) {
+	webpack(config, context) {
+		const { isServer } = context;
 		if (!isServer) {
 			config.plugins.push(
 				new WorkerPlugin({
@@ -17,16 +18,6 @@ module.exports = {
 				}
 			]
 		});
-
-		config.resolve.alias = {
-			...config.resolve.alias,
-			react: 'preact/compat',
-			'react-dom/test-utils': 'preact/test-utils',
-			'react-dom': 'preact/compat',
-			'react-ssr-prepass': 'preact-ssr-prepass',
-			'react-render-to-string': 'preact-render-to-string'
-			// Must be below test-utils
-		};
 
 		return config;
 	}

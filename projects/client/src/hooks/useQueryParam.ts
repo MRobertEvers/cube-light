@@ -21,13 +21,14 @@ export type UseQueryStateReturn<T> = [T | null, React.Dispatch<React.SetStateAct
  */
 export function useQueryState<T = string>(
 	key: string,
-	{
+	options: Partial<UseQueryStateOptions<T>> = {}
+): UseQueryStateReturn<T | null> {
+	const {
 		history = 'replace',
 		parse = (x) => (x as unknown) as T,
 		serialize = (x) => `${x}`,
 		shallow = false
-	}: Partial<UseQueryStateOptions<T>> = {}
-): UseQueryStateReturn<T | null> {
+	} = options;
 	const router = useRouter();
 
 	// Memoizing the update function has the advantage of making it

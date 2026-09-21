@@ -23,7 +23,11 @@ export function* iterCompletionListFromLookupTree(
 			next.push([char, depth + 1, followTree]);
 		}
 
-		next = next.sort(([a], [b]) => (a < b ? 1 : -1));
+		next = next.sort((entry, entry1) => {
+			const [a] = entry;
+			const [b] = entry1;
+			return a < b ? 1 : -1;
+		});
 		stack.push(...next);
 	}
 }

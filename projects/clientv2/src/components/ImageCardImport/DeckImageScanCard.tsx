@@ -1,0 +1,196 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { fetchAPICardNames } from 'src/api/fetch-api-card-names';
+import { type ImageScanTask, imageImportQueue } from 'src/utils/image-import-queue';
+import { useImageImportQueue } from 'src/utils/use-image-import-queue';
+import { type ImageRegion } from 'src/utils/card-image-ocr';
+import { LogoInkwellPulse } from 'src/components/LogoInkwellPulse/LogoInkwellPulse';
+import modalStyles from './image-card-import.module.css';
+import styles from './deck-image-scan-card.module.css';
+
+type CandidateGroup = { name: string; count: number; boxes: ImageRegion[]; score: number };
+
+function groupCandidates(task: ImageScanTask): CandidateGroup[] {
+	const groups = new Map<string, CandidateGroup>();
+	for (const candidate of task.candidates) {
+		const item = groups.get(candidate.name);
+		if (item) {
+			item.count++;
+			item.boxes.push(candidate.box);
+			item.score = Math.max(item.score, candidate.score);
+		} else {
+			groups.set(candidate.name, { name: candidate.name, count: 1, boxes: [candidate.box], score: candidate.score });
+		}
+	}
+	return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function statusText(task: ImageScanTask): string {
+	switch (task.status) {
+		case 'queued': return 'Waiting in scan queue';
+		case 'loading': return 'Loading OCR model';
+		case 'scanning': return `${task.completed} of ${task.total} regions scanned`;
+		case 'adding': return 'Adding identified cards';
+		case 'completed': return 'Image scan complete';
+		case 'error': return 'Image scan needs attention';
+	}
+}
+
+function ImageScanDetails(props: { task: ImageScanTask; onClose: () => void }) {
+	const { task, onClose } = props;
+	const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+	const [previewSize, setPreviewSize] = useState({ width: 0, height: 0 });
+	const previewRef = useRef<HTMLDivElement>(null);
+	const [hoverBoxes, setHoverBoxes] = useState<ImageRegion[]>([]);
+	const [manualName, setManualName] = useState('');
+	const [manualCount, setManualCount] = useState(1);
+	const [names, setNames] = useState<string[]>([]);
+	const [adding, setAdding] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const groups = useMemo(() => groupCandidates(task), [task.candidates]);
+	// A user inspecting an extracted card takes visual precedence over the live scan outline.
+	const selectedBoxes = hoverBoxes.length > 0 ? hoverBoxes : task.region ? [task.region] : [];
+	const suggestions = useMemo(() => {
+		const query = manualName.trim().toLocaleLowerCase();
+		return query.length < 2 ? [] : names.filter((name) => name.toLocaleLowerCase().includes(query)).slice(0, 12);
+	}, [manualName, names]);
+	const exactManualName = names.find((name) => name.toLocaleLowerCase() === manualName.trim().toLocaleLowerCase());
+	const totalAdded = Object.values(task.addedCounts).reduce((total, count) => total + count, 0);
+	const markerStyle = useMemo<React.CSSProperties | null>(() => {
+		if (!task.region || !imageSize.width || !imageSize.height || !previewSize.width || !previewSize.height) return null;
+		const scale = Math.min(previewSize.width / imageSize.width, previewSize.height / imageSize.height);
+		const imageLeft = (previewSize.width - imageSize.width * scale) / 2;
+		const imageTop = (previewSize.height - imageSize.height * scale) / 2;
+		return {
+			position: 'absolute',
+			left: imageLeft + (task.region.x + task.region.width / 2) * scale,
+			top: imageTop + (task.region.y + task.region.height / 2) * scale,
+			transform: 'translate(-50%, -50%)',
+			zIndex: 2
+		};
+	}, [task.region, imageSize, previewSize]);
+
+	useEffect(() => {
+		const preview = previewRef.current;
+		if (!preview) return;
+		const observer = new ResizeObserver(([entry]) => {
+			setPreviewSize({ width: entry.contentRect.width, height: entry.contentRect.height });
+		});
+		observer.observe(preview);
+		return () => observer.disconnect();
+	}, []);
+
+	useEffect(() => {
+		let active = true;
+		void fetchAPICardNames()
+			.then((result) => { if (active) setNames(result); })
+			.catch(() => { if (active) setError('Could not load card names for manual entry'); });
+		return () => { active = false; };
+	}, []);
+	useEffect(() => {
+		const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	}, [onClose]);
+
+	const add = async (name: string, count: number): Promise<boolean> => {
+		setAdding(true);
+		setError(null);
+		try {
+			await imageImportQueue.addCandidate(task.id, name, count);
+			return true;
+		} catch (cause) {
+			setError(cause instanceof Error ? cause.message : 'Could not add this card');
+			return false;
+		} finally {
+			setAdding(false);
+		}
+	};
+
+	return createPortal(
+		<div className={modalStyles.backdrop}>
+			<section className={modalStyles.panel} role="dialog" aria-modal="true" aria-labelledby="scan-details-title">
+				<header className={modalStyles.header}>
+					<div>
+						<h2 id="scan-details-title">Image scan</h2>
+						<p>{task.fileName} · {statusText(task)} · {totalAdded} cards added</p>
+					</div>
+					<button type="button" className={modalStyles.close} onClick={onClose} aria-label="Close scan details">×</button>
+				</header>
+				<div className={`${modalStyles.body} ${styles.scanBody}`} data-image-scan-scroll>
+					<div className={modalStyles.progress}>
+						<progress value={task.status === 'queued' || task.status === 'loading' ? undefined : task.completed} max={task.total || 1} />
+						<p role="status">{statusText(task)}. {task.candidates.length} name candidates found.</p>
+					</div>
+					<div className={`${modalStyles.preview} ${styles.stickyPreview}`} ref={previewRef} data-image-scan-preview>
+						<img src={task.imageUrl} alt="Card photo being analyzed" onLoad={(event) => setImageSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} />
+						{selectedBoxes.length > 0 && imageSize.width > 0 && <svg className={modalStyles.overlay} viewBox={`0 0 ${imageSize.width} ${imageSize.height}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+							{selectedBoxes.map((box, index) => <rect key={index} x={box.x} y={box.y} width={box.width} height={box.height} rx={Math.max(16, imageSize.width * .012)} />)}
+						</svg>}
+						{markerStyle && <LogoInkwellPulse size={38} style={markerStyle} />}
+					</div>
+					{task.error && <p className={modalStyles.error} role="alert">{task.error}</p>}
+					<h3 className={styles.sectionTitle}>Cards extracted so far ({task.candidates.length})</h3>
+					<p className={styles.help}>This list updates while OCR runs. Hover or focus a card to show every place it was found in the image. Exact names are added automatically.</p>
+					<div className={styles.candidates}>
+						{groups.map((group) => {
+							const added = task.addedCounts[group.name] ?? 0;
+							const planned = task.plannedCounts[group.name] ?? 0;
+							const pending = Math.max(0, group.count - planned);
+							return <div
+								className={styles.candidate}
+								key={group.name}
+								tabIndex={0}
+								onMouseEnter={() => setHoverBoxes(group.boxes)}
+								onMouseLeave={() => setHoverBoxes([])}
+								onFocus={() => setHoverBoxes(group.boxes)}
+								onBlur={() => setHoverBoxes([])}
+							>
+								<div><strong>{group.name}</strong><small>{group.count} seen · {added} added{planned > added ? ` · ${planned - added} adding` : ''} · {Math.round(group.score)}/100 similarity</small></div>
+								{pending > 0 && <button type="button" disabled={adding || !!task.error} onClick={() => { void add(group.name, pending); }}>Add {pending}</button>}
+							</div>;
+						})}
+						{groups.length === 0 && <p>No names detected yet.</p>}
+					</div>
+					<div className={styles.manual}>
+						<label>Missed card name
+							<input value={manualName} list="scan-card-names" onChange={(event) => setManualName(event.target.value)} placeholder="Search card name" />
+						</label>
+						<datalist id="scan-card-names">{suggestions.map((name) => <option key={name} value={name} />)}</datalist>
+						<label>Count<input type="number" min={1} max={999} value={manualCount} onChange={(event) => setManualCount(Number(event.target.value))} /></label>
+						<button type="button" disabled={!exactManualName || !Number.isInteger(manualCount) || manualCount < 1 || adding || !!task.error} onClick={() => {
+							if (!exactManualName) return;
+							void add(exactManualName, manualCount).then((success) => {
+								if (success) { setManualName(''); setManualCount(1); }
+							});
+						}}>Add card</button>
+					</div>
+					{error && <p className={modalStyles.error} role="alert">{error}</p>}
+				</div>
+				<footer className={modalStyles.footer}>
+					{(task.status === 'completed' || task.status === 'error') && <button type="button" onClick={() => { imageImportQueue.dismiss(task.id); onClose(); }}>Dismiss scan</button>}
+					<button type="button" onClick={onClose}>Close</button>
+				</footer>
+			</section>
+		</div>,
+		document.body
+	);
+}
+
+export function DeckImageScanCard(props: { deckId: string }) {
+	const { deckId } = props;
+	const tasks = useImageImportQueue().filter((task) => task.deckId === deckId);
+	const [openId, setOpenId] = useState<string | null>(null);
+	const openTask = tasks.find((task) => task.id === openId);
+	if (tasks.length === 0) return null;
+	return <div className={styles.list}>
+		{tasks.map((task) => <button className={styles.card} type="button" key={task.id} onClick={() => setOpenId(task.id)}>
+			<span className={styles.cardTitle}><LogoInkwellPulse size={26} active={task.status !== 'completed' && task.status !== 'error'} /> Image scan</span>
+			<span className={styles.cardStatus}>{statusText(task)}</span>
+			<span className={styles.cardExtracted}>{task.candidates.length} card{task.candidates.length === 1 ? '' : 's'} extracted · {Object.values(task.addedCounts).reduce((total, count) => total + count, 0)} added</span>
+			{task.total > 0 && <progress value={task.completed} max={task.total} />}
+			<span className={styles.cardFoot}>Click to inspect extracted cards</span>
+		</button>)}
+		{openTask && <ImageScanDetails task={openTask} onClose={() => setOpenId(null)} />}
+	</div>;
+}

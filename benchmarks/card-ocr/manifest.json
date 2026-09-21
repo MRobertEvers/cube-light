@@ -1,0 +1,98 @@
+[
+  {
+    "name": "Lightning Bolt",
+    "file": "00.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/7/6/7673784e-db4b-43a1-8d55-1bb9fc1e284f.jpg?1783903008",
+    "scryfallId": "7673784e-db4b-43a1-8d55-1bb9fc1e284f"
+  },
+  {
+    "name": "Counterspell",
+    "file": "01.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/4/f/4f616706-ec97-4923-bb1e-11a69fbaa1f8.jpg?1783909630",
+    "scryfallId": "4f616706-ec97-4923-bb1e-11a69fbaa1f8"
+  },
+  {
+    "name": "Sol Ring",
+    "file": "02.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/8/e/8ee443cc-e17a-493b-9c93-1f9e141a30e4.jpg?1789644446",
+    "scryfallId": "8ee443cc-e17a-493b-9c93-1f9e141a30e4"
+  },
+  {
+    "name": "Llanowar Elves",
+    "file": "03.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/6/a/6a0b230b-d391-4998-a3f7-7b158a0ec2cd.jpg?1783909057",
+    "scryfallId": "6a0b230b-d391-4998-a3f7-7b158a0ec2cd"
+  },
+  {
+    "name": "Swords to Plowshares",
+    "file": "04.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/f/7/f7e12477-d59f-442b-a678-1be746d0b7be.jpg?1789599810",
+    "scryfallId": "f7e12477-d59f-442b-a678-1be746d0b7be"
+  },
+  {
+    "name": "Thoughtseize",
+    "file": "05.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/b/2/b281a308-ab6b-47b6-bec7-632c9aaecede.jpg?1783930173",
+    "scryfallId": "b281a308-ab6b-47b6-bec7-632c9aaecede"
+  },
+  {
+    "name": "Brainstorm",
+    "file": "06.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/e/c/ec7d6864-7b6b-4f74-8474-9b9ec96b1d33.jpg?1789599806",
+    "scryfallId": "ec7d6864-7b6b-4f74-8474-9b9ec96b1d33"
+  },
+  {
+    "name": "Blood Moon",
+    "file": "07.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/d/0/d072e9ca-aae7-45dc-8025-3ce590bae63f.jpg?1783930171",
+    "scryfallId": "d072e9ca-aae7-45dc-8025-3ce590bae63f"
+  },
+  {
+    "name": "Command Tower",
+    "file": "08.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/1/a/1ac6cb62-45da-4e9a-84c6-09e6eacf0664.jpg?1789644465",
+    "scryfallId": "1ac6cb62-45da-4e9a-84c6-09e6eacf0664"
+  },
+  {
+    "name": "Mystic Remora",
+    "file": "09.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/4/0/40140991-cffa-4b52-9a25-37e9a8aa9ddd.jpg?1783918491",
+    "scryfallId": "40140991-cffa-4b52-9a25-37e9a8aa9ddd"
+  },
+  {
+    "name": "Birds of Paradise",
+    "file": "10.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/4/9/492c2f9a-51e7-4e0f-9899-23bf43ea988b.jpg?1783903230",
+    "scryfallId": "492c2f9a-51e7-4e0f-9899-23bf43ea988b"
+  },
+  {
+    "name": "Rhystic Study",
+    "file": "11.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/9/f/9f37c5b6-a59c-45cd-9a99-e9357fe9ea1b.jpg?1783919146",
+    "scryfallId": "9f37c5b6-a59c-45cd-9a99-e9357fe9ea1b"
+  },
+  {
+    "name": "Path to Exile",
+    "file": "12.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/2/2/22e08a78-55b7-46b0-bd1a-a51548fc1861.jpg?1789599789",
+    "scryfallId": "22e08a78-55b7-46b0-bd1a-a51548fc1861"
+  },
+  {
+    "name": "Teferi, Hero of Dominaria",
+    "file": "13.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/5/d/5d10b752-d9cb-419d-a5c4-d4ee1acb655e.jpg?1783934963",
+    "scryfallId": "5d10b752-d9cb-419d-a5c4-d4ee1acb655e"
+  },
+  {
+    "name": "Esper Sentinel",
+    "file": "14.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/f/3/f3537373-ef54-4578-9d05-6216420ee349.jpg?1783926893",
+    "scryfallId": "f3537373-ef54-4578-9d05-6216420ee349"
+  },
+  {
+    "name": "Urza's Saga",
+    "file": "15.jpg",
+    "imageUrl": "https://cards.scryfall.io/normal/front/c/1/c1e0f201-42cb-46a1-901a-65bb4fc18f6c.jpg?1783926791",
+    "scryfallId": "c1e0f201-42cb-46a1-901a-65bb4fc18f6c"
+  }
+]

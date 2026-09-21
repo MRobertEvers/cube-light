@@ -4,6 +4,7 @@ import '../assets/common.css';
 
 register();
 
-export default function ApplicationContainer({ Component, pageProps }: AppProps) {
+export default function ApplicationContainer(props: AppProps) {
+	const { Component, pageProps } = props;
 	return <Component {...pageProps} />;
 }

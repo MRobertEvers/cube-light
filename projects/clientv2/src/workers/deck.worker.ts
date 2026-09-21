@@ -7,12 +7,16 @@ import {
 import { createHandler } from './utils/messageToolkit';
 import { DeckWorkerMessages } from './deck.worker.messages';
 import { createOnMessageHandler } from './utils/workerToolkit';
-import { createNameLookupTree } from 'src/utils/lookup-tables/create-name-lookup-tree';
+import { createNameLookupTree } from '../utils/lookup-tables/create-name-lookup-tree';
 
 const handler = createHandler((builder) => {
 	builder.addCase(DeckWorkerMessages.getSuggestions, async (message) => {
-		const result = await fetchSortedSuggestions(message.payload);
-		return result;
+		const { query, requestId } = message.payload;
+		try {
+			return { ...(await fetchSortedSuggestions(query)), query, requestId };
+		} catch {
+			return { sorted: [], set: new Set<string>(), query, requestId, error: true };
+		}
 	});
 	builder.addCase(DeckWorkerMessages.getDeck, async (message) => {
 		const result = await fetchSortedDeck(message.payload);
@@ -20,8 +24,11 @@ const handler = createHandler((builder) => {
 	});
 	builder.addCase(DeckWorkerMessages.addCard, async (message) => {
 		const { deckId, cardName, count } = message.payload;
-		const result = await fetchAddCardCommand(deckId, cardName, count);
-		return result;
+		try {
+			return await fetchAddCardCommand(deckId, cardName, count);
+		} catch {
+			return false;
+		}
 	});
 	builder.addCase(DeckWorkerMessages.setCard, async (message) => {
 		const { deckId, cardName, action, count } = message.payload;

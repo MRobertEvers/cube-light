@@ -38,7 +38,10 @@ export function getTraversalsFromBaseInLookupTreeSimple(
 		next = [];
 	}
 
-	return level.map(([traversal, tree]) => [traversal.join(''), tree]);
+	return level.map((entry) => {
+		const [traversal, tree] = entry;
+		return [traversal.join(''), tree];
+	});
 }
 
 export function getTraversalsFromBaseInLookupTree(
@@ -73,5 +76,8 @@ export function getTraversalsFromBaseInLookupTree(
 		next = [];
 	}
 
-	return level.map(([traversal, tree]) => [traversal.join(''), tree]);
+	return level.map((entry) => {
+		const [traversal, tree] = entry;
+		return [traversal.join(''), tree];
+	});
 }

@@ -1,4 +1,8 @@
 import { API_URI } from '../config/api-url';
+import type { CardPalette } from '../utils/card-palette';
+import type { BannerCrop } from '../utils/banner-crop';
+import type { DeckTopStyle } from '../utils/deck-top-style';
+import type { BannerBlend } from '../utils/banner-blend';
 
 export type FetchAPIDeckCardResponse = {
 	name: string;
@@ -6,13 +10,20 @@ export type FetchAPIDeckCardResponse = {
 	image: string;
 	uuid: string;
 	art: string;
+	setCode: string;
 	types: string;
 	manaCost: string;
 };
 
 export type FetchAPIDeckResponse = {
 	name: string;
-	icon: string;
+	icon: string | null;
+	bannerCardUuid: string | null;
+	bannerCard: { name: string; uuid: string; setCode: string; art: string | null } | null;
+	palette: CardPalette | null;
+	bannerCrop: BannerCrop | null;
+	bannerBlend?: BannerBlend | null;
+	topStyle: DeckTopStyle;
 	cards: FetchAPIDeckCardResponse[];
 	lastEdit: string;
 };

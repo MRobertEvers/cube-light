@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Button } from 'src/components/Button/Button';
-import { ComboBox } from 'src/components/ComboBox/ComboBox';
+import { ComboBox, ComboBoxEvent } from 'src/components/ComboBox/ComboBox';
 import { createEvent, EventType } from 'src/utils/event-utils';
 
 import styles from './text-input-button-group.module.css';
@@ -25,13 +25,38 @@ export interface TextInputButtonGroupProps {
 export function TextInputButtonGroup(props: TextInputButtonGroupProps) {
 	const { buttonText, value, onEvent, suggestions, showSuggestions } = props;
 
+	const listSuggestions = useMemo(() => {
+		if (!suggestions) return [];
+		return suggestions.map((s) => {
+			return {
+				id: s,
+				value: s,
+				label: s
+			};
+		});
+	}, [suggestions]);
+
+	const comboBoxOnEvent = useCallback(
+		(e: ComboBoxEvent<string>) => {
+			if (e.type === 'selected') {
+				onEvent({
+					type: 'selected',
+					payload: e.payload.value
+				});
+			} else {
+				onEvent(e);
+			}
+		},
+		[onEvent]
+	);
+
 	return (
 		<div className={styles['combobox']}>
 			<ComboBox
 				value={value}
 				showSuggestions={showSuggestions || false}
-				suggestions={suggestions || []}
-				onEvent={onEvent}
+				suggestions={listSuggestions}
+				onEvent={comboBoxOnEvent}
 			/>
 			<Button onClick={() => onEvent(Events.clicked())}>{buttonText}</Button>
 		</div>

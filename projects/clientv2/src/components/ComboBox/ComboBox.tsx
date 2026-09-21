@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { concatClassNames } from 'src/utils/concat-class-names';
 import { createEvent, EventType } from 'src/utils/event-utils';
 
@@ -29,32 +29,68 @@ const KEY = {
 	UP: 38
 };
 
-const Events = {
-	changed: createEvent<string>()('changed'),
-	selected: createEvent<string>()('selected'),
-	itemFocussed: createEvent<string>()('itemFocussed')
-};
+function createEvents<T>() {
+	const events = {
+		changed: createEvent<string>()('changed'),
+		selected: createEvent<{ id: string; value: T; label: string }>()('selected'),
+		itemFocussed: createEvent<string>()('itemFocussed')
+	};
 
-export interface ComboBoxProps {
-	suggestions: string[];
-	showSuggestions: boolean;
-	value: string;
-	onEvent: (e: EventType<typeof Events>) => void;
+	return events;
 }
 
-export function ComboBox(props: ComboBoxProps) {
-	const { onEvent, suggestions, value, showSuggestions } = props;
+function stringOf<T>(s: string | { id: string; value: T; label: string }): string {
+	return typeof s === 'string' ? s : s.label;
+}
 
-	const showDropDown = showSuggestions && suggestions.length !== 0;
+export type ComboBoxEvent<T> = EventType<ReturnType<typeof createEvents<T>>>;
+
+export interface ComboBoxProps<T> {
+	suggestions?: Array<{ id: string; value: T; label: string }>;
+	showSuggestions: boolean | 'auto';
+	value: string;
+	onEvent: (e: ComboBoxEvent<T>) => void;
+}
+
+export function ComboBox<T = string>(props: ComboBoxProps<T>) {
+	const { onEvent, suggestions = [], value, showSuggestions } = props;
+
+	const Events = useMemo(() => createEvents<T>(), []);
+
+	const [focusRef, setFocusRef] = useState<HTMLDivElement | null>(null);
+	const [showDropDown, setShowDropdown] = useState(
+		showSuggestions === true && suggestions.length !== 0
+	);
+
+	useEffect(() => {
+		if (showSuggestions === 'auto' && focusRef) {
+			function onClick(e: MouseEvent) {
+				if (focusRef?.contains(e?.target as Node)) setShowDropdown(true);
+				else setShowDropdown(false);
+			}
+
+			window.addEventListener('click', onClick);
+			return () => {
+				window.removeEventListener('click', onClick);
+			};
+		}
+	}, [showSuggestions, focusRef]);
+
 	return (
-		<div className={styles['combobox']}>
+		<div
+			className={styles['combobox']}
+			ref={setFocusRef}
+			onClick={() => {
+				setShowDropdown(true);
+			}}
+		>
 			<input
 				value={value}
 				type="search"
 				onChange={(e) => onEvent(Events.changed(e.target.value))}
 				onKeyDown={(e) => {
-					if (e.which === KEY.TAB) {
-						onEvent(Events.selected(suggestions.length > 0 ? suggestions[0] : ''));
+					if (e.which === KEY.TAB && suggestions.length) {
+						onEvent(Events.selected(suggestions[0]));
 					}
 				}}
 			/>
@@ -67,8 +103,13 @@ export function ComboBox(props: ComboBoxProps) {
 				{suggestions.map((suggestion, index) => (
 					<li
 						tabIndex={index + 1}
-						key={suggestion}
-						onClick={() => onEvent(Events.selected(suggestion))}
+						key={typeof suggestion === 'string' ? suggestion : suggestion.id}
+						onClick={(e) => {
+							e.stopPropagation();
+							e.preventDefault();
+							onEvent(Events.selected(suggestion));
+							setShowDropdown(false);
+						}}
 						// onFocus={() => {
 						// 	dispatch(Actions.setViewAddItemText(suggestion));
 						// }}
@@ -91,7 +132,7 @@ export function ComboBox(props: ComboBoxProps) {
 						// 	}
 						// }}
 					>
-						{suggestion}
+						{stringOf(suggestion)}
 					</li>
 				))}
 			</ul>

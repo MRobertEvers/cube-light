@@ -1,7 +1,7 @@
 import { API_URI } from '../config/api-url';
 
 export type FetchCreateDeckResponse = {
-	deckId: number;
+	deckId: string;
 };
 
 export async function fetchAPICreateDeck(name: string): Promise<FetchCreateDeckResponse> {
@@ -14,6 +14,7 @@ export async function fetchAPICreateDeck(name: string): Promise<FetchCreateDeckR
 			name: name
 		})
 	});
+	if (!fetchResult.ok) throw new Error('Could not create deck');
 
 	return fetchResult.json() as Promise<FetchCreateDeckResponse>;
 }

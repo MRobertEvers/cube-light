@@ -1,140 +1,104 @@
-import { Sequelize } from 'sequelize';
 import file from 'fs';
-import { SetListLookup } from '../../app/create-set-list-lookup';
+import { SqliteDatabase, placeholders } from '../sqlite';
 
-const CARD_DATABASE_KEYS = ['name', 'uuid', 'scryfallId', 'types', 'manaCost'];
-const CARD_DATABASE_COLUMNS = CARD_DATABASE_KEYS.join(',');
-// 'Enchantment' | 'Creature' | 'Instant' | 'Sorcery' | 'Artifact' | 'Planeswalker' | 'Land'
-
-const CARD_DATA_KEYS_DETAILED = [
-	'name',
-	'uuid',
-	'scryfallId',
-	'types',
-	'subtypes',
-	'manaCost',
-	'text',
-	'setCode'
-];
+const CARD_DATABASE_COLUMNS = 'c.name, c.uuid, i.scryfallId, c.types, c.manaCost';
+const CARD_DATA_COLUMNS =
+	'c.name, c.uuid, i.scryfallId, c.types, c.subtypes, c.manaCost, c.text, c.setCode';
 
 export type CardInfo = {
 	name: string;
 	uuid: string;
 	scryfallId: string;
-	types: string; // Comma separated types above.
-	manaCost: string; // {X}{W}
+	types: string;
+	manaCost: string;
 };
 
-export type DetailedCardInfo = {
-	name: string;
-	uuid: string;
-	scryfallId: string;
-	types: string; // Comma separated types above.
+export type PrintingCardInfo = CardInfo & { setCode: string };
+
+export type DetailedCardInfo = CardInfo & {
 	subtypes: string;
-	manaCost: string; // {X}{W}
 	text: string;
 	setCode: string;
 };
 
 export class CardDatabase {
-	private db: Sequelize;
+	private db: SqliteDatabase;
 
-	private setLookup: SetListLookup;
-
-	constructor(sqlite: string, setLookupPath: string) {
+	constructor(sqlite: string) {
 		if (!file.existsSync(sqlite)) {
 			throw new Error('CardDatabase SQLite not found!' + sqlite);
 		}
 
-		if (!file.existsSync(setLookupPath)) {
-			throw new Error('Set Lookup not found!' + setLookupPath);
-		}
+		this.db = new SqliteDatabase(sqlite, true);
+	}
 
-		this.db = new Sequelize({
-			dialect: 'sqlite',
-			storage: sqlite
-		});
-
-		this.setLookup = JSON.parse(file.readFileSync(setLookupPath).toString());
+	public close(): Promise<void> {
+		return this.db.close();
 	}
 
 	public async getCardUuidsByNames(names: string[]): Promise<Record<string, string>> {
-		const query = this.db.query(`SELECT uuid, name FROM cards WHERE name IN (?)`, {
-			replacements: [names]
-		}) as Promise<[Array<{ uuid: string; name: string }>, any]>;
-		const [result] = await query;
-
+		if (names.length === 0) return {};
+		const result = await this.db.all<{ uuid: string; name: string }>(
+			`SELECT uuid, name FROM cards WHERE name IN (${placeholders(names)})`,
+			names
+		);
 		return result.reduce((map, item) => {
 			map[item.name] = item.uuid;
 			return map;
 		}, {} as Record<string, string>);
 	}
 
-	public async queryCardsByName(name: string): Promise<CardInfo[]> {
-		const query = this.db.query(
-			`SELECT name, uuid, scryfallId FROM cards WHERE name=? COLLATE NOCASE`,
-			{
-				replacements: [name.toLowerCase()]
-			}
-		) as Promise<[CardInfo[], any]>;
-		const [result] = await query;
-
-		return result;
+	public queryCardsByName(name: string): Promise<PrintingCardInfo[]> {
+		return this.db.all<PrintingCardInfo>(
+			'SELECT c.name, c.uuid, c.setCode, i.scryfallId FROM cards c JOIN cardIdentifiers i ON i.uuid = c.uuid WHERE c.name = ? COLLATE NOCASE ORDER BY c.rowid',
+			[name]
+		);
 	}
 
-	public async queryCardsByNameStub(nameStub: string): Promise<CardInfo[]> {
-		if (nameStub.length < 3) {
-			return [];
-		}
-
-		const query = this.db.query(`SELECT name FROM cards WHERE name COLLATE NOCASE LIKE ?`, {
-			replacements: [`%${nameStub.toLowerCase()}%`]
-		}) as Promise<[CardInfo[], any]>;
-		const [result] = await query;
-
-		return result;
+	public queryCardsByNameStub(nameStub: string): Promise<CardInfo[]> {
+		if (nameStub.length < 3) return Promise.resolve([]);
+		return this.db.all<CardInfo>('SELECT name FROM cards WHERE name COLLATE NOCASE LIKE ?', [
+			`%${nameStub}%`
+		]);
 	}
 
-	public async queryCardInfo(uuids: string[]): Promise<CardInfo[]> {
-		//Scryfallid
-		const query = this.db.query(
-			`SELECT ${CARD_DATABASE_COLUMNS} FROM cards WHERE uuid COLLATE NOCASE IN (:uuids)`,
-			{
-				replacements: { uuids: uuids }
-			}
-		) as Promise<[CardInfo[], any]>;
-
-		const [result] = await query;
-
-		return result;
+	public async queryAllCardNames(): Promise<string[]> {
+		const rows = await this.db.all<{ name: string }>(
+			'SELECT DISTINCT name FROM cards ORDER BY name COLLATE NOCASE'
+		);
+		return rows.map((row) => row.name);
 	}
 
-	public async getCardDataByUuids(uuids: string[]): Promise<DetailedCardInfo[]> {
-		//Scryfallid
-		const query = this.db.query(
-			`SELECT ${CARD_DATA_KEYS_DETAILED} FROM cards WHERE uuid COLLATE NOCASE IN (:uuids)`,
-			{
-				replacements: { uuids: uuids }
-			}
-		) as Promise<[DetailedCardInfo[], any]>;
-
-		const [result] = await query;
-
-		return result;
+	public queryCardInfo(uuids: string[]): Promise<CardInfo[]> {
+		if (uuids.length === 0) return Promise.resolve([]);
+		return this.db.all<CardInfo>(
+			`SELECT ${CARD_DATABASE_COLUMNS} FROM cards c JOIN cardIdentifiers i ON i.uuid = c.uuid WHERE c.uuid COLLATE NOCASE IN (${placeholders(uuids)})`,
+			uuids
+		);
 	}
 
-	// [setCode, uuid]
+	public getCardDataByUuids(uuids: string[]): Promise<DetailedCardInfo[]> {
+		if (uuids.length === 0) return Promise.resolve([]);
+		return this.db.all<DetailedCardInfo>(
+			`SELECT ${CARD_DATA_COLUMNS} FROM cards c JOIN cardIdentifiers i ON i.uuid = c.uuid WHERE c.uuid COLLATE NOCASE IN (${placeholders(uuids)})`,
+			uuids
+		);
+	}
+
 	public async getCardSets(name: string): Promise<Array<[string, string]>> {
-		const result: Array<[string, string]> = [];
-		const sets = this.setLookup[name];
-		if (!sets) {
-			return [];
+		const rows = await this.db.all<{ setCode: string; uuid: string }>(
+			'SELECT setCode, uuid FROM cards WHERE name = ? ORDER BY rowid',
+			[name]
+		);
+		const bySet = new Map<string, string[]>();
+		for (const { setCode, uuid } of rows) {
+			if (!bySet.has(setCode)) bySet.set(setCode, []);
+			bySet.get(setCode)!.push(uuid);
 		}
-
-		for (const [setCode, uuids] of Object.entries(sets)) {
+		const result: Array<[string, string]> = [];
+		for (const [setCode, uuids] of bySet) {
 			result.push(...uuids.map((uuid) => [setCode, uuid] as [string, string]));
 		}
-
 		return result;
 	}
 }

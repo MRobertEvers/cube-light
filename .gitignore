@@ -21,3 +21,13 @@
 # Data
 **/AllPrintings.*
 **/*.sqlite
+
+.DS_Store
+
+# Local C editor configuration (contains machine-specific Node header paths)
+**/compile_commands.json
+
+
+# Editor/build caches
+**/.cache/
+**/__pycache__/

@@ -15,15 +15,16 @@ export type UseQueryStateReturn<T> = [T | null, React.Dispatch<React.SetStateAct
  */
 export function useQueryState<T = string>(
 	key: string,
-	{
-		parse = (x) => (x as unknown) as T,
-		serialize = (x) => `${x}`
-	}: Partial<UseQueryStateOptions<T>> = {}
+	options: Partial<UseQueryStateOptions<T>> = {}
 ): UseQueryStateReturn<T | null> {
 	// Memoizing the update function has the advantage of making it
 	// immutable as long as `history` stays the same.
 	// It reduces the amount of reactivity needed to update the state.
 
+	const {
+		parse = (x) => (x as unknown) as T,
+		serialize = (x) => `${x}`
+	} = options;
 	const getValue = (): T | null => {
 		const query = new URLSearchParams(window.location.search);
 		const value = query.get(key);

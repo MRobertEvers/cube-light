@@ -1,5 +1,4 @@
-import React from 'react';
-import { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from 'src/components/Button/Button';
 
 import styles from './new-deck.module.css';
@@ -26,12 +25,15 @@ export function NewDeckModal(props: NewDeckModalProps) {
 	const [name, setName] = useState('');
 
 	return (
-		<div className={styles['container']}>
+		<div className={styles['container']} role="dialog" aria-modal="true" aria-labelledby="new-deck-title">
 			<div className={styles['contents']}>
-				<input value={name} onChange={(e) => setName(e.target.value)} />
+				<h2 id="new-deck-title">Create a deck</h2>
+				<label htmlFor="new-deck-name">Deck name</label>
+				<input id="new-deck-name" autoFocus placeholder="Give your deck a name" value={name} onChange={(e) => setName(e.target.value)} />
 				<div className={styles['body']}>
 					<div className={styles['group-counter-buttons']}>
 						<Button
+							disabled={!name.trim()}
 							onClick={() =>
 								onEvent({ type: NewDeckModalEventType.SUBMIT, payload: name })
 							}

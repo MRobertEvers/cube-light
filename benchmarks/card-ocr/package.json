@@ -1,0 +1,22 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 4173",
+    "bench": "node run.mjs",
+    "bench:more": "node run.mjs --more",
+    "bench:photo": "node run.mjs --photo",
+    "bench:multi": "node run-multi.mjs",
+    "bench:multi:titles": "node run-multi-titles.mjs",
+    "bench:worker": "node run-worker-smoke.mjs",
+    "match:multi": "node match-multi.mjs",
+    "summarize:multi": "python3 summarize-multi.py",
+    "summarize": "python3 summarize.py"
+  },
+  "dependencies": {
+    "@paddleocr/paddleocr-js": "0.4.2",
+    "playwright": "1.63.0",
+    "tesseract.js": "7.0.0",
+    "vite": "8.0.3"
+  }
+}

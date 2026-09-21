@@ -1,18 +1,19 @@
 .container {
-	background-color: var(--theme-light);
-	box-shadow: 0 0 4px rgba(var(--theme-dark-tuple), 0.4);
-	min-width: 240px;
-	padding: 5px;
+	background-color: white;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+	border-radius: 14px;
+	width: min(420px, calc(100vw - 40px));
+	box-sizing: border-box;
+	padding: 24px;
 }
 
 .contents {
-	margin: 10px;
+	margin: 0;
 }
 
 .header {
-	padding: 2px;
-	margin: 4px 0;
-	border-bottom: 1px solid black;
+	font-size: 23px;
+	margin: 0 0 20px;
 }
 
 .body {
@@ -30,5 +31,7 @@
 
 .group-counter-buttons {
 	display: flex;
-	justify-content: space-between;
+	justify-content: flex-end;
+	gap: 10px;
+	margin-top: 24px;
 }

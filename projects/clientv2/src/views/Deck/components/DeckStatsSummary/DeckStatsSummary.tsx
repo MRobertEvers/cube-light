@@ -13,11 +13,7 @@ export function DeckStatsSummary(props: DeckStatsSummaryProps) {
 		<div className={styles['deck-stats-summary-container']}>
 			<span className={styles['item']}>
 				<span className={styles['focus-item']}>{deck.deck.count} </span>
-				cards
-			</span>
-			<span className={styles['item']}>
-				<span className={styles['focus-item']}>8 </span>
-				likes
+				{deck.deck.count === 1 ? 'card' : 'cards'}
 			</span>
 		</div>
 	);

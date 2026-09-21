@@ -1,5 +1,4 @@
 import { ActionReducerMapBuilder, createAction, createReducer } from '@reduxjs/toolkit';
-import { FetchAPIDeckCardResponse } from 'src/api/fetch-api-deck';
 
 // Based on "Ariel - Beta Test Questionaire.docx"
 export type AddCardState = {

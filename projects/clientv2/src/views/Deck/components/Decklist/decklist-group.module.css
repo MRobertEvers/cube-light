@@ -1,6 +1,6 @@
 .decklist-groups > tbody > tr > td > a {
 	text-decoration: none;
-	color: rgb(0, 0, 238);
+	color: var(--deck-accent-text, #6f2525);
 	cursor: pointer;
 }
 
@@ -9,7 +9,7 @@
 }
 
 .decklist-groups > tbody > tr > td {
-	padding-left: 8px;
+	padding: 6px 4px 6px 8px;
 }
 
 .decklist-groups > tbody > tr > td:first-child {
@@ -23,17 +23,30 @@
 }
 
 .decklist-groups {
-	/* margin: 12px 40px; */
 	border-collapse: collapse;
 	text-align: left;
 	break-inside: avoid;
 	width: 100%;
+	margin-bottom: 12px;
+	background: white;
+	color: var(--theme-text);
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 8px;
 }
+
+.category-header {
+	background: var(--deck-surface, #f2efed);
+	color: var(--deck-on-surface, var(--theme-text));
+	text-align: left;
+	font-size: 13px;
+}
+
+.category-header th { padding: 9px 12px; }
 
 @media (max-width: 680px) {
 	.decklist-groups > tbody > tr > td > a {
 		text-decoration: none;
-		color: var(--theme-text);
+		color: var(--deck-accent-text, var(--theme-text));
 	}
 
 	.decklist-groups > tbody > tr > td > a:hover {
@@ -57,6 +70,5 @@
 	.category-header {
 		padding-left: 4px;
 		height: 32px;
-		background-color: rgb(234, 234, 234);
 	}
 }

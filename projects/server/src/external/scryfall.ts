@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 const SCRYFALL_API = `https://api.scryfall.com/cards/collection`;
 
 export type ScryfallCardInfo = {
@@ -47,5 +45,5 @@ export async function fetchImageByScryFallId(id: string): Promise<Buffer | null>
 
 	const imageData = await fetch(cardData.image_uris.small);
 
-	return imageData.buffer();
+	return Buffer.from(await imageData.arrayBuffer());
 }

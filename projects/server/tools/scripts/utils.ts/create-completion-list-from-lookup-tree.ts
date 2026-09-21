@@ -27,7 +27,10 @@ export function getTraversalsFromBaseInLookupTree(
 		next = [];
 	}
 
-	return level.map(([traversal, tree]) => [traversal.join(''), tree]);
+	return level.map((entry) => {
+		const [traversal, tree] = entry;
+		return [traversal.join(''), tree];
+	});
 }
 
 function deepMerge(branchOne: any, branchTwo: any): any | undefined {
@@ -137,7 +140,11 @@ export function* iterCompletionListFromLookupTree(
 			next.push([char, depth + 1, followTree]);
 		}
 
-		next = next.sort(([a], [b]) => (a < b ? 1 : -1));
+		next = next.sort((entry, entry1) => {
+			const [a] = entry;
+			const [b] = entry1;
+			return a < b ? 1 : -1;
+		});
 		stack.push(...next);
 	}
 }
@@ -183,7 +190,11 @@ export function createCompletionListFromLookupTree(base: string, lookupTree: any
 			next.push([char, depth + 1, followTree]);
 		}
 
-		next = next.sort(([a], [b]) => (a < b ? 1 : -1));
+		next = next.sort((entry, entry1) => {
+			const [a] = entry;
+			const [b] = entry1;
+			return a < b ? 1 : -1;
+		});
 		stack.push(...next);
 	}
 

@@ -15,11 +15,7 @@ const buildDirectory = path.join(__dirname, '../../../dist');
  */
 module.exports = {
 	mode: 'production',
-	entry: ['react', 'react-dom', './src/assets/common.css', './src/index.tsx'],
-	externals: {
-		react: 'React',
-		'react-dom': 'ReactDOM'
-	},
+	entry: ['./src/assets/common.css', './src/index.tsx'],
 	resolve: {
 		extensions: ['.ts', '.tsx', '.js', '.jsx'],
 		// Absolute paths to where modules can be resolved.

@@ -7,9 +7,7 @@ export function Header() {
 		<nav className={styles['header']}>
 			<section className={styles['header-content']}>
 				<Link href="/">
-					<a>
-						<h2 style={{ margin: 0 }}>CubeLite</h2>
-					</a>
+					<h2 style={{ margin: 0 }}>CubeLite</h2>
 				</Link>
 			</section>
 		</nav>

@@ -6,8 +6,15 @@
 	box-sizing: border-box;
 	display: flex;
 	z-index: 100;
+	padding: 20px;
+	background: rgba(27, 22, 21, 0.48);
+	backdrop-filter: blur(3px);
 }
 
 .modal-container-contents {
 	margin: auto;
+	max-width: min(100%, 560px);
+	max-height: 100%;
+	overflow: auto;
 }
+.wide { max-width: min(100%, 760px); }

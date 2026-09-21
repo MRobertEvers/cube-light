@@ -1,28 +1,87 @@
 .spotlight-card-container {
-	flex-basis: 50%;
-	flex-grow: 1;
+	flex: 1 1 230px;
 	box-sizing: border-box;
 }
 
 .spotlight-card {
-	margin: 4px;
-	border: 1px solid var(--theme-dark);
-	box-shadow: 0 0 4px rgba(var(--theme-dark-tuple), 0.2);
-	height: 80px;
-	background-size: auto 130%;
-	background-repeat: no-repeat;
-	background-position-x: -30px;
+	position: relative;
+	isolation: isolate;
+	overflow: hidden;
+	border: 1px solid #e4ddda;
+	border-radius: 12px;
+	box-shadow: 0 3px 10px rgba(var(--theme-dark-tuple), 0.07);
+	min-height: 112px;
+	--spotlight-surface: #f2e9e6;
+	background-color: var(--spotlight-surface);
 	cursor: pointer;
-	transition: box-shadow 0.1s;
-	min-width: 180px;
+	transition: box-shadow 0.15s, transform 0.15s;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.spotlight-card-art {
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: 78%;
+	height: 100%;
+}
+
+.rendered { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; object-fit: fill; }
+
+.spotlight-card-art > img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: left center; }
+.mobileCrop { display: none; }
+.mobile .desktopCrop { display: none; }
+.mobile .mobileCrop { display: block; }
+@media (max-width: 680px) {
+	.responsive .desktopCrop { display: none; }
+	.responsive .mobileCrop { display: block; }
+}
+
+/* Both masks reach zero opacity while there is still artwork underneath. */
+.fade {
+	-webkit-mask-image: linear-gradient(to right, #000 45%, transparent 88%);
+	mask-image: linear-gradient(to right, #000 45%, transparent 88%);
+}
+
+.blend {
+	-webkit-mask-image: radial-gradient(ellipse 145% 180% at -50% 50%, #000 60%, rgba(0, 0, 0, 0.8) 70%, rgba(0, 0, 0, 0.25) 80%, transparent 85%);
+	mask-image: radial-gradient(ellipse 145% 180% at -50% 50%, #000 60%, rgba(0, 0, 0, 0.8) 70%, rgba(0, 0, 0, 0.25) 80%, transparent 85%);
 }
 
 .spotlight-card:hover {
-	box-shadow: 0 0 6px rgba(var(--theme-dark-tuple), 0.6);
+	box-shadow: 0 8px 22px rgba(var(--theme-dark-tuple), 0.14);
+	transform: translateY(-2px);
 }
 
+.preview .spotlight-card { cursor: default; }
+.preview .spotlight-card:hover { box-shadow: 0 3px 10px rgba(var(--theme-dark-tuple), 0.07); transform: none; }
+
 .spotlight-card h2 {
-	margin: 0px;
+	margin: 0;
 	text-align: right;
-	font-size: 20px;
+	font-size: 21px;
+	line-height: 1.2;
+	color: var(--spotlight-ink, #302b29);
+	text-shadow: 0 1px 2px var(--spotlight-surface);
+}
+
+.spotlight-card-details {
+	position: relative;
+	min-width: 0;
+}
+
+.spotlight-card-dates {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+	margin-top: 8px;
+	font-size: 12px;
+	line-height: 1.3;
+	color: var(--spotlight-ink, #514945);
+	text-align: right;
+	text-shadow: 0 1px 2px var(--spotlight-surface);
 }

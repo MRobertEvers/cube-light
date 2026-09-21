@@ -1,10 +1,8 @@
-import { NextPage } from 'next';
 import Link from 'next/link';
-import useSWR from 'swr';
-import { Page } from '../../components/Page/Page';
 import { fetchDecks, FetchDecksResponse } from '../../api/fetch-decks';
+import { Page } from '../../components/Page/Page';
+import { useEffect, useState } from 'react';
 
-import styles from './home.module.css';
 
 export type HomeProps = {
 	initialData?: FetchDecksResponse;
@@ -13,13 +11,14 @@ export type HomeProps = {
 export function Home(props: HomeProps) {
 	const { initialData } = props;
 
-	const { data, error } = useSWR(
-		'decks',
-		async (key: string) => {
-			return await fetchDecks();
-		},
-		{ initialData: initialData }
-	);
+	const [data, setData] = useState<FetchDecksResponse>([])
+	useEffect(() => {
+		async function fetchData() {
+			const response = await fetchDecks(0, 0);
+			setData(response);
+		}
+		fetchData()
+	}, [])
 
 	return (
 		<Page>
@@ -28,7 +27,7 @@ export function Home(props: HomeProps) {
 					return (
 						<li>
 							<Link href="/decks/[id]" as={`/decks/${deck.deckId}`}>
-								<a>{deck.name}</a>
+								{deck.name}
 							</Link>
 						</li>
 					);

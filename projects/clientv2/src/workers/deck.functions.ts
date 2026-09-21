@@ -1,18 +1,17 @@
-import { fetchAPINameLookup } from 'src/api/fetch-api-get-card-names-lookup';
+import { fetchAPINameLookup } from '../api/fetch-api-get-card-names-lookup';
 
 import { fetchAPIAddCard } from '../api/fetch-api-add-card';
 import { fetchAPIDeck } from '../api/fetch-api-deck';
 import { fetchAPISetCard, SetCardAction } from '../api/fetch-api-set-card';
 import { GetDeckResponse } from './deck.worker.messages';
-import { getFirstNMatchesInLookupTree } from 'src/utils/lookup-tables/iter-matches-in-lookup-tree';
 
 export async function fetchSortedSuggestions(
 	search: string
 ): Promise<{ sorted: string[]; set: Set<string> }> {
 	// TODO: Better way to do this?
-	const tree = await fetchAPINameLookup();
+	const index = await fetchAPINameLookup();
 
-	const suggestions = getFirstNMatchesInLookupTree(10, search, tree);
+	const suggestions = index.getFirstNMatches(10, search);
 
 	const result = {
 		sorted: suggestions,
@@ -26,8 +25,8 @@ export async function fetchAddCardCommand(
 	deckId: string,
 	cardName: string,
 	count = 1
-): Promise<void> {
-	await fetchAPIAddCard(deckId, cardName, count);
+): Promise<boolean> {
+	return fetchAPIAddCard(deckId, cardName, count);
 }
 
 export async function fetchSetCardCommand(

@@ -1,0 +1,7 @@
+images/
+results.json
+results-more.json
+results-photo.json
+results-multi.json
+results-multi-titles.json
+__pycache__/

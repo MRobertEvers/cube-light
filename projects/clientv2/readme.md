@@ -1,22 +1,28 @@
-# Client
+# Client v2
 
-The client is a nextjs application using `preact`. Using `preact` with nextjs requires special configuration. See `next.config.js`. Note! Nextjs still requires React to be installed, so it is installed as a dev dependency.
+This is a React single-page app built with Vite.
 
-## Getting Started
+## Development
 
-Get started by installing the client's dependencies; this requires `node>=12` and `npm`. `npm` is usually installed with node.
+Use Node.js 20.19+ or 22.12+ and npm. From this directory:
 
-Run `npm install` inside the clients directory, then you can start the development server with `npm start`. This will start the nextjs development server on port 3000.
+```sh
+npm install
+npm run dev
+```
 
-The backend must be running for the client to work.
+The development server runs at `http://127.0.0.1:3000`. Start the backend separately. API requests use `http://localhost:4040` by default; set `VITE_BACKEND_HOST_URI` before starting Vite to use another backend URL.
 
-## Configuration
+## Import cards from a photo
 
-You must specify the backend API via config.
+Use **Create a deck from image** on the deck list, or **Add cards in image** while editing a deck. Deck creation opens the deck immediately; image scans run one at a time in a client-side queue that continues across in-app navigation while the tab remains open. The small scan card in the deck's left column opens the photo, progress bar, and active-region highlight. OCR and card-name matching run in Web Workers. Exact card-name matches are added to the deck as regions finish; less certain candidates can be added from the expanded scan card, along with missed cards entered manually. The image stays in the browser. The OCR model is downloaded on first use and its worker is reused for later queued images.
 
-### Service Worker
+## Checks and production build
 
-This project has a service worker which is compiled separately from the nextjs application. `npm run build` will build both the next application and the service worker.
+```sh
+npm run typecheck
+npm run build
+npm run preview
+```
 
-`src/service-worker/service-worker.ts` contains the code to register the worker on the client.
-`service-worker/service-worker.sw.ts` is the service worker itself.
+The production build is written to `dist`.

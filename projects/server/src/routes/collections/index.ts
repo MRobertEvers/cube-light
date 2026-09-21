@@ -3,11 +3,9 @@ import { Router, json } from 'express';
 
 import { Database } from '../../database/app/database';
 import { expressNotFound } from '../../utils/express-not-found';
-import { Op } from 'sequelize';
-import { expressBadRequest } from '../../utils/express-bad-request';
+import { isPublicId } from '../../database/app/public-id';
 
 export function createRoutes_Collections(database: Database) {
-	const { Collection } = database;
 	const app = Router();
 
 	app.use(json());
@@ -16,14 +14,13 @@ export function createRoutes_Collections(database: Database) {
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-		const collection = await Collection.create({
-			Name: name
-		});
+		const rowId = await database.createCollection(name);
+		const collectionId = (await database.getCollection(rowId))!.PublicId;
 
 		res.status(200);
 		res.send(
 			JSON.stringify({
-				collection_id: collection.CollectionId
+				collection_id: collectionId
 			})
 		);
 	});
@@ -32,18 +29,11 @@ export function createRoutes_Collections(database: Database) {
 		const pageToken = parseInt((req.query['page-token'] as string) ?? '0', 10);
 		const pageLimit = parseInt((req.query['limit'] as string) ?? '9999', 10);
 
-		const collections = await Collection.findAll({
-			where: {
-				CollectionId: {
-					[Op.gte]: pageToken
-				}
-			},
-			limit: pageLimit
-		});
+		const collections = await database.listCollections(pageToken, pageLimit);
 
 		const response = collections.map((collection) => {
 			return {
-				collection_id: collection.CollectionId,
+				collection_id: collection.PublicId,
 				name: collection.Name
 			};
 		});
@@ -53,19 +43,17 @@ export function createRoutes_Collections(database: Database) {
 		res.send(JSON.stringify(response));
 	});
 
-	app.get('/:id', async (req: Request, res: Response) => {
-		const id = parseInt(req.params.id, 10);
-		if (isNaN(id)) {
-			return expressBadRequest(res);
-		}
+	app.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
+		const id = req.params.id;
+		if (!isPublicId(id, 'collection')) return expressNotFound(res);
 
-		const collection = await Collection.findByPk(id);
+		const collection = await database.getCollectionByPublicId(id);
 		if (!collection) {
 			return expressNotFound(res);
 		}
 
 		const response = {
-			collection_id: collection.CollectionId,
+			collection_id: collection.PublicId,
 			name: collection.Name
 		};
 

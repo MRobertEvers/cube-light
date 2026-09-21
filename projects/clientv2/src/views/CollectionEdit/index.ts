@@ -1,0 +1,1 @@
+export { CollectionEditPage } from './CollectionEditPage';

@@ -1,13 +1,5 @@
 import { CardDatabase, DetailedCardInfo } from '../database/cards/CardDatabase';
-import { fetchCardDataByScryFallIds, ScryfallCardInfo } from '../external/scryfall';
-
-function scryfallId(card: ScryfallCardInfo): string {
-	return card.id;
-}
-
-async function fetchImages(scryfallIds: string[]): Promise<Array<ScryfallCardInfo>> {
-	return scryfallIds.length > 0 ? (await fetchCardDataByScryFallIds(scryfallIds)).data : [];
-}
+import { cardImageUrl, ImageVariant } from '../images/card-images';
 
 export type DeckOverviewCardInfo = {
 	// From DetailedCardInfo
@@ -20,15 +12,16 @@ export type DeckOverviewCardInfo = {
 	text: string;
 	setCode: string;
 
-	// From Scryfall;
+	// URLs served by this server.
 	image?: string;
-	images?: ScryfallCardInfo['image_uris'];
+	images?: Record<ImageVariant, string>;
 	art?: string;
 };
 
 export async function getDeckOverviewCardInfo(
 	uuids: string[],
-	cardDatabase: CardDatabase
+	cardDatabase: CardDatabase,
+	imageBaseUrl: string
 ): Promise<Array<DeckOverviewCardInfo>> {
 	const cards = await cardDatabase.getCardDataByUuids(uuids);
 
@@ -37,22 +30,21 @@ export async function getDeckOverviewCardInfo(
 		return map;
 	}, {} as Record<string, DetailedCardInfo>);
 
-	const cardImages = await fetchImages(cards.map((card) => card.scryfallId));
-
-	const cardImagesMapped = cardImages.reduce((map, scryfallCard) => {
-		map[scryfallId(scryfallCard)] = scryfallCard;
-		return map;
-	}, {} as Record<string, ScryfallCardInfo>);
-
 	return uuids.map((uuid) => {
 		const baseCard = cardMap[uuid];
-		const images = cardImagesMapped[baseCard.scryfallId];
+		const small = cardImageUrl(imageBaseUrl, baseCard.scryfallId, 'small');
+		const images = small ? {
+			small,
+			normal: cardImageUrl(imageBaseUrl, baseCard.scryfallId, 'normal')!,
+			large: cardImageUrl(imageBaseUrl, baseCard.scryfallId, 'large')!,
+			art_crop: cardImageUrl(imageBaseUrl, baseCard.scryfallId, 'art_crop')!
+		} : undefined;
 
 		return {
 			...baseCard,
-			image: images?.image_uris.small,
-			images: images?.image_uris,
-			art: images?.image_uris.art_crop
+			image: images?.small,
+			images,
+			art: images?.art_crop
 		};
 	});
 }

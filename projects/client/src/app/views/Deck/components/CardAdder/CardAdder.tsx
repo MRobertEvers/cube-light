@@ -1,5 +1,4 @@
 import { useState, useRef, useMemo } from 'preact/hooks';
-import { mutate } from 'swr';
 import { Spinner } from '../../../../components/Spinner/Spinner';
 import { useDeckWorker } from '../../../../workers/deck.hook';
 import EnterIcon from '../../../../components/Icons/EnterIcon';
@@ -55,7 +54,7 @@ export function CardAdder() {
 				setAddItemText('');
 				setSuggestions({ sorted: [], set: new Set() });
 				setIsWaiting(false);
-				await mutate('1');
+		
 			});
 			return builder;
 		});

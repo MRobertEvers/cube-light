@@ -1,14 +1,5 @@
-import { CardDatabase, DetailedCardInfo } from '../database/cards/CardDatabase';
-import { fetchCardDataByScryFallIds, ScryfallCardInfo } from '../external/scryfall';
+import { CardDatabase } from '../database/cards/CardDatabase';
 import { getDeckOverviewCardInfo } from './get-deck-overview-card-info';
-
-function scryfallId(card: ScryfallCardInfo): string {
-	return card.id;
-}
-
-async function fetchImages(scryfallIds: string[]): Promise<Array<ScryfallCardInfo>> {
-	return scryfallIds.length > 0 ? (await fetchCardDataByScryFallIds(scryfallIds)).data : [];
-}
 
 export type CompleteCardInfo = {
 	// From DetailedCardInfo
@@ -23,7 +14,7 @@ export type CompleteCardInfo = {
 
 	sets: Array<[string, string]>;
 
-	// From Scryfall;
+	// URLs served by this server.
 	image: string | null;
 	highResImage: string | null;
 	art: string | null;
@@ -31,9 +22,10 @@ export type CompleteCardInfo = {
 
 export async function getCardsDetails(
 	uuids: string[],
-	cardDatabase: CardDatabase
+	cardDatabase: CardDatabase,
+	imageBaseUrl: string
 ): Promise<Array<CompleteCardInfo>> {
-	const cards = await getDeckOverviewCardInfo(uuids, cardDatabase);
+	const cards = await getDeckOverviewCardInfo(uuids, cardDatabase, imageBaseUrl);
 
 	const cardSets: Record<string, Array<[string, string]>> = {};
 	for (const card of cards) {

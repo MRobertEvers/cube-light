@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { OnMessageResponseHandler, Message } from './utils/messageToolkit';
 
 const globalWorker: {
@@ -9,8 +9,6 @@ const globalWorker: {
 };
 
 /**
- * The worker-plugin requires the Worker(path) in order to package it correctly.
- *
  * This hook is to capture that and provide types for the postmessage.
  *
  * Additionally, this captures the worker in a global so that it can be referenced in more
@@ -21,11 +19,15 @@ const globalWorker: {
 export function useDeckWorker(
 	onmessage: OnMessageResponseHandler
 ): <T, R>(message: Message<T, R>) => void {
+	const onmessageRef = useRef(onmessage);
+	onmessageRef.current = onmessage;
+
 	const worker = useMemo(() => {
 		if (typeof Worker !== 'undefined') {
 			if (!globalWorker.worker) {
-				// The worker-plugin requires the Worker(path) in order to package it correctly.
-				globalWorker.worker = new Worker('./deck.worker.ts', { type: 'module' });
+				globalWorker.worker = new Worker(new URL('./deck.worker.ts', import.meta.url), {
+					type: 'module'
+				});
 				globalWorker.listeners = new Set();
 			}
 
@@ -37,7 +39,7 @@ export function useDeckWorker(
 		if (!worker) {
 			return;
 		}
-		const newListener = onmessage;
+		const newListener: OnMessageResponseHandler = (message) => onmessageRef.current(message);
 
 		globalWorker.listeners.add(newListener);
 
@@ -49,11 +51,12 @@ export function useDeckWorker(
 
 		return () => {
 			globalWorker.listeners.delete(newListener);
-
-			if (globalWorker.listeners.size === 0) {
-				worker.terminate();
-				delete globalWorker.worker;
-			}
+			queueMicrotask(() => {
+				if (globalWorker.listeners.size === 0 && globalWorker.worker === worker) {
+					worker.terminate();
+					delete globalWorker.worker;
+				}
+			});
 		};
 	}, [worker]);
 

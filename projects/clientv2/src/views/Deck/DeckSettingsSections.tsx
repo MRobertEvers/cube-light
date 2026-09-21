@@ -1,0 +1,184 @@
+import React from 'react';
+import type { GetDeckResponse } from '../../workers/deck.worker.messages';
+import { BannerCrop, BannerFrame, DEFAULT_BANNER_CROP, MAX_MASKED_BANNER_X } from '../../utils/banner-crop';
+import type { CardPalette } from '../../utils/card-palette';
+import { DeckFullArtTop } from '../../components/DeckFullArtTop/DeckFullArtTop';
+import { SpotlightCard } from '../../widgets/SpotlightCard/SpotlightCard';
+import { openBannerPicker } from '../../store/banner-picker/banner-picker.state';
+import { appearanceActions, appearanceView, saveCrop, savePalette, saveStyle, saveBlend } from '../../store/appearance-settings/appearance-settings.state';
+import type { BannerBlendConfig } from '../../utils/banner-blend';
+import { useAppDispatch } from '../../store/use-app-dispatch';
+import styles from './deck-settings.module.css';
+
+type SettingsView = ReturnType<typeof appearanceView>;
+type SectionProps = { deckId: string; data: GetDeckResponse; view: SettingsView };
+
+const COLOR_LABELS: Array<{ key: keyof CardPalette; label: string; description: string }> = [
+	{ key: 'accent', label: 'Accent', description: 'Headings, links and highlights' },
+	{ key: 'surface', label: 'Surface', description: 'Banner and section backgrounds' },
+	{ key: 'wash', label: 'Page', description: 'The page background tint' },
+	{ key: 'border', label: 'Border', description: 'Outlines and separators' }
+];
+
+function bannerCard(data: GetDeckResponse) {
+	return data.bannerCard ?? data.cards.find((card) => card.uuid === data.bannerCardUuid) ?? data.cards.find((card) => !!card.art);
+}
+
+export function BannerCardSection(props: SectionProps) {
+	const { deckId, data, view } = props;
+	const dispatch = useAppDispatch();
+	const card = bannerCard(data);
+	const names = [...new Set(data.cards.map((item) => item.name))].sort((a, b) => a.localeCompare(b));
+	return <section className={`${styles['editor']} ${styles['banner-editor']}`} aria-labelledby="banner-card-heading">
+		<h2 id="banner-card-heading">Banner card</h2>
+		<p className={styles['intro']}>Choose a card in this deck and preview its printings. Saving new artwork resets the banner crop.</p>
+		{card?.art && <div className={styles['current-banner']}><img src={card.art} alt="" /><span><strong>{card.name}</strong><small>{card.setCode}</small></span></div>}
+		{names.length === 0 && <p>Add a card to your deck to choose banner artwork.</p>}
+		<div className={styles['actions']}><button type="button" className={styles['primary']} disabled={names.length === 0}
+			onClick={() => {
+				dispatch(appearanceActions.bannerPickerOpened());
+				dispatch(openBannerPicker({ deckId, names, deckCardUuids: data.cards.map((item) => item.uuid),
+					currentName: card && names.includes(card.name) ? card.name : '', currentUuid: data.bannerCardUuid }));
+			}}>Choose banner artwork</button></div>
+		{view.status.banner.message && <p className={styles['success']} role="status">{view.status.banner.message}</p>}
+	</section>;
+}
+
+export function TopStyleSection(props: SectionProps) {
+	const { deckId, view } = props;
+	const dispatch = useAppDispatch();
+	const { style, styleChanged, status } = view;
+	return <section className={`${styles['editor']} ${styles['style-editor']}`} aria-labelledby="style-heading">
+		<h2 id="style-heading">Deck top style</h2>
+		<div className={styles['style-options']}>
+			<label className={styles['style-option']}>
+				<input type="radio" name="deck-top-style" value="card" checked={style === 'card'} onChange={() => dispatch(appearanceActions.changeStyle('card'))} />
+				<span><strong>Banner card</strong><small>Card artwork and name in a framed banner above the list.</small></span>
+			</label>
+			<label className={styles['style-option']}>
+				<input type="radio" name="deck-top-style" value="full-art" checked={style === 'full-art'} onChange={() => dispatch(appearanceActions.changeStyle('full-art'))} />
+				<span><strong>Full-width art</strong><small>Artwork spans the page and fades into the card list.</small></span>
+			</label>
+		</div>
+		<div className={styles['actions']}><button type="button" className={styles['primary']}
+			onClick={() => void dispatch(saveStyle({ deckId, style }))} disabled={!styleChanged || status.style.saving}>
+			{status.style.saving ? 'Saving…' : 'Save top style'}</button></div>
+		{status.style.message && <p className={styles['success']} role="status">{status.style.message}</p>}
+		{status.style.error && <p className={styles['error']} role="alert">{status.style.error}</p>}
+	</section>;
+}
+
+export function CropSection(props: SectionProps) {
+	const { deckId, data, view } = props;
+	const dispatch = useAppDispatch();
+	const { crop, cropChanged, style, status } = view;
+	const card = bannerCard(data);
+	const bannerName = card?.name ?? data.name;
+	const bannerArt = card?.art ?? data.icon;
+	const firstGroupName = Object.keys(data.deck.cardCategories).find((name) => !name.includes('Land')) ?? Object.keys(data.deck.cardCategories)[0];
+	const firstGroup = firstGroupName ? data.deck.cardCategories[firstGroupName] : undefined;
+	const updateCrop = (variant: keyof BannerCrop, frame: BannerFrame) => dispatch(appearanceActions.changeCrop({ ...crop, [variant]: frame }));
+	return <section className={`${styles['editor']} ${styles['crop-editor']}`} aria-labelledby="crop-heading">
+		<div className={styles['section-heading']}><h2 id="crop-heading">Banner artwork</h2></div>
+		<p className={styles['intro']}>Drag the artwork in each deck-page preview, then adjust zoom or position. Desktop and mobile are saved separately.</p>
+		{!bannerArt ? <p>Add a card to your deck to choose banner artwork.</p> : <div className={styles['crop-views']}>
+			{(['desktop', 'mobile'] as const).map((variant) => <div className={styles['crop-view']} key={variant}>
+				<div className={styles['crop-view-heading']}>
+					<h3>{variant === 'desktop' ? 'Desktop' : 'Mobile'}</h3>
+					<button type="button" className={styles['reset']} onClick={() => updateCrop(variant, { ...DEFAULT_BANNER_CROP[variant] })} disabled={status.crop.saving}>Reset</button>
+				</div>
+				<div className={`${styles['crop-preview']} ${styles[variant]} ${style === 'card' ? styles['card-preview'] : styles['full-preview']}`}>
+					{style === 'card' ? <SpotlightCard art={bannerArt} crop={crop} name={bannerName} variant={variant} preview bannerBlend={cropChanged ? null : data.bannerBlend}
+						onCropChange={(_, frame) => updateCrop(variant, frame)} /> : <>
+						<DeckFullArtTop src={bannerArt} crop={crop} name={bannerName} variant={variant}
+							onCropChange={(_, frame) => updateCrop(variant, frame)} />
+						{firstGroup && <div className={styles['full-list-preview']}>{firstGroupName} ({firstGroup.count})</div>}
+					</>}
+				</div>
+				<label className={styles['range-label']}>Zoom
+					<input type="range" min="1" max="3" step="0.01" value={crop[variant].zoom}
+						onChange={(event) => updateCrop(variant, { ...crop[variant], zoom: Number(event.target.value) })} />
+				</label>
+				<label className={styles['range-label']}>Move left / right
+					<input type="range" min="0" max={style === 'card' ? MAX_MASKED_BANNER_X : 1} step="0.01"
+						value={Math.min(crop[variant].x, style === 'card' ? MAX_MASKED_BANNER_X : 1)}
+						onChange={(event) => updateCrop(variant, { ...crop[variant], x: Number(event.target.value) })} />
+				</label>
+				<label className={styles['range-label']}>Move up / down
+					<input type="range" min="0" max="1" step="0.01" value={crop[variant].y}
+						onChange={(event) => updateCrop(variant, { ...crop[variant], y: Number(event.target.value) })} />
+				</label>
+			</div>)}
+		</div>}
+		<div className={styles['actions']}><button type="button" className={styles['primary']}
+			onClick={() => void dispatch(saveCrop({ deckId, crop }))} disabled={(!cropChanged && !status.crop.error) || status.crop.saving || status.blend.saving || !bannerArt}>
+			{status.crop.saving ? 'Generating and saving…' : 'Save banner crop'}</button></div>
+		{status.crop.message && <p className={styles['success']} role="status">{status.crop.message}</p>}
+		{status.crop.error && <p className={styles['error']} role="alert">{status.crop.error}</p>}
+	</section>;
+}
+
+export function BlendSection(props: SectionProps) {
+	const { deckId, data, view } = props;
+	const dispatch = useAppDispatch();
+	const { blend, status, cropChanged } = view;
+	const change = (update: Partial<BannerBlendConfig>) => dispatch(appearanceActions.changeBlend({ ...blend, ...update }));
+	const busy = status.blend.saving || status.crop.saving;
+	return <section className={`${styles.editor} ${styles['crop-editor']}`} aria-labelledby="blend-heading">
+		<h2 id="blend-heading">Banner edge blend</h2>
+		<p className={styles.intro}>Choose how the artwork meets the card background, then generate to update the previews above. Saved banners are reused on every visit.</p>
+		<fieldset className={styles['blend-controls']} disabled={busy}>
+			<label>Blend method<select aria-label="Blend method" value={blend.method} onChange={(event) => change({ method: event.target.value as BannerBlendConfig['method'] })}>
+				<option value="multiband">Multiband — preserve texture and blend broad colors</option>
+				<option value="poisson">Poisson — match local contrast and boundary colors</option>
+				<option value="fade">Soft fade — simple opacity transition</option>
+			</select></label>
+			<label className={styles['blend-checkbox']}><input type="checkbox" checked={blend.contentAware} onChange={(event) => change({ contentAware: event.target.checked })} />Find a content-aware seam around strong edges</label>
+			<label className={styles['range-label']}>Transition position ({Math.round(blend.position * 100)}%)
+				<input aria-label="Blend transition position" type="range" min="0.35" max="0.55" step="0.01" value={blend.position} onChange={(event) => change({ position: Number(event.target.value) })} /></label>
+			<label className={styles['range-label']}>Transition width ({Math.round(blend.width * 100)}%)
+				<input aria-label="Blend transition width" type="range" min="0.08" max="0.24" step="0.01" value={blend.width} onChange={(event) => change({ width: Number(event.target.value) })} /></label>
+			<label className={styles['blend-checkbox']}>Card background<input type="color" value={blend.surface} onChange={(event) => change({ surface: event.target.value })} /></label>
+		</fieldset>
+		{cropChanged && <p>Save the banner crop before generating a new blend.</p>}
+		{!data.bannerBlend?.images && <p>No blend has been generated for this artwork and crop yet.</p>}
+		<div className={styles.actions}><button className={styles.primary} disabled={busy || cropChanged || !data.icon}
+			onClick={() => void dispatch(saveBlend({ deckId, config: blend }))}>{status.blend.saving ? 'Generating…' : 'Generate and save blend'}</button></div>
+		{status.blend.message && <p role="status" className={styles.success}>{status.blend.message}</p>}
+		{status.blend.error && <p role="alert" className={styles.error}>{status.blend.error}</p>}
+	</section>;
+}
+
+export function PaletteSection(props: SectionProps) {
+	const { deckId, data, view } = props;
+	const dispatch = useAppDispatch();
+	const { palette, selectedPalette, isAuto, paletteChanged, status } = view;
+	return <>
+		<section className={styles['editor']} aria-labelledby="palette-heading">
+			<div className={styles['section-heading']}><h2 id="palette-heading">Page palette</h2><span className={styles['mode']}>{isAuto ? 'From banner card' : 'Custom'}</span></div>
+			<p className={styles['intro']}>Use colors from the banner card, or adjust each color for this deck.</p>
+			<div className={styles['colors']}>{COLOR_LABELS.map((args) => {
+				const { key, label, description } = args;
+				return <label className={styles['color-row']} key={key}>
+					<input type="color" value={palette[key]} onChange={(event) => dispatch(appearanceActions.changePaletteColor({ key, value: event.target.value, palette }))} aria-label={`${label} color`} />
+					<span className={styles['color-copy']}><strong>{label}</strong><small>{description}</small></span><code>{palette[key].toUpperCase()}</code>
+				</label>;
+			})}</div>
+			<div className={styles['actions']}>
+				<button type="button" className={styles['secondary']} onClick={() => dispatch(appearanceActions.useCardColors())} disabled={isAuto || status.palette.saving}>Use card colors</button>
+				<button type="button" className={styles['primary']} onClick={() => void dispatch(savePalette({ deckId, palette: selectedPalette }))}
+					disabled={!paletteChanged || status.palette.saving}>{status.palette.saving ? 'Saving…' : 'Save palette'}</button>
+			</div>
+			{status.palette.message && <p className={styles['success']} role="status">{status.palette.message}</p>}
+			{status.palette.error && <p className={styles['error']} role="alert">{status.palette.error}</p>}
+		</section>
+		<section className={styles['preview']} aria-label="Palette preview">
+			<div className={styles['art']}>{data.icon && <img src={data.icon} alt="" />}</div>
+			<div className={styles['preview-content']}>
+				<span className={styles['preview-label']}>Preview</span><h2>{data.name}</h2>
+				<p>Your deck page will use these colors for its banner, background and highlights.</p>
+				<span className={styles['preview-badge']}>{data.deck.count} cards</span>
+			</div>
+		</section>
+	</>;
+}

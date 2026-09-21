@@ -2,8 +2,8 @@
 	"compilerOptions": {
 		"outDir": "./dist",
 		"sourceMap": true,
-		"module": "CommonJS",
-		"jsx": "react",
+		"module": "ESNext",
+		"jsx": "react-jsx",
 		"esModuleInterop": true,
 		"target": "ES6",
 		"lib": ["DOM", "WebWorker", "ESNext"],
@@ -11,16 +11,16 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"forceConsistentCasingInFileNames": true,
-		"noEmit": false,
-		"moduleResolution": "node",
+		"noEmit": true,
+		"moduleResolution": "Bundler",
+		"types": ["vite/client"],
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"noImplicitAny": true,
-		"baseUrl": ".",
 		"paths": {
-			"src": ["src"]
+			"src/*": ["./src/*"]
 		}
 	},
-	"include": ["src", "custom.d.ts"],
+	"include": ["src"],
 	"exclude": ["node_modules"]
 }

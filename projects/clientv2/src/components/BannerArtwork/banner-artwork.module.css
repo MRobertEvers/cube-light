@@ -1,0 +1,18 @@
+.viewport {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	background: var(--deck-border, #e6e1df);
+}
+
+.viewport img {
+	position: absolute;
+	display: block;
+	max-width: none;
+	user-select: none;
+	object-fit: cover;
+}
+
+.editable { cursor: grab; touch-action: none; }
+.editable:active { cursor: grabbing; }

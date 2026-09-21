@@ -1,19 +1,38 @@
+.counter {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
 .input {
-	-moz-appearance: textfield;
-	height: 24px;
-	border: none;
-	padding: 2px;
+	appearance: textfield;
+	height: 32px;
+	border: 1px solid #cac4c1;
+	border-radius: 6px;
+	padding: 4px;
 	box-sizing: border-box;
-	width: 48px;
+	width: 50px;
 	outline: none;
-	background-color: transparent;
-	border-bottom: 1px solid rgb(219, 219, 219);
+	background-color: white;
+	text-align: center;
+	font-size: 15px;
 }
 
 .input:focus {
-	border-bottom: 2px solid rgb(200, 200, 200);
+	outline: 2px solid #a65350;
 }
 
 .input-button {
-	margin: 4px;
+	width: 32px;
+	min-width: 32px;
+	height: 32px;
+	min-height: 32px;
+	margin: 0;
+	padding: 0;
+	border-radius: 6px;
+}
+
+.input-button:focus-visible {
+	outline: 2px solid #a65350;
+	outline-offset: 2px;
 }
