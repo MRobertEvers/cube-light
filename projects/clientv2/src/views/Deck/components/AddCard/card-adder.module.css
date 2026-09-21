@@ -77,6 +77,11 @@
 }
 
 .suggestions {
+	position: absolute;
+	z-index: 5;
+	top: 100%;
+	right: 0;
+	left: 0;
 	box-sizing: border-box;
 	max-height: min(200px, 30vh);
 	margin: 6px 0 0;

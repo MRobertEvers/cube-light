@@ -57,50 +57,48 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 
 	const navigate = useNavigate();
 
+	// A single element whose label and action derive from isEditMode, so it switches in the same
+	// render as the links below. Swapping between two stacked buttons let the Button transition
+	// keep the outgoing one visible after the rest of the controls had already changed.
 	return (
-		<div className={styles['edit-deck-button-container']}>
-			<div className={concatClassNames(styles['control-mode'], isEditMode ? styles['inactive'] : undefined)} aria-hidden={isEditMode}>
-				<Button className={styles['edit-deck-button']} onClick={onEdit} disabled={isSaving}>
-					Edit deck
-				</Button>
-				<nav className={styles['secondary-links']} aria-label="Deck links">
-					<Link to={`/deck/${deckId}/history`}>Edit history</Link>
-					<Link to={`/deck/${deckId}/settings`}>Appearance settings</Link>
-				</nav>
-			</div>
-			<div className={concatClassNames(styles['control-mode'], !isEditMode ? styles['inactive'] : undefined)} aria-hidden={!isEditMode}>
-				<Button
-					className={styles['edit-deck-button']}
-					onClick={onDone}
-					disabled={isSaving}
-				>
-					Save and close
-				</Button>
-				<div className={styles['secondary-links']}>
-					<button className={styles['secondary-action']} onClick={onEditName} disabled={isSaving}>
-						Edit deck name
-					</button>
-					<button className={styles['secondary-action']} onClick={onImportImage} disabled={isSaving}>
-						Add cards in image
-					</button>
-					<button
-						className={styles['secondary-action']}
-						onClick={() => dispatch(Actions.setViewAddCard(true))}
-						disabled={isSaving}
-					>
-						Add card
-					</button>
-					<Link to={`/deck/${deckId}/settings`}>Appearance settings</Link>
-					<button
-						className={concatClassNames(styles['secondary-action'], styles['delete-deck-button'])}
-						disabled={isSaving}
-						onClick={async () => {
-							await fetchAPIDeleteDeck(deckId);
-							navigate('/');
-						}}
-					>
-						Delete
-					</button>
+		<div>
+			<Button className={styles['edit-deck-button']} onClick={isEditMode ? onDone : onEdit} disabled={isSaving}>
+				{isEditMode ? 'Save and close' : 'Edit deck'}
+			</Button>
+			<div className={styles['edit-deck-button-container']}>
+				<div className={concatClassNames(styles['control-mode'], isEditMode ? styles['inactive'] : undefined)} aria-hidden={isEditMode}>
+					<nav className={styles['secondary-links']} aria-label="Deck links">
+						<Link to={`/deck/${deckId}/history`}>Edit history</Link>
+						<Link to={`/deck/${deckId}/settings`}>Appearance settings</Link>
+					</nav>
+				</div>
+				<div className={concatClassNames(styles['control-mode'], !isEditMode ? styles['inactive'] : undefined)} aria-hidden={!isEditMode}>
+					<div className={styles['secondary-links']}>
+						<button className={styles['secondary-action']} onClick={onEditName} disabled={isSaving}>
+							Edit deck name
+						</button>
+						<button className={styles['secondary-action']} onClick={onImportImage} disabled={isSaving}>
+							Add cards in image
+						</button>
+						<button
+							className={styles['secondary-action']}
+							onClick={() => dispatch(Actions.setViewAddCard(true))}
+							disabled={isSaving}
+						>
+							Add card
+						</button>
+						<Link to={`/deck/${deckId}/settings`}>Appearance settings</Link>
+						<button
+							className={concatClassNames(styles['secondary-action'], styles['delete-deck-button'])}
+							disabled={isSaving}
+							onClick={async () => {
+								await fetchAPIDeleteDeck(deckId);
+								navigate('/');
+							}}
+						>
+							Delete
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -171,6 +169,13 @@ export function Deck(props: DeckProps) {
 	useEffect(() => {
 		if (addedFromScans > 0) void refreshDeck();
 	}, [addedFromScans, refreshDeck]);
+
+	// Appearance settings may be saved from another tab; pick those changes up on return.
+	useEffect(() => {
+		const onVisible = () => { if (document.visibilityState === 'visible') void refreshDeck(); };
+		document.addEventListener('visibilitychange', onVisible);
+		return () => document.removeEventListener('visibilitychange', onVisible);
+	}, [refreshDeck]);
 
 	useEffect(() => {
 		if (showDetailsModal) nameInputRef.current?.focus();
