@@ -6,6 +6,7 @@ import { CollectionEditPageProps } from 'src/views/CollectionEdit/CollectionEdit
 import { DeckPageProps } from 'src/views/Deck/DeckPage';
 import { DeckSettingsPage } from 'src/views/Deck/DeckSettingsPage';
 import { DeckHistoryPage } from 'src/views/Deck/DeckHistoryPage';
+import { DeckImageScanPage } from 'src/views/Deck/DeckImageScanPage';
 import { CollectionPage } from '../views/Collection';
 import { DeckPage } from '../views/Deck';
 import { HomePage } from '../views/Home';
@@ -16,6 +17,11 @@ const CollectionEditMapper: ParamMapper<CollectionEditPageProps> = {
 
 const DeckMapper: ParamMapper<DeckPageProps> = {
 	deckId: 'id'
+};
+
+const DeckImageScanMapper: ParamMapper<React.ComponentProps<typeof DeckImageScanPage>> = {
+	deckId: 'id',
+	taskId: 'taskId'
 };
 
 /**
@@ -35,6 +41,7 @@ export function Routes() {
 				<Route path="/deck/:id" element={<PassParams Component={DeckPage} params={DeckMapper} />} />
 				<Route path="/deck/:id/settings" element={<PassParams Component={DeckSettingsPage} params={DeckMapper} />} />
 				<Route path="/deck/:id/history" element={<PassParams Component={DeckHistoryPage} params={DeckMapper} />} />
+				<Route path="/deck/:id/scan/:taskId" element={<PassParams Component={DeckImageScanPage} params={DeckImageScanMapper} />} />
 			</RouterRoutes>
 		</BrowserRouter>
 	);

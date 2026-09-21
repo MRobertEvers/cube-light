@@ -7,6 +7,42 @@ import { PathBuilder } from '../../utils/PathBuilder';
 
 const sizes = { desktop: [1440, 224], mobile: [720, 224], tile: [640, 224] };
 const defaultCrop = { desktop: { x: 0.5, y: 0.5, zoom: 1 }, mobile: { x: 0.5, y: 0.5, zoom: 1 } };
+const LEGACY_KEYS = ['contentAware', 'method', 'position', 'surface', 'width'];
+const CURRENT_KEYS = [...LEGACY_KEYS, 'decontamination', 'feather', 'protectSubject', 'protection', 'version'].sort();
+const MAX_STROKES = 64, MAX_STROKE_POINTS = 512, MAX_CONFIG_JSON = 96 * 1024;
+
+const unit = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1;
+function validProtection(protection: any): boolean {
+	if (protection === null) return true;
+	if (!protection || typeof protection !== 'object' || Object.keys(protection).sort().join() !== 'rect,source,strokes' ||
+		typeof protection.source !== 'string' || protection.source.length > 1024 || !Array.isArray(protection.strokes) || protection.strokes.length > MAX_STROKES) return false;
+	const { rect } = protection;
+	if (rect !== null && (!rect || Object.keys(rect).sort().join() !== 'height,width,x,y' || ![rect.x, rect.y, rect.width, rect.height].every(unit) ||
+		rect.x + rect.width > 1.0001 || rect.y + rect.height > 1.0001)) return false;
+	return protection.strokes.every((stroke: any) => stroke && Object.keys(stroke).sort().join() === 'label,points,radius' &&
+		(stroke.label === 'foreground' || stroke.label === 'background') && unit(stroke.radius) && stroke.radius > 0 && stroke.radius <= 0.25 &&
+		Array.isArray(stroke.points) && stroke.points.length >= 2 && stroke.points.length % 2 === 0 && stroke.points.length <= MAX_STROKE_POINTS * 2 && stroke.points.every(unit));
+}
+
+/** Accepts current (v2+) configs and the original five-field format from older clients. */
+export function validBannerBlendConfig(config: any): boolean {
+	if (!config || typeof config !== 'object') return false;
+	const keys = Object.keys(config).sort().join();
+	const common = ['multiband', 'poisson', 'fade'].includes(config.method) && typeof config.contentAware === 'boolean' && /^#[0-9a-f]{6}$/i.test(config.surface) &&
+		typeof config.position === 'number' && Number.isFinite(config.position) && config.position >= 0.35 && config.position <= 0.55 &&
+		typeof config.width === 'number' && Number.isFinite(config.width) && config.width >= 0.08 && config.width <= 0.24;
+	if (keys === LEGACY_KEYS.join()) return common;
+	return keys === CURRENT_KEYS.join() && common && Number.isInteger(config.version) && config.version >= 2 && config.version <= 1000 &&
+		typeof config.protectSubject === 'boolean' && Number.isInteger(config.feather) && config.feather >= 1 && config.feather <= 12 &&
+		unit(config.decontamination) && validProtection(config.protection) && JSON.stringify(config).length <= MAX_CONFIG_JSON;
+}
+
+/** History shows config diffs as text, so brush point lists are summarized. */
+export function bannerBlendHistoryValue(config: any): string {
+	if (!config?.protection) return JSON.stringify(config);
+	const { strokes, ...protection } = config.protection;
+	return JSON.stringify({ ...config, protection: { ...protection, strokes: strokes.length } });
+}
 
 export async function bannerBlendResponse(database: Database, deck: Deck, base: string) {
 	const blend = await database.getDeckBannerBlend(String(deck.DeckId));
@@ -28,11 +64,7 @@ export function createBannerBlendRoutes(builder: PathBuilder, database: Database
 	app.put(route, async (req: Request<{ id: string }>, res: Response) => {
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		const { config, source, crop, images } = req.body ?? {};
-		if (!config || Object.keys(config).length !== 5 || !['multiband', 'poisson', 'fade'].includes(config.method) ||
-			typeof config.contentAware !== 'boolean' || !/^#[0-9a-f]{6}$/i.test(config.surface) ||
-			typeof config.position !== 'number' || !Number.isFinite(config.position) || config.position < 0.35 || config.position > 0.55 ||
-			typeof config.width !== 'number' || !Number.isFinite(config.width) || config.width < 0.08 || config.width > 0.24 ||
-			typeof source !== 'string' || !crop || !images || Object.keys(images).length !== 3) { res.sendStatus(400); return; }
+		if (!validBannerBlendConfig(config) || typeof source !== 'string' || !crop || !images || Object.keys(images).length !== 3) { res.sendStatus(400); return; }
 		const buffers = {} as { desktop: Buffer; mobile: Buffer; tile: Buffer };
 		for (const variant of ['desktop', 'mobile', 'tile'] as const) {
 			if (typeof images[variant] !== 'string' || images[variant].length > 1800000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(images[variant])) { res.sendStatus(400); return; }
@@ -49,8 +81,11 @@ export function createBannerBlendRoutes(builder: PathBuilder, database: Database
 		const sameCrop = ['desktop', 'mobile'].every((v) => crop[v] && ['x', 'y', 'zoom'].every((k) => crop[v][k] === expectedCrop[v][k]));
 		if (source !== localDeckArtUrl(imageBaseUrl(req), deck.Art) || !sameCrop) { res.sendStatus(409); return; }
 		const json = JSON.stringify(config);
-		const revision = createHash('sha256').update(json).update(buffers.desktop).update(buffers.mobile).update(buffers.tile).digest('hex');
-		const saved = await database.setDeckBannerBlend(String(deck.DeckId), deck.Art, deck.BannerCropJson, json, revision, buffers);
+		// Cache identity: algorithm version, source art, crop, full config (including the
+		// protection selection), and the image bytes. Any change yields a new immutable URL.
+		const revision = createHash('sha256').update(`banner-blend:v${config.version ?? 1}\0${deck.Art ?? ''}\0${deck.BannerCropJson ?? ''}\0`)
+			.update(json).update(buffers.desktop).update(buffers.mobile).update(buffers.tile).digest('hex');
+		const saved = await database.setDeckBannerBlend(String(deck.DeckId), deck.Art, deck.BannerCropJson, json, revision, buffers, bannerBlendHistoryValue(config));
 		res.sendStatus(saved ? 204 : 409);
 	});
 	app.get(builder.pathAt('/banner-blend/:variant/:revision.png'), async (req: Request<{ id: string; variant: string; revision: string }>, res: Response) => {

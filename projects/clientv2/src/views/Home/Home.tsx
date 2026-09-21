@@ -53,7 +53,7 @@ export function Home(props: HomeProps) {
 			{showImageImport && <ImageCardImport
 				mode="create"
 				onClose={() => setShowImageImport(false)}
-				onComplete={(deckId) => { setShowImageImport(false); navigate(`/deck/${deckId}`); }}
+				onComplete={(deckId, taskId) => { setShowImageImport(false); navigate(taskId ? `/deck/${deckId}/scan/${taskId}` : `/deck/${deckId}`); }}
 			/>}
 			{isShowModal && (
 				<Modal>

@@ -88,7 +88,7 @@ export class Database {
 			CREATE TABLE IF NOT EXISTS DeckBannerBlends (
 				DeckId INTEGER PRIMARY KEY REFERENCES Decks(DeckId) ON DELETE CASCADE,
 				ConfigJson TEXT NOT NULL, SourceArt TEXT, CropJson TEXT, Revision TEXT NOT NULL,
-				DesktopImage BLOB NOT NULL, MobileImage BLOB NOT NULL, TileImage BLOB NOT NULL
+				DesktopImage BLOB NOT NULL, MobileImage BLOB NOT NULL, TileImage BLOB NOT NULL, HistoryJson TEXT
 			);
 			CREATE TABLE IF NOT EXISTS DeckEdits (
 				DeckEditId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -148,6 +148,11 @@ export class Database {
 		}
 		if (!columns.some((column) => column.name === 'TopStyle')) {
 			await this.db.exec("ALTER TABLE Decks ADD COLUMN TopStyle TEXT NOT NULL DEFAULT 'card'");
+		}
+		// Additive: existing blend rows and their images stay valid; HistoryJson is only a compact edit-log value.
+		const blendColumns = await this.db.all<{ name: string }>('PRAGMA table_info(DeckBannerBlends)');
+		if (!blendColumns.some((column) => column.name === 'HistoryJson')) {
+			await this.db.exec('ALTER TABLE DeckBannerBlends ADD COLUMN HistoryJson TEXT');
 		}
 		await this.ensurePublicIds('Decks', 'DeckId', 'deck');
 		await this.ensurePublicIds('Collections', 'CollectionId', 'collection');
@@ -402,17 +407,17 @@ export class Database {
 	}
 
 	async setDeckBannerBlend(id: string, expectedArt: string | null, expectedCrop: string | null,
-		config: string, revision: string, images: { desktop: Buffer; mobile: Buffer; tile: Buffer }): Promise<boolean> {
+		config: string, revision: string, images: { desktop: Buffer; mobile: Buffer; tile: Buffer }, historyValue = config): Promise<boolean> {
 		return this.db.transaction((tx) => {
 			const deck = tx.get<Deck>('SELECT Art, BannerCropJson FROM Decks WHERE DeckId = ?', [id]);
 			if (!deck || deck.Art !== expectedArt || deck.BannerCropJson !== expectedCrop) return false;
-			const previous = tx.get<DeckBannerBlend>('SELECT ConfigJson FROM DeckBannerBlends WHERE DeckId = ?', [id]);
-			tx.run(`INSERT INTO DeckBannerBlends (DeckId, ConfigJson, SourceArt, CropJson, Revision, DesktopImage, MobileImage, TileImage)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(DeckId) DO UPDATE SET
+			const previous = tx.get<DeckBannerBlend & { HistoryJson: string | null }>('SELECT ConfigJson, HistoryJson FROM DeckBannerBlends WHERE DeckId = ?', [id]);
+			tx.run(`INSERT INTO DeckBannerBlends (DeckId, ConfigJson, SourceArt, CropJson, Revision, DesktopImage, MobileImage, TileImage, HistoryJson)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(DeckId) DO UPDATE SET
 				ConfigJson=excluded.ConfigJson, SourceArt=excluded.SourceArt, CropJson=excluded.CropJson, Revision=excluded.Revision,
-				DesktopImage=excluded.DesktopImage, MobileImage=excluded.MobileImage, TileImage=excluded.TileImage`,
-				[id, config, expectedArt, expectedCrop, revision, images.desktop, images.mobile, images.tile]);
-			if (previous?.ConfigJson !== config) this.recordDeckDetailEdit(tx, id, [{ field: 'bannerBlend', before: previous?.ConfigJson ?? null, after: config }]);
+				DesktopImage=excluded.DesktopImage, MobileImage=excluded.MobileImage, TileImage=excluded.TileImage, HistoryJson=excluded.HistoryJson`,
+				[id, config, expectedArt, expectedCrop, revision, images.desktop, images.mobile, images.tile, historyValue]);
+			if (previous?.ConfigJson !== config) this.recordDeckDetailEdit(tx, id, [{ field: 'bannerBlend', before: previous ? previous.HistoryJson ?? previous.ConfigJson : null, after: historyValue }]);
 			return true;
 		});
 	}

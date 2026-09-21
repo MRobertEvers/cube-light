@@ -6,7 +6,8 @@ import { DeckFullArtTop } from '../../components/DeckFullArtTop/DeckFullArtTop';
 import { SpotlightCard } from '../../widgets/SpotlightCard/SpotlightCard';
 import { openBannerPicker } from '../../store/banner-picker/banner-picker.state';
 import { appearanceActions, appearanceView, saveCrop, savePalette, saveStyle, saveBlend } from '../../store/appearance-settings/appearance-settings.state';
-import type { BannerBlendConfig } from '../../utils/banner-blend';
+import { artworkKey, BANNER_BLEND_ALGORITHM_VERSION, type BannerBlendConfig } from '../../utils/banner-blend';
+import { DEFAULT_PROTECT_RECT, SubjectProtection } from './components/SubjectProtection/SubjectProtection';
 import { useAppDispatch } from '../../store/use-app-dispatch';
 import styles from './deck-settings.module.css';
 
@@ -124,26 +125,44 @@ export function BlendSection(props: SectionProps) {
 	const { blend, status, cropChanged } = view;
 	const change = (update: Partial<BannerBlendConfig>) => dispatch(appearanceActions.changeBlend({ ...blend, ...update }));
 	const busy = status.blend.saving || status.crop.saving;
+	const art = data.icon;
+	// A selection drawn on other artwork does not apply; the editor starts fresh for this art.
+	const protection = art && blend.protection && artworkKey(blend.protection.source) === artworkKey(art) ? blend.protection : null;
+	const progress = status.blend.saving ? status.blend.progress : status.crop.saving ? status.crop.progress : null;
 	return <section className={`${styles.editor} ${styles['crop-editor']}`} aria-labelledby="blend-heading">
 		<h2 id="blend-heading">Banner edge blend</h2>
 		<p className={styles.intro}>Choose how the artwork meets the card background, then generate to update the previews above. Saved banners are reused on every visit.</p>
 		<fieldset className={styles['blend-controls']} disabled={busy}>
-			<label>Blend method<select aria-label="Blend method" value={blend.method} onChange={(event) => change({ method: event.target.value as BannerBlendConfig['method'] })}>
+			<label>Background blend<select aria-label="Blend method" value={blend.method} onChange={(event) => change({ method: event.target.value as BannerBlendConfig['method'] })}>
 				<option value="multiband">Multiband — preserve texture and blend broad colors</option>
 				<option value="poisson">Poisson — match local contrast and boundary colors</option>
 				<option value="fade">Soft fade — simple opacity transition</option>
 			</select></label>
-			<label className={styles['blend-checkbox']}><input type="checkbox" checked={blend.contentAware} onChange={(event) => change({ contentAware: event.target.checked })} />Find a content-aware seam around strong edges</label>
+			<label className={styles['blend-checkbox']}><input type="checkbox" checked={blend.contentAware} onChange={(event) => change({ contentAware: event.target.checked })} />Place the transition away from detailed areas</label>
 			<label className={styles['range-label']}>Transition position ({Math.round(blend.position * 100)}%)
 				<input aria-label="Blend transition position" type="range" min="0.35" max="0.55" step="0.01" value={blend.position} onChange={(event) => change({ position: Number(event.target.value) })} /></label>
 			<label className={styles['range-label']}>Transition width ({Math.round(blend.width * 100)}%)
 				<input aria-label="Blend transition width" type="range" min="0.08" max="0.24" step="0.01" value={blend.width} onChange={(event) => change({ width: Number(event.target.value) })} /></label>
 			<label className={styles['blend-checkbox']}>Card background<input type="color" value={blend.surface} onChange={(event) => change({ surface: event.target.value })} /></label>
+			<label className={styles['blend-checkbox']}><input type="checkbox" checked={blend.protectSubject} disabled={!art}
+				onChange={(event) => change({ protectSubject: event.target.checked,
+					protection: event.target.checked && art && !protection ? { source: art, rect: { ...DEFAULT_PROTECT_RECT }, strokes: [] } : blend.protection })} />
+				Protect subject — keep the character’s outline and blend only the background around it</label>
+			{blend.protectSubject && art && <>
+				<SubjectProtection src={art} protection={protection} feather={blend.feather} disabled={busy}
+					onChange={(next) => change({ protection: next })} />
+				<label className={styles['range-label']}>Edge feather ({blend.feather} px)
+					<input aria-label="Subject edge feather" type="range" min="1" max="12" step="1" value={blend.feather} onChange={(event) => change({ feather: Number(event.target.value) })} /></label>
+				<label className={styles['range-label']}>Edge color cleanup ({Math.round(blend.decontamination * 100)}%)
+					<input aria-label="Edge color decontamination strength" type="range" min="0" max="1" step="0.05" value={blend.decontamination} onChange={(event) => change({ decontamination: Number(event.target.value) })} /></label>
+			</>}
 		</fieldset>
 		{cropChanged && <p>Save the banner crop before generating a new blend.</p>}
-		{!data.bannerBlend?.images && <p>No blend has been generated for this artwork and crop yet.</p>}
-		<div className={styles.actions}><button className={styles.primary} disabled={busy || cropChanged || !data.icon}
+		{!data.bannerBlend?.images && <p>No blend has been generated for this artwork and crop yet. The deck shows a simple fade until you generate one.</p>}
+		{data.bannerBlend?.images && view.savedBlend.version < BANNER_BLEND_ALGORITHM_VERSION && <p>These banners were made with an earlier blend version. They are kept until you generate again.</p>}
+		<div className={styles.actions}><button className={styles.primary} disabled={busy || cropChanged || !art}
 			onClick={() => void dispatch(saveBlend({ deckId, config: blend }))}>{status.blend.saving ? 'Generating…' : 'Generate and save blend'}</button></div>
+		{progress != null && <progress className={styles.progress} value={progress} max={1} aria-label="Banner generation progress" />}
 		{status.blend.message && <p role="status" className={styles.success}>{status.blend.message}</p>}
 		{status.blend.error && <p role="alert" className={styles.error}>{status.blend.error}</p>}
 	</section>;

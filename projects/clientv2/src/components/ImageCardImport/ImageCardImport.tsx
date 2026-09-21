@@ -8,7 +8,7 @@ type Props = {
 	mode: 'create' | 'add';
 	deckId?: string;
 	onClose: () => void;
-	onComplete: (deckId: string) => void;
+	onComplete: (deckId: string, taskId?: string) => void;
 };
 
 export function ImageCardImport(props: Props) {
@@ -40,8 +40,8 @@ export function ImageCardImport(props: Props) {
 				targetDeckId = String(created.deckId);
 				setCreatedDeckId(targetDeckId);
 			}
-			imageImportQueue.enqueue(targetDeckId, file);
-			onComplete(targetDeckId);
+			const taskId = imageImportQueue.enqueue(targetDeckId, file);
+			onComplete(targetDeckId, taskId);
 		} catch (cause) {
 			setError(cause instanceof Error ? cause.message : 'Could not start the image scan');
 			setIsStarting(false);
@@ -54,7 +54,7 @@ export function ImageCardImport(props: Props) {
 				<header className={styles.header}>
 					<div>
 						<h2 id="image-import-title">{mode === 'create' ? 'Create a deck from image' : 'Add cards in image'}</h2>
-						<p>The deck opens right away. Card scanning continues in the background.</p>
+						<p>{mode === 'create' ? 'You can watch cards being found, or continue to the deck while scanning runs in the background.' : 'The deck opens right away. Card scanning continues in the background.'}</p>
 					</div>
 					<button type="button" className={styles.close} onClick={onClose} disabled={isStarting} aria-label="Close image import">×</button>
 				</header>

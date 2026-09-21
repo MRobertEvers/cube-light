@@ -146,3 +146,4 @@
 .blend-checkbox { display: flex; align-items: center; gap: 10px; }
 .blend-checkbox input { accent-color: var(--deck-accent); }
 .blend-controls .range-label { grid-template-columns: minmax(180px, 1fr) minmax(100px, 2fr); margin-top: 0; }
+.progress { display: block; width: 100%; height: 8px; margin-top: 12px; accent-color: var(--deck-accent); }

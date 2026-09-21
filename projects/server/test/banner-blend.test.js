@@ -70,3 +70,90 @@ test('generated banners persist, have immutable URLs, and reject stale renders',
 		await new Promise(resolve => server.close(resolve)); await database.close(); fs.rmSync(directory, { recursive: true, force: true });
 	}
 });
+
+test('v2 subject-protection configs validate, persist, change the revision, and keep history compact', async () => {
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cube-blend-v2-'));
+	const file = path.join(directory, 'app.sqlite');
+	let database = await Database.Sqlite(file);
+	const id = String(await database.createDeck('Blend v2'));
+	const publicId = (await database.getDeck(id)).PublicId;
+	const art = '/images/art_crop/bbbf8c3a-6c74-42fd-bb8d-61e3f0a77848.jpg';
+	await database.setDeckArt(Number(id), art, 'test-card');
+	const app = express();
+	app.use(createRoutesDecks(new PathBuilder('/decks'), database, { queryCardInfo: async () => [], getCardDataByUuids: async () => [] }));
+	const server = await new Promise(resolve => { const server = app.listen(0, '127.0.0.1', () => resolve(server)); });
+	try {
+		const base = `http://127.0.0.1:${server.address().port}`;
+		const url = `${base}/decks/${publicId}`;
+		const crop = { desktop: { x: 0.5, y: 0.5, zoom: 1 }, mobile: { x: 0.5, y: 0.5, zoom: 1 } };
+		const images = { desktop: png(1440, 224).toString('base64'), mobile: png(720, 224).toString('base64'), tile: png(640, 224).toString('base64') };
+		const put = body => fetch(`${url}/banner-blend`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+		const protection = { source: base + art, rect: { x: 0.2, y: 0.05, width: 0.66, height: 0.9 },
+			strokes: [{ label: 'foreground', radius: 0.02, points: [0.5, 0.1, 0.52, 0.12] }, { label: 'background', radius: 0.03, points: [0.9, 0.9] }] };
+		const config = { version: 2, method: 'multiband', contentAware: true, position: 0.5, width: 0.18, surface: '#f2e9e6',
+			protectSubject: true, protection, feather: 4, decontamination: 0.9 };
+
+		// Existing (v1) artifacts written by the previous release keep working after migration.
+		const legacy = { method: 'poisson', contentAware: true, position: 0.49, width: 0.13, surface: '#f2e9e6' };
+		assert.equal((await put({ source: base + art, config: legacy, crop, images })).status, 204);
+		const legacyUrl = (await (await fetch(url)).json()).bannerBlend.images.desktop;
+		assert.deepEqual(JSON.parse((await database.getDeckBannerBlend(id)).ConfigJson), legacy);
+
+		const bad = async (mutate) => { const c = structuredClone(config); mutate(c); return (await put({ source: base + art, config: c, crop, images })).status; };
+		assert.equal(await bad((c) => { c.feather = 40; }), 400);
+		assert.equal(await bad((c) => { c.decontamination = 2; }), 400);
+		assert.equal(await bad((c) => { c.protection.rect.x = 0.9; }), 400);
+		assert.equal(await bad((c) => { c.protection.strokes[0].points.push(0.5); }), 400);
+		assert.equal(await bad((c) => { c.protection.strokes[0].label = 'maybe'; }), 400);
+		assert.equal(await bad((c) => { c.protection.strokes = Array.from({ length: 65 }, () => c.protection.strokes[0]); }), 400);
+		assert.equal(await bad((c) => { c.extra = 1; }), 400);
+		assert.equal(await bad((c) => { c.version = 1; }), 400);
+		assert.equal(await bad((c) => { c.protection = null; c.protectSubject = false; }), 204);
+		assert.equal((await put({ source: base + art, config, crop, images })).status, 204);
+		const response = await (await fetch(url)).json();
+		assert.deepEqual(response.bannerBlend.config, config);
+		const protectedUrl = response.bannerBlend.images.desktop;
+		assert.notEqual(protectedUrl, legacyUrl);
+
+		// Identical images under a different algorithm version or protection get a different immutable URL.
+		assert.equal((await put({ source: base + art, config: { ...config, version: 3 }, crop, images })).status, 204);
+		const versionUrl = (await (await fetch(url)).json()).bannerBlend.images.desktop;
+		assert.notEqual(versionUrl, protectedUrl);
+		assert.equal((await fetch(versionUrl)).status, 200);
+
+		const history = await (await fetch(`${url}/history`)).json();
+		const values = history.edits.flatMap((edit) => edit.details).filter((d) => d.field === 'bannerBlend').map((d) => d.after);
+		assert.ok(values.length >= 2);
+		for (const value of values) assert.ok(!value.includes('points'), 'history omits brush point lists');
+
+		// Reload: config (with protection mask) and images persist across restarts.
+		const revision = versionUrl.split('/').pop().replace('.png', '');
+		await database.close(); database = await Database.Sqlite(file);
+		const saved = JSON.parse((await database.getDeckBannerBlend(id)).ConfigJson);
+		assert.deepEqual(saved.protection, protection);
+		assert.deepEqual(Buffer.from(await database.getDeckBannerBlendImage(id, 'desktop', revision)), Buffer.from(images.desktop, 'base64'));
+	} finally {
+		await new Promise(resolve => server.close(resolve)); await database.close(); fs.rmSync(directory, { recursive: true, force: true });
+	}
+});
+
+test('migration adds HistoryJson without disturbing blends saved by the previous schema', async () => {
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cube-blend-migrate-'));
+	const file = path.join(directory, 'app.sqlite');
+	let database = await Database.Sqlite(file);
+	try {
+		const id = String(await database.createDeck('Old blend'));
+		await database.setDeckArt(Number(id), '/images/art_crop/x.jpg', 'card');
+		const legacy = JSON.stringify({ method: 'multiband', contentAware: true, position: 0.5, width: 0.18, surface: '#f2e9e6' });
+		const images = { desktop: png(1440, 224), mobile: png(720, 224), tile: png(640, 224) };
+		assert.equal(await database.setDeckBannerBlend(id, '/images/art_crop/x.jpg', null, legacy, 'a'.repeat(64), images), true);
+		// Recreate the pre-migration table shape (no HistoryJson), as written by the previous release.
+		database.db.exec('ALTER TABLE DeckBannerBlends DROP COLUMN HistoryJson');
+		await database.close();
+		database = await Database.Sqlite(file);
+		const row = await database.getDeckBannerBlend(id);
+		assert.equal(row.ConfigJson, legacy);
+		assert.equal(row.Revision, 'a'.repeat(64));
+		assert.deepEqual(Buffer.from(await database.getDeckBannerBlendImage(id, 'desktop', 'a'.repeat(64))), images.desktop);
+	} finally { await database.close(); fs.rmSync(directory, { recursive: true, force: true }); }
+});
