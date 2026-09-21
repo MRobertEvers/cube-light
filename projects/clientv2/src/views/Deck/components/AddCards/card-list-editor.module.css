@@ -1,0 +1,332 @@
+/*
+ * The textarea sits over a mirror of its own text (.backdrop) that draws the squiggles.
+ * Both must share font, padding, border and line height exactly, and lines never wrap,
+ * so line N is always at the same height in each.
+ */
+.editor {
+	--editor-line-height: 21px;
+	--editor-gutter: 34px;
+	position: relative;
+	border-radius: 8px;
+	background: #fff;
+}
+
+.input,
+.backdrop {
+	box-sizing: border-box;
+	padding: 11px var(--editor-gutter) 11px 13px;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 14px;
+	line-height: var(--editor-line-height);
+	letter-spacing: normal;
+	tab-size: 4;
+	white-space: pre;
+	overflow-wrap: normal;
+}
+
+.input {
+	position: relative;
+	z-index: 1;
+	display: block;
+	width: 100%;
+	min-height: 260px;
+	max-height: 55vh;
+	margin: 0;
+	border-color: #c9c0bd;
+	background: transparent;
+	color: #262120;
+	overflow: auto;
+	resize: vertical;
+	/* No double-tap zoom, since a double tap opens the line's menu. */
+	touch-action: manipulation;
+}
+
+.input::placeholder {
+	color: #807775;
+}
+
+.input:focus-visible {
+	border-color: #a65350;
+	outline: 3px solid rgba(166, 83, 80, 0.2);
+}
+
+.input[aria-invalid='true'] {
+	border-color: #ab3e3e;
+}
+
+.backdrop {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	color: transparent;
+	pointer-events: none;
+}
+
+.backdrop-text {
+	will-change: transform;
+}
+
+.ghost {
+	color: #a39894;
+}
+
+.unknown {
+	background: rgba(196, 54, 54, 0.1);
+	color: transparent;
+	text-decoration: underline wavy #c43636;
+	text-decoration-skip-ink: none;
+	text-underline-offset: 4px;
+	border-radius: 2px;
+}
+
+/* Clipped to the textarea's padding box so markers scroll out of view with their lines. */
+.markers {
+	position: absolute;
+	z-index: 2;
+	inset: 1px;
+	overflow: hidden;
+	pointer-events: none;
+}
+
+.marker {
+	position: absolute;
+	right: 8px;
+	display: flex;
+	width: 18px;
+	margin-top: -1px;
+	padding: 0;
+	align-items: center;
+	justify-content: center;
+	border: 0;
+	background: none;
+	cursor: pointer;
+	pointer-events: auto;
+}
+
+.marker span {
+	display: flex;
+	width: 16px;
+	height: 16px;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background: #c43636;
+	color: #fff;
+	font-size: 11px;
+	font-weight: 800;
+	line-height: 1;
+}
+
+.marker:hover span,
+.marker[aria-expanded='true'] span {
+	background: #9d2525;
+	box-shadow: 0 0 0 3px rgba(196, 54, 54, 0.2);
+}
+
+.popover,
+.completions {
+	position: absolute;
+	z-index: 5;
+	box-sizing: border-box;
+	margin: 0;
+	border: 1px solid #d8d0cc;
+	border-radius: 9px;
+	background: #fff;
+	box-shadow: 0 12px 30px rgba(40, 30, 27, 0.16);
+}
+
+.popover {
+	right: 6px;
+	width: min(280px, calc(100% - 12px));
+	padding: 11px 12px 12px;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.popover-hint {
+	margin: 0;
+	color: #6e6461;
+	font-size: 12px;
+}
+
+.popover-hint strong {
+	color: #262120;
+	font-weight: 650;
+	overflow-wrap: anywhere;
+}
+
+.menu-tiles {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+}
+
+.menu-tile {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+	padding: 9px 10px;
+	border: 1px solid #e5dcd8;
+	border-radius: 8px;
+	background: #faf6f4;
+	color: #262120;
+	cursor: pointer;
+	font: inherit;
+	text-align: left;
+}
+
+.menu-tile:hover:not(:disabled),
+.menu-tile:focus-visible {
+	border-color: #c9a9a5;
+	background: #f6ece9;
+	outline: none;
+}
+
+.menu-tile:disabled {
+	color: #9a908d;
+	cursor: default;
+}
+
+.menu-tile-label {
+	color: #6e6461;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.menu-tile-value {
+	overflow: hidden;
+	font-size: 15px;
+	font-weight: 700;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.menu-section {
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px solid #eee7e4;
+}
+
+.popover-options {
+	margin: 4px -6px -6px;
+	padding: 0;
+	list-style: none;
+}
+
+.popover-options button {
+	display: block;
+	width: 100%;
+	padding: 7px 6px;
+	border: 0;
+	border-radius: 5px;
+	background: none;
+	color: #743c39;
+	cursor: pointer;
+	font: inherit;
+	font-weight: 600;
+	text-align: left;
+}
+
+.popover-options button:hover,
+.popover-options button:focus-visible {
+	background: #f6ece9;
+	outline: none;
+}
+
+.completions {
+	width: min(300px, 100%);
+	max-height: min(236px, 34vh);
+	padding: 5px;
+	overflow-y: auto;
+	list-style: none;
+}
+
+.completions li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 7px 10px;
+	border-radius: 5px;
+	cursor: pointer;
+	font-size: 14px;
+	line-height: 1.35;
+}
+
+.option-name {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.tab-key {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	gap: 3px;
+	padding: 1px 5px;
+	border: 1px solid #d8cdc9;
+	border-bottom-width: 2px;
+	border-radius: 4px;
+	background: #fff;
+	color: #6e6461;
+	font-family: inherit;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 1.4;
+}
+
+.tab-hint {
+	position: absolute;
+	z-index: 5;
+	display: flex;
+	max-width: min(300px, calc(100% - 12px));
+	align-items: center;
+	gap: 7px;
+	margin: 0;
+	padding: 5px 9px 5px 6px;
+	border: 1px solid #d8d0cc;
+	border-radius: 7px;
+	background: #fff;
+	box-shadow: 0 6px 18px rgba(40, 30, 27, 0.14);
+	color: #743c39;
+	cursor: pointer;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.tab-hint:hover {
+	background: #faf6f4;
+}
+
+@media (hover: none) {
+	.tab-key {
+		display: none;
+	}
+}
+
+.completions .active {
+	background: #f6ece9;
+	color: #743c39;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+/* Other lines naming the card at the caret. */
+.sibling {
+	border-radius: 2px;
+	background: rgba(122, 52, 49, 0.09);
+	box-shadow: 0 0 0 2px rgba(122, 52, 49, 0.09);
+}

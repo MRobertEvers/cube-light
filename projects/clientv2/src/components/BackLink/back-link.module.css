@@ -1,0 +1,56 @@
+.link {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin-left: -4px;
+	color: var(--deck-accent-text, #8e2524);
+	font-size: 0.875rem;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.link:visited {
+	color: var(--deck-accent-text, #8e2524);
+}
+
+.link:hover span,
+.link:focus-visible span {
+	text-decoration: underline;
+}
+
+.header-back {
+	display: flex;
+	flex: none;
+	width: 40px;
+	height: 40px;
+	margin: 0 -4px 0 -8px;
+	padding: 0;
+	align-items: center;
+	justify-content: center;
+	border: 0;
+	border-radius: 8px;
+	background: none;
+	color: #383331;
+	cursor: pointer;
+}
+
+.header-back:hover,
+.header-back:focus-visible {
+	background: #f6ece9;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+/* Matches the header, which shows its back slot at this width. */
+@media (max-width: 680px) {
+	.link.has-slot {
+		display: none;
+	}
+}

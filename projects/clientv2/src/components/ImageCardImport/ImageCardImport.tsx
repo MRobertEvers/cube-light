@@ -2,6 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { fetchAPICreateDeck } from 'src/api/fetch-api-create-deck';
 import { imageImportQueue } from 'src/utils/image-import-queue';
+import { HeaderBackButton } from 'src/components/BackLink/BackLink';
+import {
+	HeaderBackSlot,
+	HeaderBackSlotContext
+} from 'src/components/Header/HeaderBackSlot';
+import { DeckControlIcon } from 'src/views/Deck/DeckControlIcons';
 import styles from './image-card-import.module.css';
 
 type Props = {
@@ -18,7 +24,10 @@ export function ImageCardImport(props: Props) {
 	const [deckName, setDeckName] = useState('');
 	const [isStarting, setIsStarting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [isDragging, setIsDragging] = useState(false);
 	const [createdDeckId, setCreatedDeckId] = useState<string | null>(null);
+	// State, not a ref, so the back button portals in once the slot mounts.
+	const [backSlot, setBackSlot] = useState<HTMLElement | null>(null);
 
 	useEffect(
 		() => () => {
@@ -33,6 +42,13 @@ export function ImageCardImport(props: Props) {
 		window.addEventListener('keydown', onKeyDown);
 		return () => window.removeEventListener('keydown', onKeyDown);
 	}, [isStarting, onClose]);
+
+	const selectFile = (selected: File | null) => {
+		if (!selected) return;
+		setFile(selected);
+		setPreviewUrl(URL.createObjectURL(selected));
+		setError(null);
+	};
 
 	const start = async () => {
 		if (!file || isStarting || (mode === 'create' && !deckName.trim()))
@@ -67,7 +83,17 @@ export function ImageCardImport(props: Props) {
 				aria-labelledby="image-import-title"
 			>
 				<header className={styles.header}>
-					<div>
+					<HeaderBackSlot ref={setBackSlot} />
+					<HeaderBackSlotContext.Provider value={backSlot}>
+						{/* Phones fill the screen and close from here, so × and Cancel hide. */}
+						<HeaderBackButton
+							label="Close image import"
+							onClick={() => {
+								if (!isStarting) onClose();
+							}}
+						/>
+					</HeaderBackSlotContext.Provider>
+					<div className={styles.title}>
 						<h2 id="image-import-title">
 							{mode === 'create'
 								? 'Create a deck from image'
@@ -106,34 +132,68 @@ export function ImageCardImport(props: Props) {
 								/>
 							</label>
 						)}
-						<label>
-							Card photo
-							<input
-								type="file"
-								accept="image/*"
-								disabled={isStarting}
-								onChange={(event) => {
-									const selected =
-										event.target.files?.[0] ?? null;
-									setFile(selected);
-									setPreviewUrl(
-										selected
-											? URL.createObjectURL(selected)
-											: null
-									);
-									setError(null);
+						<div className={styles.photoField}>
+							<span id="image-import-photo-label">
+								Card photo
+							</span>
+							{/* No `capture`, so phones offer camera, library and files. */}
+							<label
+								className={`${styles.dropzone} ${isDragging ? styles.dragging : ''} ${previewUrl ? styles.hasPreview : ''}`}
+								onDragOver={(event) => {
+									event.preventDefault();
+									if (!isStarting) setIsDragging(true);
 								}}
-							/>
-						</label>
-					</div>
-					{previewUrl && (
-						<div className={styles.preview}>
-							<img
-								src={previewUrl}
-								alt="Card photo selected for background scan"
-							/>
+								onDragLeave={() => setIsDragging(false)}
+								onDrop={(event) => {
+									event.preventDefault();
+									setIsDragging(false);
+									if (isStarting) return;
+									const dropped = event.dataTransfer.files[0];
+									if (dropped?.type.startsWith('image/'))
+										selectFile(dropped);
+								}}
+							>
+								<input
+									className={styles.fileInput}
+									type="file"
+									accept="image/*"
+									aria-labelledby="image-import-photo-label"
+									disabled={isStarting}
+									onChange={(event) =>
+										selectFile(
+											event.target.files?.[0] ?? null
+										)
+									}
+								/>
+								{previewUrl ? (
+									<>
+										<img
+											src={previewUrl}
+											alt="Card photo selected for background scan"
+										/>
+										<span className={styles.change}>
+											<DeckControlIcon
+												name="camera"
+												size={16}
+											/>
+											Change photo
+										</span>
+									</>
+								) : (
+									<span className={styles.prompt}>
+										<DeckControlIcon
+											name="camera"
+											size={44}
+										/>
+										<strong>
+											Add a photo of your cards
+										</strong>
+										<span>Take a photo or choose one</span>
+									</span>
+								)}
+							</label>
 						</div>
-					)}
+					</div>
 					{error && (
 						<p className={styles.error} role="alert">
 							{error}
@@ -157,6 +217,7 @@ export function ImageCardImport(props: Props) {
 					)}
 					<button
 						type="button"
+						className={styles.cancel}
 						onClick={onClose}
 						disabled={isStarting}
 					>

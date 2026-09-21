@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { ReactNode, useEffect, useMemo, useState } from 'react';
 import { CardPrinting } from '../../api/fetch-api-card-printings';
 
 import styles from './printing-picker.module.css';
@@ -25,6 +25,10 @@ export type PrintingPickerProps = {
 	/** Which image the grid view shows. Compact rows always prefer the art crop. */
 	image: 'card' | 'art';
 	disabled?: boolean;
+	/** Grows to fill a flex column and scrolls the list, instead of a fixed-height list. */
+	fill?: boolean;
+	/** Shown in place of the list while there are no printings, keeping the picker's footprint. */
+	placeholder?: ReactNode;
 	'aria-label'?: string;
 	'aria-labelledby'?: string;
 };
@@ -46,7 +50,8 @@ export function PrintingPicker(props: PrintingPickerProps) {
 		);
 	}, [printings, query]);
 
-	if (printings.length === 0) return null;
+	const empty = printings.length === 0;
+	if (empty && props.placeholder === undefined) return null;
 
 	const changeView = (next: PrintingView) => {
 		setView(next);
@@ -62,7 +67,9 @@ export function PrintingPicker(props: PrintingPickerProps) {
 			: (printing.image ?? printing.art)) ?? undefined;
 
 	return (
-		<div className={styles['picker']}>
+		<div
+			className={`${styles['picker']} ${props.fill ? styles['fill'] : ''}`}
+		>
 			<div className={styles['tools']}>
 				<input
 					className={styles['search']}
@@ -70,6 +77,7 @@ export function PrintingPicker(props: PrintingPickerProps) {
 					placeholder="Search sets"
 					aria-label="Search printings by set name or code"
 					value={query}
+					disabled={empty}
 					onChange={(event) => setQuery(event.target.value)}
 				/>
 				<div
@@ -89,7 +97,10 @@ export function PrintingPicker(props: PrintingPickerProps) {
 					))}
 				</div>
 			</div>
-			{visiblePrintings.length === 0 && (
+			{empty && (
+				<div className={styles['placeholder']}>{props.placeholder}</div>
+			)}
+			{!empty && visiblePrintings.length === 0 && (
 				<p className={styles['message']}>
 					No sets match “{query.trim()}”.
 				</p>

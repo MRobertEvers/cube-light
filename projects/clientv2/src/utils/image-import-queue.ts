@@ -38,6 +38,7 @@ class ImageImportQueue {
 	private snapshot: ImageScanTask[] = [];
 	private listeners = new Set<() => void>();
 	private running = false;
+	private nextId = 0;
 
 	subscribe = (listener: () => void) => {
 		this.listeners.add(listener);
@@ -62,7 +63,7 @@ class ImageImportQueue {
 	}
 
 	enqueue(deckId: string, file: File): string {
-		const id = crypto.randomUUID();
+		const id = `scan-${++this.nextId}`;
 		this.tasks.push({
 			id,
 			deckId,

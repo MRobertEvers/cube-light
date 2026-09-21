@@ -1,5 +1,4 @@
-import React, { useCallback } from 'react';
-import { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
 	CardInteractionEvent,
 	CardInteractionEventType,
@@ -13,6 +12,10 @@ import { SpotlightCard } from 'src/widgets/SpotlightCard/SpotlightCard';
 import type { BannerCrop } from '../../../../utils/banner-crop';
 import type { DeckTopStyle } from '../../../../utils/deck-top-style';
 import type { BannerBlend } from '../../../../utils/banner-blend';
+import {
+	DeckCardGroup,
+	groupDeckCardsByName
+} from '../../../../utils/group-deck-cards';
 
 export type DecklistCardInfo = FetchAPIDeckCardResponse;
 type DecklistProps = {
@@ -22,12 +25,52 @@ type DecklistProps = {
 	bannerCrop: BannerCrop;
 	bannerBlend?: BannerBlend | null;
 	topStyle: DeckTopStyle;
-	onCardClick?: (card: DecklistCardInfo) => void;
+	/** Edit mode, where rows with several printings offer to manage them. */
+	editable: boolean;
+	onCardClick?: (card: DecklistCardInfo, group: DeckCardGroup) => void;
+	onManagePrintings?: (group: DeckCardGroup) => void;
 };
 
 export function Decklist(props: DecklistProps) {
-	const { deck, banner, bannerCrop, bannerBlend, topStyle, onCardClick } =
-		props;
+	const {
+		deck,
+		banner,
+		bannerCrop,
+		bannerBlend,
+		topStyle,
+		editable,
+		onCardClick,
+		onManagePrintings
+	} = props;
+	const [expanded, setExpanded] = useState<ReadonlySet<string>>(
+		() => new Set()
+	);
+	// Names with more than one printing, the only rows that expand.
+	const multiPrintNames = useMemo(
+		() =>
+			Object.values(deck.cardCategories).flatMap((category) =>
+				groupDeckCardsByName(category.cards)
+					.filter((group) => group.printings.length > 1)
+					.map((group) => group.name)
+			),
+		[deck]
+	);
+	const allExpanded =
+		multiPrintNames.length > 0 &&
+		multiPrintNames.every((name) => expanded.has(name));
+	const isExpanded = useCallback(
+		(name: string) => expanded.has(name),
+		[expanded]
+	);
+	const onToggle = useCallback(
+		(name: string) =>
+			setExpanded((previous) => {
+				const next = new Set(previous);
+				if (!next.delete(name)) next.add(name);
+				return next;
+			}),
+		[]
+	);
 	const [imageSource, setImageSource] = useState(
 		null as {
 			card: DecklistCardInfo;
@@ -39,7 +82,10 @@ export function Decklist(props: DecklistProps) {
 		(event: CardInteractionEvent) => {
 			switch (event.type) {
 				case CardInteractionEventType.CLICK:
-					onCardClick?.(event.payload);
+					onCardClick?.(event.payload.card, event.payload.group);
+					break;
+				case CardInteractionEventType.MANAGE:
+					onManagePrintings?.(event.payload);
 					break;
 				case CardInteractionEventType.HOVER:
 					setImageSource(event.payload);
@@ -49,7 +95,7 @@ export function Decklist(props: DecklistProps) {
 					break;
 			}
 		},
-		[onCardClick, setImageSource]
+		[onCardClick, onManagePrintings, setImageSource]
 	);
 	const hoverCardWidth = 300;
 	const hoverCardHeight = 420;
@@ -108,6 +154,33 @@ export function Decklist(props: DecklistProps) {
 						/>
 					</div>
 				)}
+				{multiPrintNames.length > 0 && (
+					<div className={styles['toolbar']}>
+						<span id="printings-view-label">Printings</span>
+						<div
+							className={styles['view-toggle']}
+							role="group"
+							aria-labelledby="printings-view-label"
+						>
+							<button
+								type="button"
+								aria-pressed={!allExpanded}
+								onClick={() => setExpanded(new Set())}
+							>
+								Collapsed
+							</button>
+							<button
+								type="button"
+								aria-pressed={allExpanded}
+								onClick={() =>
+									setExpanded(new Set(multiPrintNames))
+								}
+							>
+								Expanded
+							</button>
+						</div>
+					</div>
+				)}
 				<div className={styles['deck-list']}>
 					<DecklistGroup
 						groups={Object.keys(deck.cardCategories)
@@ -116,6 +189,9 @@ export function Decklist(props: DecklistProps) {
 								name: groupName,
 								groupData: deck.cardCategories[groupName]
 							}))}
+						editable={editable}
+						isExpanded={isExpanded}
+						onToggle={onToggle}
 						onCardEvent={onCardEvent}
 					/>
 					<DecklistGroup
@@ -125,6 +201,9 @@ export function Decklist(props: DecklistProps) {
 								name: groupName,
 								groupData: deck.cardCategories[groupName]
 							}))}
+						editable={editable}
+						isExpanded={isExpanded}
+						onToggle={onToggle}
 						onCardEvent={onCardEvent}
 					/>
 				</div>

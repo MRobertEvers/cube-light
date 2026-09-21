@@ -61,6 +61,27 @@
 	line-height: 1.4;
 }
 
+.placeholder {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	box-sizing: border-box;
+	min-height: 272px;
+	margin-top: 12px;
+	padding: 16px;
+	border: 1px dashed var(--deck-border, #e5e1df);
+	border-radius: 8px;
+	color: #6c625c;
+	font-size: 0.875rem;
+	line-height: 1.4;
+	text-align: center;
+}
+.placeholder p {
+	margin: 0;
+}
+
 .list {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -133,6 +154,9 @@
 }
 
 @media (max-width: 680px) {
+	.placeholder {
+		min-height: 160px;
+	}
 	.list {
 		grid-template-columns: repeat(4, minmax(0, 1fr));
 		max-height: none;
@@ -143,4 +167,16 @@
 	.list.compact {
 		grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
 	}
+}
+
+.fill {
+	flex: 1;
+	min-height: 0;
+}
+.fill .placeholder,
+.fill .list,
+.fill .list.compact {
+	flex: 1;
+	max-height: none;
+	align-content: start;
 }

@@ -2,38 +2,15 @@
 	width: min(560px, calc(100vw - 32px));
 }
 
-.list-input {
-	box-sizing: border-box;
-	display: block;
-	width: 100%;
-	min-height: 260px;
-	max-height: 55vh;
-	padding: 11px 13px;
-	border: 1px solid #c9c0bd;
-	border-radius: 8px;
-	background: #fff;
-	color: #262120;
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	font-size: 14px;
-	line-height: 1.5;
-	resize: vertical;
-}
-
-.list-input::placeholder {
-	color: #807775;
-}
-
-.list-input:focus-visible {
-	border-color: #a65350;
-	outline: 3px solid rgba(166, 83, 80, 0.2);
-}
-
-.list-input[aria-invalid='true'] {
-	border-color: #ab3e3e;
+.summary {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .issues {
-	max-height: 120px;
+	/* Five rows; scrolls past that. */
+	height: 90px;
 	margin: 10px 0 0;
 	padding: 0;
 	overflow-y: auto;
@@ -47,10 +24,61 @@
 	color: #6e6461;
 }
 
+.issues .stale {
+	opacity: 0.55;
+}
+
+.suggestion {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: #743c39;
+	cursor: pointer;
+	font: inherit;
+	font-weight: 650;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.suggestion:disabled {
+	cursor: default;
+}
+
+.suggestion:hover:not(:disabled) {
+	color: #4f2624;
+}
+
 .line-number {
 	font-weight: 650;
 }
 
 .buttons {
 	margin-top: 24px;
+}
+
+/* Rendered in a full-screen modal on phones: the editor takes the spare height. */
+@media (max-width: 680px) {
+	.dialog {
+		width: 100%;
+	}
+
+	.body,
+	.field {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+	}
+
+	.editor {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+	}
+
+	.editor textarea {
+		flex: 1;
+		min-height: 160px;
+		max-height: none;
+		resize: none;
+	}
 }

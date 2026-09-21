@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { BackLink } from '../../components/BackLink/BackLink';
 import { Page } from '../../components/Page/Page';
 import { LoadingIndicator } from '../../components/LoadingIndicator';
 import {
@@ -89,12 +89,7 @@ export function DeckSettingsPage(props: DeckSettingsPageProps) {
 					}
 				/>
 				<div className={styles['container']}>
-					<Link
-						className={styles['back-link']}
-						to={`/deck/${deckId}`}
-					>
-						← Back to deck
-					</Link>
+					<BackLink to={`/deck/${deckId}`}>Back to deck</BackLink>
 					<header className={styles['heading']}>
 						<h1>Deck appearance</h1>
 						<p>{data.name}</p>

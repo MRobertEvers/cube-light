@@ -2,12 +2,19 @@ import React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Page } from '../../components/Page/Page';
+import { PageFrame } from '../../components/Page/PageFrame';
+import { DeckHeader } from './DeckHeader';
 import { Decklist } from './components/Decklist/Decklist';
-import { EditCardModal } from './components/EditCard';
+import { CardPreviewModal } from './components/EditCard';
+import { ManagePrintings } from './components/ManagePrintings';
 import { Modal } from './components/Modal';
 import { GetDeckResponse } from '../../workers/deck.worker.messages';
 import { FetchAPIDeckCardResponse } from '../../api/fetch-api-deck';
-import { fetchAPIEditDeckCard } from '../../api/fetch-api-edit-deck-card';
+import {
+	DeckCardsEdit,
+	fetchAPIEditDeckCards
+} from '../../api/fetch-api-edit-deck-card';
+import type { DeckCardGroup } from '../../utils/group-deck-cards';
 import { Button } from '../../components/Button/Button';
 import { LoadingIndicator } from '../../components/LoadingIndicator';
 import { Spinner } from '../../components/Spinner/Spinner';
@@ -19,8 +26,9 @@ import { AddCards } from './components/AddCards';
 import { useAsyncReducer } from 'src/hooks/useAsyncReducer';
 import { AddCardEventType } from './components/AddCard/AddCard';
 import { fetchAPIDeleteDeck } from 'src/api/fetch-api-delete-deck';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { concatClassNames } from 'src/utils/concat-class-names';
+import { DeckControlIcon } from './DeckControlIcons';
 
 import styles from './deck.module.css';
 import {
@@ -89,90 +97,144 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 
 	const navigate = useNavigate();
 
-	// A single element whose label and action derive from isEditMode, so it switches in the same
-	// render as the links below. Swapping between two stacked buttons let the Button transition
-	// keep the outgoing one visible after the rest of the controls had already changed.
+	// The toggle expands the edit actions in place; edits save as they are made, so collapsing
+	// the panel is all "done" needs to do.
 	return (
-		<div>
+		<div className={styles['deck-controls']}>
 			<Button
 				className={styles['edit-deck-button']}
 				onClick={isEditMode ? onDone : onEdit}
 				disabled={isSaving}
+				ariaExpanded={isEditMode}
+				ariaControls="deck-edit-panel"
 			>
-				{isEditMode ? 'Save and close' : 'Edit deck'}
+				Edit deck
+				<DeckControlIcon
+					name="chevron"
+					size={16}
+					className={styles['edit-deck-chevron']}
+				/>
 			</Button>
-			<div className={styles['edit-deck-button-container']}>
-				<div
-					className={concatClassNames(
-						styles['control-mode'],
-						isEditMode ? styles['inactive'] : undefined
-					)}
-					aria-hidden={isEditMode}
-				>
+			<div
+				className={concatClassNames(
+					styles['deck-collapse'],
+					!isEditMode ? styles['open'] : undefined
+				)}
+				inert={isEditMode}
+			>
+				<div className={styles['deck-collapse-inner']}>
 					<nav
-						className={styles['secondary-links']}
+						className={styles['deck-control-pair']}
 						aria-label="Deck links"
 					>
-						<Link to={`/deck/${deckId}/history`}>Edit history</Link>
-						<Link to={`/deck/${deckId}/settings`}>
-							Appearance settings
-						</Link>
+						<Button
+							className={styles['deck-control-button']}
+							onClick={() => navigate(`/deck/${deckId}/history`)}
+						>
+							Edit history
+						</Button>
+						<Button
+							className={styles['deck-control-button']}
+							onClick={() => navigate(`/deck/${deckId}/settings`)}
+						>
+							Appearance
+						</Button>
 					</nav>
 				</div>
-				<div
-					className={concatClassNames(
-						styles['control-mode'],
-						!isEditMode ? styles['inactive'] : undefined
-					)}
-					aria-hidden={!isEditMode}
-				>
-					<div className={styles['secondary-links']}>
-						<button
-							className={styles['secondary-action']}
-							onClick={onEditName}
-							disabled={isSaving}
-						>
-							Edit deck name
-						</button>
-						<button
-							className={styles['secondary-action']}
-							onClick={onImportImage}
-							disabled={isSaving}
-						>
-							Add cards in image
-						</button>
-						<button
-							className={styles['secondary-action']}
-							onClick={() =>
-								dispatch(Actions.setViewAddCard(true))
-							}
-							disabled={isSaving}
-						>
-							Add card
-						</button>
-						<button
-							className={styles['secondary-action']}
-							onClick={onAddCards}
-							disabled={isSaving}
-						>
-							Add cards
-						</button>
-						<Link to={`/deck/${deckId}/settings`}>
-							Appearance settings
-						</Link>
-						<button
-							className={concatClassNames(
-								styles['secondary-action'],
-								styles['delete-deck-button']
-							)}
-							disabled={isSaving}
-							onClick={async () => {
-								await fetchAPIDeleteDeck(deckId);
-								navigate('/');
-							}}
-						>
-							Delete
-						</button>
+			</div>
+			<div
+				id="deck-edit-panel"
+				className={concatClassNames(
+					styles['deck-collapse'],
+					isEditMode ? styles['open'] : undefined
+				)}
+				inert={!isEditMode}
+			>
+				<div className={styles['deck-collapse-inner']}>
+					<div className={styles['deck-edit-panel-body']}>
+						<section className={styles['deck-control-group']}>
+							<h2 className={styles['deck-control-label']}>
+								Add cards
+							</h2>
+							<div className={styles['deck-add-tiles']}>
+								<Button
+									className={styles['deck-add-tile']}
+									onClick={() =>
+										dispatch(Actions.setViewAddCard(true))
+									}
+									disabled={isSaving}
+								>
+									<DeckControlIcon name="search" />
+									<span>Search</span>
+									<span
+										className={styles['deck-add-tile-hint']}
+									>
+										one card
+									</span>
+								</Button>
+								<Button
+									className={styles['deck-add-tile']}
+									onClick={onAddCards}
+									disabled={isSaving}
+								>
+									<DeckControlIcon name="list" />
+									<span>Paste list</span>
+									<span
+										className={styles['deck-add-tile-hint']}
+									>
+										many cards
+									</span>
+								</Button>
+								<Button
+									className={styles['deck-add-tile']}
+									onClick={onImportImage}
+									disabled={isSaving}
+								>
+									<DeckControlIcon name="camera" />
+									<span>Scan image</span>
+									<span
+										className={styles['deck-add-tile-hint']}
+									>
+										from a photo
+									</span>
+								</Button>
+							</div>
+						</section>
+						<section className={styles['deck-control-group']}>
+							<h2 className={styles['deck-control-label']}>
+								Deck
+							</h2>
+							<div className={styles['deck-control-row']}>
+								<Button
+									className={styles['deck-control-button']}
+									onClick={onEditName}
+									disabled={isSaving}
+								>
+									Rename
+								</Button>
+								<Button
+									className={styles['deck-control-button']}
+									onClick={() =>
+										navigate(`/deck/${deckId}/settings`)
+									}
+								>
+									Appearance
+								</Button>
+								<Button
+									className={concatClassNames(
+										styles['deck-control-button'],
+										styles['delete-deck-button']
+									)}
+									disabled={isSaving}
+									onClick={async () => {
+										await fetchAPIDeleteDeck(deckId);
+										navigate('/');
+									}}
+								>
+									Delete
+								</Button>
+							</div>
+						</section>
 					</div>
 				</div>
 			</div>
@@ -203,7 +265,12 @@ export function Deck(props: DeckProps) {
 	const [isSaving, setIsSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [showDetailsModal, setShowDetailsModal] = useState(false);
+	// A snapshot of the card's printings when the dialog opened, so a refresh can't reset it.
+	const [managing, setManaging] = useState<DeckCardGroup | null>(null);
 	const [showImageImport, setShowImageImport] = useState(false);
+	const [bannerElement, setBannerElement] = useState<HTMLElement | null>(
+		null
+	);
 	const addCards = useSelector(selectAddCards);
 	const showAddCards = addCards.open && addCards.deckId === deckId;
 	const scanTasks = useImageImportQueue();
@@ -257,6 +324,12 @@ export function Deck(props: DeckProps) {
 			} as React.CSSProperties)
 		: undefined;
 
+	const setEditing = (editing: boolean) => {
+		setDetailsDraft(null);
+		setSaveError(null);
+		setIsEditMode(editing);
+	};
+
 	const refreshDeck = useCallback(
 		() => storeDispatch(loadDeck(deckId)),
 		[deckId, storeDispatch]
@@ -294,22 +367,15 @@ export function Deck(props: DeckProps) {
 		if (showDetailsModal) nameInputRef.current?.focus();
 	}, [showDetailsModal]);
 
-	const onSubmitChange = useCallback(
-		async (
-			card: FetchAPIDeckCardResponse,
-			update: { uuid: string; count: number }
-		) => {
-			await fetchAPIEditDeckCard(
-				deckId,
-				card.uuid,
-				update.uuid,
-				update.count
-			);
+	const savePrintings = useCallback(
+		async (edit: DeckCardsEdit) => {
+			await fetchAPIEditDeckCards(deckId, edit);
 			await refreshDeck();
-			dispatch(Actions.setEditCard(null));
+			setManaging(null);
 		},
-		[deckId, dispatch, refreshDeck]
+		[deckId, refreshDeck]
 	);
+	const closeManaging = useCallback(() => setManaging(null), []);
 
 	const saveName = async () => {
 		if (!data || !name.trim() || isSaving) return;
@@ -354,7 +420,25 @@ export function Deck(props: DeckProps) {
 	}
 
 	return (
-		<Page>
+		<PageFrame
+			renderHeader={(backSlotRef) => (
+				<DeckHeader
+					backSlotRef={backSlotRef}
+					name={data.name}
+					art={
+						topStyle === 'full-art'
+							? (topBannerCard?.art ?? null)
+							: previewIcon
+					}
+					artFrame={bannerCrop.mobile}
+					banner={bannerElement}
+					isEditMode={!!isEditMode}
+					onToggleEdit={() => setEditing(!isEditMode)}
+					isSaving={isSaving}
+					style={paletteStyle}
+				/>
+			)}
+		>
 			{error && <p role="alert">Unable to refresh deck.</p>}
 			{showImageImport && (
 				<ImageCardImport
@@ -367,19 +451,23 @@ export function Deck(props: DeckProps) {
 					}}
 				/>
 			)}
-			{viewEditCard ? (
-				<Modal wide fullScreenOnMobile>
-					<EditCardModal
-						editable={!!isEditMode}
-						onSubmit={(update) =>
-							onSubmitChange(viewEditCard, update)
-						}
-						onCancel={() => dispatch(Actions.setEditCard(null))}
+			{managing ? (
+				<Modal extraWide fullScreenOnMobile>
+					<ManagePrintings
+						group={managing}
+						onSave={savePrintings}
+						onCancel={closeManaging}
+					/>
+				</Modal>
+			) : viewEditCard ? (
+				<Modal extraWide fullScreenOnMobile>
+					<CardPreviewModal
+						onClose={() => dispatch(Actions.setEditCard(null))}
 						card={viewEditCard}
 					/>
 				</Modal>
 			) : viewAddCard ? (
-				<Modal>
+				<Modal fullScreenOnMobile>
 					<AddCard
 						deckId={deckId}
 						onEvent={(e) => {
@@ -395,7 +483,7 @@ export function Deck(props: DeckProps) {
 					/>
 				</Modal>
 			) : showAddCards ? (
-				<Modal>
+				<Modal fullScreenOnMobile>
 					<AddCards />
 				</Modal>
 			) : showDetailsModal ? (
@@ -456,6 +544,7 @@ export function Deck(props: DeckProps) {
 			<div className={styles['deck-theme']} style={paletteStyle}>
 				{topStyle === 'full-art' && topBannerCard && (
 					<DeckFullArtTop
+						ref={setBannerElement}
 						src={topBannerCard.art}
 						crop={bannerCrop}
 						name={topBannerCard.name}
@@ -472,6 +561,7 @@ export function Deck(props: DeckProps) {
 					<div className={styles['banner-container']}>
 						{topStyle === 'card' && (
 							<DeckBannerCard
+								ref={setBannerElement}
 								src={previewIcon}
 								crop={bannerCrop}
 								name={data.name}
@@ -482,21 +572,13 @@ export function Deck(props: DeckProps) {
 							deckId={deckId}
 							dispatch={dispatch}
 							isEditMode={!!isEditMode}
-							onEdit={() => {
-								setDetailsDraft(null);
-								setSaveError(null);
-								setIsEditMode(true);
-							}}
+							onEdit={() => setEditing(true)}
 							onEditName={() => {
 								setDetailsDraft({ deckId, name: data.name });
 								setSaveError(null);
 								setShowDetailsModal(true);
 							}}
-							onDone={() => {
-								setDetailsDraft(null);
-								setSaveError(null);
-								setIsEditMode(false);
-							}}
+							onDone={() => setEditing(false)}
 							onImportImage={() => setShowImageImport(true)}
 							onAddCards={() =>
 								storeDispatch(openAddCards({ deckId }))
@@ -525,12 +607,18 @@ export function Deck(props: DeckProps) {
 						bannerCrop={bannerCrop}
 						bannerBlend={data.bannerBlend}
 						topStyle={topStyle}
-						onCardClick={(card: FetchAPIDeckCardResponse) => {
-							dispatch(Actions.setEditCard(card));
+						editable={!!isEditMode}
+						onCardClick={(
+							card: FetchAPIDeckCardResponse,
+							group: DeckCardGroup
+						) => {
+							if (isEditMode) setManaging(group);
+							else dispatch(Actions.setEditCard(card));
 						}}
+						onManagePrintings={setManaging}
 					/>
 				</div>
 			</div>
-		</Page>
+		</PageFrame>
 	);
 }

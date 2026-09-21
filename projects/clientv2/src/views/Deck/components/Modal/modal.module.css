@@ -20,6 +20,9 @@
 .wide {
 	max-width: min(100%, 760px);
 }
+.extra-wide {
+	max-width: min(100%, 960px);
+}
 
 @media (max-width: 680px) {
 	.mobile-full-screen {

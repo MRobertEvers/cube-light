@@ -6,6 +6,11 @@ import AlertIcon from '../../../../components/Icons/AlertIcon';
 import { createResponseHandler } from '../../../../workers/utils/messageToolkit';
 import { DeckWorkerMessages } from '../../../../workers/deck.worker.messages';
 import { Button } from 'src/components/Button/Button';
+import { HeaderBackButton } from 'src/components/BackLink/BackLink';
+import {
+	HeaderBackSlot,
+	HeaderBackSlotContext
+} from 'src/components/Header/HeaderBackSlot';
 import { Counter } from 'src/components/Counter/Counter';
 import { SuggestionInput } from 'src/components/SuggestionInput/SuggestionInput';
 import { useAsyncReducer } from 'src/hooks/useAsyncReducer';
@@ -50,6 +55,8 @@ export function AddCard(props: AddCardProps) {
 	const submitStartedAt = useRef(0);
 	const hintId = useId();
 	const errorId = useId();
+	// State, not a ref, so the back button portals in once the slot mounts.
+	const [backSlot, setBackSlot] = useState<HTMLElement | null>(null);
 
 	useEffect(() => {
 		const previousFocus = document.activeElement as HTMLElement | null;
@@ -188,97 +195,118 @@ export function AddCard(props: AddCardProps) {
 				}
 			}}
 		>
-			<div className={styles['heading']}>
-				<h2 id="add-card-title">Add a card</h2>
-				<p>Search for a card, then choose how many to add.</p>
-			</div>
-			<div className={styles['field']}>
-				<label htmlFor="add-card-name">Card name</label>
-				<SuggestionInput
-					id="add-card-name"
-					inputRef={addItemInputRef}
-					value={viewAddItemText}
-					suggestions={suggestions.sorted}
-					open={viewIsDropDownVisible}
-					onOpenChange={(open) =>
-						dispatch(Actions.setViewIsDropDownVisible(open))
-					}
-					onChange={(query) => {
-						queryRef.current = query;
-						requestIdRef.current += 1;
-						dispatch(Actions.setViewAddItemText(query));
-						dispatch(
-							Actions.setSuggestionsData({
-								sorted: [],
-								set: new Set()
-							})
-						);
-						dispatch(Actions.setViewIsDropDownVisible(false));
-						setError(null);
-						setIsSearching(Boolean(query.trim()));
-						if (query.trim()) {
-							searchStartedAt.current = performance.now();
-							postToWorker(
-								DeckWorkerMessages.getSuggestions({
-									query,
-									requestId: requestIdRef.current
+			<HeaderBackSlotContext.Provider value={backSlot}>
+				<header className={styles['top-bar']}>
+					<HeaderBackSlot ref={setBackSlot} />
+					<h2 id="add-card-title">Add a card</h2>
+					{/* Phones fill the screen and close from the top bar, so Cancel hides. */}
+					<HeaderBackButton
+						label="Close add a card"
+						onClick={() => {
+							if (!isSubmitting)
+								onEvent({ type: AddCardEventType.CLOSE });
+						}}
+					/>
+				</header>
+			</HeaderBackSlotContext.Provider>
+			<div className={styles['body']}>
+				<p className={styles['intro']}>
+					Search for a card, then choose how many to add.
+				</p>
+				<div className={styles['field']}>
+					<label htmlFor="add-card-name">Card name</label>
+					<SuggestionInput
+						id="add-card-name"
+						inputRef={addItemInputRef}
+						value={viewAddItemText}
+						suggestions={suggestions.sorted}
+						open={viewIsDropDownVisible}
+						onOpenChange={(open) =>
+							dispatch(Actions.setViewIsDropDownVisible(open))
+						}
+						onChange={(query) => {
+							queryRef.current = query;
+							requestIdRef.current += 1;
+							dispatch(Actions.setViewAddItemText(query));
+							dispatch(
+								Actions.setSuggestionsData({
+									sorted: [],
+									set: new Set()
 								})
 							);
+							dispatch(Actions.setViewIsDropDownVisible(false));
+							setError(null);
+							setIsSearching(Boolean(query.trim()));
+							if (query.trim()) {
+								searchStartedAt.current = performance.now();
+								postToWorker(
+									DeckWorkerMessages.getSuggestions({
+										query,
+										requestId: requestIdRef.current
+									})
+								);
+							}
+						}}
+						onSelect={selectSuggestion}
+						enterSelects={
+							suggestions.sorted.length === 1 && !exactMatch
+								? suggestions.sorted[0]
+								: undefined
 						}
-					}}
-					onSelect={selectSuggestion}
-					enterSelects={
-						suggestions.sorted.length === 1 && !exactMatch
-							? suggestions.sorted[0]
-							: undefined
-					}
-					tabSelects={
-						suggestions.sorted.length === 1
-							? suggestions.sorted[0]
-							: undefined
-					}
-					placeholder="Start typing a card name"
-					indicator={
-						isSearching ? (
-							<Spinner />
-						) : viewAddItemText ? (
-							resolvedCardName ? (
-								<EnterIcon />
-							) : (
-								<AlertIcon />
-							)
-						) : null
-					}
-					listLabel="Card suggestions"
-					aria-describedby={`${hintId}${error ? ` ${errorId}` : ''}`}
-					aria-invalid={Boolean(error)}
-				/>
-				<p id={hintId} className={styles['field-hint']}>
-					{isSearching
-						? 'Searching cards…'
-						: viewAddItemText && !resolvedCardName
-							? 'Choose a suggestion or enter an exact card name.'
-							: 'Use arrow keys to browse suggestions; press Enter to choose.'}
-				</p>
-				{error && (
-					<p id={errorId} className={styles['error']} role="alert">
-						{error}
+						tabSelects={
+							suggestions.sorted.length === 1
+								? suggestions.sorted[0]
+								: undefined
+						}
+						placeholder="Start typing a card name"
+						indicator={
+							isSearching ? (
+								<Spinner />
+							) : viewAddItemText ? (
+								resolvedCardName ? (
+									<EnterIcon />
+								) : (
+									<AlertIcon />
+								)
+							) : null
+						}
+						listLabel="Card suggestions"
+						aria-describedby={`${hintId}${error ? ` ${errorId}` : ''}`}
+						aria-invalid={Boolean(error)}
+					/>
+					<p id={hintId} className={styles['field-hint']}>
+						{isSearching
+							? 'Searching cards…'
+							: viewAddItemText && !resolvedCardName
+								? 'Choose a suggestion or enter an exact card name.'
+								: 'Use arrow keys to browse suggestions; press Enter to choose.'}
 					</p>
-				)}
-			</div>
-			<div className={styles['quantity-row']}>
-				<div>
-					<span className={styles['quantity-title']}>Main deck</span>
-					<span className={styles['quantity-subtitle']}>
-						Number of copies
-					</span>
+					{error && (
+						<p
+							id={errorId}
+							className={styles['error']}
+							role="alert"
+						>
+							{error}
+						</p>
+					)}
 				</div>
-				<Counter
-					count={viewAddItemCount}
-					setCount={(count) =>
-						dispatch(Actions.setViewAddItemCount(count))
-					}
-				/>
+				<div className={styles['quantity-row']}>
+					<div>
+						<span className={styles['quantity-title']}>
+							Main deck
+						</span>
+						<span className={styles['quantity-subtitle']}>
+							Number of copies
+						</span>
+					</div>
+					<Counter
+						count={viewAddItemCount}
+						setCount={(count) =>
+							dispatch(Actions.setViewAddItemCount(count))
+						}
+					/>
+				</div>
 			</div>
 			<div className={styles['modal-buttons']}>
 				<Button

@@ -27,7 +27,8 @@ async function main() {
 	const server = new Server(
 		{
 			port: PORT,
-			host: 'localhost'
+			// '::' accepts IPv4 and IPv6, so the host.local mDNS name works on the LAN.
+			host: '::'
 		},
 		app
 	);

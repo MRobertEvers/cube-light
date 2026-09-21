@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-The development server runs at `http://127.0.0.1:3000`. Start the backend separately. API requests use `http://localhost:4040` by default; set `VITE_BACKEND_HOST_URI` before starting Vite to use another backend URL.
+The development server runs on port 3000 on all interfaces, so it is reachable at `http://localhost:3000` and from the LAN at `http://<hostname>.local:3000`. Start the backend separately. API requests go to port 4040 on whichever host served the page; set `VITE_BACKEND_HOST_URI` before starting Vite to use another backend URL.
 
 ## Import cards from a photo
 

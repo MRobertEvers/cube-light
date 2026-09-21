@@ -9,6 +9,8 @@ type ButtonProps = React.PropsWithChildren<{
 	disabled?: boolean;
 	type?: 'button' | 'submit' | 'reset';
 	ariaLabel?: string;
+	ariaExpanded?: boolean;
+	ariaControls?: string;
 }>;
 
 export function Button(props: ButtonProps) {
@@ -19,13 +21,17 @@ export function Button(props: ButtonProps) {
 		className,
 		disabled,
 		type = 'button',
-		ariaLabel
+		ariaLabel,
+		ariaExpanded,
+		ariaControls
 	} = props;
 
 	return (
 		<button
 			type={type}
 			aria-label={ariaLabel}
+			aria-expanded={ariaExpanded}
+			aria-controls={ariaControls}
 			disabled={disabled}
 			style={style}
 			className={styles['default-button'] + ` ${className || ''}`}

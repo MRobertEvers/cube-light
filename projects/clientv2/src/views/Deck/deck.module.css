@@ -22,26 +22,13 @@
 }
 
 .banner-container {
-	flex: 0 0 240px;
+	flex: 0 0 280px;
 }
 
 .full-index {
 	position: relative;
 	padding-top: 0;
 	margin-top: -56px;
-}
-
-.edit-deck-button-container {
-	display: grid;
-}
-
-.control-mode {
-	grid-area: 1 / 1;
-}
-
-.inactive {
-	visibility: hidden;
-	pointer-events: none;
 }
 
 .deck-details-fields {
@@ -103,47 +90,6 @@
 	padding: 6px 12px;
 }
 
-.edit-deck-button-container {
-	margin-top: 14px;
-}
-
-.secondary-links {
-	display: flex;
-	justify-content: center;
-	flex-wrap: wrap;
-	gap: 4px 16px;
-	width: 100%;
-	margin-top: -4px;
-	font-size: 13px;
-}
-
-.secondary-links a,
-.secondary-action {
-	color: var(--deck-page-accent, inherit);
-	padding: 4px 0;
-}
-
-.secondary-action {
-	border: 0;
-	background: none;
-	font: inherit;
-	text-decoration: underline;
-	cursor: pointer;
-}
-
-.secondary-action:disabled {
-	opacity: 0.5;
-	cursor: default;
-}
-
-.edit-deck-button {
-	border-color: var(--deck-border, #e5e1df);
-	color: var(--deck-accent-text, inherit);
-	width: 100%;
-	min-width: unset !important;
-	margin: 16px auto !important;
-}
-
 .saving-label {
 	display: inline-flex;
 	align-items: center;
@@ -156,8 +102,130 @@
 	border-width: 3px;
 }
 
+.deck-controls {
+	display: flex;
+	flex-direction: column;
+	margin: 16px 0;
+}
+
+.edit-deck-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	border-color: var(--deck-border, #e5e1df);
+	color: var(--deck-accent-text, inherit);
+	width: 100%;
+	min-width: unset !important;
+	margin: 0 !important;
+}
+
+.edit-deck-chevron {
+	transition: transform 220ms ease;
+}
+
+.edit-deck-button[aria-expanded='true'] .edit-deck-chevron {
+	transform: rotate(180deg);
+}
+
+/* Animating the row track from 0fr to 1fr lets a section expand to its natural height. */
+.deck-collapse {
+	display: grid;
+	grid-template-rows: 0fr;
+	opacity: 0;
+	transition:
+		grid-template-rows 220ms ease,
+		opacity 220ms ease;
+}
+
+.deck-collapse.open {
+	grid-template-rows: 1fr;
+	opacity: 1;
+}
+
+.deck-collapse-inner {
+	min-height: 0;
+	overflow: hidden;
+}
+
+.deck-control-pair {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+	padding-top: 10px;
+}
+
+.deck-edit-panel-body {
+	display: grid;
+	gap: 14px;
+	padding-top: 14px;
+}
+
+.deck-control-group {
+	display: grid;
+	gap: 6px;
+}
+
+.deck-control-label {
+	margin: 0;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	opacity: 0.7;
+}
+
+.deck-add-tiles {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 6px;
+}
+
+.deck-control-button,
+.deck-add-tile {
+	min-width: unset !important;
+	margin: 0 !important;
+	border-color: var(--deck-border, #e5e1df);
+	color: var(--deck-accent-text, inherit) !important;
+	font-size: 13px !important;
+}
+
+.deck-add-tile {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3px;
+	padding: 10px 4px;
+}
+
+.deck-add-tile-hint {
+	font-size: 11px;
+	font-weight: 400;
+	color: var(--deck-on-wash, #595959);
+	opacity: 0.75;
+}
+
+.deck-control-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+}
+
+.deck-control-button {
+	padding: 0 10px;
+}
+
 .delete-deck-button {
-	color: #b42323;
+	margin-left: auto !important;
+	color: #b42323 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.edit-deck-chevron,
+	.deck-collapse {
+		transition: none;
+	}
 }
 
 @media (max-width: 680px) {
@@ -169,12 +237,6 @@
 
 	.banner-container {
 		flex-basis: auto;
-	}
-
-	.edit-deck-button {
-		max-width: 240px;
-		display: block;
-		margin: 0 !important;
 	}
 }
 

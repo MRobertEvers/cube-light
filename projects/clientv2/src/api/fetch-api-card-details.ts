@@ -14,6 +14,18 @@ export type FetchAPICardDetailsResponse = {
 
 	sets: Array<[string, string]>;
 
+	// Printed face details.
+	type: string | null;
+	rarity: string | null;
+	power: string | null;
+	toughness: string | null;
+	loyalty: string | null;
+	defense: string | null;
+	number: string | null;
+	artist: string | null;
+	flavorText: string | null;
+	legalities: Record<string, string>; // format -> Legal/Banned/Restricted
+
 	// From Scryfall;
 	image: string | null;
 	highResImage: string | null;

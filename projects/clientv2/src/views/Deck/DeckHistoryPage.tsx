@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { BackLink } from '../../components/BackLink/BackLink';
 import {
 	fetchAPIDeckHistory,
 	DeckHistoryCard,
@@ -78,9 +78,7 @@ export function DeckHistoryPage(props: { deckId: string }) {
 		<NextPage title="Deck edit history">
 			<Page>
 				<main className={styles.page}>
-					<Link className={styles.back} to={`/deck/${deckId}`}>
-						← Back to deck
-					</Link>
+					<BackLink to={`/deck/${deckId}`}>Back to deck</BackLink>
 					<h1>
 						{history
 							? `${history.deckName} edit history`

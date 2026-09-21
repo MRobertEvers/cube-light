@@ -12,6 +12,7 @@ type Props = {
 	variant?: 'responsive' | 'desktop' | 'mobile';
 	onEditDetails?: () => void;
 	onCropChange?: (variant: keyof BannerCrop, frame: BannerFrame) => void;
+	ref?: React.Ref<HTMLDivElement>;
 };
 
 export function DeckBannerCard(props: Props) {
@@ -22,10 +23,11 @@ export function DeckBannerCard(props: Props) {
 		updatedAt,
 		variant = 'responsive',
 		onEditDetails,
-		onCropChange
+		onCropChange,
+		ref
 	} = props;
 	return (
-		<div className={`${styles.card} ${styles[variant]}`}>
+		<div ref={ref} className={`${styles.card} ${styles[variant]}`}>
 			<div className={styles.art}>
 				<div className={styles.desktopArt}>
 					<BannerArtwork

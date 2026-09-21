@@ -1,0 +1,219 @@
+.header {
+	--collapse: 0;
+	position: sticky;
+	top: 0;
+	z-index: 50;
+	box-sizing: border-box;
+	height: 60px;
+	padding: 0 8px 0 14px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: var(--theme-text);
+	background-color: color-mix(
+		in srgb,
+		var(--deck-surface, #fff) calc(var(--collapse) * 100%),
+		#fff
+	);
+	border-bottom: 1px solid
+		color-mix(
+			in srgb,
+			var(--deck-border, #e5e1df) calc(var(--collapse) * 100%),
+			#e5e1df
+		);
+	box-shadow: 0 2px 12px rgba(38, 38, 38, calc(0.04 + var(--collapse) * 0.08));
+}
+
+.header a {
+	text-decoration: none;
+	color: #47413f;
+}
+
+/* Both halves share one spot and cross-fade as the banner slides under. */
+.stage {
+	position: relative;
+	flex: 1;
+	min-width: 0;
+	height: 100%;
+}
+
+.site,
+.deck {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.site {
+	opacity: clamp(0, 1 - var(--collapse) * 2, 1);
+	transform: translateY(calc(var(--collapse) * -14px));
+}
+
+.deck {
+	opacity: clamp(0, var(--collapse) * 2 - 1, 1);
+	transform: translateY(calc((1 - var(--collapse)) * 14px));
+}
+
+.brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 16px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.brandIcon {
+	width: 34px;
+	height: 34px;
+	object-fit: contain;
+}
+
+/* A back button takes the brand name's room; the icon still links home. */
+.header:has([data-back-slot]:not(:empty)) .brand span {
+	display: none;
+}
+
+.navigation {
+	margin-left: auto;
+	display: flex;
+	gap: 14px;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.art {
+	position: relative;
+	flex: none;
+	width: 56px;
+	height: 42px;
+	border-radius: 7px;
+	overflow: hidden;
+	background: var(--deck-border, #f2e9e6);
+}
+
+.titles {
+	min-width: 0;
+	display: grid;
+}
+
+.name {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--deck-banner-ink, inherit);
+}
+
+.mode {
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--deck-accent-text, #8e2524);
+}
+
+.menu {
+	position: relative;
+	flex: none;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	opacity: clamp(0, var(--collapse) * 2 - 1, 1);
+}
+
+.editToggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 34px;
+	padding: 0 12px;
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 17px;
+	background: #fff;
+	color: var(--deck-accent-text, #47413f);
+	font: inherit;
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.editToggle.editing {
+	border-color: var(--deck-accent, #8e2524);
+	background: var(--deck-accent, #8e2524);
+	color: var(--deck-on-accent, #fff);
+}
+
+.editToggle:disabled {
+	opacity: 0.6;
+	cursor: default;
+}
+
+.editToggle:focus-visible {
+	outline: 2px solid var(--deck-accent, #8e2524);
+	outline-offset: 2px;
+}
+
+.menuButton {
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	border: 0;
+	border-radius: 8px;
+	background: none;
+	color: var(--deck-banner-ink, #47413f);
+	cursor: pointer;
+}
+
+.menuButton:focus-visible {
+	outline: 2px solid currentColor;
+}
+
+/* Three bars: the middle one is the element, the others its shadows. */
+.menuIcon {
+	width: 20px;
+	height: 2px;
+	border-radius: 1px;
+	background: currentColor;
+	box-shadow:
+		0 -6px 0 currentColor,
+		0 6px 0 currentColor;
+}
+
+.menuPanel {
+	position: absolute;
+	top: calc(100% + 8px);
+	right: 0;
+	min-width: 160px;
+	padding: 6px;
+	display: grid;
+	background: #fff;
+	border: 1px solid #e5e1df;
+	border-radius: 10px;
+	box-shadow: 0 12px 28px rgba(38, 38, 38, 0.16);
+	font-weight: 600;
+}
+
+.menuPanel a {
+	padding: 10px 12px;
+	border-radius: 6px;
+}
+
+.menuPanel a:hover,
+.menuPanel a:focus-visible {
+	background: #f4f1ef;
+	color: #8e2524;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.site,
+	.deck {
+		transform: none;
+	}
+}

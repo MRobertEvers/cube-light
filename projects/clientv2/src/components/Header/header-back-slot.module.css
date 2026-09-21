@@ -1,0 +1,11 @@
+.slot {
+	display: none;
+}
+
+/* Matches BackLink, which hides its inline link at this width. */
+@media (max-width: 680px) {
+	.slot:not(:empty) {
+		display: flex;
+		flex: none;
+	}
+}

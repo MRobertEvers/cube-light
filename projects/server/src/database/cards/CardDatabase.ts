@@ -25,6 +25,21 @@ export type DetailedCardInfo = CardInfo & {
 	setCode: string;
 };
 
+/** Printed card-face details shown alongside a card preview. */
+export type CardRulesInfo = {
+	uuid: string;
+	type: string | null;
+	rarity: string | null;
+	power: string | null;
+	toughness: string | null;
+	loyalty: string | null;
+	defense: string | null;
+	number: string | null;
+	artist: string | null;
+	flavorText: string | null;
+	legalities: Record<string, string>;
+};
+
 export class CardDatabase {
 	private db: SqliteDatabase;
 
@@ -93,6 +108,32 @@ export class CardDatabase {
 			`SELECT ${CARD_DATA_COLUMNS} FROM cards c JOIN cardIdentifiers i ON i.uuid = c.uuid WHERE c.uuid COLLATE NOCASE IN (${placeholders(uuids)})`,
 			uuids
 		);
+	}
+
+	public async getCardRulesByUuids(
+		uuids: string[]
+	): Promise<CardRulesInfo[]> {
+		if (uuids.length === 0) return [];
+		const cards = await this.db.all<Omit<CardRulesInfo, 'legalities'>>(
+			`SELECT uuid, type, rarity, power, toughness, loyalty, defense, number, artist, flavorText FROM cards WHERE uuid COLLATE NOCASE IN (${placeholders(uuids)})`,
+			uuids
+		);
+		const legalityRows = await this.db.all<Record<string, string | null>>(
+			`SELECT * FROM cardLegalities WHERE uuid COLLATE NOCASE IN (${placeholders(uuids)})`,
+			uuids
+		);
+		const legalitiesByUuid = new Map<string, Record<string, string>>();
+		for (const { uuid, ...formats } of legalityRows) {
+			const legalities: Record<string, string> = {};
+			for (const [format, status] of Object.entries(formats)) {
+				if (status) legalities[format] = status;
+			}
+			legalitiesByUuid.set(uuid!, legalities);
+		}
+		return cards.map((card) => ({
+			...card,
+			legalities: legalitiesByUuid.get(card.uuid) ?? {}
+		}));
 	}
 
 	public async getCardSets(name: string): Promise<Array<[string, string]>> {

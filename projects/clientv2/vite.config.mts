@@ -9,6 +9,14 @@ export default defineConfig({
 			src: fileURLToPath(new URL('./src', import.meta.url))
 		}
 	},
+	server: {
+		host: true,
+		allowedHosts: ['.local']
+	},
+	preview: {
+		host: true,
+		allowedHosts: ['.local']
+	},
 	build: {
 		outDir: 'dist'
 	}

@@ -56,6 +56,13 @@
 	margin-left: auto;
 }
 
+/* A back button takes the brand name's room on phones; the icon still links home. */
+@media (max-width: 680px) {
+	.header-content:has([data-back-slot]:not(:empty)) .brand span {
+		display: none;
+	}
+}
+
 @media (max-width: 560px) {
 	.header-content {
 		gap: 12px;

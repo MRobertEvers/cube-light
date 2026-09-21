@@ -1,1 +1,1 @@
-export { EditCardModal } from './EditCard';
+export { CardPreviewModal } from './EditCard';

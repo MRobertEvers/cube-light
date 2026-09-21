@@ -1,7 +1,10 @@
-import { CardDatabase } from '../database/cards/CardDatabase';
+import {
+	CardDatabase,
+	CardRulesInfo
+} from '../database/cards/CardDatabase';
 import { getDeckOverviewCardInfo } from './get-deck-overview-card-info';
 
-export type CompleteCardInfo = {
+export type CompleteCardInfo = Omit<CardRulesInfo, 'uuid'> & {
 	// From DetailedCardInfo
 	name: string;
 	uuid: string;
@@ -36,12 +39,33 @@ export async function getCardsDetails(
 		cardSets[card.uuid] = await cardDatabase.getCardSets(card.name);
 	}
 
+	const rules = new Map(
+		(await cardDatabase.getCardRulesByUuids(uuids)).map((row) => [
+			row.uuid,
+			row
+		])
+	);
+
 	return cards.map((card) => {
 		const { uuid } = card;
 		const sets = cardSets[uuid];
+		const { uuid: _uuid, ...cardRules } = rules.get(uuid) ?? {
+			uuid,
+			type: null,
+			rarity: null,
+			power: null,
+			toughness: null,
+			loyalty: null,
+			defense: null,
+			number: null,
+			artist: null,
+			flavorText: null,
+			legalities: {}
+		};
 
 		return {
 			...card,
+			...cardRules,
 			sets: sets,
 			highResImage: card.images?.normal || null,
 			image: card.images?.small || null,

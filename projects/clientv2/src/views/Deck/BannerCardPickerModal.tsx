@@ -25,13 +25,13 @@ export function BannerCardPickerModal(props: {
 	const dispatch = useAppDispatch();
 	const picker = useSelector(selectBannerPicker);
 	const dialogRef = useRef<HTMLDivElement>(null);
-	const inputRef = useRef<HTMLInputElement>(null);
 	const visible = picker.open && picker.deckId === deckId;
 
 	useEffect(() => {
 		if (!visible) return;
 		const previousFocus = document.activeElement as HTMLElement | null;
-		inputRef.current?.focus();
+		// Focusing the input would open its suggestion list; land on the dialog instead.
+		dialogRef.current?.focus();
 		if (picker.chosenName)
 			void dispatch(
 				loadBannerPrintings({ deckId, name: picker.chosenName })
@@ -46,9 +46,10 @@ export function BannerCardPickerModal(props: {
 		)
 		.slice(0, 10);
 	const editingName = picker.query !== picker.chosenName;
-	const selected = picker.printings.find(
-		(item) => item.uuid === picker.selectedUuid
-	);
+	const showPrintings = !editingName && !!picker.chosenName;
+	const selected = showPrintings
+		? picker.printings.find((item) => item.uuid === picker.selectedUuid)
+		: undefined;
 	const canSave =
 		!editingName &&
 		!!selected?.art &&
@@ -59,6 +60,27 @@ export function BannerCardPickerModal(props: {
 		dispatch(chooseBannerCard(name));
 		void dispatch(loadBannerPrintings({ deckId, name }));
 	};
+	const placeholder = !showPrintings ? (
+		<p>Select a card above to choose its printing.</p>
+	) : picker.loading ? (
+		<p role="status">Loading printings…</p>
+	) : picker.error ? (
+		<p className={styles['error']} role="alert">
+			{picker.error}{' '}
+			<button
+				type="button"
+				onClick={() =>
+					void dispatch(
+						loadBannerPrintings({ deckId, name: picker.chosenName })
+					)
+				}
+			>
+				Retry
+			</button>
+		</p>
+	) : (
+		<p>No artwork is available for this card.</p>
+	);
 	const save = async () => {
 		if (!picker.selectedUuid || !canSave) return;
 		try {
@@ -81,6 +103,7 @@ export function BannerCardPickerModal(props: {
 				ref={dialogRef}
 				className={styles['banner-modal']}
 				role="dialog"
+				tabIndex={-1}
 				aria-modal="true"
 				aria-labelledby="banner-modal-heading"
 				onKeyDown={(event) => {
@@ -159,7 +182,6 @@ export function BannerCardPickerModal(props: {
 					<label htmlFor="banner-card-search">Card name</label>
 					<SuggestionInput
 						id="banner-card-search"
-						inputRef={inputRef}
 						value={picker.query}
 						suggestions={matches}
 						open={picker.suggestionsOpen}
@@ -174,76 +196,45 @@ export function BannerCardPickerModal(props: {
 						listLabel="Cards in deck"
 					/>
 				</div>
-				{editingName ? (
-					<p className={styles['banner-preview-hint']}>
-						Choose a card name to view its printings.
-					</p>
-				) : (
-					picker.chosenName && (
-						<div className={styles['printings-section']}>
-							<h3>Printings of {picker.chosenName}</h3>
-							{picker.loading && (
-								<p role="status">Loading printings…</p>
+				<div className={styles['printings-section']}>
+					<h3>
+						{showPrintings
+							? `Printings of ${picker.chosenName}`
+							: 'Printings'}
+					</h3>
+					<div className={styles['printing-layout']}>
+						<PrintingPicker
+							printings={showPrintings ? picker.printings : []}
+							selectedUuid={picker.selectedUuid}
+							onSelect={(uuid) =>
+								dispatch(selectBannerPrinting(uuid))
+							}
+							name="banner-printing"
+							image="art"
+							disabled={picker.saving}
+							placeholder={placeholder}
+							aria-label="Choose printing artwork"
+						/>
+						<div className={styles['printing-preview']}>
+							{selected?.art ? (
+								<img
+									src={selected.art}
+									alt={`${picker.chosenName} ${selected.setCode} artwork preview`}
+								/>
+							) : (
+								<div
+									className={styles['printing-preview-empty']}
+									aria-hidden="true"
+								/>
 							)}
-							{picker.error && (
-								<p className={styles['error']} role="alert">
-									{picker.error}{' '}
-									<button
-										type="button"
-										onClick={() =>
-											void dispatch(
-												loadBannerPrintings({
-													deckId,
-													name: picker.chosenName
-												})
-											)
-										}
-									>
-										Retry
-									</button>
-								</p>
-							)}
-							{!picker.loading &&
-								!picker.error &&
-								picker.printings.length === 0 && (
-									<p>
-										No artwork is available for this card.
-									</p>
-								)}
-							{picker.printings.length > 0 && (
-								<div className={styles['printing-layout']}>
-									<PrintingPicker
-										printings={picker.printings}
-										selectedUuid={picker.selectedUuid}
-										onSelect={(uuid) =>
-											dispatch(selectBannerPrinting(uuid))
-										}
-										name="banner-printing"
-										image="art"
-										disabled={picker.saving}
-										aria-label="Choose printing artwork"
-									/>
-									{selected?.art && (
-										<div
-											className={
-												styles['printing-preview']
-											}
-										>
-											<img
-												src={selected.art}
-												alt={`${picker.chosenName} ${selected.setCode} artwork preview`}
-											/>
-											<p>
-												{picker.chosenName} ·{' '}
-												{selected.setCode}
-											</p>
-										</div>
-									)}
-								</div>
-							)}
+							<p>
+								{selected?.art
+									? `${picker.chosenName} · ${selected.setCode}`
+									: 'No printing selected'}
+							</p>
 						</div>
-					)
-				)}
+					</div>
+				</div>
 			</div>
 		</Modal>
 	);
