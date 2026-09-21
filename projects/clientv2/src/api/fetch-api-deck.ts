@@ -8,6 +8,12 @@ export type FetchAPIDeckCardResponse = {
 	name: string;
 	count: number;
 	image: string;
+	images?: {
+		small: string;
+		normal: string;
+		large: string;
+		art_crop: string;
+	};
 	uuid: string;
 	art: string;
 	setCode: string;

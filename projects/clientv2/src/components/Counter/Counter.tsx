@@ -3,14 +3,14 @@ import { Button } from '../Button/Button';
 
 import styles from './counter.module.css';
 
-export function Counter(props: { count: number; setCount: (x: number) => void }) {
-	const { count, setCount } = props;
+export function Counter(props: { count: number; setCount: (x: number) => void; min?: number }) {
+	const { count, setCount, min = 1 } = props;
 	return (
 		<div className={styles['counter']}>
 			<Button
 				className={styles['input-button']}
 				ariaLabel="Decrease number of copies"
-				disabled={count <= 1}
+				disabled={count <= min}
 				onClick={() => setCount(count - 1)}
 			>
 				-
@@ -19,7 +19,7 @@ export function Counter(props: { count: number; setCount: (x: number) => void })
 				className={styles['input']}
 				aria-label="Number of copies"
 				type="number"
-				min={1}
+				min={min}
 				step={1}
 				value={count}
 				onChange={(e) => {

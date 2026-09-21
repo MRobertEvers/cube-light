@@ -1,11 +1,21 @@
-.decklist-groups > tbody > tr > td > a {
+.decklist-groups > tbody > tr > td > button {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	font: inherit;
 	text-decoration: none;
 	color: var(--deck-accent-text, #6f2525);
 	cursor: pointer;
 }
 
-.decklist-groups > tbody > tr > td > a:hover {
+.decklist-groups > tbody > tr > td > button:hover {
 	text-decoration: underline;
+}
+
+.decklist-groups > tbody > tr > td > button:focus-visible {
+	border-radius: 3px;
+	outline: 2px solid var(--deck-accent, #7a3431);
+	outline-offset: 2px;
 }
 
 .decklist-groups > tbody > tr > td {
@@ -44,12 +54,12 @@
 .category-header th { padding: 9px 12px; }
 
 @media (max-width: 680px) {
-	.decklist-groups > tbody > tr > td > a {
+	.decklist-groups > tbody > tr > td > button {
 		text-decoration: none;
 		color: var(--deck-accent-text, var(--theme-text));
 	}
 
-	.decklist-groups > tbody > tr > td > a:hover {
+	.decklist-groups > tbody > tr > td > button:hover {
 		text-decoration: none;
 	}
 

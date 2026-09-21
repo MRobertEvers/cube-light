@@ -12,7 +12,8 @@ function getOcrWorker(): Promise<OcrWorker> {
 					// The SDK transfers image input into its module worker and replies with OCR results.
 					worker: true,
 					textDetectionModelName: 'PP-OCRv5_mobile_det',
-					textRecognitionModelName: 'PP-OCRv5_mobile_rec',
+					// v6 small reads blurry title bars far better than v5 mobile (e.g. "Hedr Whhe" vs "Hedge Whisperer").
+					textRecognitionModelName: 'PP-OCRv6_small_rec',
 					ortOptions: { backend: 'wasm', numThreads: 1, simd: true }
 				});
 			})

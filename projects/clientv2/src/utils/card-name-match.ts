@@ -60,9 +60,31 @@ function lcsLength(a: string, b: string): number {
 	return previous[b.length];
 }
 
+// Words that appear on type lines, keyword abilities and set headers far more often than as card names.
+const NON_NAME_WORDS = new Set(['creature', 'enchantment', 'instant', 'sorcery', 'artifact', 'land', 'legendary',
+	'basic', 'vigilance', 'reach', 'flying', 'trample', 'haste', 'exile', 'ward', 'prosperity', 'token']);
+
+function looksLikeCardName(text: string): boolean {
+	const trimmed = text.trim();
+	return !/[()]|\.\s*$|\.\s+[a-z]/.test(trimmed) && // rules or reminder text ("turn.", "Scry 2. (Then")
+		!/\s[-–—]\s/.test(trimmed) && // type line ("Creature - Elf Detective")
+		!/\b(19|20)\d\d\b/.test(trimmed) && // copyright line
+		!/,\s*[a-z]/.test(trimmed); // mid-sentence comma ("battlefield, it")
+}
+
 export function bestCardName(ocrText: string, names: PreparedCardNames): { name: string; score: number } | null {
+	if (!looksLikeCardName(ocrText)) return null;
 	const clean = normalizeCardName(ocrText);
-	if (clean.length < 4 || clean.length > 60) return null;
+	if (clean.length < 4 || clean.length > 60 || NON_NAME_WORDS.has(clean)) return null;
+	const best = fuzzyCardName(clean, names);
+	if (!best || NON_NAME_WORDS.has(normalizeCardName(best.name))) return null;
+	if (best.score < 100 && NON_NAME_WORDS.has(clean.split(' ')[0])) return null;
+	// Short fragments and lowercase starts are usually partial words, so require a closer match.
+	if (best.score < 90 && (clean.length < 8 || !/^[A-Z]/.test(ocrText.trim()))) return null;
+	return best;
+}
+
+function fuzzyCardName(clean: string, names: PreparedCardNames): { name: string; score: number } | null {
 	const exact = names.exact.get(clean);
 	if (exact) return { name: exact, score: 100 };
 	const words = clean.split(' ').length;

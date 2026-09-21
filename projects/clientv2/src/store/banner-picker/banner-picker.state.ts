@@ -2,6 +2,8 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { CardPrinting, fetchAPICardPrintings } from '../../api/fetch-api-card-printings';
 import { fetchAPIUpdateDeck } from '../../api/fetch-api-update-deck';
 import { generateAndSaveBannerBlend } from '../../utils/generate-banner-blend';
+import { configForNewArtwork, normalizeBannerBlendConfig } from '../../utils/banner-blend';
+import { isMobileDevice } from '../../utils/is-mobile-device';
 import { loadDeck } from '../decks/decks.state';
 
 export type BannerPickerState = {
@@ -42,7 +44,8 @@ export const saveBannerSelection = createAsyncThunk('bannerPicker/save',
 		const { dispatch } = context;
 		await fetchAPIUpdateDeck(deckId, deckName, uuid);
 		const deck = await dispatch(loadDeck(deckId)).unwrap();
-		await generateAndSaveBannerBlend(deckId, deck);
+		const config = deck.icon ? configForNewArtwork(normalizeBannerBlendConfig(deck.bannerBlend?.config), deck.icon, isMobileDevice()) : undefined;
+		await generateAndSaveBannerBlend(deckId, deck, config);
 		await dispatch(loadDeck(deckId)).unwrap();
 	});
 

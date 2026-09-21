@@ -66,6 +66,7 @@ export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase)
 			name: card.name,
 			uuid: card.uuid,
 			setCode: card.setCode,
+			image: cardImageUrl(baseUrl, card.scryfallId, 'normal'),
 			art: cardImageUrl(baseUrl, card.scryfallId, 'art_crop')
 		})));
 	});

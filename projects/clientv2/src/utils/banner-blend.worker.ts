@@ -1,7 +1,7 @@
 import { BANNER_BLEND_SIZES, hasProtection, type BannerBlendJob, type BannerBlendVariant, type BannerProtection } from './banner-blend';
-import { blendBannerPixels, type SubjectFrame } from './banner-blend-algorithms';
 import type { BannerCrop } from './banner-crop';
-import { computeSubjectLayer, type SubjectLayer } from './banner-subject';
+import { computeSubjectLayer } from './banner-subject';
+import { BannerWasm, type SubjectFrame, type SubjectLayer } from './banner-wasm';
 
 export type BannerWorkerRequest =
 	| { kind: 'generate'; id: number; job: BannerBlendJob }
@@ -13,6 +13,17 @@ export type BannerWorkerResponse =
 	| { id: number; error: string };
 
 const post = (message: BannerWorkerResponse, transfer: Transferable[] = []) => (self as unknown as Worker).postMessage(message, transfer);
+
+// All numeric pixel work runs in WebAssembly (native/banner_blend.c) for speed and cross-browser bit identity.
+let wasmModule: Promise<BannerWasm> | null = null;
+function loadWasm(): Promise<BannerWasm> {
+	wasmModule ??= (async () => {
+		const response = await fetch(new URL('../wasm/banner-blend.wasm', import.meta.url));
+		if (!response.ok) throw new Error('The banner processor could not be downloaded. Reload the page and try again.');
+		return BannerWasm.create(await response.arrayBuffer());
+	})().catch((error) => { wasmModule = null; throw error instanceof Error && error.message.startsWith('The banner') ? error : new Error('This browser could not start the banner processor (WebAssembly). Try a current browser.'); });
+	return wasmModule;
+}
 
 async function decode(src: string): Promise<ImageBitmap> {
 	let response: Response;
@@ -78,14 +89,14 @@ async function generate(id: number, job: BannerBlendJob) {
 	let mark = performance.now();
 	const lap = (name: string) => { const now = performance.now(); timings[name] = Math.round(now - mark); mark = now; };
 	progress('Loading banner artwork…', 0.02);
-	const bitmap = await decode(job.src);
+	const [wasm, bitmap] = await Promise.all([loadWasm(), decode(job.src)]);
 	try {
 		lap('decode');
 		const { crop, config } = job;
 		let layer: SubjectLayer | null = null;
 		if (hasProtection(config, job.src)) {
 			const pixels = sourcePixels(bitmap);
-			layer = computeSubjectLayer(pixels.data, pixels.width, pixels.height, config.protection!, {
+			layer = computeSubjectLayer(wasm, pixels.data, pixels.width, pixels.height, config.protection!, {
 				feather: config.feather, decontamination: config.decontamination,
 				onStage: (stage) => {
 					if (stage === 'segment') progress('Finding the protected subject (GrabCut)…', 0.08);
@@ -108,8 +119,10 @@ async function generate(id: number, job: BannerBlendJob) {
 			context.save(); context.beginPath(); context.rect(0, 0, artWidth, height); context.clip();
 			context.drawImage(bitmap, left, top, imageWidth, imageHeight); context.restore();
 			const pixels = context.getImageData(0, 0, width, height);
+			lap(`draw-${variant}`);
 			const subject = layer ? frameSubject(layer, place) : null;
-			pixels.data.set(blendBannerPixels(pixels.data, width, height, config, subject));
+			lap(`resample-${variant}`);
+			pixels.data.set(wasm.blend(pixels.data, width, height, config, subject));
 			context.putImageData(pixels, 0, 0);
 			lap(`blend-${variant}`);
 			images[variant] = await encodePng(canvas);
@@ -122,10 +135,10 @@ async function generate(id: number, job: BannerBlendJob) {
 async function mask(id: number, src: string, protection: BannerProtection, feather: number) {
 	const start = performance.now();
 	post({ id, progress: { message: 'Loading banner artwork…', fraction: 0.05 } });
-	const bitmap = await decode(src);
+	const [wasm, bitmap] = await Promise.all([loadWasm(), decode(src)]);
 	try {
 		const pixels = sourcePixels(bitmap);
-		const layer = computeSubjectLayer(pixels.data, pixels.width, pixels.height, protection, {
+		const layer = computeSubjectLayer(wasm, pixels.data, pixels.width, pixels.height, protection, {
 			feather, decontamination: 0,
 			onStage: (stage) => post({ id, progress: { message: stage === 'segment' ? 'Finding the subject…' : 'Refining edges…', fraction: stage === 'segment' ? 0.2 : 0.75 } })
 		});

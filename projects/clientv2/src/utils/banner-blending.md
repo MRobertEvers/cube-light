@@ -2,8 +2,10 @@
 
 Generation is an explicit asynchronous save operation. `generateAndSaveBannerBlend`
 starts a worker only when artwork is saved in the picker, a crop is saved, or the
-user clicks **Generate and save blend**. Components, page loads, and resize events
-never start a blend calculation. Existing decks without an artifact show a CSS
+user clicks **Generate and save blend**. Saving a crop reuses the current blend and
+subject settings. In the crop editor, moving the art re-runs an unsaved preview
+(`previewBannerBlend`, debounced) with those same settings; page loads and resize
+events never start a blend calculation. Existing decks without an artifact show a CSS
 fade until the user generates one.
 
 The worker decodes the art, applies the saved crop, composites in linear RGB, and
@@ -49,10 +51,8 @@ with the surface limit guarantees the HTML color from 68% on even for steep curv
    strokes are hard labels. Five-component full-covariance GMMs, γ = 50, 8-neighbour
    n-links, λ = 8γ+1, five iterations, as in OpenCV's reference implementation. GMMs
    are initialised with Orchard–Bouman principal-axis splitting (no random seed), and
-   the min-cut uses a Boykov–Kolmogorov max-flow with fixed traversal order. We
-   implement it in TypeScript rather than load OpenCV.js (~8 MB WASM), which also
-   lets every step be pinned for determinism. Strokes are also re-applied as hard
-   constraints at full resolution.
+   the min-cut uses a Boykov–Kolmogorov max-flow with fixed traversal order.
+   Strokes are also re-applied as hard constraints at full resolution.
 2. **Guided mask refinement** (He et al. 2010, color guided filter, ε = 1e-4,
    radius = *Edge feather*) with the original art as guidance. It only replaces
    alpha inside a band of that radius around the GrabCut boundary; elsewhere the
@@ -72,7 +72,10 @@ with the surface limit guarantees the HTML color from 68% on even for steep curv
 
 Selections (`protection`) are normalized source coordinates, tied to the artwork path,
 so one selection serves desktop, mobile, and tile crops and survives crop changes.
-Selecting new artwork discards the old selection at generation time. The mask
+Selecting new artwork discards the old selection at generation time. Saving new artwork
+in the picker turns "Protect subject" on with the default subject area
+(`configForNewArtwork`), except on phones and tablets (`isMobileDevice`: mobile
+user-agent hint, or no hover with a coarse pointer), where it starts off. The mask
 preview is an explicit button that runs the same pipeline in the worker.
 
 Obsolete work: starting a generation or mask preview terminates the previous worker of
@@ -104,9 +107,38 @@ anything. Uploads are checked against current source/crop again inside the save
 transaction to reject stale background work. Cached output works across reloads,
 server restarts, and browsers; no IndexedDB cache miss can trigger a recomputation.
 
-The numerical algorithm is deterministic for the same RGBA input and configuration.
-Browser image decoding/resampling can differ slightly between engines; strict
-cross-engine bit identity of a newly generated PNG is not promised. Once saved,
+## Implementation: C compiled to WebAssembly
+
+All numeric pixel work (GrabCut, max-flow, guided filter, push–pull, decontamination,
+seam search, multiband/Poisson/fade compositing) lives in `native/banner_blend.c` and
+runs as `src/wasm/banner-blend.wasm` (59 kB, 28.5 kB gzipped) inside the worker.
+`banner-wasm.ts` only copies arrays in and out. TypeScript still handles decoding,
+crop placement, resampling of the subject planes, brush rasterisation, and PNG
+encoding; these use only + − × ÷, floor/ceil and sqrt, which are exact in every JS
+engine. We chose our own C over OpenCV.js (~8 MB) to keep the download small and
+every numerical step pinned.
+
+The compiled `.wasm` is checked in, so `npm run build`/`dev` do not need Emscripten.
+After editing the C, run `npm run build:wasm` (needs `emcc`) and commit the new binary.
+
+Why WASM: JavaScript engines may implement `Math.exp/log/pow` with different last-bit
+results. The module carries its own libm and is built without fast-math, so identical
+RGBA input and configuration give identical bytes in every engine. Verified: the same
+synthetic subject and all three blend methods hashed identically in V8 (Chrome) and
+JavaScriptCore (bun). The C port was also checked against the previous TypeScript
+implementation on real card art: 0 differing bytes across 36 renders (2 artworks × 3
+crops × 3 methods × protection on/off) and identical subject planes.
+
+Performance (Chrome, 626×457 art, same tab, medians): subject extraction
+392 → 207 ms, desktop multiband blend 72 → 29 ms. A full protected generation with
+Poisson takes about 0.53 s in the worker, down from 1.38 s. The largest remaining cost is
+the desktop seam search (its band integral grows with width × band); it is exact, not
+approximated.
+
+Remaining caveat: images decoded and resampled by the browser's canvas (`drawImage`)
+can still differ slightly between engines, as can PNG encoders. So a newly generated
+PNG is only bit-identical across browsers when the decoded pixels are. Once saved,
+every browser receives the same persisted PNG. Once saved,
 every browser receives the same persisted PNG. Fixed output dimensions avoid
 regeneration for viewport/DPR changes.
 

@@ -1,8 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blendBannerPixels } from '../src/utils/banner-blend-algorithms';
+import { readFileSync } from 'node:fs';
+import { BannerWasm } from '../src/utils/banner-wasm';
 import { DEFAULT_BANNER_BLEND } from '../src/utils/banner-blend';
 
+const wasm = await BannerWasm.create(readFileSync(new URL('../src/wasm/banner-blend.wasm', import.meta.url)));
+const blendBannerPixels: BannerWasm['blend'] = (...args) => wasm.blend(...args);
 const width = 160, height = 48;
 function fixture(solid = false) {
 	const pixels = new Uint8ClampedArray(width * height * 4);

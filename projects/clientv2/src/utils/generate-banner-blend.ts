@@ -2,6 +2,7 @@ import { API_URI } from '../config/api-url';
 import { DEFAULT_BANNER_CROP } from './banner-crop';
 import { configForGeneration, normalizeBannerBlendConfig, type BannerBlendConfig, type BannerBlendJob, type BannerBlendProgress,
 	type BannerBlendVariant, type BannerProtection, type BannerSubjectMask } from './banner-blend';
+import type { BannerCrop } from './banner-crop';
 import type { BannerWorkerRequest, BannerWorkerResponse } from './banner-blend.worker';
 import type { FetchAPIDeckResponse } from '../api/fetch-api-deck';
 
@@ -12,10 +13,11 @@ export class BannerBlendCancelled extends Error {
 
 type Running = { cancel: () => void };
 type WorkerRequest = BannerWorkerRequest extends infer R ? R extends BannerWorkerRequest ? Omit<R, 'id'> : never : never;
-const running: Partial<Record<'generate' | 'mask', Running>> = {};
+type Slot = 'generate' | 'preview' | 'mask';
+const running: Partial<Record<Slot, Running>> = {};
 let nextId = 1;
 
-function runWorker<T extends BannerWorkerResponse>(slot: 'generate' | 'mask', request: WorkerRequest,
+function runWorker<T extends BannerWorkerResponse>(slot: Slot, request: WorkerRequest,
 	onProgress: ((progress: BannerBlendProgress) => void) | undefined, timeoutMs: number): Promise<T> {
 	// Starting new work of the same kind terminates the obsolete worker immediately.
 	running[slot]?.cancel();
@@ -58,6 +60,19 @@ export async function generateAndSaveBannerBlend(deckId: string, deck: FetchAPID
 		: response.status === 400 ? 'The server rejected the banner settings. Reset the subject selection and try again.'
 			: 'Unable to save the generated banner. Please try again.');
 }
+
+/**
+ * Unsaved render of a moved crop with the existing blend and subject settings, so the
+ * crop editor shows the real result. Returns data URLs; nothing is persisted.
+ */
+export async function previewBannerBlend(src: string, crop: BannerCrop, config: BannerBlendConfig): Promise<Record<BannerBlendVariant, string>> {
+	const job: BannerBlendJob = { src, crop, config: configForGeneration(config, src) };
+	const result = await runWorker<Extract<BannerWorkerResponse, { images: unknown }>>('preview', { kind: 'generate', job }, undefined, 120000);
+	const url = (data: string) => `data:image/png;base64,${data}`;
+	return { desktop: url(result.images.desktop), mobile: url(result.images.mobile), tile: url(result.images.tile) };
+}
+
+export function cancelBannerBlendPreview(): void { running.preview?.cancel(); }
 
 /** Explicit, user-requested preview of the protected-subject matte (no persistence). */
 export async function previewSubjectMask(src: string, protection: BannerProtection, feather: number,

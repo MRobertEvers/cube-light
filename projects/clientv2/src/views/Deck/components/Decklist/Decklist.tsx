@@ -43,6 +43,21 @@ export function Decklist(props: DecklistProps) {
 		},
 		[onCardClick, setImageSource]
 	);
+	const hoverCardWidth = 300;
+	const hoverCardHeight = 420;
+	const viewportWidth = typeof window === 'undefined' ? 1200 : window.innerWidth;
+	const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight;
+	const hoverLeft = imageSource
+		? Math.min(
+			Math.max(16, imageSource.position.x > hoverCardWidth + 40
+				? imageSource.position.x - hoverCardWidth - 16
+				: imageSource.position.x + 120),
+			Math.max(16, viewportWidth - hoverCardWidth - 16)
+		)
+		: 0;
+	const hoverTop = imageSource
+		? Math.min(Math.max(16, imageSource.position.y - 170), Math.max(16, viewportHeight - hoverCardHeight - 16))
+		: 0;
 
 	return (
 		<div className={styles['body']}>
@@ -51,17 +66,12 @@ export function Decklist(props: DecklistProps) {
 					styles['hover-card'] + (imageSource ? ` ${styles['hover-card-visible']}` : '')
 				}
 				style={{
-					left: imageSource ? imageSource.position.x - 180 : 0,
-					top: imageSource ? imageSource.position.y - 120 : 0
+					left: hoverLeft,
+					top: hoverTop
 				}}
 			>
 				{imageSource && (
-					<img
-						style={{
-							borderRadius: '10px'
-						}}
-						src={imageSource.card.image}
-					></img>
+					<img src={imageSource.card.images?.normal ?? imageSource.card.image} alt="" />
 				)}
 			</div>
 			<div className={styles['decklist-container']}>

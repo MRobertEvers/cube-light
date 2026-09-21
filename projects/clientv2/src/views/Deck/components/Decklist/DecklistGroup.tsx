@@ -43,6 +43,16 @@ export function DecklistCategory(props: DecklistCategoryProps) {
 				<th colSpan={2}>{`${name} (${group.count})`}</th>
 			</tr>
 			{group.cards.map((card) => {
+				const showHoverCard = (node: HTMLElement) => {
+					const bounds = node.getBoundingClientRect();
+					onCardEvent?.({
+						type: CardInteractionEventType.HOVER,
+						payload: {
+							card,
+							position: { x: bounds.left, y: bounds.bottom }
+						}
+					});
+				};
 				return (
 					<tr
 						key={card.name}
@@ -55,30 +65,21 @@ export function DecklistCategory(props: DecklistCategoryProps) {
 					>
 						<td>{card.count}</td>
 						<td>
-							<a
-								onClick={(e) => e.preventDefault()}
+							<button
+								type="button"
+								aria-label={`Open ${card.name}`}
 								onMouseLeave={() =>
 									onCardEvent?.({
 										type: CardInteractionEventType.LEAVE,
 										payload: card
 									})
 								}
-								onMouseOver={(e) => {
-									const node = e.currentTarget.getBoundingClientRect();
-									onCardEvent?.({
-										type: CardInteractionEventType.HOVER,
-										payload: {
-											card,
-											position: {
-												x: node.left,
-												y: node.bottom
-											}
-										}
-									});
-								}}
+								onMouseEnter={(event) => showHoverCard(event.currentTarget)}
+								onFocus={(event) => showHoverCard(event.currentTarget)}
+								onBlur={() => onCardEvent?.({ type: CardInteractionEventType.LEAVE, payload: card })}
 							>
 								{card.name}
-							</a>
+							</button>
 						</td>
 					</tr>
 				);

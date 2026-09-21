@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { MAX_PROTECT_STROKE_POINTS, MAX_PROTECT_STROKES, type BannerProtection, type BannerProtectRect, type BannerProtectStroke,
+import { defaultSubjectProtection, MAX_PROTECT_STROKE_POINTS, MAX_PROTECT_STROKES, type BannerProtection, type BannerProtectRect, type BannerProtectStroke,
 	type BannerSubjectMask } from '../../../../utils/banner-blend';
 import { BannerBlendCancelled, cancelSubjectMaskPreview, previewSubjectMask } from '../../../../utils/generate-banner-blend';
 import styles from './subject-protection.module.css';
@@ -15,7 +15,6 @@ type Props = {
 type Preview = { key: string; mask: BannerSubjectMask; milliseconds: number };
 type PreviewStatus = { running: boolean; message: string | null; fraction: number; error: string | null };
 
-export const DEFAULT_PROTECT_RECT: BannerProtectRect = { x: 0.15, y: 0.05, width: 0.7, height: 0.9 };
 const TOOL_LABELS: Record<Tool, string> = { rect: 'Subject area', foreground: 'Keep brush', background: 'Blend brush' };
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 const round = (n: number) => Math.round(n * 10000) / 10000;
@@ -169,7 +168,7 @@ export function SubjectProtection(props: Props) {
 		<div className={styles.buttons}>
 			<button type="button" onClick={() => onChange({ ...current, source: src, strokes: current.strokes.slice(0, -1) })} disabled={disabled || !current.strokes.length}>Undo last mark</button>
 			<button type="button" onClick={() => onChange({ ...current, source: src, strokes: [] })} disabled={disabled || !current.strokes.length}>Clear marks</button>
-			<button type="button" onClick={() => { setPreview(null); setTool('rect'); onChange({ source: src, rect: { ...DEFAULT_PROTECT_RECT }, strokes: [] }); }} disabled={disabled}>Reset selection</button>
+			<button type="button" onClick={() => { setPreview(null); setTool('rect'); onChange(defaultSubjectProtection(src)); }} disabled={disabled}>Reset selection</button>
 			<button type="button" className={styles.previewButton} onClick={() => void runPreview()} disabled={disabled || status.running || (!current.rect && !current.strokes.some((s) => s.label === 'foreground'))}>
 				{status.running ? 'Previewing…' : 'Preview subject mask'}</button>
 		</div>

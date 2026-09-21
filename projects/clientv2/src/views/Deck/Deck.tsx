@@ -7,7 +7,7 @@ import { EditCardModal } from './components/EditCard';
 import { Modal } from './components/Modal';
 import { GetDeckResponse } from '../../workers/deck.worker.messages';
 import { FetchAPIDeckCardResponse } from '../../api/fetch-api-deck';
-import { fetchAPISetCard } from '../../api/fetch-api-set-card';
+import { fetchAPIEditDeckCard } from '../../api/fetch-api-edit-deck-card';
 import { Button } from '../../components/Button/Button';
 import { LoadingIndicator } from '../../components/LoadingIndicator';
 import { Spinner } from '../../components/Spinner/Spinner';
@@ -176,10 +176,10 @@ export function Deck(props: DeckProps) {
 		if (showDetailsModal) nameInputRef.current?.focus();
 	}, [showDetailsModal]);
 
-	const onSubmitChange = useCallback(async (card: FetchAPIDeckCardResponse) => {
-		await fetchAPISetCard(deckId, card.name, 'set', card.count);
-		dispatch(Actions.setEditCard(null));
+	const onSubmitChange = useCallback(async (card: FetchAPIDeckCardResponse, update: { uuid: string; count: number }) => {
+		await fetchAPIEditDeckCard(deckId, card.uuid, update.uuid, update.count);
 		await refreshDeck();
+		dispatch(Actions.setEditCard(null));
 	}, [deckId, dispatch, refreshDeck]);
 
 	const saveName = async () => {
@@ -228,10 +228,10 @@ export function Deck(props: DeckProps) {
 				onComplete={() => { setShowImageImport(false); void refreshDeck(); }}
 			/>}
 			{viewEditCard ? (
-				<Modal>
-					{/* <CardDetailView onEvent={() => {}} cardUuid={viewEditCard.uuid} /> */}
+				<Modal wide fullScreenOnMobile>
 					<EditCardModal
-						onSubmit={onSubmitChange}
+						editable={!!isEditMode}
+						onSubmit={(update) => onSubmitChange(viewEditCard, update)}
 						onCancel={() => dispatch(Actions.setEditCard(null))}
 						card={viewEditCard}
 					/>
@@ -319,9 +319,7 @@ export function Deck(props: DeckProps) {
 						bannerBlend={data.bannerBlend}
 						topStyle={topStyle}
 						onCardClick={(card: FetchAPIDeckCardResponse) => {
-							if (isEditMode) {
-								dispatch(Actions.setEditCard(card));
-							}
+							dispatch(Actions.setEditCard(card));
 						}}
 					/>
 				</div>

@@ -41,13 +41,14 @@ export const savePalette = createAsyncThunk('appearanceSettings/savePalette',
 	});
 
 export const saveCrop = createAsyncThunk('appearanceSettings/saveCrop',
-	async (args: { deckId: string; crop: BannerCrop }, context) => {
-		const { deckId, crop } = args;
+	async (args: { deckId: string; crop: BannerCrop; config: BannerBlendConfig }, context) => {
+		const { deckId, crop, config } = args;
 		const { dispatch } = context;
 		await withMinimumStatusDuration(async () => {
 			await fetchAPISetBannerCrop(deckId, crop);
 			const deck = await dispatch(loadDeck(deckId)).unwrap();
-			if (deck.icon) await generateAndSaveBannerBlend(deckId, deck, undefined,
+			// Re-render the moved art with the blend and subject settings already in place.
+			if (deck.icon) await generateAndSaveBannerBlend(deckId, deck, config,
 				(message, progress) => dispatch(appearanceActions.renderProgress({ deckId, section: 'crop', message, progress })));
 			await dispatch(loadDeck(deckId)).unwrap();
 		});
@@ -128,6 +129,7 @@ export const appearanceSettingsSlice = createSlice({
 			.addCase(saveCrop.fulfilled, (state, action) => {
 				if (state.deckId !== action.meta.arg.deckId) return;
 				state.cropDraft = null;
+				state.blendDraft = null;
 				state.status.crop = { saving: false, message: 'Banner crop saved.', error: null };
 			})
 			.addCase(saveCrop.rejected, (state, action) => {

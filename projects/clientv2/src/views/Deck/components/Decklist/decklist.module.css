@@ -71,4 +71,22 @@
 	position: fixed;
 	z-index: 20;
 	pointer-events: none;
+	width: 300px;
+	opacity: 0;
+	transform: translateY(6px) scale(0.98);
+	transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.hover-card-visible { opacity: 1; transform: translateY(0) scale(1); }
+
+.hover-card img {
+	display: block;
+	width: 100%;
+	height: auto;
+	border-radius: 14px;
+	box-shadow: 0 18px 48px rgba(24, 19, 17, 0.32);
+}
+
+@media (max-width: 680px) {
+	.hover-card { display: none; }
 }

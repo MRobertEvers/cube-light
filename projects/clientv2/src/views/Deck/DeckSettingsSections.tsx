@@ -6,9 +6,10 @@ import { DeckFullArtTop } from '../../components/DeckFullArtTop/DeckFullArtTop';
 import { SpotlightCard } from '../../widgets/SpotlightCard/SpotlightCard';
 import { openBannerPicker } from '../../store/banner-picker/banner-picker.state';
 import { appearanceActions, appearanceView, saveCrop, savePalette, saveStyle, saveBlend } from '../../store/appearance-settings/appearance-settings.state';
-import { artworkKey, BANNER_BLEND_ALGORITHM_VERSION, type BannerBlendConfig } from '../../utils/banner-blend';
-import { DEFAULT_PROTECT_RECT, SubjectProtection } from './components/SubjectProtection/SubjectProtection';
+import { artworkKey, BANNER_BLEND_ALGORITHM_VERSION, defaultSubjectProtection, type BannerBlendConfig } from '../../utils/banner-blend';
+import { SubjectProtection } from './components/SubjectProtection/SubjectProtection';
 import { useAppDispatch } from '../../store/use-app-dispatch';
+import { useBannerBlendPreview } from '../../hooks/useBannerBlendPreview';
 import styles from './deck-settings.module.css';
 
 type SettingsView = ReturnType<typeof appearanceView>;
@@ -72,10 +73,13 @@ export function TopStyleSection(props: SectionProps) {
 export function CropSection(props: SectionProps) {
 	const { deckId, data, view } = props;
 	const dispatch = useAppDispatch();
-	const { crop, cropChanged, style, status } = view;
+	const { crop, cropChanged, style, status, blend } = view;
 	const card = bannerCard(data);
 	const bannerName = card?.name ?? data.name;
 	const bannerArt = card?.art ?? data.icon;
+	// Moving the art re-runs the blend (with any subject selection) against data.icon, the source the saved blend renders.
+	const preview = useBannerBlendPreview(data.icon, crop, blend, cropChanged && style === 'card' && !status.crop.saving);
+	const previewBlend = cropChanged ? { config: blend, images: preview.images } : data.bannerBlend;
 	const firstGroupName = Object.keys(data.deck.cardCategories).find((name) => !name.includes('Land')) ?? Object.keys(data.deck.cardCategories)[0];
 	const firstGroup = firstGroupName ? data.deck.cardCategories[firstGroupName] : undefined;
 	const updateCrop = (variant: keyof BannerCrop, frame: BannerFrame) => dispatch(appearanceActions.changeCrop({ ...crop, [variant]: frame }));
@@ -89,7 +93,7 @@ export function CropSection(props: SectionProps) {
 					<button type="button" className={styles['reset']} onClick={() => updateCrop(variant, { ...DEFAULT_BANNER_CROP[variant] })} disabled={status.crop.saving}>Reset</button>
 				</div>
 				<div className={`${styles['crop-preview']} ${styles[variant]} ${style === 'card' ? styles['card-preview'] : styles['full-preview']}`}>
-					{style === 'card' ? <SpotlightCard art={bannerArt} crop={crop} name={bannerName} variant={variant} preview bannerBlend={cropChanged ? null : data.bannerBlend}
+					{style === 'card' ? <SpotlightCard art={bannerArt} crop={crop} name={bannerName} variant={variant} preview bannerBlend={previewBlend}
 						onCropChange={(_, frame) => updateCrop(variant, frame)} /> : <>
 						<DeckFullArtTop src={bannerArt} crop={crop} name={bannerName} variant={variant}
 							onCropChange={(_, frame) => updateCrop(variant, frame)} />
@@ -111,8 +115,10 @@ export function CropSection(props: SectionProps) {
 				</label>
 			</div>)}
 		</div>}
+		{preview.rendering && <p role="status">Re-applying the banner blend…</p>}
+		{preview.error && <p className={styles['error']} role="alert">{preview.error}</p>}
 		<div className={styles['actions']}><button type="button" className={styles['primary']}
-			onClick={() => void dispatch(saveCrop({ deckId, crop }))} disabled={(!cropChanged && !status.crop.error) || status.crop.saving || status.blend.saving || !bannerArt}>
+			onClick={() => void dispatch(saveCrop({ deckId, crop, config: blend }))} disabled={(!cropChanged && !status.crop.error) || status.crop.saving || status.blend.saving || !bannerArt}>
 			{status.crop.saving ? 'Generating and saving…' : 'Save banner crop'}</button></div>
 		{status.crop.message && <p className={styles['success']} role="status">{status.crop.message}</p>}
 		{status.crop.error && <p className={styles['error']} role="alert">{status.crop.error}</p>}
@@ -146,7 +152,7 @@ export function BlendSection(props: SectionProps) {
 			<label className={styles['blend-checkbox']}>Card background<input type="color" value={blend.surface} onChange={(event) => change({ surface: event.target.value })} /></label>
 			<label className={styles['blend-checkbox']}><input type="checkbox" checked={blend.protectSubject} disabled={!art}
 				onChange={(event) => change({ protectSubject: event.target.checked,
-					protection: event.target.checked && art && !protection ? { source: art, rect: { ...DEFAULT_PROTECT_RECT }, strokes: [] } : blend.protection })} />
+					protection: event.target.checked && art && !protection ? defaultSubjectProtection(art) : blend.protection })} />
 				Protect subject — keep the character’s outline and blend only the background around it</label>
 			{blend.protectSubject && art && <>
 				<SubjectProtection src={art} protection={protection} feather={blend.feather} disabled={busy}

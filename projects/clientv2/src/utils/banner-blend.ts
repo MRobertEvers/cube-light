@@ -36,6 +36,22 @@ export const DEFAULT_BANNER_BLEND: BannerBlendConfig = {
 	method: 'multiband', contentAware: true, position: 0.5, width: 0.18, surface: '#f2e9e6',
 	protectSubject: false, protection: null, feather: 4, decontamination: 0.9
 };
+/** Starting subject area for a new selection: the centre of the art, where characters usually are. */
+export const DEFAULT_PROTECT_RECT: BannerProtectRect = { x: 0.15, y: 0.05, width: 0.7, height: 0.9 };
+
+export function defaultSubjectProtection(src: string): BannerProtection {
+	return { source: src, rect: { ...DEFAULT_PROTECT_RECT }, strokes: [] };
+}
+
+/**
+ * Config for freshly chosen artwork. Subject protection starts on with the default
+ * selection, except on phones and tablets, where segmentation is too slow to run by default.
+ */
+export function configForNewArtwork(config: BannerBlendConfig, src: string, mobile: boolean): BannerBlendConfig {
+	return mobile ? { ...config, protectSubject: false, protection: null }
+		: { ...config, protectSubject: true, protection: defaultSubjectProtection(src) };
+}
+
 // Fixed output sizes keep the persisted result independent of viewport and DPR.
 export const BANNER_BLEND_SIZES = { desktop: [1440, 224], mobile: [720, 224], tile: [640, 224] } as const;
 export const MAX_PROTECT_STROKES = 64;

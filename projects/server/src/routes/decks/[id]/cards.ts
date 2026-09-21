@@ -61,8 +61,17 @@ export function createRoutesDecksIdCards(
 		}
 		res.json({ added: cards.reduce((total, card) => total + (card.count as number), 0) });
 	});
-	app.post(pathBuilder.pathAt('/edit'), async (req: Request<{ id: string }>, res: Response) => {
+	const editPath = pathBuilder.pathAt('/edit');
+	app.options(editPath, (_req: Request, res: Response) => {
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+		res.setHeader('Access-Control-Allow-Methods', 'POST');
+		res.sendStatus(204);
+	});
+	app.post(editPath, async (req: Request<{ id: string }>, res: Response) => {
 		const { id } = req.params;
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
 		const { remove, upsert } = (req.body || {}) as {
 			remove: string[];
@@ -90,7 +99,7 @@ export function createRoutesDecksIdCards(
 		}
 
 		database.applyDeckCardEdit(String(deck.DeckId), [
-			...upsert.map((item) => ({ ...item, action: 'add' as const })),
+			...upsert.map((item) => ({ ...item, action: 'set' as const })),
 			...remove.map((uuid) => ({ uuid, count: 0, action: 'set' as const }))
 		]);
 
