@@ -4,7 +4,12 @@ type NameIndexExports = {
 	free(pointer: number): void;
 	nm_wasm_load(pointer: number, size: number): number;
 	nm_wasm_has_prefix(pointer: number, size: number): number;
-	nm_wasm_find_prefix(pointer: number, size: number, output: number, capacity: number): number;
+	nm_wasm_find_prefix(
+		pointer: number,
+		size: number,
+		output: number,
+		capacity: number
+	): number;
 	nm_wasm_name_ptr(index: number): number;
 };
 
@@ -33,11 +38,20 @@ export class NameIndexWasm {
 		const bytes = this.encoder.encode(query);
 		if (bytes.length + 1 > this.queryCapacity) {
 			if (this.queryPointer) this.wasm.free(this.queryPointer);
-			this.queryCapacity = Math.max(bytes.length + 1, this.queryCapacity * 2, 32);
+			this.queryCapacity = Math.max(
+				bytes.length + 1,
+				this.queryCapacity * 2,
+				32
+			);
 			this.queryPointer = this.wasm.malloc(this.queryCapacity);
-			if (!this.queryPointer) throw new Error('Could not allocate query memory');
+			if (!this.queryPointer)
+				throw new Error('Could not allocate query memory');
 		}
-		new Uint8Array(this.wasm.memory.buffer, this.queryPointer, bytes.length).set(bytes);
+		new Uint8Array(
+			this.wasm.memory.buffer,
+			this.queryPointer,
+			bytes.length
+		).set(bytes);
 		return bytes.length;
 	}
 
@@ -51,13 +65,21 @@ export class NameIndexWasm {
 			if (this.resultPointer) this.wasm.free(this.resultPointer);
 			this.resultCapacity = Math.max(limit, this.resultCapacity * 2, 16);
 			this.resultPointer = this.wasm.malloc(this.resultCapacity * 4);
-			if (!this.resultPointer) throw new Error('Could not allocate result memory');
+			if (!this.resultPointer)
+				throw new Error('Could not allocate result memory');
 		}
 		const length = this.setQuery(prefix);
 		const count = this.wasm.nm_wasm_find_prefix(
-			this.queryPointer, length, this.resultPointer, limit
+			this.queryPointer,
+			length,
+			this.resultPointer,
+			limit
 		);
-		const indices = new Uint32Array(this.wasm.memory.buffer, this.resultPointer, count);
+		const indices = new Uint32Array(
+			this.wasm.memory.buffer,
+			this.resultPointer,
+			count
+		);
 		const names: string[] = [];
 		for (let i = 0; i < count; i++) {
 			const pointer = this.wasm.nm_wasm_name_ptr(indices[i]);
@@ -73,7 +95,9 @@ export class NameIndexWasm {
 		if (limit <= 0) return [];
 		let level = [''];
 		for (const char of base) {
-			const keys = Array.from(new Set([char.toUpperCase(), char.toLowerCase()]));
+			const keys = Array.from(
+				new Set([char.toUpperCase(), char.toLowerCase()])
+			);
 			const next: string[] = [];
 			for (const prefix of level) {
 				for (const key of keys) {
@@ -81,7 +105,8 @@ export class NameIndexWasm {
 					if (this.hasPrefix(candidate)) next.push(candidate);
 				}
 				for (const ignored of [',', "'"]) {
-					if (ignored === char || !this.hasPrefix(prefix + ignored)) continue;
+					if (ignored === char || !this.hasPrefix(prefix + ignored))
+						continue;
 					for (const key of keys) {
 						const candidate = prefix + ignored + key;
 						if (this.hasPrefix(candidate)) next.push(candidate);

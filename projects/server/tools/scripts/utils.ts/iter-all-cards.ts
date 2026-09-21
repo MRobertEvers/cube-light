@@ -18,7 +18,9 @@ export type MTGJSONCard = {
 export function* iterAllCards(sqlitePath: string): Generator<MTGJSONCard> {
 	const database = new DatabaseSync(sqlitePath, { readOnly: true });
 	try {
-		for (const card of database.prepare('SELECT name, setCode, uuid FROM cards ORDER BY rowid').iterate()) {
+		for (const card of database
+			.prepare('SELECT name, setCode, uuid FROM cards ORDER BY rowid')
+			.iterate()) {
 			yield card;
 		}
 	} finally {

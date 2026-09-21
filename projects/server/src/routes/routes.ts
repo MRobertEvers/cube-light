@@ -10,7 +10,11 @@ import { createRoutes_Collections } from './collections';
 import { createRoutes_StorageLocations } from './storage-locations';
 import { createRoutesImages } from './images';
 
-export function createRoutes(database: Database, cardDatabase: CardDatabase, images: CardImageService): Router {
+export function createRoutes(
+	database: Database,
+	cardDatabase: CardDatabase,
+	images: CardImageService
+): Router {
 	const app = Router();
 	let pathBuilder = new PathBuilder();
 
@@ -22,7 +26,9 @@ export function createRoutes(database: Database, cardDatabase: CardDatabase, ima
 	});
 
 	app.use(createRoutesSuggest(pathBuilder.routes('/suggest'), cardDatabase));
-	app.use(createRoutesDecks(pathBuilder.routes('/decks'), database, cardDatabase));
+	app.use(
+		createRoutesDecks(pathBuilder.routes('/decks'), database, cardDatabase)
+	);
 	app.use(createRoutesCards(pathBuilder.routes('/cards'), cardDatabase));
 	app.use(createRoutesImages(images));
 

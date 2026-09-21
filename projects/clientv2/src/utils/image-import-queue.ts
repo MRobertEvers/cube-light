@@ -1,9 +1,17 @@
 import { fetchAPICardNames } from 'src/api/fetch-api-card-names';
-import { fetchAPIImportCards, type ImportedCard } from 'src/api/fetch-api-import-cards';
-import { scanCardImage, type CardImageCandidate, type ImageRegion } from './card-image-ocr';
+import {
+	fetchAPIImportCards,
+	type ImportedCard
+} from 'src/api/fetch-api-import-cards';
+import {
+	scanCardImage,
+	type CardImageCandidate,
+	type ImageRegion
+} from './card-image-ocr';
 import { resolvedCandidateAdditions } from './image-import-auto-add';
 
-export type ImageScanStatus = 'queued' | 'loading' | 'scanning' | 'adding' | 'completed' | 'error';
+export type ImageScanStatus =
+	'queued' | 'loading' | 'scanning' | 'adding' | 'completed' | 'error';
 
 export type ImageScanTask = {
 	id: string;
@@ -33,7 +41,9 @@ class ImageImportQueue {
 
 	subscribe = (listener: () => void) => {
 		this.listeners.add(listener);
-		return () => { this.listeners.delete(listener); };
+		return () => {
+			this.listeners.delete(listener);
+		};
 	};
 
 	getSnapshot = () => this.snapshot;
@@ -54,9 +64,19 @@ class ImageImportQueue {
 	enqueue(deckId: string, file: File): string {
 		const id = crypto.randomUUID();
 		this.tasks.push({
-			id, deckId, file, imageUrl: URL.createObjectURL(file), fileName: file.name,
-			status: 'queued', completed: 0, total: 0, region: null,
-			candidates: [], addedCounts: {}, plannedCounts: {}, error: null,
+			id,
+			deckId,
+			file,
+			imageUrl: URL.createObjectURL(file),
+			fileName: file.name,
+			status: 'queued',
+			completed: 0,
+			total: 0,
+			region: null,
+			candidates: [],
+			addedCounts: {},
+			plannedCounts: {},
+			error: null,
 			writes: Promise.resolve()
 		});
 		this.publish();
@@ -72,10 +92,14 @@ class ImageImportQueue {
 		this.publish();
 	}
 
-	private scheduleAdditions(task: InternalTask, cards: ImportedCard[]): Promise<void> {
+	private scheduleAdditions(
+		task: InternalTask,
+		cards: ImportedCard[]
+	): Promise<void> {
 		if (cards.length === 0 || task.error) return task.writes;
 		for (const card of cards) {
-			task.plannedCounts[card.name] = (task.plannedCounts[card.name] ?? 0) + card.count;
+			task.plannedCounts[card.name] =
+				(task.plannedCounts[card.name] ?? 0) + card.count;
 		}
 		this.publish();
 		task.writes = task.writes.then(async () => {
@@ -83,11 +107,15 @@ class ImageImportQueue {
 			try {
 				await fetchAPIImportCards(task.deckId, cards);
 				for (const card of cards) {
-					task.addedCounts[card.name] = (task.addedCounts[card.name] ?? 0) + card.count;
+					task.addedCounts[card.name] =
+						(task.addedCounts[card.name] ?? 0) + card.count;
 				}
 				this.publish();
 			} catch (error) {
-				task.error = error instanceof Error ? error.message : 'Could not add identified cards';
+				task.error =
+					error instanceof Error
+						? error.message
+						: 'Could not add identified cards';
 				task.status = 'error';
 				this.publish();
 			}
@@ -96,12 +124,20 @@ class ImageImportQueue {
 	}
 
 	private scheduleResolvedMatches(task: InternalTask) {
-		void this.scheduleAdditions(task, resolvedCandidateAdditions(task.candidates, task.plannedCounts));
+		void this.scheduleAdditions(
+			task,
+			resolvedCandidateAdditions(task.candidates, task.plannedCounts)
+		);
 	}
 
-	async addCandidate(taskId: string, name: string, count: number): Promise<void> {
+	async addCandidate(
+		taskId: string,
+		name: string,
+		count: number
+	): Promise<void> {
 		const task = this.tasks.find((item) => item.id === taskId);
-		if (!task || task.error || !Number.isInteger(count) || count <= 0) return;
+		if (!task || task.error || !Number.isInteger(count) || count <= 0)
+			return;
 		await this.scheduleAdditions(task, [{ name, count }]);
 	}
 
@@ -110,22 +146,32 @@ class ImageImportQueue {
 		this.running = true;
 		try {
 			while (true) {
-				const task = this.tasks.find((item) => item.status === 'queued');
+				const task = this.tasks.find(
+					(item) => item.status === 'queued'
+				);
 				if (!task) break;
 				task.status = 'loading';
 				this.publish();
 				try {
 					const names = await fetchAPICardNames();
-					await scanCardImage(task.file, names, (update) => {
-						if (task.error) return;
-						task.status = update.phase === 'loading' ? 'loading' : 'scanning';
-						task.completed = update.completed;
-						task.total = update.total;
-						task.region = update.region;
-						task.candidates = update.candidates;
-						this.scheduleResolvedMatches(task);
-						this.publish();
-					}, () => !!task.error);
+					await scanCardImage(
+						task.file,
+						names,
+						(update) => {
+							if (task.error) return;
+							task.status =
+								update.phase === 'loading'
+									? 'loading'
+									: 'scanning';
+							task.completed = update.completed;
+							task.total = update.total;
+							task.region = update.region;
+							task.candidates = update.candidates;
+							this.scheduleResolvedMatches(task);
+							this.publish();
+						},
+						() => !!task.error
+					);
 					if (!task.error) {
 						task.status = 'adding';
 						task.region = null;
@@ -134,7 +180,10 @@ class ImageImportQueue {
 					await task.writes;
 					if (!task.error) task.status = 'completed';
 				} catch (error) {
-					task.error = error instanceof Error ? error.message : 'Could not scan this image';
+					task.error =
+						error instanceof Error
+							? error.message
+							: 'Could not scan this image';
 					task.status = 'error';
 				} finally {
 					task.region = null;

@@ -1,9 +1,18 @@
 import type { OcrResultItem } from '@paddleocr/paddleocr-js';
-import { bestCardName, prepareCardNames, PreparedCardNames } from './card-name-match';
+import {
+	bestCardName,
+	prepareCardNames,
+	PreparedCardNames
+} from './card-name-match';
 import type { CardImageCandidate, ImageRegion } from './card-image-ocr';
 
 type InitializeMessage = { type: 'initialize'; names: string[] };
-type MatchMessage = { type: 'match'; id: number; items: OcrResultItem[]; region: ImageRegion };
+type MatchMessage = {
+	type: 'match';
+	id: number;
+	items: OcrResultItem[];
+	region: ImageRegion;
+};
 type InputMessage = InitializeMessage | MatchMessage;
 
 let names: PreparedCardNames | null = null;
@@ -22,8 +31,11 @@ function sameLocation(left: ImageRegion, right: ImageRegion): boolean {
 	const leftY = left.y + left.height / 2;
 	const rightX = right.x + right.width / 2;
 	const rightY = right.y + right.height / 2;
-	return Math.abs(leftX - rightX) < Math.max(left.width, right.width) / 2 &&
-		Math.abs(leftY - rightY) < Math.max(8, Math.max(left.height, right.height) * 1.2);
+	return (
+		Math.abs(leftX - rightX) < Math.max(left.width, right.width) / 2 &&
+		Math.abs(leftY - rightY) <
+			Math.max(8, Math.max(left.height, right.height) * 1.2)
+	);
 }
 
 function appendCandidates(items: OcrResultItem[], region: ImageRegion): void {
@@ -33,8 +45,10 @@ function appendCandidates(items: OcrResultItem[], region: ImageRegion): void {
 		const suggestion = bestCardName(item.text, names);
 		if (!suggestion || suggestion.score < 80) continue;
 		const box = itemBox(item, region);
-		const duplicate = candidates.find((candidate) =>
-			candidate.name === suggestion.name && sameLocation(candidate.box, box)
+		const duplicate = candidates.find(
+			(candidate) =>
+				candidate.name === suggestion.name &&
+				sameLocation(candidate.box, box)
 		);
 		if (duplicate) {
 			if (suggestion.score > duplicate.score) {
@@ -43,7 +57,12 @@ function appendCandidates(items: OcrResultItem[], region: ImageRegion): void {
 				duplicate.box = box;
 			}
 		} else {
-			candidates.push({ name: suggestion.name, text: item.text, score: suggestion.score, box });
+			candidates.push({
+				name: suggestion.name,
+				text: item.text,
+				score: suggestion.score,
+				box
+			});
 		}
 	}
 }
@@ -56,10 +75,20 @@ self.onmessage = (event: MessageEvent<InputMessage>) => {
 			self.postMessage({ type: 'ready' });
 		} else {
 			appendCandidates(message.items, message.region);
-			self.postMessage({ type: 'matched', id: message.id, candidates: [...candidates] });
+			self.postMessage({
+				type: 'matched',
+				id: message.id,
+				candidates: [...candidates]
+			});
 		}
 	} catch (error) {
-		self.postMessage({ type: 'error', id: message.type === 'match' ? message.id : undefined,
-			message: error instanceof Error ? error.message : 'Could not match card names' });
+		self.postMessage({
+			type: 'error',
+			id: message.type === 'match' ? message.id : undefined,
+			message:
+				error instanceof Error
+					? error.message
+					: 'Could not match card names'
+		});
 	}
 };

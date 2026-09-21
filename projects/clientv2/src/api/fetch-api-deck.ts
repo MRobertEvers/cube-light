@@ -25,7 +25,12 @@ export type FetchAPIDeckResponse = {
 	name: string;
 	icon: string | null;
 	bannerCardUuid: string | null;
-	bannerCard: { name: string; uuid: string; setCode: string; art: string | null } | null;
+	bannerCard: {
+		name: string;
+		uuid: string;
+		setCode: string;
+		art: string | null;
+	} | null;
 	palette: CardPalette | null;
 	bannerCrop: BannerCrop | null;
 	bannerBlend?: BannerBlend | null;
@@ -34,7 +39,9 @@ export type FetchAPIDeckResponse = {
 	lastEdit: string;
 };
 
-export async function fetchAPIDeck(deckId: string): Promise<FetchAPIDeckResponse> {
+export async function fetchAPIDeck(
+	deckId: string
+): Promise<FetchAPIDeckResponse> {
 	const fetchResult = await fetch(`${API_URI}/decks/${deckId}`, {
 		method: 'GET'
 	});

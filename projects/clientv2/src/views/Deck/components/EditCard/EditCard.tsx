@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CardPrinting, fetchAPICardPrintings } from '../../../../api/fetch-api-card-printings';
+import {
+	CardPrinting,
+	fetchAPICardPrintings
+} from '../../../../api/fetch-api-card-printings';
 import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
 import { Button } from '../../../../components/Button/Button';
 import { Counter } from '../../../../components/Counter/Counter';
@@ -43,8 +46,12 @@ export function EditCardModal(props: EditCardModalProps) {
 		void fetchAPICardPrintings(card.name, controller.signal)
 			.then((items) => setPrintings(items.filter((item) => !!item.image)))
 			.catch((error: unknown) => {
-				if (!(error instanceof DOMException && error.name === 'AbortError')) {
-					setLoadError('Print versions could not be loaded. You can still update the number of copies.');
+				if (!(
+					error instanceof DOMException && error.name === 'AbortError'
+				)) {
+					setLoadError(
+						'Print versions could not be loaded. You can still update the number of copies.'
+					);
 				}
 			})
 			.finally(() => {
@@ -68,7 +75,8 @@ export function EditCardModal(props: EditCardModalProps) {
 
 	if (!card) return null;
 
-	const selectedImage = selectedPrinting?.image ?? card.images?.normal ?? card.image;
+	const selectedImage =
+		selectedPrinting?.image ?? card.images?.normal ?? card.image;
 	const selectedSetCode = selectedPrinting?.setCode ?? card.setCode;
 	const save = async () => {
 		if (saving || count < 1) return;
@@ -83,54 +91,110 @@ export function EditCardModal(props: EditCardModalProps) {
 	};
 
 	return (
-		<section className={`${styles['container']} ${!editable ? styles['view-only'] : ''}`} role="dialog" aria-modal="true" aria-labelledby="card-modal-title">
+		<section
+			className={`${styles['container']} ${!editable ? styles['view-only'] : ''}`}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="card-modal-title"
+		>
 			<header className={styles['header']}>
 				<div>
 					<h2 id="card-modal-title">{card.name}</h2>
 					<p>{selectedSetCode} printing</p>
 				</div>
-				<button className={styles['close']} type="button" aria-label="Close card preview" onClick={onCancel} disabled={saving}>×</button>
+				<button
+					className={styles['close']}
+					type="button"
+					aria-label="Close card preview"
+					onClick={onCancel}
+					disabled={saving}
+				>
+					×
+				</button>
 			</header>
 			<div className={styles['body']}>
 				<div className={styles['image-panel']}>
-					<img src={selectedImage} alt={`${card.name}, ${selectedSetCode} printing`} />
+					<img
+						src={selectedImage}
+						alt={`${card.name}, ${selectedSetCode} printing`}
+					/>
 				</div>
-				{editable && <div className={styles['controls']}>
-					<div className={styles['printing-heading']}>
-						<h3 id="printing-heading">Print version</h3>
-						{loadingPrintings && <span role="status">Loading…</span>}
-					</div>
-					{loadError && <p className={styles['message']} role="alert">{loadError}</p>}
-					{printings.length > 0 && (
-						<div className={styles['printing-list']} role="radiogroup" aria-labelledby="printing-heading">
-							{printings.map((printing) => (
-								<label className={styles['printing-option']} key={printing.uuid}>
-									<input
-										type="radio"
-										name="card-printing"
-										value={printing.uuid}
-										checked={printing.uuid === selectedUuid}
-										disabled={saving}
-										onChange={() => setSelectedUuid(printing.uuid)}
-									/>
-									<img src={printing.image ?? undefined} alt="" loading="lazy" />
-									<span>{printing.setCode}</span>
-								</label>
-							))}
+				{editable && (
+					<div className={styles['controls']}>
+						<div className={styles['printing-heading']}>
+							<h3 id="printing-heading">Print version</h3>
+							{loadingPrintings && (
+								<span role="status">Loading…</span>
+							)}
 						</div>
-					)}
-					<div className={styles['count-row']}>
-						<div><h3>Copies</h3><p>In this deck</p></div>
-						<Counter count={count} setCount={(next) => setCount(Math.max(1, next))} />
+						{loadError && (
+							<p className={styles['message']} role="alert">
+								{loadError}
+							</p>
+						)}
+						{printings.length > 0 && (
+							<div
+								className={styles['printing-list']}
+								role="radiogroup"
+								aria-labelledby="printing-heading"
+							>
+								{printings.map((printing) => (
+									<label
+										className={styles['printing-option']}
+										key={printing.uuid}
+									>
+										<input
+											type="radio"
+											name="card-printing"
+											value={printing.uuid}
+											checked={
+												printing.uuid === selectedUuid
+											}
+											disabled={saving}
+											onChange={() =>
+												setSelectedUuid(printing.uuid)
+											}
+										/>
+										<img
+											src={printing.image ?? undefined}
+											alt=""
+											loading="lazy"
+										/>
+										<span>{printing.setCode}</span>
+									</label>
+								))}
+							</div>
+						)}
+						<div className={styles['count-row']}>
+							<div>
+								<h3>Copies</h3>
+								<p>In this deck</p>
+							</div>
+							<Counter
+								count={count}
+								setCount={(next) => setCount(Math.max(1, next))}
+							/>
+						</div>
+						{saveError && (
+							<p className={styles['save-error']} role="alert">
+								{saveError}
+							</p>
+						)}
+						<div className={styles['actions']}>
+							<Button onClick={onCancel} disabled={saving}>
+								Cancel
+							</Button>
+							<Button
+								onClick={() => {
+									void save();
+								}}
+								disabled={saving || count < 1}
+							>
+								{saving ? 'Saving…' : 'Save card'}
+							</Button>
+						</div>
 					</div>
-					{saveError && <p className={styles['save-error']} role="alert">{saveError}</p>}
-					<div className={styles['actions']}>
-						<Button onClick={onCancel} disabled={saving}>Cancel</Button>
-						<Button onClick={() => { void save(); }} disabled={saving || count < 1}>
-							{saving ? 'Saving…' : 'Save card'}
-						</Button>
-					</div>
-				</div>}
+				)}
 			</div>
 		</section>
 	);

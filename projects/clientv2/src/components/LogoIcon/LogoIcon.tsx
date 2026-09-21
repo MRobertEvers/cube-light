@@ -9,5 +9,11 @@ type LogoIconProps = {
 export function LogoIcon(props: LogoIconProps) {
 	const { style, className } = props;
 
-	return <img style={style} className={` ${className || ''}`} src={logoIcon}></img>;
+	return (
+		<img
+			style={style}
+			className={` ${className || ''}`}
+			src={logoIcon}
+		></img>
+	);
 }

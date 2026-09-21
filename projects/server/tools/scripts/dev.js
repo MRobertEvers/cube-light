@@ -19,7 +19,9 @@ function start(name, args) {
 	});
 	child.on('exit', (code, signal) => {
 		if (stopping) return;
-		console.error(`${name} exited (${signal || code}); stopping dev server.`);
+		console.error(
+			`${name} exited (${signal || code}); stopping dev server.`
+		);
 		process.exitCode = code || 1;
 		stopChildren();
 	});
@@ -32,5 +34,9 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
 	});
 }
 
-start('TypeScript watcher', [require.resolve('typescript/bin/tsc'), '--watch', '--preserveWatchOutput']);
+start('TypeScript watcher', [
+	require.resolve('typescript/bin/tsc'),
+	'--watch',
+	'--preserveWatchOutput'
+]);
 start('Node watcher', ['--enable-source-maps', '--watch', 'build/src/main.js']);

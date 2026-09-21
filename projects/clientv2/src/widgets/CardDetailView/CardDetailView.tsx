@@ -41,7 +41,10 @@ export function CardDetailView(props: CardDetailViewProps) {
 
 	return (
 		<div className={styles['card-detail-container']}>
-			<img className={styles['card']} src={cardDetails.highResImage || undefined}></img>
+			<img
+				className={styles['card']}
+				src={cardDetails.highResImage || undefined}
+			></img>
 			<h2>WOWOWOW</h2>
 		</div>
 	);

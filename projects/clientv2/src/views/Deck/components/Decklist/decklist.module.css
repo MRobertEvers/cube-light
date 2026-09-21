@@ -41,7 +41,6 @@
 	margin-bottom: 20px;
 }
 
-
 @media (max-width: 680px) {
 	.deck-list {
 		column-count: unset;
@@ -74,10 +73,15 @@
 	width: 300px;
 	opacity: 0;
 	transform: translateY(6px) scale(0.98);
-	transition: opacity 120ms ease, transform 120ms ease;
+	transition:
+		opacity 120ms ease,
+		transform 120ms ease;
 }
 
-.hover-card-visible { opacity: 1; transform: translateY(0) scale(1); }
+.hover-card-visible {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+}
 
 .hover-card img {
 	display: block;
@@ -88,5 +92,7 @@
 }
 
 @media (max-width: 680px) {
-	.hover-card { display: none; }
+	.hover-card {
+		display: none;
+	}
 }

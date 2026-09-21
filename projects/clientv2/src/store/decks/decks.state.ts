@@ -21,9 +21,12 @@ const initialState: DecksState = {
 	requestIdsById: {}
 };
 
-export const loadDecks = createAsyncThunk('decks/loadList', async () => fetchAPIDecks());
-export const loadDeck = createAsyncThunk('decks/loadDeck', async (deckId: string) =>
-	fetchSortedDeck(deckId)
+export const loadDecks = createAsyncThunk('decks/loadList', async () =>
+	fetchAPIDecks()
+);
+export const loadDeck = createAsyncThunk(
+	'decks/loadDeck',
+	async (deckId: string) => fetchSortedDeck(deckId)
 );
 
 export const decksSlice = createSlice({
@@ -53,7 +56,8 @@ export const decksSlice = createSlice({
 			})
 			.addCase(loadDecks.rejected, (state, action) => {
 				if (state.listRequestId !== action.meta.requestId) return;
-				state.listError = action.error.message ?? 'Unable to load decks';
+				state.listError =
+					action.error.message ?? 'Unable to load decks';
 				state.listRequestId = null;
 			})
 			.addCase(loadDeck.pending, (state, action) => {
@@ -63,14 +67,17 @@ export const decksSlice = createSlice({
 			})
 			.addCase(loadDeck.fulfilled, (state, action) => {
 				const deckId = action.meta.arg;
-				if (state.requestIdsById[deckId] !== action.meta.requestId) return;
+				if (state.requestIdsById[deckId] !== action.meta.requestId)
+					return;
 				state.byId[deckId] = action.payload;
 				delete state.requestIdsById[deckId];
 			})
 			.addCase(loadDeck.rejected, (state, action) => {
 				const deckId = action.meta.arg;
-				if (state.requestIdsById[deckId] !== action.meta.requestId) return;
-				state.errorsById[deckId] = action.error.message ?? 'Unable to load deck';
+				if (state.requestIdsById[deckId] !== action.meta.requestId)
+					return;
+				state.errorsById[deckId] =
+					action.error.message ?? 'Unable to load deck';
 				delete state.requestIdsById[deckId];
 			});
 	}
@@ -81,7 +88,9 @@ export const { setInitialDecks, setInitialDeck } = decksSlice.actions;
 type DecksRootState = { decks: DecksState };
 
 export const selectDecks = (state: DecksRootState) => state.decks.list;
-export const selectDecksError = (state: DecksRootState) => state.decks.listError;
-export const selectDeck = (state: DecksRootState, deckId: string) => state.decks.byId[deckId];
+export const selectDecksError = (state: DecksRootState) =>
+	state.decks.listError;
+export const selectDeck = (state: DecksRootState, deckId: string) =>
+	state.decks.byId[deckId];
 export const selectDeckError = (state: DecksRootState, deckId: string) =>
 	state.decks.errorsById[deckId];

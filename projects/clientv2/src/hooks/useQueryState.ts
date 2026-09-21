@@ -6,7 +6,10 @@ export interface UseQueryStateOptions<T> {
 	default?: string;
 }
 
-export type UseQueryStateReturn<T> = [T | null, React.Dispatch<React.SetStateAction<T>>];
+export type UseQueryStateReturn<T> = [
+	T | null,
+	React.Dispatch<React.SetStateAction<T>>
+];
 
 /**
  * React state hook synchronized with a URL query string in Next.js
@@ -21,10 +24,8 @@ export function useQueryState<T = string>(
 	// immutable as long as `history` stays the same.
 	// It reduces the amount of reactivity needed to update the state.
 
-	const {
-		parse = (x) => (x as unknown) as T,
-		serialize = (x) => `${x}`
-	} = options;
+	const { parse = (x) => x as unknown as T, serialize = (x) => `${x}` } =
+		options;
 	const getValue = (): T | null => {
 		const query = new URLSearchParams(window.location.search);
 		const value = query.get(key);
@@ -39,7 +40,9 @@ export function useQueryState<T = string>(
 
 	const update = React.useCallback(
 		(stateUpdater: React.SetStateAction<T | null>) => {
-			const isUpdaterFunction = (input: any): input is (prevState: T | null) => T | null => {
+			const isUpdaterFunction = (
+				input: any
+			): input is (prevState: T | null) => T | null => {
 				return typeof input === 'function';
 			};
 

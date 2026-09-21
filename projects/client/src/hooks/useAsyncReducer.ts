@@ -1,4 +1,11 @@
-import { Dispatch, Reducer, ReducerAction, ReducerState, useCallback, useReducer } from 'react';
+import {
+	Dispatch,
+	Reducer,
+	ReducerAction,
+	ReducerState,
+	useCallback,
+	useReducer
+} from 'react';
 
 export function useAsyncReducer<T extends Reducer<any, any>>(
 	reducer: T,

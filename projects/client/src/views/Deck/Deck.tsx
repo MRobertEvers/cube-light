@@ -36,7 +36,9 @@ export function Deck(props: DeckProps) {
 		{ initialData: initialDeckData }
 	);
 
-	const [editCard, setEditCard] = useState(null as FetchDeckCardResponse | null);
+	const [editCard, setEditCard] = useState(
+		null as FetchDeckCardResponse | null
+	);
 	const onCardClick = useCallback((card: FetchDeckCardResponse) => {
 		setEditCard(card);
 	}, []);
@@ -58,17 +60,29 @@ export function Deck(props: DeckProps) {
 					/>
 				</Modal>
 			)}
-			<div className={styles['index-container-top']}>{editMode && <CardAdder />}</div>
+			<div className={styles['index-container-top']}>
+				{editMode && <CardAdder />}
+			</div>
 			<div className={styles['index-container']}>
 				<div>
 					<div className={styles['avatar']}>
 						<div className={styles['square']}>
-							{data && <img width={260} height={260} src={data.icon} />}
+							{data && (
+								<img width={260} height={260} src={data.icon} />
+							)}
 						</div>
-						<button onClick={() => setEditMode(!editMode)}>Edit</button>
+						<button onClick={() => setEditMode(!editMode)}>
+							Edit
+						</button>
 					</div>
 				</div>
-				{data && <Decklist name={data.name} deck={data.deck} onCardClick={onCardClick} />}
+				{data && (
+					<Decklist
+						name={data.name}
+						deck={data.deck}
+						onCardClick={onCardClick}
+					/>
+				)}
 			</div>
 		</Page>
 	);

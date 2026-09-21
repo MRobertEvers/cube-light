@@ -16,7 +16,9 @@ const CARD_DATABASE_PATH = path.join(__dirname, './assets/AllPrintings.sqlite');
 async function main() {
 	const cDb = new CardDatabase(CARD_DATABASE_PATH);
 	const db = await Database.Sqlite('database.sqlite');
-	const images = new CardImageService(new FileImageCache(path.join(os.homedir(), 'Documents/mtg-card-images')));
+	const images = new CardImageService(
+		new FileImageCache(path.join(os.homedir(), 'Documents/mtg-card-images'))
+	);
 
 	const app = express();
 

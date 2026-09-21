@@ -20,7 +20,9 @@ export function PassParams<T>(props: PassParamsProps<T>) {
 		for (const param in params) {
 			const key = params[param];
 			const value =
-				typeof key === 'string' ? inputParams[key] : key.mapper(inputParams[key.key]);
+				typeof key === 'string'
+					? inputParams[key]
+					: key.mapper(inputParams[key.key]);
 
 			buildProps[param] = value;
 		}

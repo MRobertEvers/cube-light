@@ -1,4 +1,9 @@
-import { ReducersMapObject, combineReducers, Reducer, UnknownAction } from 'redux';
+import {
+	ReducersMapObject,
+	combineReducers,
+	Reducer,
+	UnknownAction
+} from 'redux';
 
 export type ReducerManager<T> = {
 	getReducerMap: () => ReducersMapObject<T>;
@@ -7,7 +12,9 @@ export type ReducerManager<T> = {
 	remove: (key: keyof T) => void;
 };
 
-export function createReducerManager<T>(initialReducers: ReducersMapObject<T>): ReducerManager<T> {
+export function createReducerManager<T>(
+	initialReducers: ReducersMapObject<T>
+): ReducerManager<T> {
 	// Create an object which maps keys to reducers
 	const reducers: Record<string, Reducer<any>> = { ...initialReducers };
 

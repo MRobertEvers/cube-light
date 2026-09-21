@@ -15,7 +15,8 @@ export function createRoutes_StorageLocations(database: Database) {
 		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
 		const rowId = await database.createStorageLocation(name);
-		const storageLocationId = (await database.getStorageLocation(rowId))!.PublicId;
+		const storageLocationId = (await database.getStorageLocation(rowId))!
+			.PublicId;
 
 		res.status(200);
 		res.send(
@@ -26,10 +27,19 @@ export function createRoutes_StorageLocations(database: Database) {
 	});
 
 	app.get('/search', async (req: Request, res: Response) => {
-		const pageToken = parseInt((req.query['page-token'] as string) ?? '0', 10);
-		const pageLimit = parseInt((req.query['limit'] as string) ?? '9999', 10);
+		const pageToken = parseInt(
+			(req.query['page-token'] as string) ?? '0',
+			10
+		);
+		const pageLimit = parseInt(
+			(req.query['limit'] as string) ?? '9999',
+			10
+		);
 
-		const locations = await database.listStorageLocations(pageToken, pageLimit);
+		const locations = await database.listStorageLocations(
+			pageToken,
+			pageLimit
+		);
 
 		const response = locations.map((location) => {
 			return {

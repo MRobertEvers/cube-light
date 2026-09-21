@@ -14,7 +14,9 @@ export function getTraversalsFromBaseInLookupTree(
 	let next: [string[], any][] = [];
 
 	for (const char of base) {
-		const branchKeys = Array.from(new Set(compareLaxSpecialCharacters(char)));
+		const branchKeys = Array.from(
+			new Set(compareLaxSpecialCharacters(char))
+		);
 
 		for (const [traversal, tree] of level) {
 			const branches: [string[], any][] = branchKeys
@@ -167,7 +169,10 @@ export function getFirstNCompletionsFromLookupTree(
 	return words;
 }
 
-export function createCompletionListFromLookupTree(base: string, lookupTree: any): string[] {
+export function createCompletionListFromLookupTree(
+	base: string,
+	lookupTree: any
+): string[] {
 	const words: string[] = [];
 	let traversal: string[] = [base];
 
@@ -201,7 +206,10 @@ export function createCompletionListFromLookupTree(base: string, lookupTree: any
 	return words;
 }
 
-export function* iterMatchesInLookupTree(base: string, lookupTree: any): Generator<string> {
+export function* iterMatchesInLookupTree(
+	base: string,
+	lookupTree: any
+): Generator<string> {
 	let traversals = getTraversalsFromBaseInLookupTree(base, lookupTree);
 
 	for (const [traversal, tree] of traversals) {

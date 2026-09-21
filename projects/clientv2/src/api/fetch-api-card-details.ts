@@ -20,13 +20,18 @@ export type FetchAPICardDetailsResponse = {
 	art: string | null;
 };
 
-export async function fetchAPICardDetails(uuid: string): Promise<FetchAPICardDetailsResponse> {
+export async function fetchAPICardDetails(
+	uuid: string
+): Promise<FetchAPICardDetailsResponse> {
 	const query = new URLSearchParams();
 	query.set('uuid', uuid);
 
-	const request = await fetchTimeout(`${API_URI}/cards/details?${query.toString()}`, {
-		method: 'GET'
-	});
+	const request = await fetchTimeout(
+		`${API_URI}/cards/details?${query.toString()}`,
+		{
+			method: 'GET'
+		}
+	);
 
 	return request.json();
 }

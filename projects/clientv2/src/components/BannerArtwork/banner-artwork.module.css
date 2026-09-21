@@ -14,5 +14,10 @@
 	object-fit: cover;
 }
 
-.editable { cursor: grab; touch-action: none; }
-.editable:active { cursor: grabbing; }
+.editable {
+	cursor: grab;
+	touch-action: none;
+}
+.editable:active {
+	cursor: grabbing;
+}

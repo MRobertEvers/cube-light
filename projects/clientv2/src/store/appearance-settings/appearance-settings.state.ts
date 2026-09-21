@@ -8,11 +8,19 @@ import { CardPalette, DEFAULT_CARD_PALETTE } from '../../utils/card-palette';
 import { BannerCrop, DEFAULT_BANNER_CROP } from '../../utils/banner-crop';
 import type { DeckTopStyle } from '../../utils/deck-top-style';
 import { loadDeck } from '../decks/decks.state';
-import { normalizeBannerBlendConfig, type BannerBlendConfig } from '../../utils/banner-blend';
+import {
+	normalizeBannerBlendConfig,
+	type BannerBlendConfig
+} from '../../utils/banner-blend';
 import { generateAndSaveBannerBlend } from '../../utils/generate-banner-blend';
 
 type Section = 'palette' | 'crop' | 'style' | 'banner' | 'blend';
-type Status = { saving: boolean; message: string | null; error: string | null; progress?: number | null };
+type Status = {
+	saving: boolean;
+	message: string | null;
+	error: string | null;
+	progress?: number | null;
+};
 type PaletteDraft = { value: CardPalette | null } | null;
 
 export type AppearanceSettingsState = {
@@ -24,13 +32,28 @@ export type AppearanceSettingsState = {
 	status: Record<Section, Status>;
 };
 
-const emptyStatus = (): Status => ({ saving: false, message: null, error: null });
+const emptyStatus = (): Status => ({
+	saving: false,
+	message: null,
+	error: null
+});
 const initialState = (): AppearanceSettingsState => ({
-	deckId: null, paletteDraft: null, cropDraft: null, styleDraft: null, blendDraft: null,
-	status: { palette: emptyStatus(), crop: emptyStatus(), style: emptyStatus(), banner: emptyStatus(), blend: emptyStatus() }
+	deckId: null,
+	paletteDraft: null,
+	cropDraft: null,
+	styleDraft: null,
+	blendDraft: null,
+	status: {
+		palette: emptyStatus(),
+		crop: emptyStatus(),
+		style: emptyStatus(),
+		banner: emptyStatus(),
+		blend: emptyStatus()
+	}
 });
 
-export const savePalette = createAsyncThunk('appearanceSettings/savePalette',
+export const savePalette = createAsyncThunk(
+	'appearanceSettings/savePalette',
 	async (args: { deckId: string; palette: CardPalette | null }, context) => {
 		const { deckId, palette } = args;
 		const { dispatch } = context;
@@ -38,33 +61,67 @@ export const savePalette = createAsyncThunk('appearanceSettings/savePalette',
 			await fetchAPISetDeckPalette(deckId, palette);
 			await dispatch(loadDeck(deckId)).unwrap();
 		});
-	});
+	}
+);
 
-export const saveCrop = createAsyncThunk('appearanceSettings/saveCrop',
-	async (args: { deckId: string; crop: BannerCrop; config: BannerBlendConfig }, context) => {
+export const saveCrop = createAsyncThunk(
+	'appearanceSettings/saveCrop',
+	async (
+		args: { deckId: string; crop: BannerCrop; config: BannerBlendConfig },
+		context
+	) => {
 		const { deckId, crop, config } = args;
 		const { dispatch } = context;
 		await withMinimumStatusDuration(async () => {
 			await fetchAPISetBannerCrop(deckId, crop);
 			const deck = await dispatch(loadDeck(deckId)).unwrap();
 			// Re-render the moved art with the blend and subject settings already in place.
-			if (deck.icon) await generateAndSaveBannerBlend(deckId, deck, config,
-				(message, progress) => dispatch(appearanceActions.renderProgress({ deckId, section: 'crop', message, progress })));
+			if (deck.icon)
+				await generateAndSaveBannerBlend(
+					deckId,
+					deck,
+					config,
+					(message, progress) =>
+						dispatch(
+							appearanceActions.renderProgress({
+								deckId,
+								section: 'crop',
+								message,
+								progress
+							})
+						)
+				);
 			await dispatch(loadDeck(deckId)).unwrap();
 		});
-	});
+	}
+);
 
-export const saveBlend = createAsyncThunk('appearanceSettings/saveBlend',
+export const saveBlend = createAsyncThunk(
+	'appearanceSettings/saveBlend',
 	async (args: { deckId: string; config: BannerBlendConfig }, context) => {
 		const { deckId, config } = args;
 		const { dispatch } = context;
 		const deck = await dispatch(loadDeck(deckId)).unwrap();
-		await generateAndSaveBannerBlend(deckId, deck, config,
-			(message, progress) => dispatch(appearanceActions.renderProgress({ deckId, section: 'blend', message, progress })));
+		await generateAndSaveBannerBlend(
+			deckId,
+			deck,
+			config,
+			(message, progress) =>
+				dispatch(
+					appearanceActions.renderProgress({
+						deckId,
+						section: 'blend',
+						message,
+						progress
+					})
+				)
+		);
 		await dispatch(loadDeck(deckId)).unwrap();
-	});
+	}
+);
 
-export const saveStyle = createAsyncThunk('appearanceSettings/saveStyle',
+export const saveStyle = createAsyncThunk(
+	'appearanceSettings/saveStyle',
 	async (args: { deckId: string; style: DeckTopStyle }, context) => {
 		const { deckId, style } = args;
 		const { dispatch } = context;
@@ -72,111 +129,265 @@ export const saveStyle = createAsyncThunk('appearanceSettings/saveStyle',
 			await fetchAPISetTopStyle(deckId, style);
 			await dispatch(loadDeck(deckId)).unwrap();
 		});
-	});
+	}
+);
 
 export const appearanceSettingsSlice = createSlice({
-	name: 'appearanceSettings', initialState: initialState(),
+	name: 'appearanceSettings',
+	initialState: initialState(),
 	reducers: {
 		openAppearanceDeck(state, action: PayloadAction<string>) {
-			if (state.deckId !== action.payload) Object.assign(state, initialState(), { deckId: action.payload });
+			if (state.deckId !== action.payload)
+				Object.assign(state, initialState(), {
+					deckId: action.payload
+				});
 		},
-		changePaletteColor(state, action: PayloadAction<{ key: keyof CardPalette; value: string; palette: CardPalette }>) {
-			state.paletteDraft = { value: { ...action.payload.palette, [action.payload.key]: action.payload.value } };
+		changePaletteColor(
+			state,
+			action: PayloadAction<{
+				key: keyof CardPalette;
+				value: string;
+				palette: CardPalette;
+			}>
+		) {
+			state.paletteDraft = {
+				value: {
+					...action.payload.palette,
+					[action.payload.key]: action.payload.value
+				}
+			};
 			state.status.palette = emptyStatus();
 		},
-		useCardColors(state) { state.paletteDraft = { value: null }; state.status.palette = emptyStatus(); },
-		changeCrop(state, action: PayloadAction<BannerCrop>) { state.cropDraft = action.payload; state.status.crop = emptyStatus(); },
-		changeStyle(state, action: PayloadAction<DeckTopStyle>) { state.styleDraft = action.payload; state.status.style = emptyStatus(); },
-		changeBlend(state, action: PayloadAction<BannerBlendConfig>) { state.blendDraft = action.payload; state.status.blend = emptyStatus(); },
-		renderProgress(state, action: PayloadAction<{ deckId: string; section: 'blend' | 'crop'; message: string; progress?: number }>) {
+		useCardColors(state) {
+			state.paletteDraft = { value: null };
+			state.status.palette = emptyStatus();
+		},
+		changeCrop(state, action: PayloadAction<BannerCrop>) {
+			state.cropDraft = action.payload;
+			state.status.crop = emptyStatus();
+		},
+		changeStyle(state, action: PayloadAction<DeckTopStyle>) {
+			state.styleDraft = action.payload;
+			state.status.style = emptyStatus();
+		},
+		changeBlend(state, action: PayloadAction<BannerBlendConfig>) {
+			state.blendDraft = action.payload;
+			state.status.blend = emptyStatus();
+		},
+		renderProgress(
+			state,
+			action: PayloadAction<{
+				deckId: string;
+				section: 'blend' | 'crop';
+				message: string;
+				progress?: number;
+			}>
+		) {
 			if (state.deckId !== action.payload.deckId) return;
-			state.status[action.payload.section].message = action.payload.message;
-			state.status[action.payload.section].progress = action.payload.progress ?? null;
+			state.status[action.payload.section].message =
+				action.payload.message;
+			state.status[action.payload.section].progress =
+				action.payload.progress ?? null;
 		},
 		bannerSaved(state, action: PayloadAction<string>) {
 			if (state.deckId !== action.payload) return;
 			state.cropDraft = null;
-			state.status.banner = { saving: false, message: 'Banner artwork saved.', error: null };
+			state.status.banner = {
+				saving: false,
+				message: 'Banner artwork saved.',
+				error: null
+			};
 		},
-		bannerPickerOpened(state) { state.status.banner = emptyStatus(); }
+		bannerPickerOpened(state) {
+			state.status.banner = emptyStatus();
+		}
 	},
 	extraReducers: (builder) => {
 		builder
-			.addCase(saveBlend.pending, (state, action) => { if (state.deckId === action.meta.arg.deckId) state.status.blend = { saving: true, message: 'Preparing banners…', error: null }; })
+			.addCase(saveBlend.pending, (state, action) => {
+				if (state.deckId === action.meta.arg.deckId)
+					state.status.blend = {
+						saving: true,
+						message: 'Preparing banners…',
+						error: null
+					};
+			})
 			.addCase(saveBlend.fulfilled, (state, action) => {
 				if (state.deckId !== action.meta.arg.deckId) return;
 				state.blendDraft = null;
-				state.status.blend = { saving: false, message: 'Blend saved. Future visits use the generated images.', error: null };
+				state.status.blend = {
+					saving: false,
+					message:
+						'Blend saved. Future visits use the generated images.',
+					error: null
+				};
 			})
 			.addCase(saveBlend.rejected, (state, action) => {
 				if (state.deckId !== action.meta.arg.deckId) return;
 				// A newer generation replaced this one; its result is discarded, not an error.
-				state.status.blend = action.error.name === 'BannerBlendCancelled'
-					? { saving: false, message: 'Replaced by a newer banner request.', error: null }
-					: { saving: false, message: null, error: action.error.message ?? 'Unable to generate banners. Please try again.' };
+				state.status.blend =
+					action.error.name === 'BannerBlendCancelled'
+						? {
+								saving: false,
+								message: 'Replaced by a newer banner request.',
+								error: null
+							}
+						: {
+								saving: false,
+								message: null,
+								error:
+									action.error.message ??
+									'Unable to generate banners. Please try again.'
+							};
 			})
-			.addCase(savePalette.pending, (state, action) => { if (state.deckId === action.meta.arg.deckId) state.status.palette = { saving: true, message: null, error: null }; })
+			.addCase(savePalette.pending, (state, action) => {
+				if (state.deckId === action.meta.arg.deckId)
+					state.status.palette = {
+						saving: true,
+						message: null,
+						error: null
+					};
+			})
 			.addCase(savePalette.fulfilled, (state, action) => {
 				if (state.deckId !== action.meta.arg.deckId) return;
 				state.paletteDraft = null;
-				state.status.palette = { saving: false, message: 'Palette saved.', error: null };
+				state.status.palette = {
+					saving: false,
+					message: 'Palette saved.',
+					error: null
+				};
 			})
 			.addCase(savePalette.rejected, (state, action) => {
 				if (state.deckId !== action.meta.arg.deckId) return;
-				state.status.palette = { saving: false, message: null, error: 'Unable to save the palette. Your changes are still here; please try again.' };
+				state.status.palette = {
+					saving: false,
+					message: null,
+					error: 'Unable to save the palette. Your changes are still here; please try again.'
+				};
 			})
-			.addCase(saveCrop.pending, (state, action) => { if (state.deckId === action.meta.arg.deckId) state.status.crop = { saving: true, message: null, error: null }; })
+			.addCase(saveCrop.pending, (state, action) => {
+				if (state.deckId === action.meta.arg.deckId)
+					state.status.crop = {
+						saving: true,
+						message: null,
+						error: null
+					};
+			})
 			.addCase(saveCrop.fulfilled, (state, action) => {
 				if (state.deckId !== action.meta.arg.deckId) return;
 				state.cropDraft = null;
 				state.blendDraft = null;
-				state.status.crop = { saving: false, message: 'Banner crop saved.', error: null };
+				state.status.crop = {
+					saving: false,
+					message: 'Banner crop saved.',
+					error: null
+				};
 			})
 			.addCase(saveCrop.rejected, (state, action) => {
 				if (state.deckId !== action.meta.arg.deckId) return;
-				state.status.crop = action.error.name === 'BannerBlendCancelled'
-					? { saving: false, message: 'Crop saved; its banner render was replaced by a newer request.', error: null }
-					: { saving: false, message: null, error: action.error.message ?? 'Unable to save the banner crop and blend. Please try again.' };
+				state.status.crop =
+					action.error.name === 'BannerBlendCancelled'
+						? {
+								saving: false,
+								message:
+									'Crop saved; its banner render was replaced by a newer request.',
+								error: null
+							}
+						: {
+								saving: false,
+								message: null,
+								error:
+									action.error.message ??
+									'Unable to save the banner crop and blend. Please try again.'
+							};
 			})
-			.addCase(saveStyle.pending, (state, action) => { if (state.deckId === action.meta.arg.deckId) state.status.style = { saving: true, message: null, error: null }; })
+			.addCase(saveStyle.pending, (state, action) => {
+				if (state.deckId === action.meta.arg.deckId)
+					state.status.style = {
+						saving: true,
+						message: null,
+						error: null
+					};
+			})
 			.addCase(saveStyle.fulfilled, (state, action) => {
 				if (state.deckId !== action.meta.arg.deckId) return;
 				state.styleDraft = null;
-				state.status.style = { saving: false, message: 'Deck top style saved.', error: null };
+				state.status.style = {
+					saving: false,
+					message: 'Deck top style saved.',
+					error: null
+				};
 			})
 			.addCase(saveStyle.rejected, (state, action) => {
 				if (state.deckId !== action.meta.arg.deckId) return;
-				state.status.style = { saving: false, message: null, error: 'Unable to save the top style. Your selection is still here; please try again.' };
+				state.status.style = {
+					saving: false,
+					message: null,
+					error: 'Unable to save the top style. Your selection is still here; please try again.'
+				};
 			});
 	}
 });
 
 export const appearanceActions = appearanceSettingsSlice.actions;
-export const selectAppearanceSettings = (state: { appearanceSettings: AppearanceSettingsState }) => state.appearanceSettings;
+export const selectAppearanceSettings = (state: {
+	appearanceSettings: AppearanceSettingsState;
+}) => state.appearanceSettings;
 
 function samePalette(a: CardPalette | null, b: CardPalette | null): boolean {
 	if (!a || !b) return a === b;
-	return a.accent === b.accent && a.surface === b.surface && a.wash === b.wash && a.border === b.border;
+	return (
+		a.accent === b.accent &&
+		a.surface === b.surface &&
+		a.wash === b.wash &&
+		a.border === b.border
+	);
 }
 
 function sameCrop(a: BannerCrop, b: BannerCrop): boolean {
-	return (['desktop', 'mobile'] as const).every((variant) =>
-		a[variant].x === b[variant].x && a[variant].y === b[variant].y && a[variant].zoom === b[variant].zoom);
+	return (['desktop', 'mobile'] as const).every(
+		(variant) =>
+			a[variant].x === b[variant].x &&
+			a[variant].y === b[variant].y &&
+			a[variant].zoom === b[variant].zoom
+	);
 }
 
-export function appearanceView(state: AppearanceSettingsState, deckId: string, deck: GetDeckResponse | undefined, generatedPalette: CardPalette | null) {
+export function appearanceView(
+	state: AppearanceSettingsState,
+	deckId: string,
+	deck: GetDeckResponse | undefined,
+	generatedPalette: CardPalette | null
+) {
 	const active = state.deckId === deckId ? state : initialState();
-	const selectedPalette = active.paletteDraft ? active.paletteDraft.value : deck?.palette ?? null;
+	const selectedPalette = active.paletteDraft
+		? active.paletteDraft.value
+		: (deck?.palette ?? null);
 	const palette = selectedPalette ?? generatedPalette ?? DEFAULT_CARD_PALETTE;
 	const crop = active.cropDraft ?? deck?.bannerCrop ?? DEFAULT_BANNER_CROP;
 	const style = active.styleDraft ?? deck?.topStyle ?? 'card';
 	const savedBlend = normalizeBannerBlendConfig(deck?.bannerBlend?.config);
 	const blend = active.blendDraft ?? savedBlend;
 	return {
-		blend, savedBlend, blendChanged: !!active.blendDraft && JSON.stringify(active.blendDraft) !== JSON.stringify(savedBlend),
-		palette, selectedPalette, isAuto: selectedPalette === null,
-		paletteChanged: !!deck && !!active.paletteDraft && !samePalette(selectedPalette, deck.palette),
-		crop, cropChanged: !!deck && !!active.cropDraft && !sameCrop(crop, deck.bannerCrop ?? DEFAULT_BANNER_CROP),
-		style, styleChanged: !!deck && style !== (deck.topStyle ?? 'card'), status: active.status
+		blend,
+		savedBlend,
+		blendChanged:
+			!!active.blendDraft &&
+			JSON.stringify(active.blendDraft) !== JSON.stringify(savedBlend),
+		palette,
+		selectedPalette,
+		isAuto: selectedPalette === null,
+		paletteChanged:
+			!!deck &&
+			!!active.paletteDraft &&
+			!samePalette(selectedPalette, deck.palette),
+		crop,
+		cropChanged:
+			!!deck &&
+			!!active.cropDraft &&
+			!sameCrop(crop, deck.bannerCrop ?? DEFAULT_BANNER_CROP),
+		style,
+		styleChanged: !!deck && style !== (deck.topStyle ?? 'card'),
+		status: active.status
 	};
 }

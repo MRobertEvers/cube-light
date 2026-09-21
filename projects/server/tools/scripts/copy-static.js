@@ -8,14 +8,13 @@ async function copyStatic(root) {
 
 	await Promise.all([
 		fs.mkdir(targetAssets, { recursive: true }),
-		fs.mkdir(targetPublic, { recursive: true }),
+		fs.mkdir(targetPublic, { recursive: true })
 	]);
 
 	await fs.copyFile(
 		path.join(sourceAssets, 'AllPrintings.sqlite'),
-		path.join(targetAssets, 'AllPrintings.sqlite'),
+		path.join(targetAssets, 'AllPrintings.sqlite')
 	);
-
 }
 
 if (require.main === module) {

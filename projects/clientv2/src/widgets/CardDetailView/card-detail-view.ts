@@ -22,15 +22,23 @@ function parseLoadedDataToState(
 	};
 }
 
-function buildCardDetailViewReducer(builder: ActionReducerMapBuilder<CardDetailViewState>) {
-	builder.addCase(CommandsCardDetailView.initialize.pending, (slice, action) => {
-		slice.status = CardDetailViewStatus.LOADING;
-	});
+function buildCardDetailViewReducer(
+	builder: ActionReducerMapBuilder<CardDetailViewState>
+) {
+	builder.addCase(
+		CommandsCardDetailView.initialize.pending,
+		(slice, action) => {
+			slice.status = CardDetailViewStatus.LOADING;
+		}
+	);
 
-	builder.addCase(CommandsCardDetailView.initialize.fulfilled, (slice, action) => {
-		const { cardUuid, cardDetails } = action.payload;
-		return parseLoadedDataToState(cardUuid, cardDetails);
-	});
+	builder.addCase(
+		CommandsCardDetailView.initialize.fulfilled,
+		(slice, action) => {
+			const { cardUuid, cardDetails } = action.payload;
+			return parseLoadedDataToState(cardUuid, cardDetails);
+		}
+	);
 
 	return builder;
 }

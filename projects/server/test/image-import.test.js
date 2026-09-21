@@ -12,17 +12,26 @@ const { PathBuilder } = require('../build/src/utils/PathBuilder');
 
 test('imports reviewed card names as one deck edit and rejects unknown names atomically', async () => {
 	const directory = await mkdtemp(path.join(tmpdir(), 'cube-image-import-'));
-	const database = await Database.Sqlite(path.join(directory, 'decks.sqlite'));
-	const cards = new CardDatabase(path.join(__dirname, '../build/src/assets/AllPrintings.sqlite'));
+	const database = await Database.Sqlite(
+		path.join(directory, 'decks.sqlite')
+	);
+	const cards = new CardDatabase(
+		path.join(__dirname, '../build/src/assets/AllPrintings.sqlite')
+	);
 	const app = express();
-	app.use(createRoutesDecks(new PathBuilder().routes('/decks'), database, cards));
+	app.use(
+		createRoutesDecks(new PathBuilder().routes('/decks'), database, cards)
+	);
 	const server = app.listen(0, '127.0.0.1');
 	try {
 		await once(server, 'listening');
 		const base = `http://127.0.0.1:${server.address().port}`;
-		const request = (url, body) => fetch(`${base}${url}`, {
-			method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-		});
+		const request = (url, body) =>
+			fetch(`${base}${url}`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body)
+			});
 		const created = await request('/decks/', { name: 'Photo deck' });
 		assert.equal(created.status, 200);
 		const { deckId } = await created.json();
@@ -30,7 +39,10 @@ test('imports reviewed card names as one deck edit and rejects unknown names ato
 		assert.ok(deck);
 		const rowId = String(deck.DeckId);
 		const imported = await request(`/decks/${deckId}/cards/import`, {
-			cards: [{ name: 'Shock', count: 2 }, { name: 'Forest', count: 3 }]
+			cards: [
+				{ name: 'Shock', count: 2 },
+				{ name: 'Forest', count: 3 }
+			]
 		});
 		assert.equal(imported.status, 200);
 		assert.deepEqual(await imported.json(), { added: 5 });
@@ -40,7 +52,10 @@ test('imports reviewed card names as one deck edit and rejects unknown names ato
 		assert.equal((await database.getDeckEditHistory(rowId)).length, 1);
 
 		const invalid = await request(`/decks/${deckId}/cards/import`, {
-			cards: [{ name: 'Shock', count: 1 }, { name: 'This Is Not A Card', count: 1 }]
+			cards: [
+				{ name: 'Shock', count: 1 },
+				{ name: 'This Is Not A Card', count: 1 }
+			]
 		});
 		assert.equal(invalid.status, 400);
 		deckCards = await database.getDeckCards(rowId);

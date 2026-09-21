@@ -3,11 +3,15 @@ import { Suspense, lazy } from 'react';
 import { BrowserRouter, Switch, Route, useParams } from 'react-router-dom';
 import { LoadingIndicator } from '../components/LoadingIndicator';
 
-const UsersList = lazy(() => import(/* webpackChunkName: "users-list" */ '../views/UsersList'));
+const UsersList = lazy(
+	() => import(/* webpackChunkName: "users-list" */ '../views/UsersList')
+);
 const UserProfile = lazy(
 	() => import(/* webpackChunkName: "user-profile" */ '../views/UserProfile')
 );
-const UserTag = lazy(() => import(/* webpackChunkName: "user-tag" */ '../views/UserTag'));
+const UserTag = lazy(
+	() => import(/* webpackChunkName: "user-tag" */ '../views/UserTag')
+);
 
 function LoadingSuspense(props: React.PropsWithChildren<{}>) {
 	const { children } = props;

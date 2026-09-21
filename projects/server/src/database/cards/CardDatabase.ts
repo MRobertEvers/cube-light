@@ -1,7 +1,8 @@
 import file from 'fs';
 import { SqliteDatabase, placeholders } from '../sqlite';
 
-const CARD_DATABASE_COLUMNS = 'c.name, c.uuid, i.scryfallId, c.types, c.manaCost';
+const CARD_DATABASE_COLUMNS =
+	'c.name, c.uuid, i.scryfallId, c.types, c.manaCost';
 const CARD_DATA_COLUMNS =
 	'c.name, c.uuid, i.scryfallId, c.types, c.subtypes, c.manaCost, c.text, c.setCode';
 
@@ -36,16 +37,21 @@ export class CardDatabase {
 		return this.db.close();
 	}
 
-	public async getCardUuidsByNames(names: string[]): Promise<Record<string, string>> {
+	public async getCardUuidsByNames(
+		names: string[]
+	): Promise<Record<string, string>> {
 		if (names.length === 0) return {};
 		const result = await this.db.all<{ uuid: string; name: string }>(
 			`SELECT uuid, name FROM cards WHERE name IN (${placeholders(names)})`,
 			names
 		);
-		return result.reduce((map, item) => {
-			map[item.name] = item.uuid;
-			return map;
-		}, {} as Record<string, string>);
+		return result.reduce(
+			(map, item) => {
+				map[item.name] = item.uuid;
+				return map;
+			},
+			{} as Record<string, string>
+		);
 	}
 
 	public queryCardsByName(name: string): Promise<PrintingCardInfo[]> {
@@ -57,9 +63,10 @@ export class CardDatabase {
 
 	public queryCardsByNameStub(nameStub: string): Promise<CardInfo[]> {
 		if (nameStub.length < 3) return Promise.resolve([]);
-		return this.db.all<CardInfo>('SELECT name FROM cards WHERE name COLLATE NOCASE LIKE ?', [
-			`%${nameStub}%`
-		]);
+		return this.db.all<CardInfo>(
+			'SELECT name FROM cards WHERE name COLLATE NOCASE LIKE ?',
+			[`%${nameStub}%`]
+		);
 	}
 
 	public async queryAllCardNames(): Promise<string[]> {
@@ -97,7 +104,9 @@ export class CardDatabase {
 		}
 		const result: Array<[string, string]> = [];
 		for (const [setCode, uuids] of bySet) {
-			result.push(...uuids.map((uuid) => [setCode, uuid] as [string, string]));
+			result.push(
+				...uuids.map((uuid) => [setCode, uuid] as [string, string])
+			);
 		}
 		return result;
 	}

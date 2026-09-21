@@ -26,10 +26,19 @@ export function createRoutes_Collections(database: Database) {
 	});
 
 	app.get('/search', async (req: Request, res: Response) => {
-		const pageToken = parseInt((req.query['page-token'] as string) ?? '0', 10);
-		const pageLimit = parseInt((req.query['limit'] as string) ?? '9999', 10);
+		const pageToken = parseInt(
+			(req.query['page-token'] as string) ?? '0',
+			10
+		);
+		const pageLimit = parseInt(
+			(req.query['limit'] as string) ?? '9999',
+			10
+		);
 
-		const collections = await database.listCollections(pageToken, pageLimit);
+		const collections = await database.listCollections(
+			pageToken,
+			pageLimit
+		);
 
 		const response = collections.map((collection) => {
 			return {

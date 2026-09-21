@@ -19,7 +19,9 @@ const DeckMapper: ParamMapper<DeckPageProps> = {
 	deckId: 'id'
 };
 
-const DeckImageScanMapper: ParamMapper<React.ComponentProps<typeof DeckImageScanPage>> = {
+const DeckImageScanMapper: ParamMapper<
+	React.ComponentProps<typeof DeckImageScanPage>
+> = {
 	deckId: 'id',
 	taskId: 'taskId'
 };
@@ -36,12 +38,46 @@ export function Routes() {
 				<Route path="/collection" element={<CollectionPage />} />
 				<Route
 					path="/collection/:id"
-					element={<PassParams Component={CollectionEditPage} params={CollectionEditMapper} />}
+					element={
+						<PassParams
+							Component={CollectionEditPage}
+							params={CollectionEditMapper}
+						/>
+					}
 				/>
-				<Route path="/deck/:id" element={<PassParams Component={DeckPage} params={DeckMapper} />} />
-				<Route path="/deck/:id/settings" element={<PassParams Component={DeckSettingsPage} params={DeckMapper} />} />
-				<Route path="/deck/:id/history" element={<PassParams Component={DeckHistoryPage} params={DeckMapper} />} />
-				<Route path="/deck/:id/scan/:taskId" element={<PassParams Component={DeckImageScanPage} params={DeckImageScanMapper} />} />
+				<Route
+					path="/deck/:id"
+					element={
+						<PassParams Component={DeckPage} params={DeckMapper} />
+					}
+				/>
+				<Route
+					path="/deck/:id/settings"
+					element={
+						<PassParams
+							Component={DeckSettingsPage}
+							params={DeckMapper}
+						/>
+					}
+				/>
+				<Route
+					path="/deck/:id/history"
+					element={
+						<PassParams
+							Component={DeckHistoryPage}
+							params={DeckMapper}
+						/>
+					}
+				/>
+				<Route
+					path="/deck/:id/scan/:taskId"
+					element={
+						<PassParams
+							Component={DeckImageScanPage}
+							params={DeckImageScanMapper}
+						/>
+					}
+				/>
 			</RouterRoutes>
 		</BrowserRouter>
 	);

@@ -91,5 +91,8 @@
 }
 
 @media (max-width: 600px) {
-	.changes { grid-template-columns: 1fr; gap: 0; }
+	.changes {
+		grid-template-columns: 1fr;
+		gap: 0;
+	}
 }

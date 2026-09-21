@@ -25,22 +25,40 @@ export function NewDeckModal(props: NewDeckModalProps) {
 	const [name, setName] = useState('');
 
 	return (
-		<div className={styles['container']} role="dialog" aria-modal="true" aria-labelledby="new-deck-title">
+		<div
+			className={styles['container']}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="new-deck-title"
+		>
 			<div className={styles['contents']}>
 				<h2 id="new-deck-title">Create a deck</h2>
 				<label htmlFor="new-deck-name">Deck name</label>
-				<input id="new-deck-name" autoFocus placeholder="Give your deck a name" value={name} onChange={(e) => setName(e.target.value)} />
+				<input
+					id="new-deck-name"
+					autoFocus
+					placeholder="Give your deck a name"
+					value={name}
+					onChange={(e) => setName(e.target.value)}
+				/>
 				<div className={styles['body']}>
 					<div className={styles['group-counter-buttons']}>
 						<Button
 							disabled={!name.trim()}
 							onClick={() =>
-								onEvent({ type: NewDeckModalEventType.SUBMIT, payload: name })
+								onEvent({
+									type: NewDeckModalEventType.SUBMIT,
+									payload: name
+								})
 							}
 						>
 							Ok
 						</Button>
-						<Button onClick={() => onEvent({ type: NewDeckModalEventType.CLOSE })}>
+						<Button
+							onClick={() =>
+								onEvent({ type: NewDeckModalEventType.CLOSE })
+							}
+						>
 							Cancel
 						</Button>
 					</div>

@@ -24,9 +24,14 @@ export function fetchAPINameLookup(): Promise<NameIndexWasm> {
 			const module = await WebAssembly.instantiate(moduleBytes, {
 				env: { emscripten_notify_memory_growth: () => {} }
 			});
-			return new NameIndexWasm(module.instance, new Uint8Array(indexBytes));
+			return new NameIndexWasm(
+				module.instance,
+				new Uint8Array(indexBytes)
+			);
 		})();
-		NAME_LOOKUP.catch(() => { NAME_LOOKUP = undefined; });
+		NAME_LOOKUP.catch(() => {
+			NAME_LOOKUP = undefined;
+		});
 	}
 	return NAME_LOOKUP;
 }

@@ -32,7 +32,11 @@ module.exports = {
 	plugins: [
 		new HtmlWebpackPlugin({
 			title: 'Index',
-			template: path.join('src', 'templates', 'index-development.template.html')
+			template: path.join(
+				'src',
+				'templates',
+				'index-development.template.html'
+			)
 		}),
 		new webpack.DefinePlugin({
 			__SYS_BACKEND_HOST_URI__: JSON.stringify(BACKEND_HOST_URI)
@@ -63,7 +67,8 @@ module.exports = {
 						loader: 'css-loader',
 						options: {
 							modules: {
-								localIdentName: '[path][name]__[local]--[hash:base64:5]'
+								localIdentName:
+									'[path][name]__[local]--[hash:base64:5]'
 							}
 						}
 					}

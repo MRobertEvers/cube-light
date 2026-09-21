@@ -13,9 +13,19 @@ const handler = createHandler((builder) => {
 	builder.addCase(DeckWorkerMessages.getSuggestions, async (message) => {
 		const { query, requestId } = message.payload;
 		try {
-			return { ...(await fetchSortedSuggestions(query)), query, requestId };
+			return {
+				...(await fetchSortedSuggestions(query)),
+				query,
+				requestId
+			};
 		} catch {
-			return { sorted: [], set: new Set<string>(), query, requestId, error: true };
+			return {
+				sorted: [],
+				set: new Set<string>(),
+				query,
+				requestId,
+				error: true
+			};
 		}
 	});
 	builder.addCase(DeckWorkerMessages.getDeck, async (message) => {
@@ -32,7 +42,12 @@ const handler = createHandler((builder) => {
 	});
 	builder.addCase(DeckWorkerMessages.setCard, async (message) => {
 		const { deckId, cardName, action, count } = message.payload;
-		const result = await fetchSetCardCommand(deckId, cardName, action, count);
+		const result = await fetchSetCardCommand(
+			deckId,
+			cardName,
+			action,
+			count
+		);
 		return result;
 	});
 	builder.addCase(DeckWorkerMessages.getLookupTree, async (message) => {

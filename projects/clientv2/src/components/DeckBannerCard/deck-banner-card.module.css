@@ -10,30 +10,93 @@
 	padding-bottom: 20px;
 }
 
-.art { position: relative; width: 100%; aspect-ratio: 1.39; background: var(--deck-border, #f2e9e6); }
-.desktopArt, .mobileArt { position: absolute; inset: 0; }
-.mobileArt { display: none; }
-.info { padding: 0 18px; min-width: 0; }
-.title, .titleButton {
+.art {
+	position: relative;
+	width: 100%;
+	aspect-ratio: 1.39;
+	background: var(--deck-border, #f2e9e6);
+}
+.desktopArt,
+.mobileArt {
+	position: absolute;
+	inset: 0;
+}
+.mobileArt {
+	display: none;
+}
+.info {
+	padding: 0 18px;
+	min-width: 0;
+}
+.title,
+.titleButton {
 	color: var(--deck-banner-ink, inherit);
 	font-size: 23px;
 	line-height: 1.2;
 	margin: 18px 0 6px;
 }
-.titleButton { display: block; width: 100%; padding: 0; border: 0; background: none; font-family: inherit; font-weight: 700; text-align: left; cursor: pointer; }
-.titleButton:hover { text-decoration: underline; }
-.subtitle { font-size: 14px; }
+.titleButton {
+	display: block;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	background: none;
+	font-family: inherit;
+	font-weight: 700;
+	text-align: left;
+	cursor: pointer;
+}
+.titleButton:hover {
+	text-decoration: underline;
+}
+.subtitle {
+	font-size: 14px;
+}
 
-.mobile { display: flex; padding-bottom: 0; min-height: 125px; }
-.mobile .art { width: 35%; min-height: 125px; aspect-ratio: auto; flex-shrink: 0; }
-.mobile .desktopArt { display: none; }
-.mobile .mobileArt { display: block; }
-.mobile .info { text-align: center; margin: auto 12px; flex-grow: 1; }
+.mobile {
+	display: flex;
+	padding-bottom: 0;
+	min-height: 125px;
+}
+.mobile .art {
+	width: 35%;
+	min-height: 125px;
+	aspect-ratio: auto;
+	flex-shrink: 0;
+}
+.mobile .desktopArt {
+	display: none;
+}
+.mobile .mobileArt {
+	display: block;
+}
+.mobile .info {
+	text-align: center;
+	margin: auto 12px;
+	flex-grow: 1;
+}
 
 @media (max-width: 680px) {
-	.responsive { display: flex; padding-bottom: 0; min-height: 125px; }
-	.responsive .art { width: 35%; min-height: 125px; aspect-ratio: auto; flex-shrink: 0; }
-	.responsive .desktopArt { display: none; }
-	.responsive .mobileArt { display: block; }
-	.responsive .info { text-align: center; margin: auto 12px; flex-grow: 1; }
+	.responsive {
+		display: flex;
+		padding-bottom: 0;
+		min-height: 125px;
+	}
+	.responsive .art {
+		width: 35%;
+		min-height: 125px;
+		aspect-ratio: auto;
+		flex-shrink: 0;
+	}
+	.responsive .desktopArt {
+		display: none;
+	}
+	.responsive .mobileArt {
+		display: block;
+	}
+	.responsive .info {
+		text-align: center;
+		margin: auto 12px;
+		flex-grow: 1;
+	}
 }

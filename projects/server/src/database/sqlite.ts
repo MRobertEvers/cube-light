@@ -1,6 +1,9 @@
 // TypeScript 4.2 predates the node:sqlite type declarations.
 const { DatabaseSync } = require('node:sqlite') as {
-	DatabaseSync: new (filename: string, options?: { readOnly?: boolean }) => NativeDatabase;
+	DatabaseSync: new (
+		filename: string,
+		options?: { readOnly?: boolean }
+	) => NativeDatabase;
 };
 
 interface NativeDatabase {
@@ -12,7 +15,10 @@ interface NativeDatabase {
 interface NativeStatement {
 	all(...parameters: unknown[]): unknown[];
 	get(...parameters: unknown[]): unknown | undefined;
-	run(...parameters: unknown[]): { lastInsertRowid: number | bigint; changes: number | bigint };
+	run(...parameters: unknown[]): {
+		lastInsertRowid: number | bigint;
+		changes: number | bigint;
+	};
 }
 
 export interface SqliteTransaction {
@@ -36,9 +42,15 @@ export class SqliteDatabase {
 		return this.db.prepare(sql).get(...params) as T | undefined;
 	}
 
-	async run(sql: string, params: unknown[] = []): Promise<{ lastID: number; changes: number }> {
+	async run(
+		sql: string,
+		params: unknown[] = []
+	): Promise<{ lastID: number; changes: number }> {
 		const result = this.db.prepare(sql).run(...params);
-		return { lastID: Number(result.lastInsertRowid), changes: Number(result.changes) };
+		return {
+			lastID: Number(result.lastInsertRowid),
+			changes: Number(result.changes)
+		};
 	}
 
 	async exec(sql: string): Promise<void> {
@@ -52,11 +64,16 @@ export class SqliteDatabase {
 	transaction<T>(callback: (tx: SqliteTransaction) => T): T {
 		this.db.exec('BEGIN');
 		const tx: SqliteTransaction = {
-			all: <R>(sql: string, params: unknown[] = []) => this.db.prepare(sql).all(...params) as R[],
-			get: <R>(sql: string, params: unknown[] = []) => this.db.prepare(sql).get(...params) as R | undefined,
+			all: <R>(sql: string, params: unknown[] = []) =>
+				this.db.prepare(sql).all(...params) as R[],
+			get: <R>(sql: string, params: unknown[] = []) =>
+				this.db.prepare(sql).get(...params) as R | undefined,
 			run: (sql: string, params: unknown[] = []) => {
 				const result = this.db.prepare(sql).run(...params);
-				return { lastID: Number(result.lastInsertRowid), changes: Number(result.changes) };
+				return {
+					lastID: Number(result.lastInsertRowid),
+					changes: Number(result.changes)
+				};
 			}
 		};
 		try {

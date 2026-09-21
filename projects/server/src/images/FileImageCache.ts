@@ -30,7 +30,11 @@ export class FileImageCache implements ImageCache {
 
 	private filePath(key: string): string {
 		// Keys are validated at the storage boundary so callers cannot escape the cache directory.
-		if (!/^(small|normal|large|art_crop)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$/.test(key)) {
+		if (
+			!/^(small|normal|large|art_crop)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$/.test(
+				key
+			)
+		) {
 			throw new Error('Invalid image cache key');
 		}
 		return path.join(this.directory, key);

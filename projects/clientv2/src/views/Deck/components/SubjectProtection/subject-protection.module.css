@@ -1,27 +1,143 @@
-.editor { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--deck-border); border-radius: 12px; background: var(--deck-wash); }
-.toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
-.tool { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border: 1px solid var(--deck-border); border-radius: 999px; background: white; font-size: 0.875rem; cursor: pointer; }
-.tool input { position: absolute; opacity: 0; pointer-events: none; }
-.tool:focus-within { outline: 2px solid var(--deck-accent); outline-offset: 2px; }
-.active { border-color: var(--deck-accent); box-shadow: inset 0 0 0 1px var(--deck-accent); font-weight: 600; }
-.swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
-.rect { border: 2px dashed #5e5b5b; }
-.foreground { background: rgb(38, 190, 92); border-radius: 50%; }
-.background { background: rgb(226, 52, 52); border-radius: 50%; }
-.hint { margin: 0; color: #5e5b5b; font-size: 0.85rem; line-height: 1.4; }
-.error { margin: 0; color: #a12323; font-size: 0.85rem; }
-.stage { position: relative; overflow: hidden; border-radius: 8px; background: #1f1b19; touch-action: none; user-select: none; }
-.stage img { display: block; width: 100%; height: auto; }
-.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.overlay { cursor: crosshair; }
-.disabled .overlay { cursor: not-allowed; }
-.mask { pointer-events: none; image-rendering: auto; }
-.stale { opacity: 0.45; }
-.range { display: grid; grid-template-columns: 110px minmax(0, 1fr); align-items: center; gap: 12px; font-size: 0.875rem; }
-.range input { width: 100%; accent-color: var(--deck-accent); }
-.buttons { display: flex; flex-wrap: wrap; gap: 8px; }
-.buttons button { min-height: 36px; padding: 6px 12px; border: 1px solid var(--deck-border); border-radius: 7px; background: white; color: var(--deck-accent-text); font: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
-.buttons button:disabled { cursor: not-allowed; opacity: 0.5; }
-.previewButton { margin-left: auto; }
-.progress { width: 100%; height: 8px; accent-color: var(--deck-accent); }
-@media (max-width: 520px) { .previewButton { margin-left: 0; } }
+.editor {
+	display: grid;
+	gap: 10px;
+	padding: 14px;
+	border: 1px solid var(--deck-border);
+	border-radius: 12px;
+	background: var(--deck-wash);
+}
+.toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.tool {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 7px 11px;
+	border: 1px solid var(--deck-border);
+	border-radius: 999px;
+	background: white;
+	font-size: 0.875rem;
+	cursor: pointer;
+}
+.tool input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+.tool:focus-within {
+	outline: 2px solid var(--deck-accent);
+	outline-offset: 2px;
+}
+.active {
+	border-color: var(--deck-accent);
+	box-shadow: inset 0 0 0 1px var(--deck-accent);
+	font-weight: 600;
+}
+.swatch {
+	width: 12px;
+	height: 12px;
+	border-radius: 3px;
+	flex: none;
+}
+.rect {
+	border: 2px dashed #5e5b5b;
+}
+.foreground {
+	background: rgb(38, 190, 92);
+	border-radius: 50%;
+}
+.background {
+	background: rgb(226, 52, 52);
+	border-radius: 50%;
+}
+.hint {
+	margin: 0;
+	color: #5e5b5b;
+	font-size: 0.85rem;
+	line-height: 1.4;
+}
+.error {
+	margin: 0;
+	color: #a12323;
+	font-size: 0.85rem;
+}
+.stage {
+	position: relative;
+	overflow: hidden;
+	border-radius: 8px;
+	background: #1f1b19;
+	touch-action: none;
+	user-select: none;
+}
+.stage img {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+.stage canvas {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+.overlay {
+	cursor: crosshair;
+}
+.disabled .overlay {
+	cursor: not-allowed;
+}
+.mask {
+	pointer-events: none;
+	image-rendering: auto;
+}
+.stale {
+	opacity: 0.45;
+}
+.range {
+	display: grid;
+	grid-template-columns: 110px minmax(0, 1fr);
+	align-items: center;
+	gap: 12px;
+	font-size: 0.875rem;
+}
+.range input {
+	width: 100%;
+	accent-color: var(--deck-accent);
+}
+.buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.buttons button {
+	min-height: 36px;
+	padding: 6px 12px;
+	border: 1px solid var(--deck-border);
+	border-radius: 7px;
+	background: white;
+	color: var(--deck-accent-text);
+	font: inherit;
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+.buttons button:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+.previewButton {
+	margin-left: auto;
+}
+.progress {
+	width: 100%;
+	height: 8px;
+	accent-color: var(--deck-accent);
+}
+@media (max-width: 520px) {
+	.previewButton {
+		margin-left: 0;
+	}
+}

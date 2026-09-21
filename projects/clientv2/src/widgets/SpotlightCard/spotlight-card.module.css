@@ -14,7 +14,9 @@
 	--spotlight-surface: #f2e9e6;
 	background-color: var(--spotlight-surface);
 	cursor: pointer;
-	transition: box-shadow 0.15s, transform 0.15s;
+	transition:
+		box-shadow 0.15s,
+		transform 0.15s;
 	display: flex;
 	align-items: center;
 	justify-content: flex-end;
@@ -29,15 +31,38 @@
 	height: 100%;
 }
 
-.rendered { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; object-fit: fill; }
+.rendered {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+	object-fit: fill;
+}
 
-.spotlight-card-art > img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: left center; }
-.mobileCrop { display: none; }
-.mobile .desktopCrop { display: none; }
-.mobile .mobileCrop { display: block; }
+.spotlight-card-art > img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: left center;
+}
+.mobileCrop {
+	display: none;
+}
+.mobile .desktopCrop {
+	display: none;
+}
+.mobile .mobileCrop {
+	display: block;
+}
 @media (max-width: 680px) {
-	.responsive .desktopCrop { display: none; }
-	.responsive .mobileCrop { display: block; }
+	.responsive .desktopCrop {
+		display: none;
+	}
+	.responsive .mobileCrop {
+		display: block;
+	}
 }
 
 /* Both masks reach zero opacity while there is still artwork underneath. */
@@ -47,8 +72,20 @@
 }
 
 .blend {
-	-webkit-mask-image: radial-gradient(ellipse 145% 180% at -50% 50%, #000 60%, rgba(0, 0, 0, 0.8) 70%, rgba(0, 0, 0, 0.25) 80%, transparent 85%);
-	mask-image: radial-gradient(ellipse 145% 180% at -50% 50%, #000 60%, rgba(0, 0, 0, 0.8) 70%, rgba(0, 0, 0, 0.25) 80%, transparent 85%);
+	-webkit-mask-image: radial-gradient(
+		ellipse 145% 180% at -50% 50%,
+		#000 60%,
+		rgba(0, 0, 0, 0.8) 70%,
+		rgba(0, 0, 0, 0.25) 80%,
+		transparent 85%
+	);
+	mask-image: radial-gradient(
+		ellipse 145% 180% at -50% 50%,
+		#000 60%,
+		rgba(0, 0, 0, 0.8) 70%,
+		rgba(0, 0, 0, 0.25) 80%,
+		transparent 85%
+	);
 }
 
 .spotlight-card:hover {
@@ -56,8 +93,13 @@
 	transform: translateY(-2px);
 }
 
-.preview .spotlight-card { cursor: default; }
-.preview .spotlight-card:hover { box-shadow: 0 3px 10px rgba(var(--theme-dark-tuple), 0.07); transform: none; }
+.preview .spotlight-card {
+	cursor: default;
+}
+.preview .spotlight-card:hover {
+	box-shadow: 0 3px 10px rgba(var(--theme-dark-tuple), 0.07);
+	transform: none;
+}
 
 .spotlight-card h2 {
 	margin: 0;

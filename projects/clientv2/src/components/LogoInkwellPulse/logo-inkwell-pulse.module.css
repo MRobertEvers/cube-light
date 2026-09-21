@@ -14,18 +14,18 @@
 	inset: 5%;
 	z-index: 0;
 	box-sizing: border-box;
-	border: max(1px, calc(var(--inkwell-size) * .045)) solid currentColor;
+	border: max(1px, calc(var(--inkwell-size) * 0.045)) solid currentColor;
 	border-radius: 46% 54% 51% 49% / 53% 45% 55% 47%;
 	opacity: 0;
-	transform: scale(.55) rotate(-8deg);
+	transform: scale(0.55) rotate(-8deg);
 }
 
 .active .pulse {
-	animation: logo-inkwell-ring 1.8s cubic-bezier(.2, .65, .35, 1) infinite;
+	animation: logo-inkwell-ring 1.8s cubic-bezier(0.2, 0.65, 0.35, 1) infinite;
 }
 
 .active .delayed {
-	animation-delay: .9s;
+	animation-delay: 0.9s;
 	border-radius: 55% 45% 43% 57% / 44% 57% 43% 56%;
 }
 
@@ -35,7 +35,7 @@
 	z-index: 1;
 	border-radius: 52% 48% 57% 43% / 43% 54% 46% 57%;
 	background: currentColor;
-	opacity: .15;
+	opacity: 0.15;
 	transform: rotate(16deg);
 }
 
@@ -52,8 +52,8 @@
 	box-sizing: border-box;
 	border: 1px solid color-mix(in srgb, currentColor 38%, white);
 	border-radius: 50%;
-	background: rgba(255, 255, 255, .94);
-	box-shadow: 0 1px 4px rgba(38, 38, 38, .18);
+	background: rgba(255, 255, 255, 0.94);
+	box-shadow: 0 1px 4px rgba(38, 38, 38, 0.18);
 }
 
 .logo {
@@ -63,23 +63,51 @@
 	object-fit: contain;
 }
 
-.idle { opacity: .72; }
-.idle .pulse { display: none; }
-.idle .splotch { opacity: .08; }
+.idle {
+	opacity: 0.72;
+}
+.idle .pulse {
+	display: none;
+}
+.idle .splotch {
+	opacity: 0.08;
+}
 
 @keyframes logo-inkwell-ring {
-	0% { opacity: .68; transform: scale(.55) rotate(-8deg); }
-	55% { opacity: .28; }
-	100% { opacity: 0; transform: scale(1.65) rotate(14deg); }
+	0% {
+		opacity: 0.68;
+		transform: scale(0.55) rotate(-8deg);
+	}
+	55% {
+		opacity: 0.28;
+	}
+	100% {
+		opacity: 0;
+		transform: scale(1.65) rotate(14deg);
+	}
 }
 
 @keyframes logo-inkwell-breathe {
-	from { opacity: .12; transform: scale(.9) rotate(12deg); }
-	to { opacity: .25; transform: scale(1.1) rotate(20deg); }
+	from {
+		opacity: 0.12;
+		transform: scale(0.9) rotate(12deg);
+	}
+	to {
+		opacity: 0.25;
+		transform: scale(1.1) rotate(20deg);
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.active .pulse, .active .splotch { animation: none; }
-	.active .pulse { opacity: .32; transform: scale(1.15); }
-	.active .delayed { display: none; }
+	.active .pulse,
+	.active .splotch {
+		animation: none;
+	}
+	.active .pulse {
+		opacity: 0.32;
+		transform: scale(1.15);
+	}
+	.active .delayed {
+		display: none;
+	}
 }

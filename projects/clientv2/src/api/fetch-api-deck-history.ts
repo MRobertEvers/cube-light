@@ -1,8 +1,19 @@
 import { API_URI } from '../config/api-url';
 
-export type DeckHistoryCard = { uuid: string; name: string | null; count: number };
+export type DeckHistoryCard = {
+	uuid: string;
+	name: string | null;
+	count: number;
+};
 export type DeckHistoryDetail = {
-	field: 'name' | 'bannerCardUuid' | 'art' | 'palette' | 'bannerCrop' | 'topStyle' | 'bannerBlend';
+	field:
+		| 'name'
+		| 'bannerCardUuid'
+		| 'art'
+		| 'palette'
+		| 'bannerCrop'
+		| 'topStyle'
+		| 'bannerBlend';
 	before: string | null;
 	after: string | null;
 };
@@ -19,8 +30,11 @@ export type DeckHistoryResponse = {
 	edits: DeckHistoryEdit[];
 };
 
-export async function fetchAPIDeckHistory(deckId: string): Promise<DeckHistoryResponse> {
+export async function fetchAPIDeckHistory(
+	deckId: string
+): Promise<DeckHistoryResponse> {
 	const response = await fetch(`${API_URI}/decks/${deckId}/history`);
-	if (!response.ok) throw new Error(`Could not load deck history (${response.status})`);
+	if (!response.ok)
+		throw new Error(`Could not load deck history (${response.status})`);
 	return response.json() as Promise<DeckHistoryResponse>;
 }

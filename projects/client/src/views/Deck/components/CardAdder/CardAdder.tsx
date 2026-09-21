@@ -35,9 +35,14 @@ const KEY = {
 };
 
 export function CardAdder() {
-	const [suggestions, setSuggestions] = useState({ sorted: [] as string[], set: new Set() });
+	const [suggestions, setSuggestions] = useState({
+		sorted: [] as string[],
+		set: new Set()
+	});
 	const [isWaiting, setIsWaiting] = useState(false);
-	const [suggestDebounceTimer, setSuggestDebounceTimer] = useState(null as number | null);
+	const [suggestDebounceTimer, setSuggestDebounceTimer] = useState(
+		null as number | null
+	);
 	const [addItemText, setAddItemText] = useState('');
 	const addItemInputRef = useRef<HTMLInputElement>(null);
 	const itemCountRef = useRef<HTMLSelectElement>(null);
@@ -68,11 +73,18 @@ export function CardAdder() {
 	if (isWaiting) {
 		comboboxIndicator = <Spinner />;
 	} else if (addItemText) {
-		if (suggestions.set.size === 1 || suggestions.set.has(addItemText.toLowerCase())) {
+		if (
+			suggestions.set.size === 1 ||
+			suggestions.set.has(addItemText.toLowerCase())
+		) {
 			isOkToSubmit = true;
-			comboboxIndicator = <EnterIcon className={styles['combobox-input-alert']} />;
+			comboboxIndicator = (
+				<EnterIcon className={styles['combobox-input-alert']} />
+			);
 		} else {
-			comboboxIndicator = <AlertIcon className={styles['combobox-input-alert']} />;
+			comboboxIndicator = (
+				<AlertIcon className={styles['combobox-input-alert']} />
+			);
 		}
 	} else {
 		comboboxIndicator = null;
@@ -82,11 +94,16 @@ export function CardAdder() {
 		<div className={styles['combobox']}>
 			<div className={styles['combobox-bar']}>
 				<div className={styles['combobox-input']}>
-					<div className={styles['combobox-submit']}>{comboboxIndicator}</div>
+					<div className={styles['combobox-submit']}>
+						{comboboxIndicator}
+					</div>
 					<input
 						ref={addItemInputRef}
 						onKeyDown={(e) => {
-							if (e.which === KEY.TAB && suggestions.sorted.length === 1) {
+							if (
+								e.which === KEY.TAB &&
+								suggestions.sorted.length === 1
+							) {
 								setAddItemText(suggestions.sorted[0]);
 							}
 						}}
@@ -103,9 +120,16 @@ export function CardAdder() {
 							const timer: any = setTimeout(() => {
 								if (newText.length > 3) {
 									setIsWaiting(true);
-									postToWorker(DeckWorkerMessages.getSuggestions(newText));
+									postToWorker(
+										DeckWorkerMessages.getSuggestions(
+											newText
+										)
+									);
 								} else {
-									setSuggestions({ sorted: [], set: new Set() });
+									setSuggestions({
+										sorted: [],
+										set: new Set()
+									});
 								}
 							}, 500);
 							setSuggestDebounceTimer(timer);
@@ -151,7 +175,9 @@ export function CardAdder() {
 						onKeyDownCapture={(e) => {
 							if (e.keyCode === KEY.BACKSPACE) {
 								addItemInputRef.current.focus();
-								setAddItemText((prev) => prev.substr(0, prev.length - 1));
+								setAddItemText((prev) =>
+									prev.substr(0, prev.length - 1)
+								);
 								e.preventDefault();
 							}
 						}}

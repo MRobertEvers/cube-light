@@ -21,12 +21,26 @@ export type DeckCard = {
 	Count: number;
 };
 
-export type DeckBannerBlend = { ConfigJson: string; SourceArt: string | null; CropJson: string | null; Revision: string };
+export type DeckBannerBlend = {
+	ConfigJson: string;
+	SourceArt: string | null;
+	CropJson: string | null;
+	Revision: string;
+};
 
 export type DeckCardChange = { uuid: string; count: number };
-export type DeckCardEdit = DeckCardChange & { action: 'add' | 'remove' | 'set' };
+export type DeckCardEdit = DeckCardChange & {
+	action: 'add' | 'remove' | 'set';
+};
 export type DeckDetailChange = {
-	field: 'name' | 'bannerCardUuid' | 'art' | 'palette' | 'bannerCrop' | 'topStyle' | 'bannerBlend';
+	field:
+		| 'name'
+		| 'bannerCardUuid'
+		| 'art'
+		| 'palette'
+		| 'bannerCrop'
+		| 'topStyle'
+		| 'bannerBlend';
 	before: string | null;
 	after: string | null;
 };
@@ -39,11 +53,29 @@ export type DeckEdit = {
 };
 
 type DeckEditRow = { DeckEditId: number; CreatedAt: string };
-type DeckEditCardRow = { DeckEditId: number; Uuid: string; Direction: string; Count: number };
-type DeckEditDetailRow = { DeckEditId: number; Field: DeckDetailChange['field']; BeforeValue: string | null; AfterValue: string | null };
+type DeckEditCardRow = {
+	DeckEditId: number;
+	Uuid: string;
+	Direction: string;
+	Count: number;
+};
+type DeckEditDetailRow = {
+	DeckEditId: number;
+	Field: DeckDetailChange['field'];
+	BeforeValue: string | null;
+	AfterValue: string | null;
+};
 
-export type Collection = { CollectionId: number; PublicId: string; Name: string };
-export type StorageLocation = { StorageLocationId: number; PublicId: string; Name: string };
+export type Collection = {
+	CollectionId: number;
+	PublicId: string;
+	Name: string;
+};
+export type StorageLocation = {
+	StorageLocationId: number;
+	PublicId: string;
+	Name: string;
+};
 
 function timestamp(): string {
 	return new Date().toISOString();
@@ -136,49 +168,89 @@ export class Database {
 				UpdatedAt DATETIME NOT NULL
 			);
 		`);
-		const columns = await this.db.all<{ name: string }>('PRAGMA table_info(Decks)');
+		const columns = await this.db.all<{ name: string }>(
+			'PRAGMA table_info(Decks)'
+		);
 		if (!columns.some((column) => column.name === 'BannerCardUuid')) {
-			await this.db.exec('ALTER TABLE Decks ADD COLUMN BannerCardUuid VARCHAR(128)');
+			await this.db.exec(
+				'ALTER TABLE Decks ADD COLUMN BannerCardUuid VARCHAR(128)'
+			);
 		}
 		if (!columns.some((column) => column.name === 'PaletteJson')) {
 			await this.db.exec('ALTER TABLE Decks ADD COLUMN PaletteJson TEXT');
 		}
 		if (!columns.some((column) => column.name === 'BannerCropJson')) {
-			await this.db.exec('ALTER TABLE Decks ADD COLUMN BannerCropJson TEXT');
+			await this.db.exec(
+				'ALTER TABLE Decks ADD COLUMN BannerCropJson TEXT'
+			);
 		}
 		if (!columns.some((column) => column.name === 'TopStyle')) {
-			await this.db.exec("ALTER TABLE Decks ADD COLUMN TopStyle TEXT NOT NULL DEFAULT 'card'");
+			await this.db.exec(
+				"ALTER TABLE Decks ADD COLUMN TopStyle TEXT NOT NULL DEFAULT 'card'"
+			);
 		}
 		// Additive: existing blend rows and their images stay valid; HistoryJson is only a compact edit-log value.
-		const blendColumns = await this.db.all<{ name: string }>('PRAGMA table_info(DeckBannerBlends)');
+		const blendColumns = await this.db.all<{ name: string }>(
+			'PRAGMA table_info(DeckBannerBlends)'
+		);
 		if (!blendColumns.some((column) => column.name === 'HistoryJson')) {
-			await this.db.exec('ALTER TABLE DeckBannerBlends ADD COLUMN HistoryJson TEXT');
+			await this.db.exec(
+				'ALTER TABLE DeckBannerBlends ADD COLUMN HistoryJson TEXT'
+			);
 		}
 		await this.ensurePublicIds('Decks', 'DeckId', 'deck');
 		await this.ensurePublicIds('Collections', 'CollectionId', 'collection');
-		await this.ensurePublicIds('StorageLocations', 'StorageLocationId', 'location');
+		await this.ensurePublicIds(
+			'StorageLocations',
+			'StorageLocationId',
+			'location'
+		);
 	}
 
-	private async ensurePublicIds(table: string, rowId: string, kind: PublicIdKind): Promise<void> {
-		const columns = await this.db.all<{ name: string }>(`PRAGMA table_info(${table})`);
+	private async ensurePublicIds(
+		table: string,
+		rowId: string,
+		kind: PublicIdKind
+	): Promise<void> {
+		const columns = await this.db.all<{ name: string }>(
+			`PRAGMA table_info(${table})`
+		);
 		if (!columns.some((column) => column.name === 'PublicId')) {
 			await this.db.exec(`ALTER TABLE ${table} ADD COLUMN PublicId TEXT`);
 		}
 		this.db.transaction((tx) => {
-			const used = new Set(tx.all<{ PublicId: string }>(`SELECT PublicId FROM ${table} WHERE PublicId IS NOT NULL`)
-				.map((row) => row.PublicId));
-			const missing = tx.all<{ id: number }>(`SELECT ${rowId} AS id FROM ${table} WHERE PublicId IS NULL`);
+			const used = new Set(
+				tx
+					.all<{ PublicId: string }>(
+						`SELECT PublicId FROM ${table} WHERE PublicId IS NOT NULL`
+					)
+					.map((row) => row.PublicId)
+			);
+			const missing = tx.all<{ id: number }>(
+				`SELECT ${rowId} AS id FROM ${table} WHERE PublicId IS NULL`
+			);
 			for (const row of missing) {
 				let publicId: string;
-				do { publicId = createPublicId(kind); } while (used.has(publicId));
+				do {
+					publicId = createPublicId(kind);
+				} while (used.has(publicId));
 				used.add(publicId);
-				tx.run(`UPDATE ${table} SET PublicId = ? WHERE ${rowId} = ?`, [publicId, row.id]);
+				tx.run(`UPDATE ${table} SET PublicId = ? WHERE ${rowId} = ?`, [
+					publicId,
+					row.id
+				]);
 			}
 		});
-		await this.db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS ${table}_PublicId ON ${table} (PublicId)`);
+		await this.db.exec(
+			`CREATE UNIQUE INDEX IF NOT EXISTS ${table}_PublicId ON ${table} (PublicId)`
+		);
 	}
 
-	private async insertWithPublicId(table: string, kind: PublicIdKind, name: string): Promise<number> {
+	private async insertWithPublicId(
+		table: string,
+		kind: PublicIdKind,
+		name: string
+	): Promise<number> {
 		const now = timestamp();
 		for (let attempt = 0; attempt < 5; attempt++) {
 			try {
@@ -188,7 +260,12 @@ export class Database {
 				);
 				return result.lastID;
 			} catch (error) {
-				if (!String(error).includes(`UNIQUE constraint failed: ${table}.PublicId`)) throw error;
+				if (
+					!String(error).includes(
+						`UNIQUE constraint failed: ${table}.PublicId`
+					)
+				)
+					throw error;
 			}
 		}
 		throw new Error(`Could not allocate a unique ${kind} ID`);
@@ -210,7 +287,10 @@ export class Database {
 	}
 
 	getDeck(id: string): Promise<Deck | undefined> {
-		return this.db.get<Deck>('SELECT DeckId, PublicId, Name, Art, BannerCardUuid, PaletteJson, BannerCropJson, TopStyle, CreatedAt, UpdatedAt FROM Decks WHERE DeckId = ?', [id]);
+		return this.db.get<Deck>(
+			'SELECT DeckId, PublicId, Name, Art, BannerCardUuid, PaletteJson, BannerCropJson, TopStyle, CreatedAt, UpdatedAt FROM Decks WHERE DeckId = ?',
+			[id]
+		);
 	}
 
 	getDeckByPublicId(id: string): Promise<Deck | undefined> {
@@ -278,24 +358,42 @@ export class Database {
 					'SELECT DeckCardId, DeckId, Uuid, Count FROM Deck_Cards WHERE DeckId = ? AND Uuid = ?',
 					[deckId, edit.uuid]
 				);
-				const before = rows.reduce((total, row) => total + row.Count, 0);
-				const after = edit.action === 'set'
-					? edit.count
-					: edit.action === 'add'
-						? before + edit.count
-						: Math.max(0, before - edit.count);
+				const before = rows.reduce(
+					(total, row) => total + row.Count,
+					0
+				);
+				const after =
+					edit.action === 'set'
+						? edit.count
+						: edit.action === 'add'
+							? before + edit.count
+							: Math.max(0, before - edit.count);
 				if (after === before) continue;
 				if (after === 0) {
-					tx.run('DELETE FROM Deck_Cards WHERE DeckId = ? AND Uuid = ?', [deckId, edit.uuid]);
+					tx.run(
+						'DELETE FROM Deck_Cards WHERE DeckId = ? AND Uuid = ?',
+						[deckId, edit.uuid]
+					);
 				} else if (rows.length === 0) {
-					tx.run('INSERT INTO Deck_Cards (DeckId, Uuid, Count) VALUES (?, ?, ?)', [deckId, edit.uuid, after]);
+					tx.run(
+						'INSERT INTO Deck_Cards (DeckId, Uuid, Count) VALUES (?, ?, ?)',
+						[deckId, edit.uuid, after]
+					);
 				} else {
-					tx.run('UPDATE Deck_Cards SET Count = ? WHERE DeckCardId = ?', [after, rows[0].DeckCardId]);
+					tx.run(
+						'UPDATE Deck_Cards SET Count = ? WHERE DeckCardId = ?',
+						[after, rows[0].DeckCardId]
+					);
 					for (const row of rows.slice(1)) {
-						tx.run('DELETE FROM Deck_Cards WHERE DeckCardId = ?', [row.DeckCardId]);
+						tx.run('DELETE FROM Deck_Cards WHERE DeckCardId = ?', [
+							row.DeckCardId
+						]);
 					}
 				}
-				changes.set(edit.uuid, (changes.get(edit.uuid) || 0) + after - before);
+				changes.set(
+					edit.uuid,
+					(changes.get(edit.uuid) || 0) + after - before
+				);
 			}
 
 			const cardsIn: DeckCardChange[] = [];
@@ -307,118 +405,260 @@ export class Database {
 			if (cardsIn.length === 0 && cardsOut.length === 0) return null;
 
 			const createdAt = timestamp();
-			const { lastID } = tx.run('INSERT INTO DeckEdits (DeckId, CreatedAt) VALUES (?, ?)', [deckId, createdAt]);
+			const { lastID } = tx.run(
+				'INSERT INTO DeckEdits (DeckId, CreatedAt) VALUES (?, ?)',
+				[deckId, createdAt]
+			);
 			for (const card of cardsIn) {
-				tx.run('INSERT INTO DeckEditCards (DeckEditId, Uuid, Direction, Count) VALUES (?, ?, ?, ?)',
-					[lastID, card.uuid, 'in', card.count]);
+				tx.run(
+					'INSERT INTO DeckEditCards (DeckEditId, Uuid, Direction, Count) VALUES (?, ?, ?, ?)',
+					[lastID, card.uuid, 'in', card.count]
+				);
 			}
 			for (const card of cardsOut) {
-				tx.run('INSERT INTO DeckEditCards (DeckEditId, Uuid, Direction, Count) VALUES (?, ?, ?, ?)',
-					[lastID, card.uuid, 'out', card.count]);
+				tx.run(
+					'INSERT INTO DeckEditCards (DeckEditId, Uuid, Direction, Count) VALUES (?, ?, ?, ?)',
+					[lastID, card.uuid, 'out', card.count]
+				);
 			}
-			tx.run('UPDATE Decks SET UpdatedAt = ? WHERE DeckId = ?', [createdAt, deckId]);
+			tx.run('UPDATE Decks SET UpdatedAt = ? WHERE DeckId = ?', [
+				createdAt,
+				deckId
+			]);
 			return { id: lastID, createdAt, cardsIn, cardsOut, details: [] };
 		});
 	}
 
-	private recordDeckDetailEdit(tx: SqliteTransaction, deckId: string, details: DeckDetailChange[]): void {
+	private recordDeckDetailEdit(
+		tx: SqliteTransaction,
+		deckId: string,
+		details: DeckDetailChange[]
+	): void {
 		if (details.length === 0) return;
 		const createdAt = timestamp();
-		const { lastID } = tx.run('INSERT INTO DeckEdits (DeckId, CreatedAt) VALUES (?, ?)', [deckId, createdAt]);
+		const { lastID } = tx.run(
+			'INSERT INTO DeckEdits (DeckId, CreatedAt) VALUES (?, ?)',
+			[deckId, createdAt]
+		);
 		for (const detail of details) {
 			tx.run(
 				'INSERT INTO DeckEditDetails (DeckEditId, Field, BeforeValue, AfterValue) VALUES (?, ?, ?, ?)',
 				[lastID, detail.field, detail.before, detail.after]
 			);
 		}
-		tx.run('UPDATE Decks SET UpdatedAt = ? WHERE DeckId = ?', [createdAt, deckId]);
+		tx.run('UPDATE Decks SET UpdatedAt = ? WHERE DeckId = ?', [
+			createdAt,
+			deckId
+		]);
 	}
 
 	async deleteDeck(id: string): Promise<void> {
 		await this.db.run('DELETE FROM Decks WHERE DeckId = ?', [id]);
 	}
 
-	async setDeckArt(id: number, art: string, bannerCardUuid: string): Promise<void> {
-		await this.db.run('UPDATE Decks SET Art = ?, BannerCardUuid = ?, UpdatedAt = ? WHERE DeckId = ?', [art, bannerCardUuid, timestamp(), id]);
+	async setDeckArt(
+		id: number,
+		art: string,
+		bannerCardUuid: string
+	): Promise<void> {
+		await this.db.run(
+			'UPDATE Decks SET Art = ?, BannerCardUuid = ?, UpdatedAt = ? WHERE DeckId = ?',
+			[art, bannerCardUuid, timestamp(), id]
+		);
 	}
 
-	async updateDeckDetails(id: string, name: string, art?: string, bannerCardUuid?: string): Promise<void> {
+	async updateDeckDetails(
+		id: string,
+		name: string,
+		art?: string,
+		bannerCardUuid?: string
+	): Promise<void> {
 		this.db.transaction((tx) => {
-			const deck = tx.get<Deck>('SELECT Name, Art, BannerCardUuid, BannerCropJson FROM Decks WHERE DeckId = ?', [id]);
+			const deck = tx.get<Deck>(
+				'SELECT Name, Art, BannerCardUuid, BannerCropJson FROM Decks WHERE DeckId = ?',
+				[id]
+			);
 			if (!deck) return;
 			const nextArt = art ?? deck.Art;
 			const nextBanner = bannerCardUuid ?? deck.BannerCardUuid;
 			const details: DeckDetailChange[] = [];
-			if (name !== deck.Name) details.push({ field: 'name', before: deck.Name, after: name });
+			if (name !== deck.Name)
+				details.push({ field: 'name', before: deck.Name, after: name });
 			if (nextBanner !== deck.BannerCardUuid) {
-				details.push({ field: 'bannerCardUuid', before: deck.BannerCardUuid, after: nextBanner });
+				details.push({
+					field: 'bannerCardUuid',
+					before: deck.BannerCardUuid,
+					after: nextBanner
+				});
 			}
-			if (nextArt !== deck.Art) details.push({ field: 'art', before: deck.Art, after: nextArt });
-			const nextCrop = nextBanner === deck.BannerCardUuid ? deck.BannerCropJson : null;
+			if (nextArt !== deck.Art)
+				details.push({
+					field: 'art',
+					before: deck.Art,
+					after: nextArt
+				});
+			const nextCrop =
+				nextBanner === deck.BannerCardUuid ? deck.BannerCropJson : null;
 			if (nextCrop !== deck.BannerCropJson) {
-				details.push({ field: 'bannerCrop', before: deck.BannerCropJson, after: null });
+				details.push({
+					field: 'bannerCrop',
+					before: deck.BannerCropJson,
+					after: null
+				});
 			}
 			if (details.length === 0) return;
-			tx.run('UPDATE Decks SET Name = ?, Art = ?, BannerCardUuid = ?, BannerCropJson = ? WHERE DeckId = ?',
-				[name, nextArt, nextBanner, nextCrop, id]);
+			tx.run(
+				'UPDATE Decks SET Name = ?, Art = ?, BannerCardUuid = ?, BannerCropJson = ? WHERE DeckId = ?',
+				[name, nextArt, nextBanner, nextCrop, id]
+			);
 			this.recordDeckDetailEdit(tx, id, details);
 		});
 	}
 
-	async setDeckPalette(id: string, paletteJson: string | null): Promise<void> {
+	async setDeckPalette(
+		id: string,
+		paletteJson: string | null
+	): Promise<void> {
 		this.db.transaction((tx) => {
-			const deck = tx.get<Deck>('SELECT PaletteJson FROM Decks WHERE DeckId = ?', [id]);
+			const deck = tx.get<Deck>(
+				'SELECT PaletteJson FROM Decks WHERE DeckId = ?',
+				[id]
+			);
 			if (!deck || deck.PaletteJson === paletteJson) return;
-			tx.run('UPDATE Decks SET PaletteJson = ? WHERE DeckId = ?', [paletteJson, id]);
-			this.recordDeckDetailEdit(tx, id, [{
-				field: 'palette', before: deck.PaletteJson, after: paletteJson
-			}]);
+			tx.run('UPDATE Decks SET PaletteJson = ? WHERE DeckId = ?', [
+				paletteJson,
+				id
+			]);
+			this.recordDeckDetailEdit(tx, id, [
+				{
+					field: 'palette',
+					before: deck.PaletteJson,
+					after: paletteJson
+				}
+			]);
 		});
 	}
 
 	async setDeckBannerCrop(id: string, cropJson: string): Promise<void> {
 		this.db.transaction((tx) => {
-			const deck = tx.get<Deck>('SELECT BannerCropJson FROM Decks WHERE DeckId = ?', [id]);
+			const deck = tx.get<Deck>(
+				'SELECT BannerCropJson FROM Decks WHERE DeckId = ?',
+				[id]
+			);
 			if (!deck || deck.BannerCropJson === cropJson) return;
-			tx.run('UPDATE Decks SET BannerCropJson = ? WHERE DeckId = ?', [cropJson, id]);
-			this.recordDeckDetailEdit(tx, id, [{
-				field: 'bannerCrop', before: deck.BannerCropJson, after: cropJson
-			}]);
+			tx.run('UPDATE Decks SET BannerCropJson = ? WHERE DeckId = ?', [
+				cropJson,
+				id
+			]);
+			this.recordDeckDetailEdit(tx, id, [
+				{
+					field: 'bannerCrop',
+					before: deck.BannerCropJson,
+					after: cropJson
+				}
+			]);
 		});
 	}
 
-	async setDeckTopStyle(id: string, topStyle: 'card' | 'full-art'): Promise<void> {
+	async setDeckTopStyle(
+		id: string,
+		topStyle: 'card' | 'full-art'
+	): Promise<void> {
 		this.db.transaction((tx) => {
-			const deck = tx.get<Deck>('SELECT TopStyle FROM Decks WHERE DeckId = ?', [id]);
+			const deck = tx.get<Deck>(
+				'SELECT TopStyle FROM Decks WHERE DeckId = ?',
+				[id]
+			);
 			if (!deck || deck.TopStyle === topStyle) return;
-			tx.run('UPDATE Decks SET TopStyle = ? WHERE DeckId = ?', [topStyle, id]);
-			this.recordDeckDetailEdit(tx, id, [{ field: 'topStyle', before: deck.TopStyle, after: topStyle }]);
+			tx.run('UPDATE Decks SET TopStyle = ? WHERE DeckId = ?', [
+				topStyle,
+				id
+			]);
+			this.recordDeckDetailEdit(tx, id, [
+				{ field: 'topStyle', before: deck.TopStyle, after: topStyle }
+			]);
 		});
 	}
 
 	async getDeckBannerBlend(id: string): Promise<DeckBannerBlend | undefined> {
-		return this.db.get<DeckBannerBlend>('SELECT ConfigJson, SourceArt, CropJson, Revision FROM DeckBannerBlends WHERE DeckId = ?', [id]);
+		return this.db.get<DeckBannerBlend>(
+			'SELECT ConfigJson, SourceArt, CropJson, Revision FROM DeckBannerBlends WHERE DeckId = ?',
+			[id]
+		);
 	}
 
-	async getDeckBannerBlendImage(id: string, variant: 'desktop' | 'mobile' | 'tile', revision: string): Promise<Uint8Array | undefined> {
-		const column = { desktop: 'DesktopImage', mobile: 'MobileImage', tile: 'TileImage' }[variant];
-		const row = await this.db.get<{ Image: Uint8Array }>(`SELECT ${column} AS Image FROM DeckBannerBlends WHERE DeckId = ? AND Revision = ?`, [id, revision]);
+	async getDeckBannerBlendImage(
+		id: string,
+		variant: 'desktop' | 'mobile' | 'tile',
+		revision: string
+	): Promise<Uint8Array | undefined> {
+		const column = {
+			desktop: 'DesktopImage',
+			mobile: 'MobileImage',
+			tile: 'TileImage'
+		}[variant];
+		const row = await this.db.get<{ Image: Uint8Array }>(
+			`SELECT ${column} AS Image FROM DeckBannerBlends WHERE DeckId = ? AND Revision = ?`,
+			[id, revision]
+		);
 		return row?.Image;
 	}
 
 	/** expectedArt is the deck's stored Art (null when it falls back to a card's art); sourceArt is the art rendered. */
-	async setDeckBannerBlend(id: string, expectedArt: string | null, sourceArt: string, expectedCrop: string | null,
-		config: string, revision: string, images: { desktop: Buffer; mobile: Buffer; tile: Buffer }, historyValue = config): Promise<boolean> {
+	async setDeckBannerBlend(
+		id: string,
+		expectedArt: string | null,
+		sourceArt: string,
+		expectedCrop: string | null,
+		config: string,
+		revision: string,
+		images: { desktop: Buffer; mobile: Buffer; tile: Buffer },
+		historyValue = config
+	): Promise<boolean> {
 		return this.db.transaction((tx) => {
-			const deck = tx.get<Deck>('SELECT Art, BannerCropJson FROM Decks WHERE DeckId = ?', [id]);
-			if (!deck || deck.Art !== expectedArt || deck.BannerCropJson !== expectedCrop) return false;
-			const previous = tx.get<DeckBannerBlend & { HistoryJson: string | null }>('SELECT ConfigJson, HistoryJson FROM DeckBannerBlends WHERE DeckId = ?', [id]);
-			tx.run(`INSERT INTO DeckBannerBlends (DeckId, ConfigJson, SourceArt, CropJson, Revision, DesktopImage, MobileImage, TileImage, HistoryJson)
+			const deck = tx.get<Deck>(
+				'SELECT Art, BannerCropJson FROM Decks WHERE DeckId = ?',
+				[id]
+			);
+			if (
+				!deck ||
+				deck.Art !== expectedArt ||
+				deck.BannerCropJson !== expectedCrop
+			)
+				return false;
+			const previous = tx.get<
+				DeckBannerBlend & { HistoryJson: string | null }
+			>(
+				'SELECT ConfigJson, HistoryJson FROM DeckBannerBlends WHERE DeckId = ?',
+				[id]
+			);
+			tx.run(
+				`INSERT INTO DeckBannerBlends (DeckId, ConfigJson, SourceArt, CropJson, Revision, DesktopImage, MobileImage, TileImage, HistoryJson)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(DeckId) DO UPDATE SET
 				ConfigJson=excluded.ConfigJson, SourceArt=excluded.SourceArt, CropJson=excluded.CropJson, Revision=excluded.Revision,
 				DesktopImage=excluded.DesktopImage, MobileImage=excluded.MobileImage, TileImage=excluded.TileImage, HistoryJson=excluded.HistoryJson`,
-				[id, config, sourceArt, expectedCrop, revision, images.desktop, images.mobile, images.tile, historyValue]);
-			if (previous?.ConfigJson !== config) this.recordDeckDetailEdit(tx, id, [{ field: 'bannerBlend', before: previous ? previous.HistoryJson ?? previous.ConfigJson : null, after: historyValue }]);
+				[
+					id,
+					config,
+					sourceArt,
+					expectedCrop,
+					revision,
+					images.desktop,
+					images.mobile,
+					images.tile,
+					historyValue
+				]
+			);
+			if (previous?.ConfigJson !== config)
+				this.recordDeckDetailEdit(tx, id, [
+					{
+						field: 'bannerBlend',
+						before: previous
+							? (previous.HistoryJson ?? previous.ConfigJson)
+							: null,
+						after: historyValue
+					}
+				]);
 			return true;
 		});
 	}
@@ -430,30 +670,41 @@ export class Database {
 		);
 	}
 
-	async addDeckCards(deckId: string, cards: Array<{ uuid: string; count: number }>): Promise<void> {
+	async addDeckCards(
+		deckId: string,
+		cards: Array<{ uuid: string; count: number }>
+	): Promise<void> {
 		for (const card of cards) {
-			await this.db.run('INSERT INTO Deck_Cards (DeckId, Uuid, Count) VALUES (?, ?, ?)', [
-				deckId,
-				card.uuid,
-				card.count
-			]);
+			await this.db.run(
+				'INSERT INTO Deck_Cards (DeckId, Uuid, Count) VALUES (?, ?, ?)',
+				[deckId, card.uuid, card.count]
+			);
 		}
 	}
 
-	async setDeckCard(deckId: string, uuid: string, count: number, cardId?: number): Promise<void> {
+	async setDeckCard(
+		deckId: string,
+		uuid: string,
+		count: number,
+		cardId?: number
+	): Promise<void> {
 		if (cardId === undefined) {
-			await this.db.run('INSERT INTO Deck_Cards (DeckId, Uuid, Count) VALUES (?, ?, ?)', [
-				deckId,
-				uuid,
-				count
-			]);
+			await this.db.run(
+				'INSERT INTO Deck_Cards (DeckId, Uuid, Count) VALUES (?, ?, ?)',
+				[deckId, uuid, count]
+			);
 		} else {
-			await this.db.run('UPDATE Deck_Cards SET Count = ? WHERE DeckCardId = ?', [count, cardId]);
+			await this.db.run(
+				'UPDATE Deck_Cards SET Count = ? WHERE DeckCardId = ?',
+				[count, cardId]
+			);
 		}
 	}
 
 	async deleteDeckCard(cardId: number): Promise<void> {
-		await this.db.run('DELETE FROM Deck_Cards WHERE DeckCardId = ?', [cardId]);
+		await this.db.run('DELETE FROM Deck_Cards WHERE DeckCardId = ?', [
+			cardId
+		]);
 	}
 
 	async removeDeckCards(deckId: string, uuids: string[]): Promise<void> {
@@ -476,18 +727,27 @@ export class Database {
 	}
 
 	getCollection(id: number): Promise<Collection | undefined> {
-		return this.db.get<Collection>('SELECT CollectionId, PublicId, Name FROM Collections WHERE CollectionId = ?', [id]);
+		return this.db.get<Collection>(
+			'SELECT CollectionId, PublicId, Name FROM Collections WHERE CollectionId = ?',
+			[id]
+		);
 	}
 
 	getCollectionByPublicId(id: string): Promise<Collection | undefined> {
-		return this.db.get<Collection>('SELECT CollectionId, PublicId, Name FROM Collections WHERE PublicId = ?', [id]);
+		return this.db.get<Collection>(
+			'SELECT CollectionId, PublicId, Name FROM Collections WHERE PublicId = ?',
+			[id]
+		);
 	}
 
 	async createStorageLocation(name: string): Promise<number> {
 		return this.insertWithPublicId('StorageLocations', 'location', name);
 	}
 
-	listStorageLocations(start: number, limit: number): Promise<StorageLocation[]> {
+	listStorageLocations(
+		start: number,
+		limit: number
+	): Promise<StorageLocation[]> {
 		return this.db.all<StorageLocation>(
 			'SELECT StorageLocationId, PublicId, Name FROM StorageLocations ORDER BY StorageLocationId LIMIT ? OFFSET ?',
 			[limit, start]
@@ -501,7 +761,9 @@ export class Database {
 		);
 	}
 
-	getStorageLocationByPublicId(id: string): Promise<StorageLocation | undefined> {
+	getStorageLocationByPublicId(
+		id: string
+	): Promise<StorageLocation | undefined> {
 		return this.db.get<StorageLocation>(
 			'SELECT StorageLocationId, PublicId, Name FROM StorageLocations WHERE PublicId = ?',
 			[id]

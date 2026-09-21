@@ -22,9 +22,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { concatClassNames } from 'src/utils/concat-class-names';
 
 import styles from './deck.module.css';
-import { loadDeck, selectDeck, selectDeckError, setInitialDeck } from '../../store/decks/decks.state';
+import {
+	loadDeck,
+	selectDeck,
+	selectDeckError,
+	setInitialDeck
+} from '../../store/decks/decks.state';
 import { useAppDispatch } from '../../store/use-app-dispatch';
-import { onAccent, readableAccent, useCardPalette } from '../../utils/card-palette';
+import {
+	onAccent,
+	readableAccent,
+	useCardPalette
+} from '../../utils/card-palette';
 import { fetchAPIUpdateDeck } from '../../api/fetch-api-update-deck';
 import { DeckBannerCard } from '../../components/DeckBannerCard/DeckBannerCard';
 import { DeckFullArtTop } from '../../components/DeckFullArtTop/DeckFullArtTop';
@@ -47,13 +56,28 @@ export type DeckControlButtonsProps = {
 };
 
 function SavingLabel() {
-	return <span className={styles['saving-label']} role="status" aria-live="polite">
-		<Spinner /> Saving…
-	</span>;
+	return (
+		<span
+			className={styles['saving-label']}
+			role="status"
+			aria-live="polite"
+		>
+			<Spinner /> Saving…
+		</span>
+	);
 }
 
 export function DeckControlButtons(props: DeckControlButtonsProps) {
-	const { dispatch, isEditMode, onEdit, onEditName, onDone, onImportImage, isSaving, deckId } = props;
+	const {
+		dispatch,
+		isEditMode,
+		onEdit,
+		onEditName,
+		onDone,
+		onImportImage,
+		isSaving,
+		deckId
+	} = props;
 
 	const navigate = useNavigate();
 
@@ -62,34 +86,70 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 	// keep the outgoing one visible after the rest of the controls had already changed.
 	return (
 		<div>
-			<Button className={styles['edit-deck-button']} onClick={isEditMode ? onDone : onEdit} disabled={isSaving}>
+			<Button
+				className={styles['edit-deck-button']}
+				onClick={isEditMode ? onDone : onEdit}
+				disabled={isSaving}
+			>
 				{isEditMode ? 'Save and close' : 'Edit deck'}
 			</Button>
 			<div className={styles['edit-deck-button-container']}>
-				<div className={concatClassNames(styles['control-mode'], isEditMode ? styles['inactive'] : undefined)} aria-hidden={isEditMode}>
-					<nav className={styles['secondary-links']} aria-label="Deck links">
+				<div
+					className={concatClassNames(
+						styles['control-mode'],
+						isEditMode ? styles['inactive'] : undefined
+					)}
+					aria-hidden={isEditMode}
+				>
+					<nav
+						className={styles['secondary-links']}
+						aria-label="Deck links"
+					>
 						<Link to={`/deck/${deckId}/history`}>Edit history</Link>
-						<Link to={`/deck/${deckId}/settings`}>Appearance settings</Link>
+						<Link to={`/deck/${deckId}/settings`}>
+							Appearance settings
+						</Link>
 					</nav>
 				</div>
-				<div className={concatClassNames(styles['control-mode'], !isEditMode ? styles['inactive'] : undefined)} aria-hidden={!isEditMode}>
+				<div
+					className={concatClassNames(
+						styles['control-mode'],
+						!isEditMode ? styles['inactive'] : undefined
+					)}
+					aria-hidden={!isEditMode}
+				>
 					<div className={styles['secondary-links']}>
-						<button className={styles['secondary-action']} onClick={onEditName} disabled={isSaving}>
+						<button
+							className={styles['secondary-action']}
+							onClick={onEditName}
+							disabled={isSaving}
+						>
 							Edit deck name
 						</button>
-						<button className={styles['secondary-action']} onClick={onImportImage} disabled={isSaving}>
+						<button
+							className={styles['secondary-action']}
+							onClick={onImportImage}
+							disabled={isSaving}
+						>
 							Add cards in image
 						</button>
 						<button
 							className={styles['secondary-action']}
-							onClick={() => dispatch(Actions.setViewAddCard(true))}
+							onClick={() =>
+								dispatch(Actions.setViewAddCard(true))
+							}
 							disabled={isSaving}
 						>
 							Add card
 						</button>
-						<Link to={`/deck/${deckId}/settings`}>Appearance settings</Link>
+						<Link to={`/deck/${deckId}/settings`}>
+							Appearance settings
+						</Link>
 						<button
-							className={concatClassNames(styles['secondary-action'], styles['delete-deck-button'])}
+							className={concatClassNames(
+								styles['secondary-action'],
+								styles['delete-deck-button']
+							)}
 							disabled={isSaving}
 							onClick={async () => {
 								await fetchAPIDeleteDeck(deckId);
@@ -114,7 +174,9 @@ export function Deck(props: DeckProps) {
 	const [state, dispatch] = useAsyncReducer(reducer, initialState);
 	const storeDispatch = useAppDispatch();
 	const { viewEditCard, viewAddCard } = state;
-	const data = useSelector((root: Parameters<typeof selectDeck>[0]) => selectDeck(root, deckId));
+	const data = useSelector((root: Parameters<typeof selectDeck>[0]) =>
+		selectDeck(root, deckId)
+	);
 	const error = useSelector((root: Parameters<typeof selectDeckError>[0]) =>
 		selectDeckError(root, deckId)
 	);
@@ -128,13 +190,24 @@ export function Deck(props: DeckProps) {
 	const [showDetailsModal, setShowDetailsModal] = useState(false);
 	const [showImageImport, setShowImageImport] = useState(false);
 	const scanTasks = useImageImportQueue();
-	const addedFromScans = scanTasks.filter((task) => task.deckId === deckId)
-		.reduce((total, task) => total + Object.values(task.addedCounts).reduce((sum, count) => sum + count, 0), 0);
+	const addedFromScans = scanTasks
+		.filter((task) => task.deckId === deckId)
+		.reduce(
+			(total, task) =>
+				total +
+				Object.values(task.addedCounts).reduce(
+					(sum, count) => sum + count,
+					0
+				),
+			0
+		);
 	const nameInputRef = useRef<HTMLInputElement>(null);
 	const draft = detailsDraft?.deckId === deckId ? detailsDraft : null;
 	const name = draft?.name ?? data?.name ?? '';
 	const bannerCards = data?.cards.filter((card) => !!card.art) ?? [];
-	const selectedBanner = data?.bannerCard ?? bannerCards.find((card) => card.uuid === data?.bannerCardUuid);
+	const selectedBanner =
+		data?.bannerCard ??
+		bannerCards.find((card) => card.uuid === data?.bannerCardUuid);
 	const topBannerCard = selectedBanner ?? bannerCards[0];
 
 	const [isEditMode, setIsEditMode] = useQueryState('edit', {
@@ -146,23 +219,35 @@ export function Deck(props: DeckProps) {
 	const topStyle = data?.topStyle === 'full-art' ? 'full-art' : 'card';
 	const generatedPalette = useCardPalette(previewIcon);
 	const palette = data?.palette ?? generatedPalette;
-	const paletteStyle = palette ? {
-		'--deck-accent': palette.accent,
-		'--deck-accent-text': readableAccent(palette.accent, '#ffffff'),
-		'--deck-page-accent': readableAccent(palette.accent, palette.wash),
-		'--deck-banner-ink': readableAccent(palette.accent, palette.surface),
-		'--deck-on-accent': onAccent(palette.accent),
-		'--deck-on-surface': onAccent(palette.surface),
-		'--deck-on-wash': onAccent(palette.wash),
-		'--deck-surface': palette.surface,
-		'--deck-wash': palette.wash,
-		'--deck-border': palette.border
-	} as React.CSSProperties : undefined;
+	const paletteStyle = palette
+		? ({
+				'--deck-accent': palette.accent,
+				'--deck-accent-text': readableAccent(palette.accent, '#ffffff'),
+				'--deck-page-accent': readableAccent(
+					palette.accent,
+					palette.wash
+				),
+				'--deck-banner-ink': readableAccent(
+					palette.accent,
+					palette.surface
+				),
+				'--deck-on-accent': onAccent(palette.accent),
+				'--deck-on-surface': onAccent(palette.surface),
+				'--deck-on-wash': onAccent(palette.wash),
+				'--deck-surface': palette.surface,
+				'--deck-wash': palette.wash,
+				'--deck-border': palette.border
+			} as React.CSSProperties)
+		: undefined;
 
-	const refreshDeck = useCallback(() => storeDispatch(loadDeck(deckId)), [deckId, storeDispatch]);
+	const refreshDeck = useCallback(
+		() => storeDispatch(loadDeck(deckId)),
+		[deckId, storeDispatch]
+	);
 
 	useEffect(() => {
-		if (initialDeckData) storeDispatch(setInitialDeck({ deckId, data: initialDeckData }));
+		if (initialDeckData)
+			storeDispatch(setInitialDeck({ deckId, data: initialDeckData }));
 		void refreshDeck();
 	}, [deckId, initialDeckData, refreshDeck, storeDispatch]);
 
@@ -172,20 +257,34 @@ export function Deck(props: DeckProps) {
 
 	// Appearance settings may be saved from another tab; pick those changes up on return.
 	useEffect(() => {
-		const onVisible = () => { if (document.visibilityState === 'visible') void refreshDeck(); };
+		const onVisible = () => {
+			if (document.visibilityState === 'visible') void refreshDeck();
+		};
 		document.addEventListener('visibilitychange', onVisible);
-		return () => document.removeEventListener('visibilitychange', onVisible);
+		return () =>
+			document.removeEventListener('visibilitychange', onVisible);
 	}, [refreshDeck]);
 
 	useEffect(() => {
 		if (showDetailsModal) nameInputRef.current?.focus();
 	}, [showDetailsModal]);
 
-	const onSubmitChange = useCallback(async (card: FetchAPIDeckCardResponse, update: { uuid: string; count: number }) => {
-		await fetchAPIEditDeckCard(deckId, card.uuid, update.uuid, update.count);
-		await refreshDeck();
-		dispatch(Actions.setEditCard(null));
-	}, [deckId, dispatch, refreshDeck]);
+	const onSubmitChange = useCallback(
+		async (
+			card: FetchAPIDeckCardResponse,
+			update: { uuid: string; count: number }
+		) => {
+			await fetchAPIEditDeckCard(
+				deckId,
+				card.uuid,
+				update.uuid,
+				update.count
+			);
+			await refreshDeck();
+			dispatch(Actions.setEditCard(null));
+		},
+		[deckId, dispatch, refreshDeck]
+	);
 
 	const saveName = async () => {
 		if (!data || !name.trim() || isSaving) return;
@@ -207,9 +306,11 @@ export function Deck(props: DeckProps) {
 			setDetailsDraft(null);
 			setShowDetailsModal(false);
 		} catch {
-			setSaveError(saved
-				? 'Deck saved, but could not refresh. Please try again.'
-				: 'Unable to save deck details. Please try again.');
+			setSaveError(
+				saved
+					? 'Deck saved, but could not refresh. Please try again.'
+					: 'Unable to save deck details. Please try again.'
+			);
 		} finally {
 			setIsSaving(false);
 		}
@@ -218,7 +319,11 @@ export function Deck(props: DeckProps) {
 	if (!data || showInitialLoading) {
 		return (
 			<Page>
-				{!showInitialLoading && error ? <p>Unable to load deck.</p> : <LoadingIndicator />}
+				{!showInitialLoading && error ? (
+					<p>Unable to load deck.</p>
+				) : (
+					<LoadingIndicator />
+				)}
 			</Page>
 		);
 	}
@@ -226,17 +331,24 @@ export function Deck(props: DeckProps) {
 	return (
 		<Page>
 			{error && <p role="alert">Unable to refresh deck.</p>}
-			{showImageImport && <ImageCardImport
-				mode="add"
-				deckId={deckId}
-				onClose={() => setShowImageImport(false)}
-				onComplete={() => { setShowImageImport(false); void refreshDeck(); }}
-			/>}
+			{showImageImport && (
+				<ImageCardImport
+					mode="add"
+					deckId={deckId}
+					onClose={() => setShowImageImport(false)}
+					onComplete={() => {
+						setShowImageImport(false);
+						void refreshDeck();
+					}}
+				/>
+			)}
 			{viewEditCard ? (
 				<Modal wide fullScreenOnMobile>
 					<EditCardModal
 						editable={!!isEditMode}
-						onSubmit={(update) => onSubmitChange(viewEditCard, update)}
+						onSubmit={(update) =>
+							onSubmitChange(viewEditCard, update)
+						}
 						onCancel={() => dispatch(Actions.setEditCard(null))}
 						card={viewEditCard}
 					/>
@@ -259,7 +371,12 @@ export function Deck(props: DeckProps) {
 				</Modal>
 			) : showDetailsModal ? (
 				<Modal>
-					<section className={styles['deck-details-modal']} role="dialog" aria-modal="true" aria-labelledby="deck-details-title">
+					<section
+						className={styles['deck-details-modal']}
+						role="dialog"
+						aria-modal="true"
+						aria-labelledby="deck-details-title"
+					>
 						<h2 id="deck-details-title">Edit deck name</h2>
 						<div className={styles['deck-details-fields']}>
 							<label htmlFor="edit-deck-name">Deck name</label>
@@ -269,16 +386,38 @@ export function Deck(props: DeckProps) {
 								value={name}
 								disabled={isSaving}
 								maxLength={1024}
-								onChange={(event) => setDetailsDraft({ deckId, name: event.target.value })}
+								onChange={(event) =>
+									setDetailsDraft({
+										deckId,
+										name: event.target.value
+									})
+								}
 								onKeyDown={(event) => {
 									if (event.key === 'Enter') void saveName();
 								}}
 							/>
 						</div>
-						{saveError && <p className={styles['save-error']} role="alert">{saveError}</p>}
+						{saveError && (
+							<p className={styles['save-error']} role="alert">
+								{saveError}
+							</p>
+						)}
 						<div className={styles['deck-details-actions']}>
-							<Button onClick={() => { setDetailsDraft(null); setShowDetailsModal(false); }} disabled={isSaving}>Cancel</Button>
-							<Button onClick={() => { void saveName(); }} disabled={!name.trim() || isSaving}>
+							<Button
+								onClick={() => {
+									setDetailsDraft(null);
+									setShowDetailsModal(false);
+								}}
+								disabled={isSaving}
+							>
+								Cancel
+							</Button>
+							<Button
+								onClick={() => {
+									void saveName();
+								}}
+								disabled={!name.trim() || isSaving}
+							>
 								{isSaving ? <SavingLabel /> : 'Save name'}
 							</Button>
 						</div>
@@ -286,40 +425,71 @@ export function Deck(props: DeckProps) {
 				</Modal>
 			) : undefined}
 			<div className={styles['deck-theme']} style={paletteStyle}>
-				{topStyle === 'full-art' && topBannerCard && <DeckFullArtTop
-					src={topBannerCard.art}
-					crop={bannerCrop}
-					name={topBannerCard.name}
-				/>}
-				<div className={concatClassNames(styles['index-container'], topStyle === 'full-art' ? styles['full-index'] : undefined)}>
+				{topStyle === 'full-art' && topBannerCard && (
+					<DeckFullArtTop
+						src={topBannerCard.art}
+						crop={bannerCrop}
+						name={topBannerCard.name}
+					/>
+				)}
+				<div
+					className={concatClassNames(
+						styles['index-container'],
+						topStyle === 'full-art'
+							? styles['full-index']
+							: undefined
+					)}
+				>
 					<div className={styles['banner-container']}>
-						{topStyle === 'card' && <DeckBannerCard
-							src={previewIcon}
-							crop={bannerCrop}
-							name={data.name}
-							updatedAt={data.lastEdit}
-						/>}
+						{topStyle === 'card' && (
+							<DeckBannerCard
+								src={previewIcon}
+								crop={bannerCrop}
+								name={data.name}
+								updatedAt={data.lastEdit}
+							/>
+						)}
 						<DeckControlButtons
 							deckId={deckId}
 							dispatch={dispatch}
 							isEditMode={!!isEditMode}
-							onEdit={() => { setDetailsDraft(null); setSaveError(null); setIsEditMode(true); }}
-							onEditName={() => { setDetailsDraft({ deckId, name: data.name }); setSaveError(null); setShowDetailsModal(true); }}
-							onDone={() => { setDetailsDraft(null); setSaveError(null); setIsEditMode(false); }}
+							onEdit={() => {
+								setDetailsDraft(null);
+								setSaveError(null);
+								setIsEditMode(true);
+							}}
+							onEditName={() => {
+								setDetailsDraft({ deckId, name: data.name });
+								setSaveError(null);
+								setShowDetailsModal(true);
+							}}
+							onDone={() => {
+								setDetailsDraft(null);
+								setSaveError(null);
+								setIsEditMode(false);
+							}}
 							onImportImage={() => setShowImageImport(true)}
 							isSaving={isSaving}
 						/>
 						<DeckImageScanCard deckId={deckId} />
-						{saveError && !showDetailsModal && <p className={styles['save-error']} role="alert">{saveError}</p>}
+						{saveError && !showDetailsModal && (
+							<p className={styles['save-error']} role="alert">
+								{saveError}
+							</p>
+						)}
 						<DeckStatsSummary deck={data} />
 					</div>
 					<Decklist
 						name={name}
 						deck={data.deck}
-						banner={topBannerCard ? {
-							art: topBannerCard.art,
-							name: topBannerCard.name
-						} : null}
+						banner={
+							topBannerCard
+								? {
+										art: topBannerCard.art,
+										name: topBannerCard.name
+									}
+								: null
+						}
 						bannerCrop={bannerCrop}
 						bannerBlend={data.bannerBlend}
 						topStyle={topStyle}

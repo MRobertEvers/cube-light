@@ -1,4 +1,10 @@
-import React, { MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+	MutableRefObject,
+	useEffect,
+	useMemo,
+	useRef,
+	useState
+} from 'react';
 import { concatClassNames } from 'src/utils/concat-class-names';
 import { createEvent, EventType } from 'src/utils/event-utils';
 
@@ -32,14 +38,18 @@ const KEY = {
 function createEvents<T>() {
 	const events = {
 		changed: createEvent<string>()('changed'),
-		selected: createEvent<{ id: string; value: T; label: string }>()('selected'),
+		selected: createEvent<{ id: string; value: T; label: string }>()(
+			'selected'
+		),
 		itemFocussed: createEvent<string>()('itemFocussed')
 	};
 
 	return events;
 }
 
-function stringOf<T>(s: string | { id: string; value: T; label: string }): string {
+function stringOf<T>(
+	s: string | { id: string; value: T; label: string }
+): string {
 	return typeof s === 'string' ? s : s.label;
 }
 
@@ -65,7 +75,8 @@ export function ComboBox<T = string>(props: ComboBoxProps<T>) {
 	useEffect(() => {
 		if (showSuggestions === 'auto' && focusRef) {
 			function onClick(e: MouseEvent) {
-				if (focusRef?.contains(e?.target as Node)) setShowDropdown(true);
+				if (focusRef?.contains(e?.target as Node))
+					setShowDropdown(true);
 				else setShowDropdown(false);
 			}
 
@@ -103,7 +114,11 @@ export function ComboBox<T = string>(props: ComboBoxProps<T>) {
 				{suggestions.map((suggestion, index) => (
 					<li
 						tabIndex={index + 1}
-						key={typeof suggestion === 'string' ? suggestion : suggestion.id}
+						key={
+							typeof suggestion === 'string'
+								? suggestion
+								: suggestion.id
+						}
 						onClick={(e) => {
 							e.stopPropagation();
 							e.preventDefault();

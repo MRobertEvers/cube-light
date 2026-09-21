@@ -4,7 +4,8 @@ export type FetchCollectionsCollectionResponse = {
 	collection_id: string;
 	name: string;
 };
-export type FetchCollectionsResponse = Array<FetchCollectionsCollectionResponse>;
+export type FetchCollectionsResponse =
+	Array<FetchCollectionsCollectionResponse>;
 
 export async function fetchAPICollections(
 	pageStart: number = 0,
@@ -18,9 +19,12 @@ export async function fetchAPICollections(
 		}
 	}
 
-	const response = await fetch(`${API_URI}/collection/search?${q.toString()}`, {
-		method: 'GET'
-	});
+	const response = await fetch(
+		`${API_URI}/collection/search?${q.toString()}`,
+		{
+			method: 'GET'
+		}
+	);
 
 	return response.json() as Promise<FetchCollectionsResponse>;
 }

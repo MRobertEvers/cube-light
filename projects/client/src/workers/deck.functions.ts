@@ -42,7 +42,9 @@ export async function fetchSetCardCommand(
 	await fetchSetCard('1', cardName, action, count);
 }
 
-export async function fetchSortedDeck(deckId: string): Promise<GetDeckResponse> {
+export async function fetchSortedDeck(
+	deckId: string
+): Promise<GetDeckResponse> {
 	const data = await fetchDeck(deckId);
 
 	const { cards } = data;

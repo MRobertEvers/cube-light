@@ -14,7 +14,9 @@ interface LocationsDropdownProps {
 export function LocationsDropdown(props: LocationsDropdownProps) {
 	const { value, onChange } = props;
 
-	const [locations, setLocations] = useState<FetchStorageLocationsResponse>([]);
+	const [locations, setLocations] = useState<FetchStorageLocationsResponse>(
+		[]
+	);
 
 	useEffect(() => {
 		fetchAPIStorageLocations().then(setLocations);
@@ -36,21 +38,26 @@ export function LocationsDropdown(props: LocationsDropdownProps) {
 		return locations.find((loc) => loc.storage_location_id === value);
 	}, [value]);
 
-	const [controlledValue, setControlledValue] = useState<string>(ddValue?.name ?? '');
+	const [controlledValue, setControlledValue] = useState<string>(
+		ddValue?.name ?? ''
+	);
 	const [prevValue, setPrevValue] = useState(value);
 	if (value !== prevValue) {
 		setControlledValue(ddValue?.name ?? '');
 		setPrevValue(value);
 	}
 
-	const onEvent = useCallback((e: ComboBoxEvent<FetchStorageLocationsLocationResponse>) => {
-		if (e.type === 'selected') {
-			onChange(e.payload.value);
-		} else if (e.type === 'changed') {
-			setControlledValue(e.payload);
-			onChange(null);
-		}
-	}, []);
+	const onEvent = useCallback(
+		(e: ComboBoxEvent<FetchStorageLocationsLocationResponse>) => {
+			if (e.type === 'selected') {
+				onChange(e.payload.value);
+			} else if (e.type === 'changed') {
+				setControlledValue(e.payload);
+				onChange(null);
+			}
+		},
+		[]
+	);
 
 	return (
 		<ComboBox

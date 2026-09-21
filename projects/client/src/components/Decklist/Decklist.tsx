@@ -21,12 +21,17 @@ function ManaSymbol(props: { symbol: string; size: number }) {
 		<span
 			className={manaStyles['mana-symbol']}
 			style={{
-				backgroundColor: symbol in colorMap ? colorMap[symbol] : 'rgb(170, 170, 170)',
+				backgroundColor:
+					symbol in colorMap
+						? colorMap[symbol]
+						: 'rgb(170, 170, 170)',
 				width: `${size}px`,
 				height: `${size}px`
 			}}
 		>
-			<span className={manaStyles['mana-generic-number']}>{symbol in colorMap ? '' : symbol}</span>
+			<span className={manaStyles['mana-generic-number']}>
+				{symbol in colorMap ? '' : symbol}
+			</span>
 		</span>
 	);
 }
@@ -85,12 +90,15 @@ function CardTableRows(props: { deck: DeckMappedData; setImageSource: any }) {
 		for (const card of cards) {
 			categoryArray.push(
 				<tr key={index}>
-					<td className={styles['decklist-card-count']}>{card.count}</td>
+					<td className={styles['decklist-card-count']}>
+						{card.count}
+					</td>
 					<td className="wow">
 						<span
 							onMouseLeave={() => setImageSource(null)}
 							onMouseOver={(e) => {
-								const node = e.currentTarget.getBoundingClientRect();
+								const node =
+									e.currentTarget.getBoundingClientRect();
 								setImageSource({
 									card,
 									position: {
@@ -101,7 +109,9 @@ function CardTableRows(props: { deck: DeckMappedData; setImageSource: any }) {
 							}}
 						>
 							{card.name}
-							<div className={styles['decklist-card-type']}>{card.types}</div>
+							<div className={styles['decklist-card-type']}>
+								{card.types}
+							</div>
 						</span>
 					</td>
 					<td>
@@ -127,7 +137,10 @@ type DecklistProps = {
 export function Decklist(props: DecklistProps) {
 	const { name, deck, onCardClick } = props;
 	const [imageSource, setImageSource] = useState(
-		null as { card: DecklistCardInfo; position: { x: number; y: number } } | null
+		null as {
+			card: DecklistCardInfo;
+			position: { x: number; y: number };
+		} | null
 	);
 
 	const spotlightCards = [];
@@ -148,7 +161,10 @@ export function Decklist(props: DecklistProps) {
 	return (
 		<div className={styles['body']}>
 			<div
-				className={styles['hover-card'] + (imageSource ? ` ${styles['hover-card-visible']}` : '')}
+				className={
+					styles['hover-card'] +
+					(imageSource ? ` ${styles['hover-card-visible']}` : '')
+				}
 				style={{
 					left: imageSource ? imageSource.position.x - 180 : 0,
 					top: imageSource ? imageSource.position.y - 120 : 0
@@ -178,7 +194,11 @@ export function Decklist(props: DecklistProps) {
 				<div className={styles['decklist-groups']}>
 					{Object.keys(deck.cardCategories).map((group) => {
 						return (
-							<DecklistGroup name={group} group={deck.cardCategories[group]} onCardClick={onCardClick} />
+							<DecklistGroup
+								name={group}
+								group={deck.cardCategories[group]}
+								onCardClick={onCardClick}
+							/>
 						);
 					})}
 				</div>

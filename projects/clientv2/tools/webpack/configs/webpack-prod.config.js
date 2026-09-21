@@ -30,7 +30,11 @@ module.exports = {
 	plugins: [
 		new HtmlWebpackPlugin({
 			title: 'Index',
-			template: path.join('src', 'templates', 'index-production.template.html')
+			template: path.join(
+				'src',
+				'templates',
+				'index-production.template.html'
+			)
 		}),
 		new webpack.DefinePlugin({
 			__SYS_BACKEND_HOST_URI__: JSON.stringify(BACKEND_HOST_URI)
@@ -55,7 +59,10 @@ module.exports = {
 				// https://webpack.js.org/loaders/style-loader/#injecttype
 				test: /\.css$/,
 				use: [
-					{ loader: 'style-loader', options: { injectType: 'singletonStyleTag' } },
+					{
+						loader: 'style-loader',
+						options: { injectType: 'singletonStyleTag' }
+					},
 					{ loader: 'css-loader', options: { modules: true } }
 				],
 				include: [sourceDirectory]

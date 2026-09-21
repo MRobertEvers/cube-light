@@ -18,7 +18,8 @@ export function createEvent<T = void>() {
 	};
 }
 
-export type EventType<E extends Record<string, EventCreator<any, any>>> = ReturnType<E[keyof E]>;
+export type EventType<E extends Record<string, EventCreator<any, any>>> =
+	ReturnType<E[keyof E]>;
 
 // const Events = {
 // 	create: createEvent<string>()('create'),

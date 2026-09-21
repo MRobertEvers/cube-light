@@ -59,17 +59,28 @@ export function createRoutesDecks(
 
 		const decks = await database.listDecks(pageStartVal, pageSizeVal);
 
-		const response = await Promise.all(decks.map(async (deck) => {
-			const bannerArt = await deckBannerArt(database, cardDatabase, deck);
-			return {
-				deckId: deck.PublicId,
-				name: deck.Name,
-				art: localDeckArtUrl(imageBaseUrl(req), bannerArt),
-				bannerBlend: await bannerBlendResponse(database, deck, bannerArt, imageBaseUrl(req)),
-				createdAt: deck.CreatedAt,
-				updatedAt: deck.UpdatedAt
-			};
-		}));
+		const response = await Promise.all(
+			decks.map(async (deck) => {
+				const bannerArt = await deckBannerArt(
+					database,
+					cardDatabase,
+					deck
+				);
+				return {
+					deckId: deck.PublicId,
+					name: deck.Name,
+					art: localDeckArtUrl(imageBaseUrl(req), bannerArt),
+					bannerBlend: await bannerBlendResponse(
+						database,
+						deck,
+						bannerArt,
+						imageBaseUrl(req)
+					),
+					createdAt: deck.CreatedAt,
+					updatedAt: deck.UpdatedAt
+				};
+			})
+		);
 
 		res.status(200);
 		res.setHeader('Content-Type', 'application/json');

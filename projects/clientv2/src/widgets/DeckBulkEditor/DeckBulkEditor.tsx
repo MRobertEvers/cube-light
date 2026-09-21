@@ -26,7 +26,9 @@ export function DeckBulkEditor(props: DeckBulkEditor) {
 			<TextInputButtonGroup
 				value={value}
 				suggestions={
-					value.length > 0 ? getFirstNMatchesInLookupTree(10, value, deckSearch) : []
+					value.length > 0
+						? getFirstNMatchesInLookupTree(10, value, deckSearch)
+						: []
 				}
 				showSuggestions={showSuggestions}
 				buttonText="name"

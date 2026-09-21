@@ -4,7 +4,9 @@ export type FetchCreateDeckResponse = {
 	deckId: string;
 };
 
-export async function fetchAPICreateDeck(name: string): Promise<FetchCreateDeckResponse> {
+export async function fetchAPICreateDeck(
+	name: string
+): Promise<FetchCreateDeckResponse> {
 	const fetchResult = await fetch(`${API_URI}/decks`, {
 		method: 'POST',
 		headers: {

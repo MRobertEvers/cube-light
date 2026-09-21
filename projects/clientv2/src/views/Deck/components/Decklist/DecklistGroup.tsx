@@ -74,9 +74,18 @@ export function DecklistCategory(props: DecklistCategoryProps) {
 										payload: card
 									})
 								}
-								onMouseEnter={(event) => showHoverCard(event.currentTarget)}
-								onFocus={(event) => showHoverCard(event.currentTarget)}
-								onBlur={() => onCardEvent?.({ type: CardInteractionEventType.LEAVE, payload: card })}
+								onMouseEnter={(event) =>
+									showHoverCard(event.currentTarget)
+								}
+								onFocus={(event) =>
+									showHoverCard(event.currentTarget)
+								}
+								onBlur={() =>
+									onCardEvent?.({
+										type: CardInteractionEventType.LEAVE,
+										payload: card
+									})
+								}
 							>
 								{card.name}
 							</button>

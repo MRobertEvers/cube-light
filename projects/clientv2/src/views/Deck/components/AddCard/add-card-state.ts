@@ -1,4 +1,8 @@
-import { ActionReducerMapBuilder, createAction, createReducer } from '@reduxjs/toolkit';
+import {
+	ActionReducerMapBuilder,
+	createAction,
+	createReducer
+} from '@reduxjs/toolkit';
 
 // Based on "Ariel - Beta Test Questionaire.docx"
 export type AddCardState = {
@@ -18,7 +22,9 @@ export const initialState: AddCardState = {
 };
 
 export const Actions = {
-	setSuggestionsData: createAction<{ sorted: string[]; set: Set<string> }>('setSuggestionsData'),
+	setSuggestionsData: createAction<{ sorted: string[]; set: Set<string> }>(
+		'setSuggestionsData'
+	),
 	setViewIsDropDownVisible: createAction<boolean>('setViewIsDropDownVisible'),
 	setViewAddItemText: createAction<string>('setViewAddItemText'),
 	setViewAddItemCount: createAction<number>('setViewAddItemCount')

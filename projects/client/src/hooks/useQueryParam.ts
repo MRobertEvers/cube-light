@@ -12,7 +12,10 @@ export interface UseQueryStateOptions<T> {
 	shallow: boolean;
 }
 
-export type UseQueryStateReturn<T> = [T | null, React.Dispatch<React.SetStateAction<T>>];
+export type UseQueryStateReturn<T> = [
+	T | null,
+	React.Dispatch<React.SetStateAction<T>>
+];
 
 /**
  * React state hook synchronized with a URL query string in Next.js
@@ -25,7 +28,7 @@ export function useQueryState<T = string>(
 ): UseQueryStateReturn<T | null> {
 	const {
 		history = 'replace',
-		parse = (x) => (x as unknown) as T,
+		parse = (x) => x as unknown as T,
 		serialize = (x) => `${x}`,
 		shallow = false
 	} = options;
@@ -34,7 +37,10 @@ export function useQueryState<T = string>(
 	// Memoizing the update function has the advantage of making it
 	// immutable as long as `history` stays the same.
 	// It reduces the amount of reactivity needed to update the state.
-	const updateUrl = React.useMemo(() => (history === 'push' ? router.push : router.replace), [history]);
+	const updateUrl = React.useMemo(
+		() => (history === 'push' ? router.push : router.replace),
+		[history]
+	);
 
 	const getValue = React.useCallback((): T | null => {
 		if (typeof window === 'undefined') {
@@ -54,13 +60,17 @@ export function useQueryState<T = string>(
 
 	const update = React.useCallback(
 		(stateUpdater: React.SetStateAction<T | null>) => {
-			const isUpdaterFunction = (input: any): input is (prevState: T | null) => T | null => {
+			const isUpdaterFunction = (
+				input: any
+			): input is (prevState: T | null) => T | null => {
 				return typeof input === 'function';
 			};
 
 			// Resolve the new value based on old value & updater
 			const oldValue = getValue();
-			const newValue = isUpdaterFunction(stateUpdater) ? stateUpdater(oldValue) : stateUpdater;
+			const newValue = isUpdaterFunction(stateUpdater)
+				? stateUpdater(oldValue)
+				: stateUpdater;
 			// We can't rely on router.query here to avoid causing
 			// unnecessary renders when other query parameters change.
 			// URLSearchParams is already polyfilled by Next.js

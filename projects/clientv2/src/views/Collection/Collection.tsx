@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FetchCollectionsResponse, fetchAPICollections } from 'src/api/fetch-api-collections';
+import {
+	FetchCollectionsResponse,
+	fetchAPICollections
+} from 'src/api/fetch-api-collections';
 import { fetchAPICreateCollection } from 'src/api/fetch-api-create-collection';
 import { fetchAPICreateStorageLocation } from 'src/api/fetch-api-create-storage-location';
 import {
@@ -21,8 +24,11 @@ export type HomeProps = {
 export function Collection(props: HomeProps) {
 	const { initialData } = props;
 
-	const [collections, setCollections] = useState<FetchCollectionsResponse>([]);
-	const [locations, setStorageLocations] = useState<FetchStorageLocationsResponse>([]);
+	const [collections, setCollections] = useState<FetchCollectionsResponse>(
+		[]
+	);
+	const [locations, setStorageLocations] =
+		useState<FetchStorageLocationsResponse>([]);
 
 	const load = useCallback(() => {
 		async function fetchData() {
@@ -88,7 +94,9 @@ export function Collection(props: HomeProps) {
 							<tr key={key}>
 								<td>
 									{collection && (
-										<Link to={`/collection/${collection.collection_id}`}>
+										<Link
+											to={`/collection/${collection.collection_id}`}
+										>
 											{collection.name}
 										</Link>
 									)}

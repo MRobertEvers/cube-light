@@ -14,7 +14,11 @@ import {
 import { useAppDispatch } from '../../store/use-app-dispatch';
 import { Page } from '../../components/Page/Page';
 import { Modal } from '../Deck/components/Modal';
-import { NewDeckModal, NewDeckModalEvent, NewDeckModalEventType } from './components/NewDeck';
+import {
+	NewDeckModal,
+	NewDeckModalEvent,
+	NewDeckModalEventType
+} from './components/NewDeck';
 import { ImageCardImport } from 'src/components/ImageCardImport/ImageCardImport';
 
 import styles from './home.module.css';
@@ -39,22 +43,37 @@ export function Home(props: HomeProps) {
 
 	return (
 		<Page
-				header={
+			header={
 				<div className={styles['header-actions']}>
-					<Button className={styles['header-button']} onClick={() => setIsShowModal(true)}>
+					<Button
+						className={styles['header-button']}
+						onClick={() => setIsShowModal(true)}
+					>
 						New Deck
 					</Button>
-					<Button className={styles['header-button']} onClick={() => setShowImageImport(true)}>
+					<Button
+						className={styles['header-button']}
+						onClick={() => setShowImageImport(true)}
+					>
 						Create a deck from image
 					</Button>
 				</div>
 			}
 		>
-			{showImageImport && <ImageCardImport
-				mode="create"
-				onClose={() => setShowImageImport(false)}
-				onComplete={(deckId, taskId) => { setShowImageImport(false); navigate(taskId ? `/deck/${deckId}/scan/${taskId}` : `/deck/${deckId}`); }}
-			/>}
+			{showImageImport && (
+				<ImageCardImport
+					mode="create"
+					onClose={() => setShowImageImport(false)}
+					onComplete={(deckId, taskId) => {
+						setShowImageImport(false);
+						navigate(
+							taskId
+								? `/deck/${deckId}/scan/${taskId}`
+								: `/deck/${deckId}`
+						);
+					}}
+				/>
+			)}
 			{isShowModal && (
 				<Modal>
 					<NewDeckModal
@@ -62,7 +81,9 @@ export function Home(props: HomeProps) {
 							if (e.type === NewDeckModalEventType.CLOSE) {
 								setIsShowModal(false);
 							} else {
-								const deckData = await fetchAPICreateDeck(e.payload);
+								const deckData = await fetchAPICreateDeck(
+									e.payload
+								);
 
 								navigate(`/deck/${deckData.deckId}`);
 							}
@@ -80,7 +101,11 @@ export function Home(props: HomeProps) {
 				{error && <p role="alert">Unable to refresh decks.</p>}
 				<div className={styles['deck-grid']}>
 					{data?.map((deck) => (
-						<Link className={styles['deck-link']} key={deck.deckId} to={`/deck/${deck.deckId}`}>
+						<Link
+							className={styles['deck-link']}
+							key={deck.deckId}
+							to={`/deck/${deck.deckId}`}
+						>
 							<SpotlightCard
 								name={deck.name}
 								art={deck.art}

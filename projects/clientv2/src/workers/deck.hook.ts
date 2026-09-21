@@ -25,9 +25,12 @@ export function useDeckWorker(
 	const worker = useMemo(() => {
 		if (typeof Worker !== 'undefined') {
 			if (!globalWorker.worker) {
-				globalWorker.worker = new Worker(new URL('./deck.worker.ts', import.meta.url), {
-					type: 'module'
-				});
+				globalWorker.worker = new Worker(
+					new URL('./deck.worker.ts', import.meta.url),
+					{
+						type: 'module'
+					}
+				);
 				globalWorker.listeners = new Set();
 			}
 
@@ -39,7 +42,8 @@ export function useDeckWorker(
 		if (!worker) {
 			return;
 		}
-		const newListener: OnMessageResponseHandler = (message) => onmessageRef.current(message);
+		const newListener: OnMessageResponseHandler = (message) =>
+			onmessageRef.current(message);
 
 		globalWorker.listeners.add(newListener);
 
@@ -52,7 +56,10 @@ export function useDeckWorker(
 		return () => {
 			globalWorker.listeners.delete(newListener);
 			queueMicrotask(() => {
-				if (globalWorker.listeners.size === 0 && globalWorker.worker === worker) {
+				if (
+					globalWorker.listeners.size === 0 &&
+					globalWorker.worker === worker
+				) {
 					worker.terminate();
 					delete globalWorker.worker;
 				}

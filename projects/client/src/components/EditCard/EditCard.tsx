@@ -4,7 +4,11 @@ import { useEffect } from 'preact/hooks';
 
 import styles from './edit-card.module.css';
 
-function Counter(props: { count: number; onCountUp: () => void; onCountDown: () => void }) {
+function Counter(props: {
+	count: number;
+	onCountUp: () => void;
+	onCountDown: () => void;
+}) {
 	const { count, onCountDown, onCountUp } = props;
 	return (
 		<div>
@@ -44,7 +48,9 @@ export function EditCardModal(props: EditCardModalProps) {
 						onCountDown={() => setCount((c) => (c > 0 ? c - 1 : c))}
 						onCountUp={() => setCount((c) => c + 1)}
 					/>
-					<button onClick={() => onSubmit({ ...card, count: count })}>Ok</button>
+					<button onClick={() => onSubmit({ ...card, count: count })}>
+						Ok
+					</button>
 					<button onClick={() => onCancel()}>Cancel</button>
 				</div>
 			</div>

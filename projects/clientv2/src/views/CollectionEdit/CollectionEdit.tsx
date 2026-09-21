@@ -25,7 +25,9 @@ export function CollectionEdit(props: HomeProps) {
 							<LocationsDropdown
 								value={locationId}
 								onChange={(e) => {
-									setLocationId(e ? e.storage_location_id : null);
+									setLocationId(
+										e ? e.storage_location_id : null
+									);
 								}}
 							/>
 						</div>

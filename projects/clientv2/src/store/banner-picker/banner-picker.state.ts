@@ -1,8 +1,14 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { CardPrinting, fetchAPICardPrintings } from '../../api/fetch-api-card-printings';
+import {
+	CardPrinting,
+	fetchAPICardPrintings
+} from '../../api/fetch-api-card-printings';
 import { fetchAPIUpdateDeck } from '../../api/fetch-api-update-deck';
 import { generateAndSaveBannerBlend } from '../../utils/generate-banner-blend';
-import { configForNewArtwork, normalizeBannerBlendConfig } from '../../utils/banner-blend';
+import {
+	configForNewArtwork,
+	normalizeBannerBlendConfig
+} from '../../utils/banner-blend';
 import { isMobileDevice } from '../../utils/is-mobile-device';
 import { loadDeck } from '../decks/decks.state';
 
@@ -27,47 +33,104 @@ export type BannerPickerState = {
 };
 
 const initialState: BannerPickerState = {
-	open: false, deckId: null, names: [], deckCardUuids: [], query: '', chosenName: '', currentName: '',
-	selectedUuid: null, currentUuid: null, printings: [], loading: false, error: null,
-	requestId: null, suggestionsOpen: false, activeIndex: -1, saving: false, saveError: null
+	open: false,
+	deckId: null,
+	names: [],
+	deckCardUuids: [],
+	query: '',
+	chosenName: '',
+	currentName: '',
+	selectedUuid: null,
+	currentUuid: null,
+	printings: [],
+	loading: false,
+	error: null,
+	requestId: null,
+	suggestionsOpen: false,
+	activeIndex: -1,
+	saving: false,
+	saveError: null
 };
 
-export const loadBannerPrintings = createAsyncThunk('bannerPicker/loadPrintings',
+export const loadBannerPrintings = createAsyncThunk(
+	'bannerPicker/loadPrintings',
 	async (args: { deckId: string; name: string }) => {
 		const { name } = args;
 		return fetchAPICardPrintings(name);
-	});
+	}
+);
 
-export const saveBannerSelection = createAsyncThunk('bannerPicker/save',
-	async (args: { deckId: string; deckName: string; uuid: string }, context) => {
+export const saveBannerSelection = createAsyncThunk(
+	'bannerPicker/save',
+	async (
+		args: { deckId: string; deckName: string; uuid: string },
+		context
+	) => {
 		const { deckId, deckName, uuid } = args;
 		const { dispatch } = context;
 		await fetchAPIUpdateDeck(deckId, deckName, uuid);
 		const deck = await dispatch(loadDeck(deckId)).unwrap();
-		const config = deck.icon ? configForNewArtwork(normalizeBannerBlendConfig(deck.bannerBlend?.config), deck.icon, isMobileDevice()) : undefined;
+		const config = deck.icon
+			? configForNewArtwork(
+					normalizeBannerBlendConfig(deck.bannerBlend?.config),
+					deck.icon,
+					isMobileDevice()
+				)
+			: undefined;
 		await generateAndSaveBannerBlend(deckId, deck, config);
 		await dispatch(loadDeck(deckId)).unwrap();
-	});
+	}
+);
 
 export const bannerPickerSlice = createSlice({
-	name: 'bannerPicker', initialState,
+	name: 'bannerPicker',
+	initialState,
 	reducers: {
-		openBannerPicker(state, action: PayloadAction<{ deckId: string; names: string[]; deckCardUuids: string[]; currentName: string; currentUuid: string | null }>) {
-			const { deckId, names, deckCardUuids, currentName, currentUuid } = action.payload;
-			Object.assign(state, initialState, { open: true, deckId, names, deckCardUuids,
-				query: currentName, chosenName: currentName, currentName, selectedUuid: currentUuid, currentUuid });
+		openBannerPicker(
+			state,
+			action: PayloadAction<{
+				deckId: string;
+				names: string[];
+				deckCardUuids: string[];
+				currentName: string;
+				currentUuid: string | null;
+			}>
+		) {
+			const { deckId, names, deckCardUuids, currentName, currentUuid } =
+				action.payload;
+			Object.assign(state, initialState, {
+				open: true,
+				deckId,
+				names,
+				deckCardUuids,
+				query: currentName,
+				chosenName: currentName,
+				currentName,
+				selectedUuid: currentUuid,
+				currentUuid
+			});
 		},
-		closeBannerPicker(state) { Object.assign(state, initialState); },
+		closeBannerPicker(state) {
+			Object.assign(state, initialState);
+		},
 		setBannerQuery(state, action: PayloadAction<string>) {
 			state.query = action.payload;
 			state.suggestionsOpen = true;
 			state.activeIndex = -1;
 		},
-		setBannerSuggestionsOpen(state, action: PayloadAction<boolean>) { state.suggestionsOpen = action.payload; },
-		setBannerActiveIndex(state, action: PayloadAction<number>) { state.activeIndex = action.payload; },
+		setBannerSuggestionsOpen(state, action: PayloadAction<boolean>) {
+			state.suggestionsOpen = action.payload;
+		},
+		setBannerActiveIndex(state, action: PayloadAction<number>) {
+			state.activeIndex = action.payload;
+		},
 		chooseBannerCard(state, action: PayloadAction<string>) {
 			if (!state.names.includes(action.payload)) return;
-			if (state.chosenName !== action.payload) state.selectedUuid = action.payload === state.currentName ? state.currentUuid : null;
+			if (state.chosenName !== action.payload)
+				state.selectedUuid =
+					action.payload === state.currentName
+						? state.currentUuid
+						: null;
 			state.chosenName = action.payload;
 			state.query = action.payload;
 			state.printings = [];
@@ -87,18 +150,36 @@ export const bannerPickerSlice = createSlice({
 	extraReducers: (builder) => {
 		builder
 			.addCase(loadBannerPrintings.pending, (state, action) => {
-				if (state.deckId !== action.meta.arg.deckId || state.chosenName !== action.meta.arg.name) return;
+				if (
+					state.deckId !== action.meta.arg.deckId ||
+					state.chosenName !== action.meta.arg.name
+				)
+					return;
 				state.requestId = action.meta.requestId;
 				state.loading = true;
 				state.error = null;
 			})
 			.addCase(loadBannerPrintings.fulfilled, (state, action) => {
-				if (state.requestId !== action.meta.requestId || state.deckId !== action.meta.arg.deckId || state.chosenName !== action.meta.arg.name) return;
+				if (
+					state.requestId !== action.meta.requestId ||
+					state.deckId !== action.meta.arg.deckId ||
+					state.chosenName !== action.meta.arg.name
+				)
+					return;
 				state.printings = action.payload.filter((item) => !!item.art);
 				state.loading = false;
 				state.requestId = null;
-				if (!state.printings.some((item) => item.uuid === state.selectedUuid)) {
-					state.selectedUuid = state.printings.find((item) => state.deckCardUuids.includes(item.uuid))?.uuid ?? state.printings[0]?.uuid ?? null;
+				if (
+					!state.printings.some(
+						(item) => item.uuid === state.selectedUuid
+					)
+				) {
+					state.selectedUuid =
+						state.printings.find((item) =>
+							state.deckCardUuids.includes(item.uuid)
+						)?.uuid ??
+						state.printings[0]?.uuid ??
+						null;
 				}
 			})
 			.addCase(loadBannerPrintings.rejected, (state, action) => {
@@ -109,20 +190,33 @@ export const bannerPickerSlice = createSlice({
 			})
 			.addCase(saveBannerSelection.pending, (state, action) => {
 				if (state.deckId !== action.meta.arg.deckId) return;
-				state.saving = true; state.saveError = null;
+				state.saving = true;
+				state.saveError = null;
 			})
 			.addCase(saveBannerSelection.fulfilled, (state, action) => {
-				if (state.deckId === action.meta.arg.deckId) Object.assign(state, initialState);
+				if (state.deckId === action.meta.arg.deckId)
+					Object.assign(state, initialState);
 			})
 			.addCase(saveBannerSelection.rejected, (state, action) => {
 				if (state.deckId !== action.meta.arg.deckId) return;
 				state.saving = false;
-				state.saveError = action.error.message ?? 'Unable to save the banner card and blend. Please try again.';
+				state.saveError =
+					action.error.message ??
+					'Unable to save the banner card and blend. Please try again.';
 			});
 	}
 });
 
-export const { openBannerPicker, closeBannerPicker, setBannerQuery, setBannerSuggestionsOpen,
-	setBannerActiveIndex, chooseBannerCard, selectBannerPrinting } = bannerPickerSlice.actions;
+export const {
+	openBannerPicker,
+	closeBannerPicker,
+	setBannerQuery,
+	setBannerSuggestionsOpen,
+	setBannerActiveIndex,
+	chooseBannerCard,
+	selectBannerPrinting
+} = bannerPickerSlice.actions;
 
-export const selectBannerPicker = (state: { bannerPicker: BannerPickerState }) => state.bannerPicker;
+export const selectBannerPicker = (state: {
+	bannerPicker: BannerPickerState;
+}) => state.bannerPicker;

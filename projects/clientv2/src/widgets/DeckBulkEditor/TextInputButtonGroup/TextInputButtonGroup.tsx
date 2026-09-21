@@ -58,7 +58,9 @@ export function TextInputButtonGroup(props: TextInputButtonGroupProps) {
 				suggestions={listSuggestions}
 				onEvent={comboBoxOnEvent}
 			/>
-			<Button onClick={() => onEvent(Events.clicked())}>{buttonText}</Button>
+			<Button onClick={() => onEvent(Events.clicked())}>
+				{buttonText}
+			</Button>
 		</div>
 	);
 }

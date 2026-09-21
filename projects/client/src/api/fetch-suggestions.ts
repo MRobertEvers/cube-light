@@ -2,7 +2,9 @@ import { API_URI } from '../config/api-url';
 import { fetchTimeout } from './utils';
 
 export type SuggestionsResponse = string[];
-export async function fetchSuggestions(name: string): Promise<SuggestionsResponse> {
+export async function fetchSuggestions(
+	name: string
+): Promise<SuggestionsResponse> {
 	const request = await fetchTimeout(`${API_URI}/suggest?stub=${name}`, {
 		method: 'GET'
 	});

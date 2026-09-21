@@ -14,7 +14,9 @@ type ScryfallApiResponse = {
 	data: ScryfallCardInfo[];
 };
 
-export async function fetchCardDataByScryFallIds(ids: string[]): Promise<ScryfallApiResponse> {
+export async function fetchCardDataByScryFallIds(
+	ids: string[]
+): Promise<ScryfallApiResponse> {
 	const requestBody = JSON.stringify({
 		identifiers: ids.map((id) => {
 			return {
@@ -34,7 +36,9 @@ export async function fetchCardDataByScryFallIds(ids: string[]): Promise<Scryfal
 	return resp.json();
 }
 
-export async function fetchImageByScryFallId(id: string): Promise<Buffer | null> {
+export async function fetchImageByScryFallId(
+	id: string
+): Promise<Buffer | null> {
 	const scryfallData = await fetchCardDataByScryFallIds([id]);
 
 	if (scryfallData.data.length === 0) {

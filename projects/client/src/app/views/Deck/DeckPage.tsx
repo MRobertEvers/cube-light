@@ -3,7 +3,10 @@ import { NextPage } from '../../components/Page/NextPage';
 import { fetchSortedDeck } from '../../api/composite/deck.functions';
 import { Deck } from './Deck';
 import { GetDeckResponse } from '../../workers/deck.worker.messages';
-import { fetchAPIDecks, FetchDecksResponse } from '../../../api/fetch-api-decks';
+import {
+	fetchAPIDecks,
+	FetchDecksResponse
+} from '../../../api/fetch-api-decks';
 
 export type DeckPageProps = {
 	initialDeckData: GetDeckResponse;

@@ -1,6 +1,10 @@
 import React, { useCallback } from 'react';
 import { useState } from 'react';
-import { CardInteractionEvent, CardInteractionEventType, DecklistGroup } from './DecklistGroup';
+import {
+	CardInteractionEvent,
+	CardInteractionEventType,
+	DecklistGroup
+} from './DecklistGroup';
 import { DeckMappedData } from '../../../../workers/deck.worker.messages';
 import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
 
@@ -22,9 +26,13 @@ type DecklistProps = {
 };
 
 export function Decklist(props: DecklistProps) {
-	const { deck, banner, bannerCrop, bannerBlend, topStyle, onCardClick } = props;
+	const { deck, banner, bannerCrop, bannerBlend, topStyle, onCardClick } =
+		props;
 	const [imageSource, setImageSource] = useState(
-		null as { card: DecklistCardInfo; position: { x: number; y: number } } | null
+		null as {
+			card: DecklistCardInfo;
+			position: { x: number; y: number };
+		} | null
 	);
 
 	const onCardEvent = useCallback(
@@ -45,25 +53,34 @@ export function Decklist(props: DecklistProps) {
 	);
 	const hoverCardWidth = 300;
 	const hoverCardHeight = 420;
-	const viewportWidth = typeof window === 'undefined' ? 1200 : window.innerWidth;
-	const viewportHeight = typeof window === 'undefined' ? 800 : window.innerHeight;
+	const viewportWidth =
+		typeof window === 'undefined' ? 1200 : window.innerWidth;
+	const viewportHeight =
+		typeof window === 'undefined' ? 800 : window.innerHeight;
 	const hoverLeft = imageSource
 		? Math.min(
-			Math.max(16, imageSource.position.x > hoverCardWidth + 40
-				? imageSource.position.x - hoverCardWidth - 16
-				: imageSource.position.x + 120),
-			Math.max(16, viewportWidth - hoverCardWidth - 16)
-		)
+				Math.max(
+					16,
+					imageSource.position.x > hoverCardWidth + 40
+						? imageSource.position.x - hoverCardWidth - 16
+						: imageSource.position.x + 120
+				),
+				Math.max(16, viewportWidth - hoverCardWidth - 16)
+			)
 		: 0;
 	const hoverTop = imageSource
-		? Math.min(Math.max(16, imageSource.position.y - 170), Math.max(16, viewportHeight - hoverCardHeight - 16))
+		? Math.min(
+				Math.max(16, imageSource.position.y - 170),
+				Math.max(16, viewportHeight - hoverCardHeight - 16)
+			)
 		: 0;
 
 	return (
 		<div className={styles['body']}>
 			<div
 				className={
-					styles['hover-card'] + (imageSource ? ` ${styles['hover-card-visible']}` : '')
+					styles['hover-card'] +
+					(imageSource ? ` ${styles['hover-card-visible']}` : '')
 				}
 				style={{
 					left: hoverLeft,
@@ -71,13 +88,26 @@ export function Decklist(props: DecklistProps) {
 				}}
 			>
 				{imageSource && (
-					<img src={imageSource.card.images?.normal ?? imageSource.card.image} alt="" />
+					<img
+						src={
+							imageSource.card.images?.normal ??
+							imageSource.card.image
+						}
+						alt=""
+					/>
 				)}
 			</div>
 			<div className={styles['decklist-container']}>
-				{banner && topStyle === 'card' && <div className={styles['decklist-spotlight']}>
-					<SpotlightCard art={banner.art} name={banner.name} crop={bannerCrop} bannerBlend={bannerBlend} />
-				</div>}
+				{banner && topStyle === 'card' && (
+					<div className={styles['decklist-spotlight']}>
+						<SpotlightCard
+							art={banner.art}
+							name={banner.name}
+							crop={bannerCrop}
+							bannerBlend={bannerBlend}
+						/>
+					</div>
+				)}
 				<div className={styles['deck-list']}>
 					<DecklistGroup
 						groups={Object.keys(deck.cardCategories)

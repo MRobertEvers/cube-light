@@ -4,7 +4,9 @@ export type FetchCreateCollectionResponse = {
 	collection_id: string;
 };
 
-export async function fetchAPICreateCollection(name: string): Promise<FetchCreateCollectionResponse> {
+export async function fetchAPICreateCollection(
+	name: string
+): Promise<FetchCreateCollectionResponse> {
 	const fetchResult = await fetch(`${API_URI}/collection`, {
 		method: 'POST',
 		headers: {

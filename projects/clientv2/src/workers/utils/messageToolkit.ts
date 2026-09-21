@@ -8,7 +8,9 @@ export interface MessageCreator<T, Response = void> {
 	readonly type: string;
 }
 
-export function createMessage<T, Response = void>(name: string): MessageCreator<T, Response> {
+export function createMessage<T, Response = void>(
+	name: string
+): MessageCreator<T, Response> {
 	const creator = (payload: T) => {
 		return {
 			type: name,
@@ -58,13 +60,17 @@ class MessageResponseHandlerMapBuilder {
 	}
 }
 export interface OnMessageHandler {
-	<T, Response = void>(msg: Message<T, Response>): Promise<Message<Response, void> | undefined>;
+	<T, Response = void>(
+		msg: Message<T, Response>
+	): Promise<Message<Response, void> | undefined>;
 }
 
 export interface OnMessageResponseHandler {
 	<T, Response = void>(msg: Message<Response, void>): Promise<void>;
 }
-function createHandleMessage(map: { [x: string]: MessageHandler<any, any> }): OnMessageHandler {
+function createHandleMessage(map: {
+	[x: string]: MessageHandler<any, any>;
+}): OnMessageHandler {
 	const handler: OnMessageHandler = async <T, Response>(
 		msg: Message<T, Response>
 	): Promise<Message<Response, void> | undefined> => {
@@ -85,7 +91,9 @@ function createHandleMessage(map: { [x: string]: MessageHandler<any, any> }): On
 }
 
 export function createResponseHandler(
-	mapper: (builder: MessageResponseHandlerMapBuilder) => MessageResponseHandlerMapBuilder
+	mapper: (
+		builder: MessageResponseHandlerMapBuilder
+	) => MessageResponseHandlerMapBuilder
 ): OnMessageResponseHandler {
 	const map: { [x: string]: MessageHandler<any> } = {};
 	mapper(new MessageResponseHandlerMapBuilder(map));

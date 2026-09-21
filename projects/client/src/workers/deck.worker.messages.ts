@@ -17,8 +17,15 @@ export type DeckMappedData = {
 export type GetDeckResponse = FetchDeckResponse & { deck: DeckMappedData };
 
 export const DeckWorkerMessages = {
-	getSuggestions: createMessage<string, { sorted: string[]; set: Set<string> }>('getSuggestions'),
+	getSuggestions: createMessage<
+		string,
+		{ sorted: string[]; set: Set<string> }
+	>('getSuggestions'),
 	addCard: createMessage<string>('addCard'),
-	setCard: createMessage<{ cardName: string; action: SetCardAction; count: number }>('setCard'),
+	setCard: createMessage<{
+		cardName: string;
+		action: SetCardAction;
+		count: number;
+	}>('setCard'),
 	getDeck: createMessage<string, GetDeckResponse>('getDeck')
 };

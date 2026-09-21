@@ -1,4 +1,6 @@
-export function createNameLookupTree(nameIter: Generator<string> | string[]): any {
+export function createNameLookupTree(
+	nameIter: Generator<string> | string[]
+): any {
 	const lookup: Record<string, any> = {};
 
 	for (const name of nameIter) {

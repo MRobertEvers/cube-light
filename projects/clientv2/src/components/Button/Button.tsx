@@ -12,7 +12,15 @@ type ButtonProps = React.PropsWithChildren<{
 }>;
 
 export function Button(props: ButtonProps) {
-	const { onClick, children, style, className, disabled, type = 'button', ariaLabel } = props;
+	const {
+		onClick,
+		children,
+		style,
+		className,
+		disabled,
+		type = 'button',
+		ariaLabel
+	} = props;
 
 	return (
 		<button

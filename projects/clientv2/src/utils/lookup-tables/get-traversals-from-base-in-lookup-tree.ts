@@ -61,11 +61,16 @@ export function getTraversalsFromBaseInLookupTree(
 				.filter((key) => tree[key])
 				.map((key) => [traversal.concat([key]), tree[key]]);
 
-			for (const ignoreChar of ignoreChars.filter((key) => key !== char && tree[key])) {
+			for (const ignoreChar of ignoreChars.filter(
+				(key) => key !== char && tree[key]
+			)) {
 				const skippedTree = tree[ignoreChar];
 				const laxBranches: [string[], any][] = branchKeys
 					.filter((key) => skippedTree[key])
-					.map((key) => [traversal.concat([ignoreChar, key]), skippedTree[key]]);
+					.map((key) => [
+						traversal.concat([ignoreChar, key]),
+						skippedTree[key]
+					]);
 				branches.push(...laxBranches);
 			}
 

@@ -1,4 +1,8 @@
-import { ActionReducerMapBuilder, createAction, createReducer } from '@reduxjs/toolkit';
+import {
+	ActionReducerMapBuilder,
+	createAction,
+	createReducer
+} from '@reduxjs/toolkit';
 import { FetchAPIDeckCardResponse } from 'src/api/fetch-api-deck';
 
 export type DeckState = {

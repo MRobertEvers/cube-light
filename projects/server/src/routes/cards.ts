@@ -5,7 +5,10 @@ import { imageBaseUrl } from '../images/image-base-url';
 import { cardImageUrl } from '../images/card-images';
 import { PathBuilder } from '../utils/PathBuilder';
 
-export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase) {
+export function createRoutesCards(
+	path: PathBuilder,
+	cardDatabase: CardDatabase
+) {
 	const app = Router();
 
 	app.use(urlencoded());
@@ -29,7 +32,11 @@ export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase)
 		};
 
 		const uuids = uuidsListString.split(',');
-		const cards = await getCardsDetails(uuids, cardDatabase, imageBaseUrl(req));
+		const cards = await getCardsDetails(
+			uuids,
+			cardDatabase,
+			imageBaseUrl(req)
+		);
 
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Content-Type', 'application/json');
@@ -41,7 +48,11 @@ export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase)
 			uuid: string;
 		};
 
-		const [card] = await getCardsDetails([uuid], cardDatabase, imageBaseUrl(req));
+		const [card] = await getCardsDetails(
+			[uuid],
+			cardDatabase,
+			imageBaseUrl(req)
+		);
 
 		if (!card) {
 			res.sendStatus(400);
@@ -62,13 +73,15 @@ export function createRoutesCards(path: PathBuilder, cardDatabase: CardDatabase)
 		const cards = await cardDatabase.queryCardsByName(name.trim());
 		const baseUrl = imageBaseUrl(req);
 		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.json(cards.map((card) => ({
-			name: card.name,
-			uuid: card.uuid,
-			setCode: card.setCode,
-			image: cardImageUrl(baseUrl, card.scryfallId, 'normal'),
-			art: cardImageUrl(baseUrl, card.scryfallId, 'art_crop')
-		})));
+		res.json(
+			cards.map((card) => ({
+				name: card.name,
+				uuid: card.uuid,
+				setCode: card.setCode,
+				image: cardImageUrl(baseUrl, card.scryfallId, 'normal'),
+				art: cardImageUrl(baseUrl, card.scryfallId, 'art_crop')
+			}))
+		);
 	});
 
 	return app;

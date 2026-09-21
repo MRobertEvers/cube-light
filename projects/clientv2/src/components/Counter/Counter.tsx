@@ -3,7 +3,11 @@ import { Button } from '../Button/Button';
 
 import styles from './counter.module.css';
 
-export function Counter(props: { count: number; setCount: (x: number) => void; min?: number }) {
+export function Counter(props: {
+	count: number;
+	setCount: (x: number) => void;
+	min?: number;
+}) {
 	const { count, setCount, min = 1 } = props;
 	return (
 		<div className={styles['counter']}>

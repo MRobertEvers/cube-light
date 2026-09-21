@@ -51,7 +51,9 @@
 	font-size: 13px;
 }
 
-.category-header th { padding: 9px 12px; }
+.category-header th {
+	padding: 9px 12px;
+}
 
 @media (max-width: 680px) {
 	.decklist-groups > tbody > tr > td > button {

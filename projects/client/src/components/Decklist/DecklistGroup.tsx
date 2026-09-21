@@ -20,8 +20,13 @@ export function DecklistGroup(props: DecklistGroupProps) {
 					<ul>
 						{group.cards.map((card) => {
 							return (
-								<li key={card.name} onClick={() => onCardClick?.(card)}>
-									<span className={styles['item-count']}>{card.count}</span>
+								<li
+									key={card.name}
+									onClick={() => onCardClick?.(card)}
+								>
+									<span className={styles['item-count']}>
+										{card.count}
+									</span>
 									{card.name}
 								</li>
 							);

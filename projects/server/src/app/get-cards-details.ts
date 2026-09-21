@@ -25,7 +25,11 @@ export async function getCardsDetails(
 	cardDatabase: CardDatabase,
 	imageBaseUrl: string
 ): Promise<Array<CompleteCardInfo>> {
-	const cards = await getDeckOverviewCardInfo(uuids, cardDatabase, imageBaseUrl);
+	const cards = await getDeckOverviewCardInfo(
+		uuids,
+		cardDatabase,
+		imageBaseUrl
+	);
 
 	const cardSets: Record<string, Array<[string, string]>> = {};
 	for (const card of cards) {
