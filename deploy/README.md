@@ -43,3 +43,5 @@ HOST=127.0.0.1 PORT=3000 node deploy/serve-client.mjs
 ```
 
 Use a reverse proxy for HTTPS when serving other devices. This server supports SPA routes, binary model files, MIME types and byte ranges, and returns a genuine 404 for missing model assets.
+
+On macOS, `node scripts/deploy-local.mjs` verifies the models, snapshots the built client into `~/Library/Application Support/CubeLight/releases/`, and installs the `local.cube-light.client` user LaunchAgent on port 3000. It replaces only a listener belonging to this checkout and refuses to stop unrelated processes. Set `CUBE_NODE_EXECUTABLE` to a stable Node 24+ executable when the invoking Node is temporary. Logs are in `~/Library/Logs/CubeLight/`. The deployed artifact is separate from the working checkout. On this workstation, the service uses an official, checksum-verified Node 24.5.0 installation under the application-support directory.
