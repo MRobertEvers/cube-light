@@ -3,9 +3,9 @@ import type { Request, Response } from 'express';
 
 import { CardDatabase } from '../../database/cards/CardDatabase';
 import { Database } from '../../database/app/database';
-import { cardImageUrl, localDeckArtUrl } from '../../images/card-images';
+import { localDeckArtUrl } from '../../images/card-images';
 import { imageBaseUrl } from '../../images/image-base-url';
-import { bannerBlendResponse } from './banner-blend';
+import { bannerBlendResponse, deckBannerArt } from './banner-blend';
 import { PathBuilder } from '../../utils/PathBuilder';
 import { createRoutesDecksId } from './[id]';
 
@@ -60,19 +60,12 @@ export function createRoutesDecks(
 		const decks = await database.listDecks(pageStartVal, pageSizeVal);
 
 		const response = await Promise.all(decks.map(async (deck) => {
-			let art = localDeckArtUrl(imageBaseUrl(req), deck.Art);
-			if (!art) {
-				const [firstCard] = await database.getDeckCards(String(deck.DeckId));
-				if (firstCard) {
-					const [card] = await cardDatabase.queryCardInfo([firstCard.Uuid]);
-					art = cardImageUrl(imageBaseUrl(req), card?.scryfallId, 'art_crop');
-				}
-			}
+			const bannerArt = await deckBannerArt(database, cardDatabase, deck);
 			return {
 				deckId: deck.PublicId,
 				name: deck.Name,
-				art,
-				bannerBlend: await bannerBlendResponse(database, deck, imageBaseUrl(req)),
+				art: localDeckArtUrl(imageBaseUrl(req), bannerArt),
+				bannerBlend: await bannerBlendResponse(database, deck, bannerArt, imageBaseUrl(req)),
 				createdAt: deck.CreatedAt,
 				updatedAt: deck.UpdatedAt
 			};

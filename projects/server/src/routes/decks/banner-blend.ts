@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { createHash } from 'crypto';
 import { Database, Deck } from '../../database/app/database';
-import { localDeckArtUrl } from '../../images/card-images';
+import { CardDatabase } from '../../database/cards/CardDatabase';
+import { cardImagePath, localDeckArtUrl } from '../../images/card-images';
 import { imageBaseUrl } from '../../images/image-base-url';
 import { PathBuilder } from '../../utils/PathBuilder';
 
@@ -44,10 +45,22 @@ export function bannerBlendHistoryValue(config: any): string {
 	return JSON.stringify({ ...config, protection: { ...protection, strokes: strokes.length } });
 }
 
-export async function bannerBlendResponse(database: Database, deck: Deck, base: string) {
+/**
+ * The artwork a deck's banner shows, in stored form: the chosen art, or the first card's art
+ * when none was chosen. Blends are keyed by this, so decks on the fallback art can save one too.
+ */
+export async function deckBannerArt(database: Database, cardDatabase: CardDatabase, deck: Deck): Promise<string | null> {
+	if (deck.Art) return deck.Art;
+	const [firstCard] = await database.getDeckCards(String(deck.DeckId));
+	if (!firstCard) return null;
+	const [card] = await cardDatabase.queryCardInfo([firstCard.Uuid]);
+	return cardImagePath(card?.scryfallId, 'art_crop');
+}
+
+export async function bannerBlendResponse(database: Database, deck: Deck, art: string | null, base: string) {
 	const blend = await database.getDeckBannerBlend(String(deck.DeckId));
 	if (!blend) return null;
-	const valid = blend.SourceArt === deck.Art && blend.CropJson === deck.BannerCropJson;
+	const valid = !!art && blend.SourceArt === art && blend.CropJson === deck.BannerCropJson;
 	return { config: JSON.parse(blend.ConfigJson), images: valid ? {
 		desktop: `${base}/decks/${deck.PublicId}/banner-blend/desktop/${blend.Revision}.png`,
 		mobile: `${base}/decks/${deck.PublicId}/banner-blend/mobile/${blend.Revision}.png`,
@@ -55,7 +68,7 @@ export async function bannerBlendResponse(database: Database, deck: Deck, base: 
 	} : null };
 }
 
-export function createBannerBlendRoutes(builder: PathBuilder, database: Database): Router {
+export function createBannerBlendRoutes(builder: PathBuilder, database: Database, cardDatabase: CardDatabase): Router {
 	const app = Router(), route = builder.pathAt('/banner-blend');
 	app.options(route, (_req, res) => {
 		res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -79,13 +92,14 @@ export function createBannerBlendRoutes(builder: PathBuilder, database: Database
 		if (!deck) { res.sendStatus(404); return; }
 		const expectedCrop = deck.BannerCropJson ? JSON.parse(deck.BannerCropJson) : defaultCrop;
 		const sameCrop = ['desktop', 'mobile'].every((v) => crop[v] && ['x', 'y', 'zoom'].every((k) => crop[v][k] === expectedCrop[v][k]));
-		if (source !== localDeckArtUrl(imageBaseUrl(req), deck.Art) || !sameCrop) { res.sendStatus(409); return; }
+		const art = await deckBannerArt(database, cardDatabase, deck);
+		if (!art || source !== localDeckArtUrl(imageBaseUrl(req), art) || !sameCrop) { res.sendStatus(409); return; }
 		const json = JSON.stringify(config);
 		// Cache identity: algorithm version, source art, crop, full config (including the
 		// protection selection), and the image bytes. Any change yields a new immutable URL.
-		const revision = createHash('sha256').update(`banner-blend:v${config.version ?? 1}\0${deck.Art ?? ''}\0${deck.BannerCropJson ?? ''}\0`)
+		const revision = createHash('sha256').update(`banner-blend:v${config.version ?? 1}\0${art}\0${deck.BannerCropJson ?? ''}\0`)
 			.update(json).update(buffers.desktop).update(buffers.mobile).update(buffers.tile).digest('hex');
-		const saved = await database.setDeckBannerBlend(String(deck.DeckId), deck.Art, deck.BannerCropJson, json, revision, buffers, bannerBlendHistoryValue(config));
+		const saved = await database.setDeckBannerBlend(String(deck.DeckId), deck.Art, art, deck.BannerCropJson, json, revision, buffers, bannerBlendHistoryValue(config));
 		res.sendStatus(saved ? 204 : 409);
 	});
 	app.get(builder.pathAt('/banner-blend/:variant/:revision.png'), async (req: Request<{ id: string; variant: string; revision: string }>, res: Response) => {

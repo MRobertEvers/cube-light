@@ -11,7 +11,7 @@ import { imageBaseUrl } from '../../../images/image-base-url';
 import { cardImagePath, localDeckArtUrl } from '../../../images/card-images';
 import { PathBuilder } from '../../../utils/PathBuilder';
 import { createRoutesDecksIdCards } from './cards';
-import { bannerBlendResponse, createBannerBlendRoutes } from '../banner-blend';
+import { bannerBlendResponse, createBannerBlendRoutes, deckBannerArt } from '../banner-blend';
 
 const PALETTE_KEYS = ['accent', 'surface', 'wash', 'border'] as const;
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
@@ -55,7 +55,7 @@ export function createRoutesDecksId(
 	cardDatabase: CardDatabase
 ): Router {
 	const app = Router();
-	app.use(createBannerBlendRoutes(pathBuilder, database));
+	app.use(createBannerBlendRoutes(pathBuilder, database, cardDatabase));
 
 	const routePath = pathBuilder.pathAt('/');
 
@@ -97,7 +97,8 @@ export function createRoutesDecksId(
 			};
 		});
 
-		const icon = localDeckArtUrl(imageBaseUrl(req), deck.Art) ?? cardData[0]?.art ?? null;
+		const art = await deckBannerArt(database, cardDatabase, deck);
+		const icon = localDeckArtUrl(imageBaseUrl(req), art);
 		let bannerCard: DeckOverviewCardInfo | undefined = cardData.find((card) => card.uuid === deck.BannerCardUuid);
 		if (!bannerCard && deck.BannerCardUuid) {
 			const [storedCard] = await cardDatabase.queryCardInfo([deck.BannerCardUuid]);
@@ -113,7 +114,7 @@ export function createRoutesDecksId(
 				bannerCard: bannerCard ? { name: bannerCard.name, uuid: bannerCard.uuid, setCode: bannerCard.setCode, art: bannerCard.art ?? null } : null,
 				palette: storedPalette(deck.PaletteJson),
 				bannerCrop: storedBannerCrop(deck.BannerCropJson),
-				bannerBlend: await bannerBlendResponse(database, deck, imageBaseUrl(req)),
+				bannerBlend: await bannerBlendResponse(database, deck, art, imageBaseUrl(req)),
 				topStyle: deck.TopStyle === 'full-art' ? 'full-art' : 'card',
 				cards: cardData,
 				lastEdit: new Date(deck.UpdatedAt).toISOString()

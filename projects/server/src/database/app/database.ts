@@ -406,7 +406,8 @@ export class Database {
 		return row?.Image;
 	}
 
-	async setDeckBannerBlend(id: string, expectedArt: string | null, expectedCrop: string | null,
+	/** expectedArt is the deck's stored Art (null when it falls back to a card's art); sourceArt is the art rendered. */
+	async setDeckBannerBlend(id: string, expectedArt: string | null, sourceArt: string, expectedCrop: string | null,
 		config: string, revision: string, images: { desktop: Buffer; mobile: Buffer; tile: Buffer }, historyValue = config): Promise<boolean> {
 		return this.db.transaction((tx) => {
 			const deck = tx.get<Deck>('SELECT Art, BannerCropJson FROM Decks WHERE DeckId = ?', [id]);
@@ -416,7 +417,7 @@ export class Database {
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(DeckId) DO UPDATE SET
 				ConfigJson=excluded.ConfigJson, SourceArt=excluded.SourceArt, CropJson=excluded.CropJson, Revision=excluded.Revision,
 				DesktopImage=excluded.DesktopImage, MobileImage=excluded.MobileImage, TileImage=excluded.TileImage, HistoryJson=excluded.HistoryJson`,
-				[id, config, expectedArt, expectedCrop, revision, images.desktop, images.mobile, images.tile, historyValue]);
+				[id, config, sourceArt, expectedCrop, revision, images.desktop, images.mobile, images.tile, historyValue]);
 			if (previous?.ConfigJson !== config) this.recordDeckDetailEdit(tx, id, [{ field: 'bannerBlend', before: previous ? previous.HistoryJson ?? previous.ConfigJson : null, after: historyValue }]);
 			return true;
 		});

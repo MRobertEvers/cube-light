@@ -146,7 +146,7 @@ test('migration adds HistoryJson without disturbing blends saved by the previous
 		await database.setDeckArt(Number(id), '/images/art_crop/x.jpg', 'card');
 		const legacy = JSON.stringify({ method: 'multiband', contentAware: true, position: 0.5, width: 0.18, surface: '#f2e9e6' });
 		const images = { desktop: png(1440, 224), mobile: png(720, 224), tile: png(640, 224) };
-		assert.equal(await database.setDeckBannerBlend(id, '/images/art_crop/x.jpg', null, legacy, 'a'.repeat(64), images), true);
+		assert.equal(await database.setDeckBannerBlend(id, '/images/art_crop/x.jpg', '/images/art_crop/x.jpg', null, legacy, 'a'.repeat(64), images), true);
 		// Recreate the pre-migration table shape (no HistoryJson), as written by the previous release.
 		database.db.exec('ALTER TABLE DeckBannerBlends DROP COLUMN HistoryJson');
 		await database.close();
@@ -156,4 +156,37 @@ test('migration adds HistoryJson without disturbing blends saved by the previous
 		assert.equal(row.Revision, 'a'.repeat(64));
 		assert.deepEqual(Buffer.from(await database.getDeckBannerBlendImage(id, 'desktop', 'a'.repeat(64))), images.desktop);
 	} finally { await database.close(); fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('decks without chosen art save and serve blends for their first card\'s art', async () => {
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cube-blend-fallback-'));
+	const file = path.join(directory, 'app.sqlite');
+	const database = await Database.Sqlite(file);
+	const id = String(await database.createDeck('Fallback art'));
+	const publicId = (await database.getDeck(id)).PublicId;
+	const scryfallId = '1e8f9ef5-762f-438f-b06b-9c30c4e364f0';
+	const card = { uuid: 'card-1', name: 'Guttersnipe', scryfallId, types: 'Creature', manaCost: '{2}{R}' };
+	await database.addDeckCards(id, [{ uuid: card.uuid, count: 1 }]);
+	const app = express();
+	app.use(createRoutesDecks(new PathBuilder('/decks'), database, { queryCardInfo: async () => [card], getCardDataByUuids: async () => [card] }));
+	const server = await new Promise(resolve => { const server = app.listen(0, '127.0.0.1', () => resolve(server)); });
+	try {
+		const base = `http://127.0.0.1:${server.address().port}`;
+		const url = `${base}/decks/${publicId}`;
+		const before = await (await fetch(url)).json();
+		assert.equal(before.icon, `${base}/images/art_crop/${scryfallId}.jpg`);
+		const config = { method: 'multiband', contentAware: true, position: 0.5, width: 0.18, surface: '#f2e9e6' };
+		const crop = { desktop: { x: 0.5, y: 0.5, zoom: 1 }, mobile: { x: 0.5, y: 0.5, zoom: 1 } };
+		const images = { desktop: png(1440, 224).toString('base64'), mobile: png(720, 224).toString('base64'), tile: png(640, 224).toString('base64') };
+		const response = await fetch(`${url}/banner-blend`, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ source: before.icon, config, crop, images }) });
+		assert.equal(response.status, 204);
+		const after = await (await fetch(url)).json();
+		assert.deepEqual(after.bannerBlend.config, config);
+		assert.ok(after.bannerBlend.images);
+		const list = await (await fetch(`${base}/decks`)).json();
+		assert.ok(list.find((deck) => deck.deckId === publicId).bannerBlend.images);
+	} finally {
+		await new Promise(resolve => server.close(resolve)); await database.close(); fs.rmSync(directory, { recursive: true, force: true });
+	}
 });
