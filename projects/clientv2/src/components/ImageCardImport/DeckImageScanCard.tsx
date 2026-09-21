@@ -164,7 +164,7 @@ export function ImageScanContent(props: { task: ImageScanTask }) {
 		</div>
 		{task.error && <p className={modalStyles.error} role="alert">{task.error}</p>}
 		<h3 className={styles.sectionTitle}>Cards extracted so far ({task.candidates.length})</h3>
-		<p className={styles.help}>This list updates while OCR runs. Hover a card to outline every match, or click its name for a zoomed view. Exact names are added automatically.</p>
+		<p className={styles.help}>This list updates while OCR runs. Hover a card to outline every match, or click its name for a zoomed view. Names resolved to the card index are added automatically.</p>
 		<div className={styles.candidates}>
 			{groups.map((group) => {
 				const added = task.addedCounts[group.name] ?? 0;

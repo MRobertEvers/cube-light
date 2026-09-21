@@ -1,7 +1,7 @@
 import { fetchAPICardNames } from 'src/api/fetch-api-card-names';
 import { fetchAPIImportCards, type ImportedCard } from 'src/api/fetch-api-import-cards';
 import { scanCardImage, type CardImageCandidate, type ImageRegion } from './card-image-ocr';
-import { normalizeCardName } from './card-name-match';
+import { resolvedCandidateAdditions } from './image-import-auto-add';
 
 export type ImageScanStatus = 'queued' | 'loading' | 'scanning' | 'adding' | 'completed' | 'error';
 
@@ -95,18 +95,8 @@ class ImageImportQueue {
 		return task.writes;
 	}
 
-	private scheduleExactMatches(task: InternalTask) {
-		const totals = new Map<string, number>();
-		for (const candidate of task.candidates) {
-			if (candidate.score < 98 || normalizeCardName(candidate.text) !== normalizeCardName(candidate.name)) continue;
-			totals.set(candidate.name, (totals.get(candidate.name) ?? 0) + 1);
-		}
-		const additions: ImportedCard[] = [];
-		for (const [name, total] of totals) {
-			const delta = total - (task.plannedCounts[name] ?? 0);
-			if (delta > 0) additions.push({ name, count: delta });
-		}
-		void this.scheduleAdditions(task, additions);
+	private scheduleResolvedMatches(task: InternalTask) {
+		void this.scheduleAdditions(task, resolvedCandidateAdditions(task.candidates, task.plannedCounts));
 	}
 
 	async addCandidate(taskId: string, name: string, count: number): Promise<void> {
@@ -133,7 +123,7 @@ class ImageImportQueue {
 						task.total = update.total;
 						task.region = update.region;
 						task.candidates = update.candidates;
-						this.scheduleExactMatches(task);
+						this.scheduleResolvedMatches(task);
 						this.publish();
 					}, () => !!task.error);
 					if (!task.error) {
