@@ -14,6 +14,13 @@ const LINEAR = Float32Array.from({ length: 256 }, (_, i) => linear(i));
 export const SURFACE_START = 0.68;
 /** Half-range of the seam search around the requested position, as a fraction of width. */
 export const SEAM_REACH = 0.12;
+/**
+ * Fraction of the protected subject kept past the seam centre: 1 at the seam (plus a small
+ * margin), 0 where the background has fully become the surface.
+ */
+export function foregroundGate(distance: number, half: number): number {
+	return 1 - smooth(half * 0.15, half, distance);
+}
 
 /**
  * Protected-subject layers resampled into the output frame (see banner-subject.ts).
@@ -98,7 +105,8 @@ function seamCost(source: Float32Array, w: number, h: number, config: BannerBlen
 	const band = Math.ceil(half);
 	const fade = new Float32Array(2 * band + 1), gate = new Float32Array(band + 1);
 	for (let k = -band; k <= band; k++) fade[k + band] = smooth(-half, half, k);
-	for (let k = 0; k <= band; k++) gate[k] = smooth(0, half, k);
+	// Pixel centres sit at k + 0.5 from an integer seam column (see seamDistance).
+	for (let k = 0; k <= band; k++) gate[k] = 1 - foregroundGate(k + 0.5, half);
 	const center = config.position * w;
 	for (let y = 0; y < h; y++) for (let j = 0; j < n; j++) {
 		const x = x0 + j, row = y * w;
@@ -256,7 +264,7 @@ export function blendBannerPixels(rgba: Uint8ClampedArray, w: number, h: number,
 		const d = distance[p];
 		// Seam-relative guards: untouched art before the band, exact surface after it.
 		const enter = smooth(-half * 1.3, -half, d), leave = smooth(half * 0.85, half, d);
-		const a = subject ? subject.alpha[p] * (1 - smooth(0, half, d)) : 0;
+		const a = subject ? subject.alpha[p] * foregroundGate(d, half) : 0;
 		for (let ch = 0; ch < 3; ch++) {
 			const k = p * 3 + ch;
 			const foreground = subject ? source[k] + subject.foregroundDelta[k] : 0;

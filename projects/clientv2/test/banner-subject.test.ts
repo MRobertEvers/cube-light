@@ -4,7 +4,7 @@ import { MaxFlowGraph } from '../src/utils/banner-maxflow';
 import { GC_BGD, GC_PR_FGD, GC_FGD, grabCut } from '../src/utils/banner-grabcut';
 import { decontaminate, guidedFilter, pushPull, refineMask } from '../src/utils/banner-matting';
 import { computeSubjectLayer, protectionLabels } from '../src/utils/banner-subject';
-import { blendBannerPixels, findSeam, SURFACE_START, type SubjectFrame } from '../src/utils/banner-blend-algorithms';
+import { blendBannerPixels, findSeam, foregroundGate, seamBounds, SURFACE_START, type SubjectFrame } from '../src/utils/banner-blend-algorithms';
 import { configForGeneration, DEFAULT_BANNER_BLEND, hasProtection, normalizeBannerBlendConfig, BANNER_BLEND_ALGORITHM_VERSION, type BannerProtection } from '../src/utils/banner-blend';
 
 function rng(seed: number) { return () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return ((seed >>> 0) % 100000) / 100000; }; }
@@ -55,11 +55,14 @@ function synthetic(width: number, height: number) {
 	// A warm, textured disc (the "subject") on a cool, textured background.
 	const random = rng(99), rgba = new Uint8ClampedArray(width * height * 4), truth = new Uint8Array(width * height);
 	for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
-		const p = y * width + x, inside = (x - width * 0.55) ** 2 + (y - height * 0.5) ** 2 < (height * 0.3) ** 2;
-		truth[p] = inside ? 1 : 0;
-		const noise = (random() - 0.5) * 30;
-		rgba[p * 4] = inside ? 200 + noise : 60 + noise; rgba[p * 4 + 1] = inside ? 120 + noise : 110 + noise;
-		rgba[p * 4 + 2] = inside ? 70 + noise : 170 + noise; rgba[p * 4 + 3] = 255;
+		// 4×4 supersampled coverage gives an anti-aliased (partially transparent) edge like real art.
+		let coverage = 0;
+		for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++)
+			if ((x + (i + 0.5) / 4 - width * 0.55) ** 2 + (y + (j + 0.5) / 4 - height * 0.5) ** 2 < (height * 0.3) ** 2) coverage += 1 / 16;
+		const p = y * width + x;
+		truth[p] = coverage >= 0.5 ? 1 : 0;
+		const noise = (random() - 0.5) * 30, mix = (fg: number, bg: number) => coverage * fg + (1 - coverage) * bg + noise;
+		rgba[p * 4] = mix(200, 60); rgba[p * 4 + 1] = mix(120, 110); rgba[p * 4 + 2] = mix(70, 170); rgba[p * 4 + 3] = 255;
 	}
 	return { rgba, truth };
 }
@@ -149,8 +152,13 @@ test('seam search routes the transition around a protected subject', () => {
 	// Subject occupying x ∈ [150, 185), right on top of the default position (0.5·w = 160).
 	for (let y = 0; y < h; y++) for (let x = 150; x < 185; x++) alpha[y * w + x] = 1;
 	const subject: SubjectFrame = { alpha, foregroundDelta: new Float32Array(w * h * 3), backgroundDelta: new Float32Array(w * h * 3) };
-	const path = findSeam(source, w, h, { ...DEFAULT_BANNER_BLEND, width: 0.12 }, subject);
-	for (const x of path) assert.ok(x >= 184, `seam at ${x} would fade the subject`);
+	const config = { ...DEFAULT_BANNER_BLEND, width: 0.12 };
+	const path = findSeam(source, w, h, config, subject);
+	const { half } = seamBounds(w, config);
+	for (const seam of path) for (let x = 150; x < 185; x++)
+		assert.ok(foregroundGate(x + 0.5 - seam, half) > 0.999, `seam at ${seam} would fade subject column ${x}`);
+	// Without protection the flat image gives the seam no reason to leave the requested position.
+	assert.ok(findSeam(source, w, h, config).every((x) => Math.abs(x - 160) < 1));
 });
 
 test('subject-preserving composite keeps protected pixels, reaches the exact surface, and is deterministic', () => {
