@@ -1,4 +1,5 @@
 import { API_URI } from '../config/api-url';
+import { apiFetch } from './utils';
 import type { CardPalette } from '../utils/card-palette';
 import type { BannerCrop } from '../utils/banner-crop';
 import type { DeckTopStyle } from '../utils/deck-top-style';
@@ -42,7 +43,7 @@ export type FetchAPIDeckResponse = {
 export async function fetchAPIDeck(
 	deckId: string
 ): Promise<FetchAPIDeckResponse> {
-	const fetchResult = await fetch(`${API_URI}/decks/${deckId}`, {
+	const fetchResult = await apiFetch(`${API_URI}/decks/${deckId}`, {
 		method: 'GET'
 	});
 

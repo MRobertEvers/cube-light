@@ -1,11 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Link } from 'react-router-dom';
 import { fetchAPICardNames } from 'src/api/fetch-api-card-names';
 import {
 	type ImageScanTask,
 	imageImportQueue
 } from 'src/utils/image-import-queue';
 import { useImageImportQueue } from 'src/utils/use-image-import-queue';
+import { useWorkQueue } from 'src/utils/work-queue';
+import { workProgress, workStatusText } from 'src/utils/work-status';
 import { type ImageRegion } from 'src/utils/card-image-ocr';
 import { LogoInkwellPulse } from 'src/components/LogoInkwellPulse/LogoInkwellPulse';
 import modalStyles from './image-card-import.module.css';
@@ -341,14 +344,20 @@ export function ImageScanContent(props: { task: ImageScanTask }) {
 			</h3>
 			<p className={styles.help}>
 				This list updates while OCR runs. Hover a card to outline every
-				match, or click its name for a zoomed view. Names resolved to
-				the card index are added automatically.
+				match, or click its name for a zoomed view.{' '}
+				{task.workId
+					? 'Names resolved to the card index are added together when the scan finishes.'
+					: 'Names resolved to the card index are added automatically.'}
 			</p>
 			<div className={styles.candidates}>
 				{groups.map((group) => {
 					const added = task.addedCounts[group.name] ?? 0;
 					const planned = task.plannedCounts[group.name] ?? 0;
-					const pending = Math.max(0, group.count - planned);
+					// Queued scans add their matches at the end, so nothing is pending until then.
+					const pending =
+						task.workId && task.status !== 'completed'
+							? 0
+							: Math.max(0, group.count - planned);
 					return (
 						<div
 							className={`${styles.candidate} ${zoomName === group.name ? styles.candidateSelected : ''}`}
@@ -522,11 +531,45 @@ export function DeckImageScanCard(props: { deckId: string }) {
 	const tasks = useImageImportQueue().filter(
 		(task) => task.deckId === deckId
 	);
+	// Photos queued from a phone that aren't being scanned in this tab.
+	const queued = (useWorkQueue().items ?? []).filter(
+		(item) =>
+			item.deck?.deckId === deckId &&
+			item.status !== 'completed' &&
+			!tasks.some((task) => task.workId === item.workId)
+	);
 	const [openId, setOpenId] = useState<string | null>(null);
 	const openTask = tasks.find((task) => task.id === openId);
-	if (tasks.length === 0) return null;
+	if (tasks.length === 0 && queued.length === 0) return null;
 	return (
 		<div className={styles.list}>
+			{queued.map((item) => {
+				const progress = workProgress(item);
+				return (
+					<Link className={styles.card} to="/queue" key={item.workId}>
+						<span className={styles.cardTitle}>
+							<LogoInkwellPulse
+								size={26}
+								active={item.status === 'running'}
+							/>{' '}
+							{item.status === 'failed'
+								? 'Queued photo scan'
+								: 'Photo queued for a computer'}
+						</span>
+						<span className={styles.cardStatus}>
+							{workStatusText(item)}
+						</span>
+						{progress !== null && (
+							<progress value={progress} max={1} />
+						)}
+						<span className={styles.cardFoot}>
+							{item.status === 'pending'
+								? 'Cards are added when Cube Light next opens on a computer'
+								: 'Open the queue for details'}
+						</span>
+					</Link>
+				);
+			})}
 			{tasks.map((task) => (
 				<button
 					className={styles.card}

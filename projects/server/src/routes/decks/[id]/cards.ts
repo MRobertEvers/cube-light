@@ -3,6 +3,11 @@ import { Request, Response } from 'express';
 import { Database } from '../../../database/app/database';
 import { CardDatabase } from '../../../database/cards/CardDatabase';
 import { cardImagePath } from '../../../images/card-images';
+import {
+	applyImport,
+	resolveImportCards,
+	validImportCards
+} from '../../../app/import-deck-cards';
 import { PathBuilder } from '../../../utils/PathBuilder';
 
 export function createRoutesDecksIdCards(
@@ -17,44 +22,19 @@ export function createRoutesDecksIdCards(
 	app.use(json());
 	app.options(routePath, async (req: Request, res: Response) => {
 		res.status(200);
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-		res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST');
 		res.send();
 	});
 	app.options(
 		pathBuilder.pathAt('/import'),
 		(_req: Request, res: Response) => {
-			res.setHeader('Access-Control-Allow-Origin', '*');
-			res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-			res.setHeader('Access-Control-Allow-Methods', 'POST');
 			res.sendStatus(200);
 		}
 	);
 	app.post(
 		pathBuilder.pathAt('/import'),
 		async (req: Request<{ id: string }>, res: Response) => {
-			res.setHeader('Access-Control-Allow-Origin', '*');
-			res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-			const cards = req.body?.cards as
-				| Array<{ name?: unknown; count?: unknown; setCode?: unknown }>
-				| undefined;
-			if (
-				!Array.isArray(cards) ||
-				cards.length === 0 ||
-				cards.length > 1000 ||
-				!cards.every(
-					(card) =>
-						card &&
-						typeof card.name === 'string' &&
-						card.name.trim() &&
-						Number.isInteger(card.count) &&
-						(card.count as number) > 0 &&
-						(card.count as number) <= 999 &&
-						(card.setCode === undefined ||
-							typeof card.setCode === 'string')
-				)
-			) {
+			const cards: unknown = req.body?.cards;
+			if (!validImportCards(cards)) {
 				res.sendStatus(400);
 				return;
 			}
@@ -63,35 +43,8 @@ export function createRoutesDecksIdCards(
 				res.sendStatus(404);
 				return;
 			}
-			const edits: Array<{ uuid: string; action: 'add'; count: number }> =
-				[];
-			let firstCard:
-				| Awaited<ReturnType<CardDatabase['queryCardsByName']>>[number]
-				| undefined;
-			const unknownCards: string[] = [];
-			for (const card of cards) {
-				const printings = await cardDatabase.queryCardsByName(
-					(card.name as string).trim()
-				);
-				const setCode =
-					typeof card.setCode === 'string'
-						? card.setCode.toUpperCase()
-						: undefined;
-				const found =
-					printings.find(
-						(printing) => printing.setCode.toUpperCase() === setCode
-					) ?? printings[0];
-				if (!found) {
-					unknownCards.push(card.name as string);
-					continue;
-				}
-				firstCard ??= found;
-				edits.push({
-					uuid: found.uuid,
-					action: 'add',
-					count: card.count as number
-				});
-			}
+			const resolved = await resolveImportCards(cardDatabase, cards);
+			const { unknownCards } = resolved;
 			if (unknownCards.length > 0) {
 				res.status(400).json({
 					error:
@@ -102,31 +55,15 @@ export function createRoutesDecksIdCards(
 				});
 				return;
 			}
-			const edit = database.applyDeckCardEdit(String(deck.DeckId), edits);
-			if (edit?.cardsIn.length && !deck.Art && firstCard) {
-				const art = cardImagePath(firstCard.scryfallId, 'art_crop');
-				if (art)
-					await database.setDeckArt(deck.DeckId, art, firstCard.uuid);
-			}
-			res.json({
-				added: cards.reduce(
-					(total, card) => total + (card.count as number),
-					0
-				)
-			});
+			res.json({ added: await applyImport(database, deck, resolved) });
 		}
 	);
 	const editPath = pathBuilder.pathAt('/edit');
 	app.options(editPath, (_req: Request, res: Response) => {
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-		res.setHeader('Access-Control-Allow-Methods', 'POST');
 		res.sendStatus(204);
 	});
 	app.post(editPath, async (req: Request<{ id: string }>, res: Response) => {
 		const { id } = req.params;
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
 		const { remove, upsert } = (req.body || {}) as {
 			remove: string[];
@@ -172,9 +109,6 @@ export function createRoutesDecksIdCards(
 		]);
 
 		res.status(200);
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-		res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST');
 		res.send();
 	});
 	app.post(routePath, async (req: Request<{ id: string }>, res: Response) => {
@@ -190,8 +124,6 @@ export function createRoutesDecksIdCards(
 			count?: number;
 		};
 
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 		if (
 			typeof cardName !== 'string' ||
 			!cardName.trim() ||

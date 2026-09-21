@@ -1,4 +1,5 @@
 import { API_URI } from '../config/api-url';
+import { apiFetch } from './utils';
 
 export type ImportedCard = { name: string; count: number; setCode?: string };
 
@@ -15,7 +16,7 @@ export async function fetchAPIImportCards(
 	deckId: string,
 	cards: ImportedCard[]
 ): Promise<void> {
-	const response = await fetch(`${API_URI}/decks/${deckId}/cards/import`, {
+	const response = await apiFetch(`${API_URI}/decks/${deckId}/cards/import`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ cards })

@@ -29,7 +29,6 @@ export function createRoutesSuggest(
 		const cards = await cardDatabase.queryCardsByNameStub(stub as string);
 
 		const cardNames = cards.map((card) => card.name);
-		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Content-Type', 'application/json');
 		res.send(JSON.stringify(cardNames));
 	});
@@ -37,7 +36,6 @@ export function createRoutesSuggest(
 	app.get(
 		path.pathAt('/card-names/index'),
 		(_req: Request, res: Response) => {
-			res.setHeader('Access-Control-Allow-Origin', '*');
 			res.type('application/octet-stream');
 			res.sendFile(NAME_INDEX_FILEPATH);
 		}
@@ -46,7 +44,6 @@ export function createRoutesSuggest(
 	app.get(
 		path.pathAt('/card-names/all'),
 		async (_req: Request, res: Response) => {
-			res.setHeader('Access-Control-Allow-Origin', '*');
 			try {
 				allNames ??= cardDatabase.queryAllCardNames().catch((error) => {
 					allNames = undefined;
@@ -60,7 +57,6 @@ export function createRoutesSuggest(
 	);
 
 	app.get(path.pathAt('/card-names/wasm'), (_req: Request, res: Response) => {
-		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.type('application/wasm');
 		res.sendFile(NAME_WASM_FILEPATH);
 	});

@@ -1,4 +1,5 @@
 import { API_URI } from '../config/api-url';
+import { apiFetch } from './utils';
 
 export type DeckHistoryCard = {
 	uuid: string;
@@ -33,7 +34,7 @@ export type DeckHistoryResponse = {
 export async function fetchAPIDeckHistory(
 	deckId: string
 ): Promise<DeckHistoryResponse> {
-	const response = await fetch(`${API_URI}/decks/${deckId}/history`);
+	const response = await apiFetch(`${API_URI}/decks/${deckId}/history`);
 	if (!response.ok)
 		throw new Error(`Could not load deck history (${response.status})`);
 	return response.json() as Promise<DeckHistoryResponse>;

@@ -1,4 +1,5 @@
 import { API_URI } from '../config/api-url';
+import { apiFetch } from './utils';
 
 export type FetchCreateCollectionResponse = {
 	collection_id: string;
@@ -7,7 +8,7 @@ export type FetchCreateCollectionResponse = {
 export async function fetchAPICreateCollection(
 	name: string
 ): Promise<FetchCreateCollectionResponse> {
-	const fetchResult = await fetch(`${API_URI}/collection`, {
+	const fetchResult = await apiFetch(`${API_URI}/collection`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'

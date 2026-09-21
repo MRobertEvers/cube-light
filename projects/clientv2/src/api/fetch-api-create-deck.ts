@@ -1,4 +1,5 @@
 import { API_URI } from '../config/api-url';
+import { apiFetch } from './utils';
 
 export type FetchCreateDeckResponse = {
 	deckId: string;
@@ -7,7 +8,7 @@ export type FetchCreateDeckResponse = {
 export async function fetchAPICreateDeck(
 	name: string
 ): Promise<FetchCreateDeckResponse> {
-	const fetchResult = await fetch(`${API_URI}/decks`, {
+	const fetchResult = await apiFetch(`${API_URI}/decks`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'

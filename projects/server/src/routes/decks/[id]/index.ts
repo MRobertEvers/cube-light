@@ -80,9 +80,6 @@ export function createRoutesDecksId(
 
 	app.options(routePath, async (req: Request, res: Response) => {
 		res.status(200);
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-		res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
 		res.send();
 	});
 	app.get(routePath, async (req: Request<{ id: string }>, res: Response) => {
@@ -111,8 +108,6 @@ export function createRoutesDecksId(
 			{} as Record<string, DeckOverviewCardInfo>
 		);
 
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 		res.setHeader('Content-Type', 'application/json');
 
 		const cardData = deckCards.map((deckCard) => {
@@ -220,7 +215,6 @@ export function createRoutesDecksId(
 		}
 	);
 	app.put(routePath, async (req: Request<{ id: string }>, res: Response) => {
-		res.setHeader('Access-Control-Allow-Origin', '*');
 		const { id } = req.params;
 		const { name, bannerCardUuid } = (req.body ?? {}) as {
 			name?: unknown;
@@ -275,15 +269,11 @@ export function createRoutesDecksId(
 	});
 	const palettePath = pathBuilder.pathAt('/palette');
 	app.options(palettePath, (req: Request, res: Response) => {
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-		res.setHeader('Access-Control-Allow-Methods', 'PUT');
 		res.sendStatus(204);
 	});
 	app.put(
 		palettePath,
 		async (req: Request<{ id: string }>, res: Response) => {
-			res.setHeader('Access-Control-Allow-Origin', '*');
 			const palette = req.body?.palette;
 			if (
 				palette !== null &&
@@ -314,13 +304,9 @@ export function createRoutesDecksId(
 	);
 	const cropPath = pathBuilder.pathAt('/banner-crop');
 	app.options(cropPath, (_req: Request, res: Response) => {
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-		res.setHeader('Access-Control-Allow-Methods', 'PUT');
 		res.sendStatus(204);
 	});
 	app.put(cropPath, async (req: Request<{ id: string }>, res: Response) => {
-		res.setHeader('Access-Control-Allow-Origin', '*');
 		const crop = req.body?.bannerCrop;
 		if (!validBannerCrop(crop)) {
 			res.sendStatus(400);
@@ -339,15 +325,11 @@ export function createRoutesDecksId(
 	});
 	const topStylePath = pathBuilder.pathAt('/top-style');
 	app.options(topStylePath, (_req: Request, res: Response) => {
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-		res.setHeader('Access-Control-Allow-Methods', 'PUT');
 		res.sendStatus(204);
 	});
 	app.put(
 		topStylePath,
 		async (req: Request<{ id: string }>, res: Response) => {
-			res.setHeader('Access-Control-Allow-Origin', '*');
 			const topStyle = req.body?.topStyle;
 			if (topStyle !== 'card' && topStyle !== 'full-art') {
 				res.sendStatus(400);
@@ -366,8 +348,6 @@ export function createRoutesDecksId(
 		routePath,
 		async (req: Request<{ id: string }>, res: Response) => {
 			const { id } = req.params;
-			res.setHeader('Access-Control-Allow-Origin', '*');
-			res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 			res.setHeader('Content-Type', 'application/json');
 
 			const deck = await database.getDeckByPublicId(id);
@@ -390,8 +370,6 @@ export function createRoutesDecksId(
 		pathBuilder.pathAt('/card-names'),
 		async (req: Request<{ id: string }>, res: Response) => {
 			const { id } = req.params;
-			res.setHeader('Access-Control-Allow-Origin', '*');
-			res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 			res.setHeader('Content-Type', 'application/json');
 
 			const deck = await database.getDeckByPublicId(id);

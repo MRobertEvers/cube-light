@@ -1,4 +1,5 @@
 import { API_URI } from '../config/api-url';
+import { apiFetch } from './utils';
 
 export type FetchStorageLocationsLocationResponse = {
 	storage_location_id: string;
@@ -19,7 +20,7 @@ export async function fetchAPIStorageLocations(
 		}
 	}
 
-	const response = await fetch(
+	const response = await apiFetch(
 		`${API_URI}/storage-location/search?${q.toString()}`,
 		{
 			method: 'GET'

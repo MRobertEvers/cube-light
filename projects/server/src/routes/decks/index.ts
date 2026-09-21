@@ -22,15 +22,10 @@ export function createRoutesDecks(
 	app.use(json());
 	app.options(routePath, async (req: Request, res: Response) => {
 		res.status(200);
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-		res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
 		res.send();
 	});
 	app.post(routePath, async (req: Request, res: Response) => {
 		const { name } = req.body;
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
 		const rowId = await database.createDeck(name);
 		const deckId = (await database.getDeck(String(rowId)))!.PublicId;
@@ -46,7 +41,6 @@ export function createRoutesDecks(
 		const pageStartVal = Number(req.query.pageStart ?? 0);
 		const pageSizeVal = Number(req.query.pageSize ?? 15);
 
-		res.setHeader('Access-Control-Allow-Origin', '*');
 		if (
 			!Number.isInteger(pageStartVal) ||
 			!Number.isInteger(pageSizeVal) ||

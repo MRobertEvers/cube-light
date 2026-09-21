@@ -12,6 +12,7 @@ const {
 	localDeckArtUrl
 } = require('../build/src/images/card-images');
 const { createRoutesImages } = require('../build/src/routes/images');
+const { cors } = require('../build/src/auth/middleware');
 
 const id = '67f4c93b-080c-4196-b095-6a120a221988';
 const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
@@ -38,6 +39,7 @@ test('serves a Scryfall image once, persists it, and handles browser caching', a
 			});
 		});
 		const app = express();
+		app.use(cors);
 		app.use(createRoutesImages(images));
 		server = app.listen(0, '127.0.0.1');
 		await once(server, 'listening');

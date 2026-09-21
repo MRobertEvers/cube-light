@@ -8,6 +8,9 @@ import { CardDatabase } from './database/cards/CardDatabase';
 import { createRoutes } from './routes/routes';
 import { CardImageService } from './images/card-images';
 import { FileImageCache } from './images/FileImageCache';
+import { createKVStore } from './auth/kv-store';
+import { SessionStore } from './auth/sessions';
+import { UserStore } from './auth/UserStore';
 
 const PORT = 4040;
 
@@ -20,9 +23,16 @@ async function main() {
 		new FileImageCache(path.join(os.homedir(), 'Documents/mtg-card-images'))
 	);
 
+	const kv = createKVStore();
+	const auth = {
+		users: await UserStore.Sqlite('database.sqlite'),
+		sessions: new SessionStore(kv),
+		kv
+	};
+
 	const app = express();
 
-	app.use(createRoutes(db, cDb, images));
+	app.use(createRoutes(db, cDb, images, auth));
 
 	const server = new Server(
 		{

@@ -1,0 +1,393 @@
+{
+  "image": "IMG_8535.jpeg",
+  "width": 5712,
+  "height": 4284,
+  "notes": "Full = sufficient exposed title to identify independently. Partial = identity annotated using visible art and adjacent cards; must not imply OCR can recover the hidden suffix. Unreadable left-edge stack, partially exposed Unsummon at right and completely hidden cards excluded from known-name scoring; any detections there require review. Exact physical total is indeterminate.",
+  "cards": [
+    {
+      "id": "card-01",
+      "name": "Inventor's Goggles",
+      "visibility": "full",
+      "box": [
+        1882,
+        1002,
+        395,
+        56
+      ]
+    },
+    {
+      "id": "card-02",
+      "name": "Inventor's Goggles",
+      "visibility": "partial",
+      "box": [
+        1359,
+        1049,
+        125,
+        53
+      ]
+    },
+    {
+      "id": "card-03",
+      "name": "Inventor's Goggles",
+      "visibility": "partial",
+      "box": [
+        1503,
+        1015,
+        169,
+        53
+      ]
+    },
+    {
+      "id": "card-04",
+      "name": "Inventor's Goggles",
+      "visibility": "partial",
+      "box": [
+        1691,
+        1015,
+        163,
+        53
+      ]
+    },
+    {
+      "id": "card-05",
+      "name": "Inventor's Axe",
+      "visibility": "full",
+      "box": [
+        454,
+        1152,
+        473,
+        116
+      ]
+    },
+    {
+      "id": "card-06",
+      "name": "Inventor's Axe",
+      "visibility": "partial",
+      "box": [
+        294,
+        1262,
+        160,
+        72
+      ]
+    },
+    {
+      "id": "card-07",
+      "name": "Galvanic Blast",
+      "visibility": "full",
+      "box": [
+        2427,
+        1037,
+        385,
+        50
+      ]
+    },
+    {
+      "id": "card-08",
+      "name": "Galvanic Discharge",
+      "visibility": "full",
+      "box": [
+        3470,
+        968,
+        357,
+        106
+      ]
+    },
+    {
+      "id": "card-09",
+      "name": "Galvanic Discharge",
+      "visibility": "partial",
+      "box": [
+        3100,
+        952,
+        135,
+        41
+      ]
+    },
+    {
+      "id": "card-10",
+      "name": "Galvanic Discharge",
+      "visibility": "partial",
+      "box": [
+        3244,
+        949,
+        78,
+        41
+      ]
+    },
+    {
+      "id": "card-11",
+      "name": "Galvanic Discharge",
+      "visibility": "partial",
+      "box": [
+        3319,
+        971,
+        132,
+        44
+      ]
+    },
+    {
+      "id": "card-12",
+      "name": "Kenku Artificer",
+      "visibility": "full",
+      "box": [
+        2202,
+        1488,
+        413,
+        66
+      ]
+    },
+    {
+      "id": "card-13",
+      "name": "Kenku Artificer",
+      "visibility": "partial",
+      "box": [
+        2029,
+        1503,
+        160,
+        63
+      ]
+    },
+    {
+      "id": "card-14",
+      "name": "Aether Swooper",
+      "visibility": "full",
+      "box": [
+        1278,
+        1744,
+        470,
+        75
+      ]
+    },
+    {
+      "id": "card-15",
+      "name": "Aether Swooper",
+      "visibility": "partial",
+      "box": [
+        658,
+        1857,
+        204,
+        81
+      ]
+    },
+    {
+      "id": "card-16",
+      "name": "Aether Swooper",
+      "visibility": "partial",
+      "box": [
+        867,
+        1807,
+        204,
+        81
+      ]
+    },
+    {
+      "id": "card-17",
+      "name": "Aether Swooper",
+      "visibility": "partial",
+      "box": [
+        1087,
+        1776,
+        169,
+        75
+      ]
+    },
+    {
+      "id": "card-18",
+      "name": "Aether Chaser",
+      "visibility": "full",
+      "box": [
+        0,
+        2123,
+        175,
+        138
+      ]
+    },
+    {
+      "id": "card-19",
+      "name": "Aether Chaser",
+      "visibility": "full",
+      "box": [
+        185,
+        1948,
+        435,
+        175
+      ]
+    },
+    {
+      "id": "card-20",
+      "name": "Aether Chaser",
+      "visibility": "full",
+      "box": [
+        4879,
+        2371,
+        401,
+        91
+      ]
+    },
+    {
+      "id": "card-21",
+      "name": "Aether Chaser",
+      "visibility": "full",
+      "box": [
+        4979,
+        2471,
+        432,
+        91
+      ]
+    },
+    {
+      "id": "card-22",
+      "name": "Cloudsculpt Technician",
+      "visibility": "full",
+      "box": [
+        3711,
+        1544,
+        323,
+        97
+      ]
+    },
+    {
+      "id": "card-23",
+      "name": "Cloudsculpt Technician",
+      "visibility": "full",
+      "box": [
+        4037,
+        1635,
+        423,
+        207
+      ]
+    },
+    {
+      "id": "card-24",
+      "name": "Cloudsculpt Technician",
+      "visibility": "partial",
+      "box": [
+        3360,
+        1534,
+        110,
+        60
+      ]
+    },
+    {
+      "id": "card-25",
+      "name": "Cloudsculpt Technician",
+      "visibility": "partial",
+      "box": [
+        3476,
+        1531,
+        200,
+        85
+      ]
+    },
+    {
+      "id": "card-26",
+      "name": "Metallic Rebuke",
+      "visibility": "full",
+      "box": [
+        827,
+        2646,
+        545,
+        188
+      ]
+    },
+    {
+      "id": "card-27",
+      "name": "Metallic Rebuke",
+      "visibility": "full",
+      "box": [
+        473,
+        2809,
+        338,
+        132
+      ]
+    },
+    {
+      "id": "card-28",
+      "name": "Gearseeker Serpent",
+      "visibility": "full",
+      "box": [
+        1954,
+        2424,
+        482,
+        153
+      ]
+    },
+    {
+      "id": "card-29",
+      "name": "Gearseeker Serpent",
+      "visibility": "partial",
+      "box": [
+        1726,
+        2543,
+        229,
+        100
+      ]
+    },
+    {
+      "id": "card-30",
+      "name": "Selfcraft Mechan",
+      "visibility": "full",
+      "box": [
+        2546,
+        2167,
+        413,
+        169
+      ]
+    },
+    {
+      "id": "card-31",
+      "name": "Selfcraft Mechan",
+      "visibility": "full",
+      "box": [
+        2919,
+        2214,
+        423,
+        97
+      ]
+    },
+    {
+      "id": "card-32",
+      "name": "Selfcraft Mechan",
+      "visibility": "partial",
+      "box": [
+        2690,
+        2302,
+        72,
+        91
+      ]
+    },
+    {
+      "id": "card-33",
+      "name": "Selfcraft Mechan",
+      "visibility": "partial",
+      "box": [
+        2781,
+        2267,
+        125,
+        91
+      ]
+    },
+    {
+      "id": "card-34",
+      "name": "Cryogen Relic",
+      "visibility": "full",
+      "box": [
+        3470,
+        2214,
+        294,
+        69
+      ]
+    },
+    {
+      "id": "card-35",
+      "name": "Cryogen Relic",
+      "visibility": "full",
+      "box": [
+        3827,
+        2220,
+        423,
+        72
+      ]
+    }
+  ]
+}

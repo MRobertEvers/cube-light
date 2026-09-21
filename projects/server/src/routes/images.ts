@@ -16,7 +16,6 @@ export function createRoutesImages(images: CardImageService): Router {
 			res: Response
 		) => {
 			res.setHeader('Cache-Control', 'no-store');
-			res.setHeader('Access-Control-Allow-Origin', '*');
 			const { id, variant } = req.params;
 			if (!isImageVariant(variant) || !isScryfallId(id)) {
 				res.sendStatus(400);

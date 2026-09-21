@@ -1,4 +1,5 @@
 import { API_URI } from '../config/api-url';
+import { apiFetch } from './utils';
 import type { BannerBlend } from '../utils/banner-blend';
 
 export type FetchDecksDeckResponse = {
@@ -21,7 +22,7 @@ export async function fetchAPIDecks(
 	}
 	if (pageSize > 0) q.set('pageSize', pageSize.toString());
 
-	const fetchResult = await fetch(`${API_URI}/decks?${q.toString()}`, {
+	const fetchResult = await apiFetch(`${API_URI}/decks?${q.toString()}`, {
 		method: 'GET'
 	});
 

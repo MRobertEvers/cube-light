@@ -1,4 +1,5 @@
 import { API_URI } from '../config/api-url';
+import { apiFetch } from './utils';
 
 export type FetchCollectionsCollectionResponse = {
 	collection_id: string;
@@ -19,7 +20,7 @@ export async function fetchAPICollections(
 		}
 	}
 
-	const response = await fetch(
+	const response = await apiFetch(
 		`${API_URI}/collection/search?${q.toString()}`,
 		{
 			method: 'GET'

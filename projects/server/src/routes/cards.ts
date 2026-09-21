@@ -21,7 +21,6 @@ export function createRoutesCards(
 
 		const cards = await cardDatabase.getCardUuidsByNames(names);
 
-		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Content-Type', 'application/json');
 		res.send(JSON.stringify(cards));
 	});
@@ -38,7 +37,6 @@ export function createRoutesCards(
 			imageBaseUrl(req)
 		);
 
-		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Content-Type', 'application/json');
 		res.send(JSON.stringify(cards));
 	});
@@ -59,7 +57,6 @@ export function createRoutesCards(
 			return;
 		}
 
-		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.setHeader('Content-Type', 'application/json');
 		res.send(JSON.stringify(card));
 	});
@@ -72,7 +69,6 @@ export function createRoutesCards(
 		}
 		const cards = await cardDatabase.queryCardsByName(name.trim());
 		const baseUrl = imageBaseUrl(req);
-		res.setHeader('Access-Control-Allow-Origin', '*');
 		res.json(
 			cards.map((card) => ({
 				name: card.name,

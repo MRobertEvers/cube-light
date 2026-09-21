@@ -341,3 +341,26 @@
 		min-height: 44px;
 	}
 }
+.controls .scanHere {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	cursor: pointer;
+}
+.controls .scanHere input {
+	width: 18px;
+	min-width: 18px;
+	min-height: 0;
+	height: 18px;
+	margin: 1px 0 0;
+	accent-color: #a65350;
+}
+.scanHere span {
+	display: grid;
+	gap: 2px;
+}
+.scanHere small {
+	color: #5c626a;
+	font-size: 13px;
+	font-weight: 400;
+}

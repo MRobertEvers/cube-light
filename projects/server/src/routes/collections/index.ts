@@ -11,8 +11,6 @@ export function createRoutes_Collections(database: Database) {
 	app.use(json());
 	app.post('/', async (req: Request, res: Response) => {
 		const { name } = req.body;
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
 		const rowId = await database.createCollection(name);
 		const collectionId = (await database.getCollection(rowId))!.PublicId;

@@ -200,13 +200,16 @@
 	font-weight: 600;
 }
 
-.menuPanel a {
+.menuPanel a,
+.menuPanel button {
 	padding: 10px 12px;
 	border-radius: 6px;
 }
 
 .menuPanel a:hover,
-.menuPanel a:focus-visible {
+.menuPanel a:focus-visible,
+.menuPanel button:hover,
+.menuPanel button:focus-visible {
 	background: #f4f1ef;
 	color: #8e2524;
 }

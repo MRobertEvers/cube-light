@@ -1,4 +1,5 @@
 import { API_URI } from '../config/api-url';
+import { apiFetch } from '../api/utils';
 import { DEFAULT_BANNER_CROP } from './banner-crop';
 import {
 	configForGeneration,
@@ -122,7 +123,7 @@ export async function generateAndSaveBannerBlend(
 		total: Math.round(performance.now() - started)
 	});
 	onProgress?.('Saving generated banners…', 0.97);
-	const response = await fetch(`${API_URI}/decks/${deckId}/banner-blend`, {
+	const response = await apiFetch(`${API_URI}/decks/${deckId}/banner-blend`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({

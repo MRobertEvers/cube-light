@@ -155,13 +155,9 @@ export function createBannerBlendRoutes(
 	const app = Router(),
 		route = builder.pathAt('/banner-blend');
 	app.options(route, (_req, res) => {
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-		res.setHeader('Access-Control-Allow-Methods', 'PUT');
 		res.sendStatus(204);
 	});
 	app.put(route, async (req: Request<{ id: string }>, res: Response) => {
-		res.setHeader('Access-Control-Allow-Origin', '*');
 		const { config, source, crop, images } = req.body ?? {};
 		if (
 			!validBannerBlendConfig(config) ||
@@ -253,7 +249,6 @@ export function createBannerBlendRoutes(
 			req: Request<{ id: string; variant: string; revision: string }>,
 			res: Response
 		) => {
-			res.setHeader('Access-Control-Allow-Origin', '*');
 			const { variant, revision } = req.params;
 			if (
 				!['desktop', 'mobile', 'tile'].includes(variant) ||

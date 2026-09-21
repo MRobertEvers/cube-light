@@ -13,6 +13,26 @@ TypeScript source files recompile and restart the server automatically. Stop it
 with Ctrl-C. Changes to the SQLite card data or native name-index code require
 restarting `npm run dev` so the build step regenerates those assets.
 
+## Accounts and sessions
+
+Everything except card data (`/cards`, `/suggest`, `/images`) and `/auth` requires
+a signed-in session. On a new server the client's sign-in screen offers to create
+the first account; `POST /auth/setup` refuses once any account exists. Add more
+accounts from this directory with `npm run create-user -- <username>`. Passwords
+are hashed with scrypt and stored in the `Users` table of `database.sqlite`.
+
+Sessions live in memory in a small C key-value store (`native/kv_store.c`, built
+by node-gyp as `kv_store.node`) with per-key expiry, so restarting the server signs
+everyone out. The session ID travels in an `HttpOnly`, `SameSite=Lax` cookie and
+lasts 14 days after the last request. The same store rate-limits sign-in attempts
+(10 per username and 50 per address every 15 minutes).
+
+The client runs on a different port, so the server answers with credentialed CORS
+for pages on its own hostname and refuses writes from any other origin. To serve the
+client from another host, set `CLIENT_ORIGINS` to a comma-separated list of origins,
+such as `CLIENT_ORIGINS=https://cube.example.com`. Run `npm run test:auth` to test
+the store, sign-in, and CORS.
+
 ## Card data
 
 `src/assets/AllPrintings.sqlite` is an export from [MTGJSON](https://mtgjson.com/downloads/all-files/), which combines data from Scryfall and other sources. The server reads card data and card sets from this SQLite file. MTGJSON stores Scryfall IDs in its `cardIdentifiers` table; the server uses those IDs to request card images from [Scryfall](https://scryfall.com/docs/api/cards/collection). The separate `database.sqlite` file holds this application's decks and collections.

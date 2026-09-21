@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 
-export type PublicIdKind = 'deck' | 'collection' | 'location';
+export type PublicIdKind = 'deck' | 'collection' | 'location' | 'work';
 
 // Twelve cryptographically random bytes encode to 16 URL-safe characters (96 bits).
 export function createPublicId(kind: PublicIdKind): string {

@@ -77,6 +77,29 @@ export type StorageLocation = {
 	Name: string;
 };
 
+export type WorkItemKind = 'card-image-ocr';
+export type WorkItemStatus = 'pending' | 'running' | 'completed' | 'failed';
+
+/** Work a phone hands off to the next desktop visit; the image stays until the item is removed. */
+export type WorkItem = {
+	PublicId: string;
+	Kind: WorkItemKind;
+	DeckPublicId: string | null;
+	DeckName: string | null;
+	Status: WorkItemStatus;
+	FileName: string;
+	Completed: number;
+	Total: number;
+	CardsAdded: number;
+	Error: string | null;
+	LeaseExpiresAt: string | null;
+	CreatedAt: string;
+	UpdatedAt: string;
+};
+
+const WORK_ITEM_COLUMNS = `w.PublicId, w.Kind, d.PublicId AS DeckPublicId, d.Name AS DeckName, w.Status,
+	w.FileName, w.Completed, w.Total, w.CardsAdded, w.Error, w.LeaseExpiresAt, w.CreatedAt, w.UpdatedAt`;
+
 function timestamp(): string {
 	return new Date().toISOString();
 }
@@ -139,6 +162,24 @@ export class Database {
 				Field VARCHAR(32) NOT NULL,
 				BeforeValue TEXT,
 				AfterValue TEXT
+			);
+			CREATE TABLE IF NOT EXISTS WorkItems (
+				WorkItemId INTEGER PRIMARY KEY AUTOINCREMENT,
+				PublicId TEXT NOT NULL UNIQUE,
+				Kind TEXT NOT NULL,
+				DeckId INTEGER REFERENCES Decks(DeckId) ON DELETE CASCADE,
+				Status TEXT NOT NULL CHECK (Status IN ('pending', 'running', 'completed', 'failed')),
+				FileName TEXT NOT NULL,
+				ContentType TEXT NOT NULL,
+				Image BLOB NOT NULL,
+				ClaimToken TEXT,
+				LeaseExpiresAt DATETIME,
+				Completed INTEGER NOT NULL DEFAULT 0,
+				Total INTEGER NOT NULL DEFAULT 0,
+				CardsAdded INTEGER NOT NULL DEFAULT 0,
+				Error TEXT,
+				CreatedAt DATETIME NOT NULL,
+				UpdatedAt DATETIME NOT NULL
 			);
 			CREATE TABLE IF NOT EXISTS Users (
 				UserId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -768,5 +809,146 @@ export class Database {
 			'SELECT StorageLocationId, PublicId, Name FROM StorageLocations WHERE PublicId = ?',
 			[id]
 		);
+	}
+
+	async createWorkItem(item: {
+		kind: WorkItemKind;
+		deckId: number;
+		fileName: string;
+		contentType: string;
+		image: Buffer;
+	}): Promise<string> {
+		const now = timestamp();
+		for (let attempt = 0; attempt < 5; attempt++) {
+			const publicId = createPublicId('work');
+			try {
+				await this.db.run(
+					`INSERT INTO WorkItems (PublicId, Kind, DeckId, Status, FileName, ContentType, Image, CreatedAt, UpdatedAt)
+					VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
+					[
+						publicId,
+						item.kind,
+						item.deckId,
+						item.fileName,
+						item.contentType,
+						item.image,
+						now,
+						now
+					]
+				);
+				return publicId;
+			} catch (error) {
+				if (!String(error).includes('UNIQUE')) throw error;
+			}
+		}
+		throw new Error('Could not allocate a unique work ID');
+	}
+
+	listWorkItems(): Promise<WorkItem[]> {
+		return this.db.all<WorkItem>(
+			`SELECT ${WORK_ITEM_COLUMNS} FROM WorkItems w LEFT JOIN Decks d ON d.DeckId = w.DeckId ORDER BY w.WorkItemId`
+		);
+	}
+
+	getWorkItem(publicId: string): Promise<WorkItem | undefined> {
+		return this.db.get<WorkItem>(
+			`SELECT ${WORK_ITEM_COLUMNS} FROM WorkItems w LEFT JOIN Decks d ON d.DeckId = w.DeckId WHERE w.PublicId = ?`,
+			[publicId]
+		);
+	}
+
+	getWorkItemImage(
+		publicId: string
+	): Promise<{ Image: Uint8Array; ContentType: string } | undefined> {
+		return this.db.get(
+			'SELECT Image, ContentType FROM WorkItems WHERE PublicId = ?',
+			[publicId]
+		);
+	}
+
+	/** Takes a pending item, or one whose runner stopped renewing its lease. */
+	async claimWorkItem(
+		publicId: string,
+		token: string,
+		leaseExpiresAt: string
+	): Promise<boolean> {
+		const now = timestamp();
+		const result = await this.db.run(
+			`UPDATE WorkItems SET Status = 'running', ClaimToken = ?, LeaseExpiresAt = ?, Completed = 0, Total = 0, Error = NULL, UpdatedAt = ?
+			WHERE PublicId = ? AND (Status = 'pending' OR (Status = 'running' AND LeaseExpiresAt < ?))`,
+			[token, leaseExpiresAt, now, publicId, now]
+		);
+		return result.changes === 1;
+	}
+
+	async renewWorkItem(
+		publicId: string,
+		token: string,
+		progress: { completed: number; total: number },
+		leaseExpiresAt: string
+	): Promise<boolean> {
+		const result = await this.db.run(
+			`UPDATE WorkItems SET Completed = ?, Total = ?, LeaseExpiresAt = ?, UpdatedAt = ?
+			WHERE PublicId = ? AND ClaimToken = ? AND Status = 'running'`,
+			[
+				progress.completed,
+				progress.total,
+				leaseExpiresAt,
+				timestamp(),
+				publicId,
+				token
+			]
+		);
+		return result.changes === 1;
+	}
+
+	/** Only the current claim holder can finish an item, so a stale runner can't add cards twice. */
+	async finishWorkItem(
+		publicId: string,
+		token: string,
+		outcome:
+			| { status: 'completed'; cardsAdded: number }
+			| { status: 'failed'; error: string }
+	): Promise<boolean> {
+		const result = await this.db.run(
+			`UPDATE WorkItems SET Status = ?, CardsAdded = ?, Error = ?, ClaimToken = NULL, LeaseExpiresAt = NULL, UpdatedAt = ?
+			WHERE PublicId = ? AND ClaimToken = ? AND Status = 'running'`,
+			[
+				outcome.status,
+				outcome.status === 'completed' ? outcome.cardsAdded : 0,
+				outcome.status === 'failed' ? outcome.error : null,
+				timestamp(),
+				publicId,
+				token
+			]
+		);
+		return result.changes === 1;
+	}
+
+	/** Hands a running item straight back to the queue, e.g. when its runner's tab closes. */
+	async releaseWorkItem(publicId: string, token: string): Promise<boolean> {
+		const result = await this.db.run(
+			`UPDATE WorkItems SET Status = 'pending', ClaimToken = NULL, LeaseExpiresAt = NULL, Completed = 0, Total = 0, UpdatedAt = ?
+			WHERE PublicId = ? AND ClaimToken = ? AND Status = 'running'`,
+			[timestamp(), publicId, token]
+		);
+		return result.changes === 1;
+	}
+
+	async retryWorkItem(publicId: string): Promise<boolean> {
+		const result = await this.db.run(
+			`UPDATE WorkItems SET Status = 'pending', Completed = 0, Total = 0, Error = NULL, UpdatedAt = ?
+			WHERE PublicId = ? AND Status = 'failed'`,
+			[timestamp(), publicId]
+		);
+		return result.changes === 1;
+	}
+
+	async deleteWorkItem(publicId: string): Promise<boolean> {
+		const result = await this.db.run(
+			'DELETE FROM WorkItems WHERE PublicId = ?',
+			[publicId]
+		);
+		return result.changes === 1;
 	}
 }

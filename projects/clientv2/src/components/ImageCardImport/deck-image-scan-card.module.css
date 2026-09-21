@@ -16,6 +16,8 @@
 }
 .card {
 	width: 100%;
+	box-sizing: border-box;
+	text-decoration: none;
 	display: grid;
 	gap: 5px;
 	padding: 13px 15px;

@@ -1,4 +1,5 @@
 import { API_URI } from '../config/api-url';
+import { apiFetch } from './utils';
 
 export type FetchDeleteDeckResponse = {
 	success: boolean;
@@ -7,7 +8,7 @@ export type FetchDeleteDeckResponse = {
 export async function fetchAPIDeleteDeck(
 	deckId: string
 ): Promise<FetchDeleteDeckResponse> {
-	const fetchResult = await fetch(`${API_URI}/decks/${deckId}`, {
+	const fetchResult = await apiFetch(`${API_URI}/decks/${deckId}`, {
 		method: 'DELETE'
 	});
 

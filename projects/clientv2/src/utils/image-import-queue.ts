@@ -3,6 +3,7 @@ import {
 	fetchAPIImportCards,
 	type ImportedCard
 } from 'src/api/fetch-api-import-cards';
+import { WorkClaimLostError } from 'src/api/fetch-api-work';
 import {
 	scanCardImage,
 	type CardImageCandidate,
@@ -26,11 +27,26 @@ export type ImageScanTask = {
 	addedCounts: Record<string, number>;
 	plannedCounts: Record<string, number>;
 	error: string | null;
+	/** Set when this scan is a phone's queued photo that this device picked up. */
+	workId: string | null;
+};
+
+/** Reports a picked-up queued scan back to the server that holds it. */
+export type ImageScanRunner = {
+	workId: string;
+	progress(completed: number, total: number): void;
+	/** Adds the scan's cards in one step, so an abandoned run can't add them twice. */
+	commit(cards: ImportedCard[]): Promise<void>;
+	fail(error: string): void;
+	/** Another device claimed the item after this one stopped reporting in. */
+	isLost(): boolean;
+	finished(): void;
 };
 
 type InternalTask = ImageScanTask & {
 	file: File;
 	writes: Promise<void>;
+	runner: ImageScanRunner | null;
 };
 
 class ImageImportQueue {
@@ -51,7 +67,12 @@ class ImageImportQueue {
 
 	private publish() {
 		this.snapshot = this.tasks.map((args) => {
-			const { file: _file, writes: _writes, ...task } = args;
+			const {
+				file: _file,
+				writes: _writes,
+				runner: _runner,
+				...task
+			} = args;
 			return {
 				...task,
 				candidates: [...task.candidates],
@@ -62,7 +83,11 @@ class ImageImportQueue {
 		for (const listener of this.listeners) listener();
 	}
 
-	enqueue(deckId: string, file: File): string {
+	enqueue(
+		deckId: string,
+		file: File,
+		runner: ImageScanRunner | null = null
+	): string {
 		const id = `scan-${++this.nextId}`;
 		this.tasks.push({
 			id,
@@ -78,7 +103,9 @@ class ImageImportQueue {
 			addedCounts: {},
 			plannedCounts: {},
 			error: null,
-			writes: Promise.resolve()
+			workId: runner?.workId ?? null,
+			writes: Promise.resolve(),
+			runner
 		});
 		this.publish();
 		void this.pump();
@@ -125,6 +152,8 @@ class ImageImportQueue {
 	}
 
 	private scheduleResolvedMatches(task: InternalTask) {
+		// Queued work commits everything once the scan finishes instead.
+		if (task.runner) return;
 		void this.scheduleAdditions(
 			task,
 			resolvedCandidateAdditions(task.candidates, task.plannedCounts)
@@ -142,6 +171,25 @@ class ImageImportQueue {
 		await this.scheduleAdditions(task, [{ name, count }]);
 	}
 
+	private async commit(task: InternalTask, runner: ImageScanRunner) {
+		const cards = resolvedCandidateAdditions(
+			task.candidates,
+			task.plannedCounts
+		);
+		for (const card of cards) {
+			task.plannedCounts[card.name] =
+				(task.plannedCounts[card.name] ?? 0) + card.count;
+		}
+		this.publish();
+		// Manual additions made during the scan went straight to the deck; wait for them first.
+		await task.writes;
+		await runner.commit(cards);
+		for (const card of cards) {
+			task.addedCounts[card.name] =
+				(task.addedCounts[card.name] ?? 0) + card.count;
+		}
+	}
+
 	private async pump() {
 		if (this.running) return;
 		this.running = true;
@@ -153,6 +201,7 @@ class ImageImportQueue {
 				if (!task) break;
 				task.status = 'loading';
 				this.publish();
+				const { runner } = task;
 				try {
 					const names = await fetchAPICardNames();
 					await scanCardImage(
@@ -168,16 +217,19 @@ class ImageImportQueue {
 							task.total = update.total;
 							task.region = update.region;
 							task.candidates = update.candidates;
+							runner?.progress(update.completed, update.total);
 							this.scheduleResolvedMatches(task);
 							this.publish();
 						},
-						() => !!task.error
+						() => !!task.error || !!runner?.isLost()
 					);
+					if (runner?.isLost()) throw new WorkClaimLostError();
 					if (!task.error) {
 						task.status = 'adding';
 						task.region = null;
 						this.publish();
 					}
+					if (runner && !task.error) await this.commit(task, runner);
 					await task.writes;
 					if (!task.error) task.status = 'completed';
 				} catch (error) {
@@ -188,6 +240,11 @@ class ImageImportQueue {
 					task.status = 'error';
 				} finally {
 					task.region = null;
+					if (runner) {
+						if (task.error && !runner.isLost())
+							runner.fail(task.error);
+						runner.finished();
+					}
 					this.publish();
 				}
 			}

@@ -1,4 +1,5 @@
 import { API_URI } from '../config/api-url';
+import { apiFetch } from './utils';
 
 export type FetchCreateStorageLocationResponse = {
 	storage_location_id: string;
@@ -7,7 +8,7 @@ export type FetchCreateStorageLocationResponse = {
 export async function fetchAPICreateStorageLocation(
 	name: string
 ): Promise<FetchCreateStorageLocationResponse> {
-	const fetchResult = await fetch(`${API_URI}/storage-location`, {
+	const fetchResult = await apiFetch(`${API_URI}/storage-location`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'

@@ -57,6 +57,7 @@ import { withMinimumStatusDuration } from '../../utils/minimum-status-duration';
 import { ImageCardImport } from 'src/components/ImageCardImport/ImageCardImport';
 import { DeckImageScanCard } from 'src/components/ImageCardImport/DeckImageScanCard';
 import { useImageImportQueue } from 'src/utils/use-image-import-queue';
+import { useWorkQueue } from 'src/utils/work-queue';
 
 export type DeckControlButtonsProps = {
 	dispatch: any;
@@ -285,6 +286,12 @@ export function Deck(props: DeckProps) {
 				),
 			0
 		);
+	// Photos queued from a phone finish on a desktop; this page may be open on either.
+	const addedFromQueuedWork = (useWorkQueue().items ?? [])
+		.filter(
+			(item) => item.deck?.deckId === deckId && item.status === 'completed'
+		)
+		.reduce((total, item) => total + item.cardsAdded, 0);
 	const nameInputRef = useRef<HTMLInputElement>(null);
 	const draft = detailsDraft?.deckId === deckId ? detailsDraft : null;
 	const name = draft?.name ?? data?.name ?? '';
@@ -350,8 +357,8 @@ export function Deck(props: DeckProps) {
 	);
 
 	useEffect(() => {
-		if (addedFromScans > 0) void refreshDeck();
-	}, [addedFromScans, refreshDeck]);
+		if (addedFromScans + addedFromQueuedWork > 0) void refreshDeck();
+	}, [addedFromScans, addedFromQueuedWork, refreshDeck]);
 
 	// Appearance settings may be saved from another tab; pick those changes up on return.
 	useEffect(() => {

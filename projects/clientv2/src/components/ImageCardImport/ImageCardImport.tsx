@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { fetchAPICreateDeck } from 'src/api/fetch-api-create-deck';
 import { imageImportQueue } from 'src/utils/image-import-queue';
+import { isMobileDevice } from 'src/utils/is-mobile-device';
+import { workQueue } from 'src/utils/work-queue';
 import { HeaderBackButton } from 'src/components/BackLink/BackLink';
 import {
 	HeaderBackSlot,
@@ -28,6 +30,10 @@ export function ImageCardImport(props: Props) {
 	const [createdDeckId, setCreatedDeckId] = useState<string | null>(null);
 	// State, not a ref, so the back button portals in once the slot mounts.
 	const [backSlot, setBackSlot] = useState<HTMLElement | null>(null);
+	// OCR on a phone is slow and drains the battery, so phones hand the photo to a desktop.
+	const [isMobile] = useState(isMobileDevice);
+	const [scanHere, setScanHere] = useState(false);
+	const deferToDesktop = isMobile && !scanHere;
 
 	useEffect(
 		() => () => {
@@ -62,13 +68,20 @@ export function ImageCardImport(props: Props) {
 				targetDeckId = String(created.deckId);
 				setCreatedDeckId(targetDeckId);
 			}
+			if (deferToDesktop) {
+				await workQueue.queueCardImage(targetDeckId, file);
+				onComplete(targetDeckId);
+				return;
+			}
 			const taskId = imageImportQueue.enqueue(targetDeckId, file);
 			onComplete(targetDeckId, taskId);
 		} catch (cause) {
 			setError(
 				cause instanceof Error
 					? cause.message
-					: 'Could not start the image scan'
+					: deferToDesktop
+						? 'Could not queue the photo'
+						: 'Could not start the image scan'
 			);
 			setIsStarting(false);
 		}
@@ -100,9 +113,11 @@ export function ImageCardImport(props: Props) {
 								: 'Add cards in image'}
 						</h2>
 						<p>
-							{mode === 'create'
-								? 'You can watch cards being found, or continue to the deck while scanning runs in the background.'
-								: 'The deck opens right away. Card scanning continues in the background.'}
+							{deferToDesktop
+								? 'Your photo is saved and scanned the next time you open Cube Light on a computer.'
+								: mode === 'create'
+									? 'You can watch cards being found, or continue to the deck while scanning runs in the background.'
+									: 'The deck opens right away. Card scanning continues in the background.'}
 						</p>
 					</div>
 					<button
@@ -193,6 +208,24 @@ export function ImageCardImport(props: Props) {
 								)}
 							</label>
 						</div>
+						{isMobile && (
+							<label className={styles.scanHere}>
+								<input
+									type="checkbox"
+									checked={scanHere}
+									onChange={(event) =>
+										setScanHere(event.target.checked)
+									}
+									disabled={isStarting}
+								/>
+								<span>
+									Scan on this phone instead
+									<small>
+										Slower, and uses a lot of battery
+									</small>
+								</span>
+							</label>
+						)}
 					</div>
 					{error && (
 						<p className={styles.error} role="alert">
@@ -200,10 +233,7 @@ export function ImageCardImport(props: Props) {
 						</p>
 					)}
 					{createdDeckId && error && (
-						<p>
-							The deck was created. Retry scanning or open the
-							deck.
-						</p>
+						<p>The deck was created. Try again or open the deck.</p>
 					)}
 				</div>
 				<footer className={styles.footer}>
@@ -236,10 +266,16 @@ export function ImageCardImport(props: Props) {
 						}
 					>
 						{isStarting
-							? 'Starting…'
-							: mode === 'create'
-								? 'Create deck and scan'
-								: 'Start image scan'}
+							? deferToDesktop
+								? 'Uploading…'
+								: 'Starting…'
+							: deferToDesktop
+								? mode === 'create'
+									? 'Create deck and queue scan'
+									: 'Queue for desktop'
+								: mode === 'create'
+									? 'Create deck and scan'
+									: 'Start image scan'}
 					</button>
 				</footer>
 			</section>

@@ -10,6 +10,8 @@
 		"build:name-index": "node tools/scripts/build-name-index.js",
 		"benchmark:name-index": "npm run build:name-index && node tools/scripts/benchmark-name-index.js --write-report",
 		"test:images": "tsc && node --test test/images.test.js",
+		"test:auth": "tsc && node --test test/kv-store.test.js test/auth.test.js",
+		"create-user": "tsc && node tools/scripts/create-user.js",
 		"dev": "npm run build && node tools/scripts/dev.js",
 		"start": "npm run build && node build/src/main.js",
 		"copy-static": "node tools/scripts/copy-static.js"
