@@ -37,11 +37,12 @@ export function createRoutesDecksIdCards(
 			res.setHeader('Access-Control-Allow-Origin', '*');
 			res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 			const cards = req.body?.cards as
-				Array<{ name?: unknown; count?: unknown }> | undefined;
+				| Array<{ name?: unknown; count?: unknown; setCode?: unknown }>
+				| undefined;
 			if (
 				!Array.isArray(cards) ||
 				cards.length === 0 ||
-				cards.length > 200 ||
+				cards.length > 1000 ||
 				!cards.every(
 					(card) =>
 						card &&
@@ -49,7 +50,9 @@ export function createRoutesDecksIdCards(
 						card.name.trim() &&
 						Number.isInteger(card.count) &&
 						(card.count as number) > 0 &&
-						(card.count as number) <= 999
+						(card.count as number) <= 999 &&
+						(card.setCode === undefined ||
+							typeof card.setCode === 'string')
 				)
 			) {
 				res.sendStatus(400);
@@ -65,15 +68,22 @@ export function createRoutesDecksIdCards(
 			let firstCard:
 				| Awaited<ReturnType<CardDatabase['queryCardsByName']>>[number]
 				| undefined;
+			const unknownCards: string[] = [];
 			for (const card of cards) {
-				const [found] = await cardDatabase.queryCardsByName(
+				const printings = await cardDatabase.queryCardsByName(
 					(card.name as string).trim()
 				);
+				const setCode =
+					typeof card.setCode === 'string'
+						? card.setCode.toUpperCase()
+						: undefined;
+				const found =
+					printings.find(
+						(printing) => printing.setCode.toUpperCase() === setCode
+					) ?? printings[0];
 				if (!found) {
-					res.status(400).json({
-						error: `Unknown card: ${card.name}`
-					});
-					return;
+					unknownCards.push(card.name as string);
+					continue;
 				}
 				firstCard ??= found;
 				edits.push({
@@ -81,6 +91,16 @@ export function createRoutesDecksIdCards(
 					action: 'add',
 					count: card.count as number
 				});
+			}
+			if (unknownCards.length > 0) {
+				res.status(400).json({
+					error:
+						unknownCards.length === 1
+							? `Unknown card: ${unknownCards[0]}`
+							: `Unknown cards: ${unknownCards.join(', ')}`,
+					unknownCards
+				});
+				return;
 			}
 			const edit = database.applyDeckCardEdit(String(deck.DeckId), edits);
 			if (edit?.cardsIn.length && !deck.Art && firstCard) {

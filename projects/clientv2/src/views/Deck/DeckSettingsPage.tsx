@@ -79,12 +79,15 @@ export function DeckSettingsPage(props: DeckSettingsPageProps) {
 
 	return (
 		<Page>
-			<BannerCardPickerModal
-				deckId={deckId}
-				deckName={data.name}
-				onSaved={() => dispatch(appearanceActions.bannerSaved(deckId))}
-			/>
 			<main className={styles['page']} style={paletteStyle}>
+				{/* Inside main so the modal inherits the deck palette variables. */}
+				<BannerCardPickerModal
+					deckId={deckId}
+					deckName={data.name}
+					onSaved={() =>
+						dispatch(appearanceActions.bannerSaved(deckId))
+					}
+				/>
 				<div className={styles['container']}>
 					<Link
 						className={styles['back-link']}

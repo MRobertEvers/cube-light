@@ -6,6 +6,7 @@ import {
 import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
 import { Button } from '../../../../components/Button/Button';
 import { Counter } from '../../../../components/Counter/Counter';
+import { PrintingPicker } from '../../../../components/PrintingPicker/PrintingPicker';
 
 import styles from './edit-card.module.css';
 
@@ -102,15 +103,33 @@ export function EditCardModal(props: EditCardModalProps) {
 					<h2 id="card-modal-title">{card.name}</h2>
 					<p>{selectedSetCode} printing</p>
 				</div>
-				<button
-					className={styles['close']}
-					type="button"
-					aria-label="Close card preview"
-					onClick={onCancel}
-					disabled={saving}
-				>
-					×
-				</button>
+				<div className={styles['header-actions']}>
+					{editable && (
+						<Button
+							className={styles['save']}
+							onClick={() => {
+								void save();
+							}}
+							disabled={saving || count < 1}
+						>
+							{saving ? 'Saving…' : 'Save card'}
+						</Button>
+					)}
+					<button
+						className={styles['close']}
+						type="button"
+						aria-label="Close card preview"
+						onClick={onCancel}
+						disabled={saving}
+					>
+						×
+					</button>
+				</div>
+				{saveError && (
+					<p className={styles['save-error']} role="alert">
+						{saveError}
+					</p>
+				)}
 			</header>
 			<div className={styles['body']}>
 				<div className={styles['image-panel']}>
@@ -132,39 +151,15 @@ export function EditCardModal(props: EditCardModalProps) {
 								{loadError}
 							</p>
 						)}
-						{printings.length > 0 && (
-							<div
-								className={styles['printing-list']}
-								role="radiogroup"
-								aria-labelledby="printing-heading"
-							>
-								{printings.map((printing) => (
-									<label
-										className={styles['printing-option']}
-										key={printing.uuid}
-									>
-										<input
-											type="radio"
-											name="card-printing"
-											value={printing.uuid}
-											checked={
-												printing.uuid === selectedUuid
-											}
-											disabled={saving}
-											onChange={() =>
-												setSelectedUuid(printing.uuid)
-											}
-										/>
-										<img
-											src={printing.image ?? undefined}
-											alt=""
-											loading="lazy"
-										/>
-										<span>{printing.setCode}</span>
-									</label>
-								))}
-							</div>
-						)}
+						<PrintingPicker
+							printings={printings}
+							selectedUuid={selectedUuid}
+							onSelect={setSelectedUuid}
+							name="card-printing"
+							image="card"
+							disabled={saving}
+							aria-labelledby="printing-heading"
+						/>
 						<div className={styles['count-row']}>
 							<div>
 								<h3>Copies</h3>
@@ -174,24 +169,6 @@ export function EditCardModal(props: EditCardModalProps) {
 								count={count}
 								setCount={(next) => setCount(Math.max(1, next))}
 							/>
-						</div>
-						{saveError && (
-							<p className={styles['save-error']} role="alert">
-								{saveError}
-							</p>
-						)}
-						<div className={styles['actions']}>
-							<Button onClick={onCancel} disabled={saving}>
-								Cancel
-							</Button>
-							<Button
-								onClick={() => {
-									void save();
-								}}
-								disabled={saving || count < 1}
-							>
-								{saving ? 'Saving…' : 'Save card'}
-							</Button>
 						</div>
 					</div>
 				)}

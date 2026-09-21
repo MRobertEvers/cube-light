@@ -14,7 +14,10 @@ export type CardInfo = {
 	manaCost: string;
 };
 
-export type PrintingCardInfo = CardInfo & { setCode: string };
+export type PrintingCardInfo = CardInfo & {
+	setCode: string;
+	setName: string | null;
+};
 
 export type DetailedCardInfo = CardInfo & {
 	subtypes: string;
@@ -56,7 +59,7 @@ export class CardDatabase {
 
 	public queryCardsByName(name: string): Promise<PrintingCardInfo[]> {
 		return this.db.all<PrintingCardInfo>(
-			'SELECT c.name, c.uuid, c.setCode, i.scryfallId FROM cards c JOIN cardIdentifiers i ON i.uuid = c.uuid WHERE c.name = ? COLLATE NOCASE ORDER BY c.rowid',
+			'SELECT c.name, c.uuid, c.setCode, s.name AS setName, i.scryfallId FROM cards c JOIN cardIdentifiers i ON i.uuid = c.uuid LEFT JOIN sets s ON s.code = c.setCode WHERE c.name = ? COLLATE NOCASE ORDER BY c.rowid',
 			[name]
 		);
 	}

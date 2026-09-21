@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { Modal } from './components/Modal/Modal';
+import { PrintingPicker } from '../../components/PrintingPicker/PrintingPicker';
+import { SuggestionInput } from '../../components/SuggestionInput/SuggestionInput';
 import { useAppDispatch } from '../../store/use-app-dispatch';
 import {
 	chooseBannerCard,
@@ -9,7 +11,6 @@ import {
 	saveBannerSelection,
 	selectBannerPicker,
 	selectBannerPrinting,
-	setBannerActiveIndex,
 	setBannerQuery,
 	setBannerSuggestionsOpen
 } from '../../store/banner-picker/banner-picker.state';
@@ -109,119 +110,69 @@ export function BannerCardPickerModal(props: {
 					}
 				}}
 			>
-				<div className={styles['banner-modal-heading']}>
-					<div>
-						<h2 id="banner-modal-heading">Choose banner artwork</h2>
-						<p>
-							Search cards in this deck, then choose a printing.
-						</p>
+				<header className={styles['banner-modal-heading']}>
+					<div className={styles['banner-modal-heading-row']}>
+						<div>
+							<h2 id="banner-modal-heading">
+								Choose banner artwork
+							</h2>
+							<p>
+								Search cards in this deck, then choose a
+								printing.
+							</p>
+						</div>
+						<div className={styles['actions']}>
+							<button
+								type="button"
+								className={styles['primary']}
+								onClick={() => void save()}
+								disabled={!canSave}
+							>
+								{picker.saving
+									? 'Generating and saving…'
+									: 'Save banner art'}
+							</button>
+							<button
+								type="button"
+								className={styles['modal-close']}
+								onClick={() => dispatch(closeBannerPicker())}
+								disabled={picker.saving}
+								aria-label="Close banner picker"
+							>
+								×
+							</button>
+						</div>
 					</div>
-					<button
-						type="button"
-						className={styles['modal-close']}
-						onClick={() => dispatch(closeBannerPicker())}
-						disabled={picker.saving}
-						aria-label="Close banner picker"
-					>
-						×
-					</button>
-				</div>
+					{picker.saving && (
+						<p role="status">
+							Generating your banner layouts. This only runs when
+							artwork or blend settings are saved.
+						</p>
+					)}
+					{picker.saveError && (
+						<p className={styles['error']} role="alert">
+							{picker.saveError}
+						</p>
+					)}
+				</header>
 				<div className={styles['banner-picker']}>
 					<label htmlFor="banner-card-search">Card name</label>
-					<input
-						ref={inputRef}
+					<SuggestionInput
 						id="banner-card-search"
-						type="search"
-						role="combobox"
-						aria-autocomplete="list"
-						aria-expanded={
-							picker.suggestionsOpen && matches.length > 0
-						}
-						aria-controls="banner-card-suggestions"
-						aria-activedescendant={
-							picker.suggestionsOpen && picker.activeIndex >= 0
-								? `banner-card-option-${picker.activeIndex}`
-								: undefined
-						}
+						inputRef={inputRef}
 						value={picker.query}
-						placeholder="Search cards in this deck"
-						autoComplete="off"
-						disabled={picker.saving}
-						onFocus={() => dispatch(setBannerSuggestionsOpen(true))}
-						onBlur={() => dispatch(setBannerSuggestionsOpen(false))}
-						onChange={(event) =>
-							dispatch(setBannerQuery(event.target.value))
+						suggestions={matches}
+						open={picker.suggestionsOpen}
+						onOpenChange={(open) =>
+							dispatch(setBannerSuggestionsOpen(open))
 						}
-						onKeyDown={(event) => {
-							if (
-								event.key === 'Escape' &&
-								picker.suggestionsOpen
-							) {
-								event.stopPropagation();
-								dispatch(setBannerSuggestionsOpen(false));
-								return;
-							}
-							if (
-								(event.key === 'ArrowDown' ||
-									event.key === 'ArrowUp') &&
-								matches.length
-							) {
-								event.preventDefault();
-								dispatch(setBannerSuggestionsOpen(true));
-								dispatch(
-									setBannerActiveIndex(
-										event.key === 'ArrowDown'
-											? (picker.activeIndex + 1) %
-													matches.length
-											: picker.activeIndex <= 0
-												? matches.length - 1
-												: picker.activeIndex - 1
-									)
-								);
-							} else if (
-								event.key === 'Enter' &&
-								picker.suggestionsOpen &&
-								matches.length
-							) {
-								event.preventDefault();
-								chooseName(
-									matches[
-										picker.activeIndex >= 0
-											? picker.activeIndex
-											: 0
-									]
-								);
-							}
-						}}
+						onChange={(query) => dispatch(setBannerQuery(query))}
+						onSelect={chooseName}
+						enterSelects={matches[0]}
+						placeholder="Search cards in this deck"
+						disabled={picker.saving}
+						listLabel="Cards in deck"
 					/>
-					{picker.suggestionsOpen && matches.length > 0 && (
-						<ul
-							id="banner-card-suggestions"
-							className={styles['banner-suggestions']}
-							role="listbox"
-							aria-label="Cards in deck"
-						>
-							{matches.map((name, index) => (
-								<li
-									key={name}
-									id={`banner-card-option-${index}`}
-									role="option"
-									aria-selected={index === picker.activeIndex}
-									className={
-										index === picker.activeIndex
-											? styles['active-suggestion']
-											: undefined
-									}
-									onMouseDown={(event) =>
-										event.preventDefault()
-									}
-									onClick={() => chooseName(name)}
-								>
-									{name}
-								</li>
-							))}
-						</ul>
-					)}
 				</div>
 				{editingName ? (
 					<p className={styles['banner-preview-hint']}>
@@ -261,57 +212,17 @@ export function BannerCardPickerModal(props: {
 								)}
 							{picker.printings.length > 0 && (
 								<div className={styles['printing-layout']}>
-									<div
-										className={styles['printing-list']}
-										role="radiogroup"
+									<PrintingPicker
+										printings={picker.printings}
+										selectedUuid={picker.selectedUuid}
+										onSelect={(uuid) =>
+											dispatch(selectBannerPrinting(uuid))
+										}
+										name="banner-printing"
+										image="art"
+										disabled={picker.saving}
 										aria-label="Choose printing artwork"
-									>
-										{picker.printings.map((printing) => (
-											<label
-												key={printing.uuid}
-												className={
-													styles['printing-option']
-												}
-											>
-												<input
-													type="radio"
-													name="banner-printing"
-													value={printing.uuid}
-													checked={
-														printing.uuid ===
-														picker.selectedUuid
-													}
-													disabled={picker.saving}
-													onChange={() =>
-														dispatch(
-															selectBannerPrinting(
-																printing.uuid
-															)
-														)
-													}
-												/>
-												<img
-													src={
-														printing.art ??
-														undefined
-													}
-													alt=""
-													loading="lazy"
-												/>
-												<span>
-													<strong>
-														{printing.setCode}
-													</strong>
-													<small>
-														{printing.uuid.slice(
-															0,
-															8
-														)}
-													</small>
-												</span>
-											</label>
-										))}
-									</div>
+									/>
 									{selected?.art && (
 										<div
 											className={
@@ -332,37 +243,6 @@ export function BannerCardPickerModal(props: {
 							)}
 						</div>
 					)
-				)}
-				<div className={styles['actions']}>
-					<button
-						type="button"
-						className={styles['secondary']}
-						onClick={() => dispatch(closeBannerPicker())}
-						disabled={picker.saving}
-					>
-						Cancel
-					</button>
-					<button
-						type="button"
-						className={styles['primary']}
-						onClick={() => void save()}
-						disabled={!canSave}
-					>
-						{picker.saving
-							? 'Generating and saving…'
-							: 'Save banner art'}
-					</button>
-				</div>
-				{picker.saving && (
-					<p role="status">
-						Generating your banner layouts. This only runs when
-						artwork or blend settings are saved.
-					</p>
-				)}
-				{picker.saveError && (
-					<p className={styles['error']} role="alert">
-						{picker.saveError}
-					</p>
 				)}
 			</div>
 		</Modal>

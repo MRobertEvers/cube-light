@@ -1,6 +1,15 @@
 import { API_URI } from '../config/api-url';
 
-export type ImportedCard = { name: string; count: number };
+export type ImportedCard = { name: string; count: number; setCode?: string };
+
+export class ImportCardsError extends Error {
+	constructor(
+		message: string,
+		readonly unknownCards: string[] = []
+	) {
+		super(message);
+	}
+}
 
 export async function fetchAPIImportCards(
 	deckId: string,
@@ -14,7 +23,11 @@ export async function fetchAPIImportCards(
 	if (!response.ok) {
 		const details = (await response.json().catch(() => null)) as {
 			error?: string;
+			unknownCards?: string[];
 		} | null;
-		throw new Error(details?.error || 'Could not add cards to the deck');
+		throw new ImportCardsError(
+			details?.error || 'Could not add cards to the deck',
+			details?.unknownCards
+		);
 	}
 }

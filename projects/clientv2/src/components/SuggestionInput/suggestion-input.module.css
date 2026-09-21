@@ -1,0 +1,85 @@
+.search-field {
+	position: relative;
+}
+
+.search-field input {
+	box-sizing: border-box;
+	width: 100%;
+	height: 44px;
+	padding: 0 13px;
+	border: 1px solid #c9c0bd;
+	border-radius: 8px;
+	background: #fff;
+	color: #262120;
+	font: inherit;
+	font-size: 15px;
+	font-weight: 400;
+}
+
+.search-field input.with-indicator {
+	padding-right: 44px;
+}
+
+.search-field input::placeholder {
+	color: #807775;
+}
+
+.search-field input:focus-visible {
+	border-color: #a65350;
+	outline: 3px solid rgba(166, 83, 80, 0.2);
+}
+
+.search-field input[aria-invalid='true'] {
+	border-color: #ab3e3e;
+}
+
+.indicator {
+	position: absolute;
+	top: 0;
+	right: 12px;
+	display: flex;
+	width: 24px;
+	height: 44px;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+}
+
+.indicator svg {
+	width: 20px;
+	height: 20px;
+	fill: #796d6a;
+}
+
+.suggestions {
+	position: absolute;
+	z-index: 5;
+	top: 100%;
+	right: 0;
+	left: 0;
+	box-sizing: border-box;
+	max-height: min(200px, 30vh);
+	margin: 6px 0 0;
+	padding: 5px;
+	overflow-y: auto;
+	border: 1px solid #d8d0cc;
+	border-radius: 9px;
+	background: #fff;
+	box-shadow: 0 12px 30px rgba(40, 30, 27, 0.16);
+	list-style: none;
+}
+
+.suggestions li {
+	padding: 9px 10px;
+	border-radius: 5px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 1.35;
+}
+
+.suggestions li:hover,
+.suggestions .active {
+	background: #f6ece9;
+	color: #743c39;
+}

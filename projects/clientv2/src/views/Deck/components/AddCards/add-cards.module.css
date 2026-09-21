@@ -1,0 +1,56 @@
+.dialog {
+	width: min(560px, calc(100vw - 32px));
+}
+
+.list-input {
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	min-height: 260px;
+	max-height: 55vh;
+	padding: 11px 13px;
+	border: 1px solid #c9c0bd;
+	border-radius: 8px;
+	background: #fff;
+	color: #262120;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 14px;
+	line-height: 1.5;
+	resize: vertical;
+}
+
+.list-input::placeholder {
+	color: #807775;
+}
+
+.list-input:focus-visible {
+	border-color: #a65350;
+	outline: 3px solid rgba(166, 83, 80, 0.2);
+}
+
+.list-input[aria-invalid='true'] {
+	border-color: #ab3e3e;
+}
+
+.issues {
+	max-height: 120px;
+	margin: 10px 0 0;
+	padding: 0;
+	overflow-y: auto;
+	color: #a12323;
+	font-size: 12px;
+	line-height: 1.5;
+	list-style: none;
+}
+
+.issues .skipped {
+	color: #6e6461;
+}
+
+.line-number {
+	font-weight: 650;
+}
+
+.buttons {
+	margin-top: 24px;
+}

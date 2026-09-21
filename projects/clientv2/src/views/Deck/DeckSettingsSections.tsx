@@ -63,6 +63,30 @@ function bannerCard(data: GetDeckResponse) {
 	);
 }
 
+/** Sticky card header that keeps the card's title, card-wide actions and save status in view while scrolling. */
+function EditorHeader(
+	props: React.PropsWithChildren<{
+		id: string;
+		title: string;
+		badge?: React.ReactNode;
+		actions: React.ReactNode;
+	}>
+) {
+	const { id, title, badge, actions, children } = props;
+	return (
+		<header className={styles['editor-header']}>
+			<div className={styles['editor-header-row']}>
+				<div className={styles['editor-title']}>
+					<h2 id={id}>{title}</h2>
+					{badge}
+				</div>
+				<div className={styles['actions']}>{actions}</div>
+			</div>
+			{children}
+		</header>
+	);
+}
+
 export function BannerCardSection(props: SectionProps) {
 	const { deckId, data, view } = props;
 	const dispatch = useAppDispatch();
@@ -75,7 +99,42 @@ export function BannerCardSection(props: SectionProps) {
 			className={`${styles['editor']} ${styles['banner-editor']}`}
 			aria-labelledby="banner-card-heading"
 		>
-			<h2 id="banner-card-heading">Banner card</h2>
+			<EditorHeader
+				id="banner-card-heading"
+				title="Banner card"
+				actions={
+					<button
+						type="button"
+						className={styles['primary']}
+						disabled={names.length === 0}
+						onClick={() => {
+							dispatch(appearanceActions.bannerPickerOpened());
+							dispatch(
+								openBannerPicker({
+									deckId,
+									names,
+									deckCardUuids: data.cards.map(
+										(item) => item.uuid
+									),
+									currentName:
+										card && names.includes(card.name)
+											? card.name
+											: '',
+									currentUuid: data.bannerCardUuid
+								})
+							);
+						}}
+					>
+						Choose banner artwork
+					</button>
+				}
+			>
+				{view.status.banner.message && (
+					<p className={styles['success']} role="status">
+						{view.status.banner.message}
+					</p>
+				)}
+			</EditorHeader>
 			<p className={styles['intro']}>
 				Choose a card in this deck and preview its printings. Saving new
 				artwork resets the banner crop.
@@ -92,37 +151,6 @@ export function BannerCardSection(props: SectionProps) {
 			{names.length === 0 && (
 				<p>Add a card to your deck to choose banner artwork.</p>
 			)}
-			<div className={styles['actions']}>
-				<button
-					type="button"
-					className={styles['primary']}
-					disabled={names.length === 0}
-					onClick={() => {
-						dispatch(appearanceActions.bannerPickerOpened());
-						dispatch(
-							openBannerPicker({
-								deckId,
-								names,
-								deckCardUuids: data.cards.map(
-									(item) => item.uuid
-								),
-								currentName:
-									card && names.includes(card.name)
-										? card.name
-										: '',
-								currentUuid: data.bannerCardUuid
-							})
-						);
-					}}
-				>
-					Choose banner artwork
-				</button>
-			</div>
-			{view.status.banner.message && (
-				<p className={styles['success']} role="status">
-					{view.status.banner.message}
-				</p>
-			)}
 		</section>
 	);
 }
@@ -136,7 +164,33 @@ export function TopStyleSection(props: SectionProps) {
 			className={`${styles['editor']} ${styles['style-editor']}`}
 			aria-labelledby="style-heading"
 		>
-			<h2 id="style-heading">Deck top style</h2>
+			<EditorHeader
+				id="style-heading"
+				title="Deck top style"
+				actions={
+					<button
+						type="button"
+						className={styles['primary']}
+						onClick={() =>
+							void dispatch(saveStyle({ deckId, style }))
+						}
+						disabled={!styleChanged || status.style.saving}
+					>
+						{status.style.saving ? 'Saving…' : 'Save top style'}
+					</button>
+				}
+			>
+				{status.style.message && (
+					<p className={styles['success']} role="status">
+						{status.style.message}
+					</p>
+				)}
+				{status.style.error && (
+					<p className={styles['error']} role="alert">
+						{status.style.error}
+					</p>
+				)}
+			</EditorHeader>
 			<div className={styles['style-options']}>
 				<label className={styles['style-option']}>
 					<input
@@ -174,26 +228,6 @@ export function TopStyleSection(props: SectionProps) {
 					</span>
 				</label>
 			</div>
-			<div className={styles['actions']}>
-				<button
-					type="button"
-					className={styles['primary']}
-					onClick={() => void dispatch(saveStyle({ deckId, style }))}
-					disabled={!styleChanged || status.style.saving}
-				>
-					{status.style.saving ? 'Saving…' : 'Save top style'}
-				</button>
-			</div>
-			{status.style.message && (
-				<p className={styles['success']} role="status">
-					{status.style.message}
-				</p>
-			)}
-			{status.style.error && (
-				<p className={styles['error']} role="alert">
-					{status.style.error}
-				</p>
-			)}
 		</section>
 	);
 }
@@ -229,9 +263,42 @@ export function CropSection(props: SectionProps) {
 			className={`${styles['editor']} ${styles['crop-editor']}`}
 			aria-labelledby="crop-heading"
 		>
-			<div className={styles['section-heading']}>
-				<h2 id="crop-heading">Banner artwork</h2>
-			</div>
+			<EditorHeader
+				id="crop-heading"
+				title="Banner artwork"
+				actions={
+					<button
+						type="button"
+						className={styles['primary']}
+						onClick={() =>
+							void dispatch(
+								saveCrop({ deckId, crop, config: blend })
+							)
+						}
+						disabled={
+							(!cropChanged && !status.crop.error) ||
+							status.crop.saving ||
+							status.blend.saving ||
+							!bannerArt
+						}
+					>
+						{status.crop.saving
+							? 'Generating and saving…'
+							: 'Save banner crop'}
+					</button>
+				}
+			>
+				{status.crop.message && (
+					<p className={styles['success']} role="status">
+						{status.crop.message}
+					</p>
+				)}
+				{status.crop.error && (
+					<p className={styles['error']} role="alert">
+						{status.crop.error}
+					</p>
+				)}
+			</EditorHeader>
 			<p className={styles['intro']}>
 				Drag the artwork in each deck-page preview, then adjust zoom or
 				position. Desktop and mobile are saved separately.
@@ -369,35 +436,6 @@ export function CropSection(props: SectionProps) {
 					{preview.error}
 				</p>
 			)}
-			<div className={styles['actions']}>
-				<button
-					type="button"
-					className={styles['primary']}
-					onClick={() =>
-						void dispatch(saveCrop({ deckId, crop, config: blend }))
-					}
-					disabled={
-						(!cropChanged && !status.crop.error) ||
-						status.crop.saving ||
-						status.blend.saving ||
-						!bannerArt
-					}
-				>
-					{status.crop.saving
-						? 'Generating and saving…'
-						: 'Save banner crop'}
-				</button>
-			</div>
-			{status.crop.message && (
-				<p className={styles['success']} role="status">
-					{status.crop.message}
-				</p>
-			)}
-			{status.crop.error && (
-				<p className={styles['error']} role="alert">
-					{status.crop.error}
-				</p>
-			)}
 		</section>
 	);
 }
@@ -427,7 +465,48 @@ export function BlendSection(props: SectionProps) {
 			className={`${styles.editor} ${styles['crop-editor']}`}
 			aria-labelledby="blend-heading"
 		>
-			<h2 id="blend-heading">Banner edge blend</h2>
+			<EditorHeader
+				id="blend-heading"
+				title="Banner edge blend"
+				actions={
+					<button
+						type="button"
+						className={styles.primary}
+						disabled={busy || cropChanged || !art}
+						onClick={() =>
+							void dispatch(saveBlend({ deckId, config: blend }))
+						}
+					>
+						{status.blend.saving
+							? 'Generating…'
+							: 'Generate and save blend'}
+					</button>
+				}
+			>
+				{cropChanged && (
+					<p className={styles.note}>
+						Save the banner crop before generating a new blend.
+					</p>
+				)}
+				{progress != null && (
+					<progress
+						className={styles.progress}
+						value={progress}
+						max={1}
+						aria-label="Banner generation progress"
+					/>
+				)}
+				{status.blend.message && (
+					<p role="status" className={styles.success}>
+						{status.blend.message}
+					</p>
+				)}
+				{status.blend.error && (
+					<p role="alert" className={styles.error}>
+						{status.blend.error}
+					</p>
+				)}
+			</EditorHeader>
 			<p className={styles.intro}>
 				Choose how the artwork meets the card background, then generate
 				to update the previews above. Saved banners are reused on every
@@ -570,9 +649,6 @@ export function BlendSection(props: SectionProps) {
 					</>
 				)}
 			</fieldset>
-			{cropChanged && (
-				<p>Save the banner crop before generating a new blend.</p>
-			)}
 			{!data.bannerBlend?.images && (
 				<p>
 					No blend has been generated for this artwork and crop yet.
@@ -586,37 +662,6 @@ export function BlendSection(props: SectionProps) {
 						They are kept until you generate again.
 					</p>
 				)}
-			<div className={styles.actions}>
-				<button
-					className={styles.primary}
-					disabled={busy || cropChanged || !art}
-					onClick={() =>
-						void dispatch(saveBlend({ deckId, config: blend }))
-					}
-				>
-					{status.blend.saving
-						? 'Generating…'
-						: 'Generate and save blend'}
-				</button>
-			</div>
-			{progress != null && (
-				<progress
-					className={styles.progress}
-					value={progress}
-					max={1}
-					aria-label="Banner generation progress"
-				/>
-			)}
-			{status.blend.message && (
-				<p role="status" className={styles.success}>
-					{status.blend.message}
-				</p>
-			)}
-			{status.blend.error && (
-				<p role="alert" className={styles.error}>
-					{status.blend.error}
-				</p>
-			)}
 		</section>
 	);
 }
@@ -631,12 +676,59 @@ export function PaletteSection(props: SectionProps) {
 				className={styles['editor']}
 				aria-labelledby="palette-heading"
 			>
-				<div className={styles['section-heading']}>
-					<h2 id="palette-heading">Page palette</h2>
-					<span className={styles['mode']}>
-						{isAuto ? 'From banner card' : 'Custom'}
-					</span>
-				</div>
+				<EditorHeader
+					id="palette-heading"
+					title="Page palette"
+					badge={
+						<span className={styles['mode']}>
+							{isAuto ? 'From banner card' : 'Custom'}
+						</span>
+					}
+					actions={
+						<>
+							<button
+								type="button"
+								className={styles['secondary']}
+								onClick={() =>
+									dispatch(appearanceActions.useCardColors())
+								}
+								disabled={isAuto || status.palette.saving}
+							>
+								Use card colors
+							</button>
+							<button
+								type="button"
+								className={styles['primary']}
+								onClick={() =>
+									void dispatch(
+										savePalette({
+											deckId,
+											palette: selectedPalette
+										})
+									)
+								}
+								disabled={
+									!paletteChanged || status.palette.saving
+								}
+							>
+								{status.palette.saving
+									? 'Saving…'
+									: 'Save palette'}
+							</button>
+						</>
+					}
+				>
+					{status.palette.message && (
+						<p className={styles['success']} role="status">
+							{status.palette.message}
+						</p>
+					)}
+					{status.palette.error && (
+						<p className={styles['error']} role="alert">
+							{status.palette.error}
+						</p>
+					)}
+				</EditorHeader>
 				<p className={styles['intro']}>
 					Use colors from the banner card, or adjust each color for
 					this deck.
@@ -671,43 +763,6 @@ export function PaletteSection(props: SectionProps) {
 						);
 					})}
 				</div>
-				<div className={styles['actions']}>
-					<button
-						type="button"
-						className={styles['secondary']}
-						onClick={() =>
-							dispatch(appearanceActions.useCardColors())
-						}
-						disabled={isAuto || status.palette.saving}
-					>
-						Use card colors
-					</button>
-					<button
-						type="button"
-						className={styles['primary']}
-						onClick={() =>
-							void dispatch(
-								savePalette({
-									deckId,
-									palette: selectedPalette
-								})
-							)
-						}
-						disabled={!paletteChanged || status.palette.saving}
-					>
-						{status.palette.saving ? 'Saving…' : 'Save palette'}
-					</button>
-				</div>
-				{status.palette.message && (
-					<p className={styles['success']} role="status">
-						{status.palette.message}
-					</p>
-				)}
-				{status.palette.error && (
-					<p className={styles['error']} role="alert">
-						{status.palette.error}
-					</p>
-				)}
 			</section>
 			<section className={styles['preview']} aria-label="Palette preview">
 				<div className={styles['art']}>

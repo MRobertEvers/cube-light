@@ -27,7 +27,6 @@ export type BannerPickerState = {
 	error: string | null;
 	requestId: string | null;
 	suggestionsOpen: boolean;
-	activeIndex: number;
 	saving: boolean;
 	saveError: string | null;
 };
@@ -47,7 +46,6 @@ const initialState: BannerPickerState = {
 	error: null,
 	requestId: null,
 	suggestionsOpen: false,
-	activeIndex: -1,
 	saving: false,
 	saveError: null
 };
@@ -116,13 +114,9 @@ export const bannerPickerSlice = createSlice({
 		setBannerQuery(state, action: PayloadAction<string>) {
 			state.query = action.payload;
 			state.suggestionsOpen = true;
-			state.activeIndex = -1;
 		},
 		setBannerSuggestionsOpen(state, action: PayloadAction<boolean>) {
 			state.suggestionsOpen = action.payload;
-		},
-		setBannerActiveIndex(state, action: PayloadAction<number>) {
-			state.activeIndex = action.payload;
 		},
 		chooseBannerCard(state, action: PayloadAction<string>) {
 			if (!state.names.includes(action.payload)) return;
@@ -137,7 +131,6 @@ export const bannerPickerSlice = createSlice({
 			state.loading = true;
 			state.error = null;
 			state.suggestionsOpen = false;
-			state.activeIndex = -1;
 			state.saveError = null;
 		},
 		selectBannerPrinting(state, action: PayloadAction<string>) {
@@ -212,7 +205,6 @@ export const {
 	closeBannerPicker,
 	setBannerQuery,
 	setBannerSuggestionsOpen,
-	setBannerActiveIndex,
 	chooseBannerCard,
 	selectBannerPrinting
 } = bannerPickerSlice.actions;

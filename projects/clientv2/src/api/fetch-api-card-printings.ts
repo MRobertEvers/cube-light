@@ -4,6 +4,7 @@ export type CardPrinting = {
 	name: string;
 	uuid: string;
 	setCode: string;
+	setName: string | null;
 	image: string | null;
 	art: string | null;
 };

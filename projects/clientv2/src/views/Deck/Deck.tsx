@@ -15,6 +15,7 @@ import { DeckStatsSummary } from './components/DeckStatsSummary/DeckStatsSummary
 import { useQueryState } from 'src/hooks/useQueryState';
 import { reducer, initialState, Actions } from './deck-state';
 import { AddCard } from './components/AddCard';
+import { AddCards } from './components/AddCards';
 import { useAsyncReducer } from 'src/hooks/useAsyncReducer';
 import { AddCardEventType } from './components/AddCard/AddCard';
 import { fetchAPIDeleteDeck } from 'src/api/fetch-api-delete-deck';
@@ -29,6 +30,11 @@ import {
 	setInitialDeck
 } from '../../store/decks/decks.state';
 import { useAppDispatch } from '../../store/use-app-dispatch';
+import {
+	closeAddCards,
+	openAddCards,
+	selectAddCards
+} from '../../store/add-cards/add-cards.state';
 import {
 	onAccent,
 	readableAccent,
@@ -52,6 +58,7 @@ export type DeckControlButtonsProps = {
 	onEditName: () => void;
 	onDone: () => void;
 	onImportImage: () => void;
+	onAddCards: () => void;
 	isSaving: boolean;
 };
 
@@ -75,6 +82,7 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 		onEditName,
 		onDone,
 		onImportImage,
+		onAddCards,
 		isSaving,
 		deckId
 	} = props;
@@ -142,6 +150,13 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 						>
 							Add card
 						</button>
+						<button
+							className={styles['secondary-action']}
+							onClick={onAddCards}
+							disabled={isSaving}
+						>
+							Add cards
+						</button>
 						<Link to={`/deck/${deckId}/settings`}>
 							Appearance settings
 						</Link>
@@ -189,6 +204,8 @@ export function Deck(props: DeckProps) {
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [showDetailsModal, setShowDetailsModal] = useState(false);
 	const [showImageImport, setShowImageImport] = useState(false);
+	const addCards = useSelector(selectAddCards);
+	const showAddCards = addCards.open && addCards.deckId === deckId;
 	const scanTasks = useImageImportQueue();
 	const addedFromScans = scanTasks
 		.filter((task) => task.deckId === deckId)
@@ -250,6 +267,14 @@ export function Deck(props: DeckProps) {
 			storeDispatch(setInitialDeck({ deckId, data: initialDeckData }));
 		void refreshDeck();
 	}, [deckId, initialDeckData, refreshDeck, storeDispatch]);
+
+	// The add-cards modal belongs to this page; don't let it reappear on the next visit.
+	useEffect(
+		() => () => {
+			storeDispatch(closeAddCards());
+		},
+		[deckId, storeDispatch]
+	);
 
 	useEffect(() => {
 		if (addedFromScans > 0) void refreshDeck();
@@ -369,6 +394,10 @@ export function Deck(props: DeckProps) {
 						}}
 					/>
 				</Modal>
+			) : showAddCards ? (
+				<Modal>
+					<AddCards />
+				</Modal>
 			) : showDetailsModal ? (
 				<Modal>
 					<section
@@ -469,6 +498,9 @@ export function Deck(props: DeckProps) {
 								setIsEditMode(false);
 							}}
 							onImportImage={() => setShowImageImport(true)}
+							onAddCards={() =>
+								storeDispatch(openAddCards({ deckId }))
+							}
 							isSaving={isSaving}
 						/>
 						<DeckImageScanCard deckId={deckId} />

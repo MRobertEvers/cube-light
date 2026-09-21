@@ -7,6 +7,7 @@ import { createResponseHandler } from '../../../../workers/utils/messageToolkit'
 import { DeckWorkerMessages } from '../../../../workers/deck.worker.messages';
 import { Button } from 'src/components/Button/Button';
 import { Counter } from 'src/components/Counter/Counter';
+import { SuggestionInput } from 'src/components/SuggestionInput/SuggestionInput';
 import { useAsyncReducer } from 'src/hooks/useAsyncReducer';
 import { Actions, initialState, reducerAddCard } from './add-card-state';
 import { loadDeck } from 'src/store/decks/decks.state';
@@ -34,7 +35,6 @@ export function AddCard(props: AddCardProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isSearching, setIsSearching] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [activeIndex, setActiveIndex] = useState(-1);
 	const [state, dispatch] = useAsyncReducer(reducerAddCard, initialState);
 	const {
 		suggestionsData: suggestions,
@@ -44,12 +44,10 @@ export function AddCard(props: AddCardProps) {
 	} = state;
 	const dialogRef = useRef<HTMLFormElement>(null);
 	const addItemInputRef = useRef<HTMLInputElement>(null);
-	const suggestionsRef = useRef<HTMLUListElement>(null);
 	const requestIdRef = useRef(0);
 	const queryRef = useRef('');
 	const searchStartedAt = useRef(0);
 	const submitStartedAt = useRef(0);
-	const listId = useId();
 	const hintId = useId();
 	const errorId = useId();
 
@@ -58,15 +56,6 @@ export function AddCard(props: AddCardProps) {
 		addItemInputRef.current?.focus();
 		return () => previousFocus?.focus();
 	}, []);
-
-	useEffect(() => {
-		if (viewIsDropDownVisible && activeIndex >= 0) {
-			(
-				suggestionsRef.current?.children[activeIndex] as
-					HTMLElement | undefined
-			)?.scrollIntoView({ block: 'nearest' });
-		}
-	}, [activeIndex, viewIsDropDownVisible]);
 
 	const workerResponseHandler = useMemo(() => {
 		return createResponseHandler((builder) => {
@@ -95,7 +84,6 @@ export function AddCard(props: AddCardProps) {
 					setIsSearching(false);
 					if (searchError)
 						setError('Unable to search cards. Please try again.');
-					setActiveIndex(-1);
 					dispatch(
 						Actions.setViewIsDropDownVisible(
 							sorted.length > 0 &&
@@ -130,8 +118,6 @@ export function AddCard(props: AddCardProps) {
 			? (exactMatch ?? suggestions.sorted[0])
 			: null;
 	const canSubmit = Boolean(resolvedCardName) && !isSubmitting;
-	const showSuggestions =
-		viewIsDropDownVisible && suggestions.sorted.length > 0;
 
 	function selectSuggestion(suggestion: string, keepFocus = true) {
 		requestIdRef.current += 1;
@@ -145,7 +131,6 @@ export function AddCard(props: AddCardProps) {
 		);
 		dispatch(Actions.setViewIsDropDownVisible(false));
 		setIsSearching(false);
-		setActiveIndex(-1);
 		setError(null);
 		if (keepFocus) addItemInputRef.current?.focus();
 	}
@@ -209,111 +194,52 @@ export function AddCard(props: AddCardProps) {
 			</div>
 			<div className={styles['field']}>
 				<label htmlFor="add-card-name">Card name</label>
-				<div className={styles['search-field']}>
-					<input
-						id="add-card-name"
-						ref={addItemInputRef}
-						role="combobox"
-						aria-autocomplete="list"
-						aria-expanded={showSuggestions}
-						aria-controls={showSuggestions ? listId : undefined}
-						aria-activedescendant={
-							showSuggestions && activeIndex >= 0
-								? `${listId}-${activeIndex}`
-								: undefined
-						}
-						aria-describedby={`${hintId}${error ? ` ${errorId}` : ''}`}
-						aria-invalid={Boolean(error)}
-						type="search"
-						autoComplete="off"
-						value={viewAddItemText}
-						placeholder="Start typing a card name"
-						onFocus={() => {
-							if (suggestions.sorted.length > 0)
-								dispatch(
-									Actions.setViewIsDropDownVisible(true)
-								);
-						}}
-						onBlur={() =>
-							dispatch(Actions.setViewIsDropDownVisible(false))
-						}
-						onChange={(event) => {
-							const query = event.target.value;
-							queryRef.current = query;
-							requestIdRef.current += 1;
-							dispatch(Actions.setViewAddItemText(query));
-							dispatch(
-								Actions.setSuggestionsData({
-									sorted: [],
-									set: new Set()
+				<SuggestionInput
+					id="add-card-name"
+					inputRef={addItemInputRef}
+					value={viewAddItemText}
+					suggestions={suggestions.sorted}
+					open={viewIsDropDownVisible}
+					onOpenChange={(open) =>
+						dispatch(Actions.setViewIsDropDownVisible(open))
+					}
+					onChange={(query) => {
+						queryRef.current = query;
+						requestIdRef.current += 1;
+						dispatch(Actions.setViewAddItemText(query));
+						dispatch(
+							Actions.setSuggestionsData({
+								sorted: [],
+								set: new Set()
+							})
+						);
+						dispatch(Actions.setViewIsDropDownVisible(false));
+						setError(null);
+						setIsSearching(Boolean(query.trim()));
+						if (query.trim()) {
+							searchStartedAt.current = performance.now();
+							postToWorker(
+								DeckWorkerMessages.getSuggestions({
+									query,
+									requestId: requestIdRef.current
 								})
 							);
-							dispatch(Actions.setViewIsDropDownVisible(false));
-							setActiveIndex(-1);
-							setError(null);
-							setIsSearching(Boolean(query.trim()));
-							if (query.trim()) {
-								searchStartedAt.current = performance.now();
-								postToWorker(
-									DeckWorkerMessages.getSuggestions({
-										query,
-										requestId: requestIdRef.current
-									})
-								);
-							}
-						}}
-						onKeyDown={(event) => {
-							if (
-								(event.key === 'ArrowDown' ||
-									event.key === 'ArrowUp') &&
-								suggestions.sorted.length > 0
-							) {
-								event.preventDefault();
-								dispatch(
-									Actions.setViewIsDropDownVisible(true)
-								);
-								setActiveIndex((current) => {
-									if (event.key === 'ArrowDown')
-										return (
-											(current + 1) %
-											suggestions.sorted.length
-										);
-									return current <= 0
-										? suggestions.sorted.length - 1
-										: current - 1;
-								});
-							} else if (
-								event.key === 'Enter' &&
-								showSuggestions &&
-								activeIndex >= 0
-							) {
-								event.preventDefault();
-								selectSuggestion(
-									suggestions.sorted[activeIndex]
-								);
-							} else if (
-								event.key === 'Enter' &&
-								showSuggestions &&
-								suggestions.sorted.length === 1 &&
-								!exactMatch
-							) {
-								event.preventDefault();
-								selectSuggestion(suggestions.sorted[0]);
-							} else if (
-								event.key === 'Tab' &&
-								!event.shiftKey &&
-								showSuggestions &&
-								suggestions.sorted.length === 1
-							) {
-								selectSuggestion(suggestions.sorted[0], false);
-							}
-						}}
-					/>
-					<div
-						className={styles['search-indicator']}
-						aria-hidden="true"
-					>
-						{isSearching ? (
+						}
+					}}
+					onSelect={selectSuggestion}
+					enterSelects={
+						suggestions.sorted.length === 1 && !exactMatch
+							? suggestions.sorted[0]
+							: undefined
+					}
+					tabSelects={
+						suggestions.sorted.length === 1
+							? suggestions.sorted[0]
+							: undefined
+					}
+					placeholder="Start typing a card name"
+					indicator={
+						isSearching ? (
 							<Spinner />
 						) : viewAddItemText ? (
 							resolvedCardName ? (
@@ -321,38 +247,12 @@ export function AddCard(props: AddCardProps) {
 							) : (
 								<AlertIcon />
 							)
-						) : null}
-					</div>
-					{showSuggestions && (
-						<ul
-							ref={suggestionsRef}
-							id={listId}
-							className={styles['suggestions']}
-							role="listbox"
-							aria-label="Card suggestions"
-						>
-							{suggestions.sorted.map((suggestion, index) => (
-								<li
-									id={`${listId}-${index}`}
-									key={suggestion}
-									role="option"
-									aria-selected={index === activeIndex}
-									className={
-										index === activeIndex
-											? styles['active-suggestion']
-											: undefined
-									}
-									onMouseDown={(event) =>
-										event.preventDefault()
-									}
-									onClick={() => selectSuggestion(suggestion)}
-								>
-									{suggestion}
-								</li>
-							))}
-						</ul>
-					)}
-				</div>
+						) : null
+					}
+					listLabel="Card suggestions"
+					aria-describedby={`${hintId}${error ? ` ${errorId}` : ''}`}
+					aria-invalid={Boolean(error)}
+				/>
 				<p id={hintId} className={styles['field-hint']}>
 					{isSearching
 						? 'Searching cards…'
