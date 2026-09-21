@@ -1,0 +1,119 @@
+{
+  "version": "61298faeb4e247e7",
+  "assets": [
+    {
+      "path": "card-names.json",
+      "bytes": 658950,
+      "sha256": "5a19a7cbec8b5a1ff40ac30b9c55b8f796a9bf6bbb4e742f3e37396c9af38f81",
+      "storage": "git"
+    },
+    {
+      "path": "models/fonts/beleren.woff",
+      "bytes": 58180,
+      "sha256": "55bd43e6ca11799c12c770ffaa32c1fd848c092682943f037bbad65508ecd6a2",
+      "storage": "git"
+    },
+    {
+      "path": "models/glm/chat_template.jinja",
+      "bytes": 4606,
+      "sha256": "062e7ee4cc8defa88a5938b5d456dc60366ffd80647f918946ee747bf09ddc7c",
+      "storage": "git"
+    },
+    {
+      "path": "models/glm/config.json",
+      "bytes": 2022,
+      "sha256": "8bf81b89d42ae98917084dfeaca5a1dc20ac20d6145f088ec2aac8840c1e4b9f",
+      "storage": "git"
+    },
+    {
+      "path": "models/glm/generation_config.json",
+      "bytes": 166,
+      "sha256": "8da3eae088e11c06a32660d428ce0ac170fefb50e6439469515c82f031d6be45",
+      "storage": "git"
+    },
+    {
+      "path": "models/glm/onnx/decoder_model_merged_fp16.onnx",
+      "bytes": 323186,
+      "sha256": "05459d5dcabe25797349b78eba00aabb3623fdea5e715531f1b9005723666458",
+      "storage": "git"
+    },
+    {
+      "path": "models/glm/onnx/decoder_model_merged_fp16.onnx_data",
+      "bytes": 1164318720,
+      "sha256": "feb49731119234bca3c65f0bc86d0b16cdc3dfdf55faaccaa7b835b12ba60e89",
+      "storage": "nas"
+    },
+    {
+      "path": "models/glm/onnx/embed_tokens_fp16.onnx",
+      "bytes": 637,
+      "sha256": "b89286897ab93a05fe94b79595056cded271d269970e659830104b028b18cb89",
+      "storage": "git"
+    },
+    {
+      "path": "models/glm/onnx/embed_tokens_fp16.onnx_data",
+      "bytes": 182452224,
+      "sha256": "2513f9cdd2775629d83707e96118266aec326c1c15d085a77433971a6b1f9696",
+      "storage": "nas"
+    },
+    {
+      "path": "models/glm/onnx/vision_encoder_fp16.onnx",
+      "bytes": 416320,
+      "sha256": "b1b5a515f0b08ba9bd47b59e6aea8d43c823a2f468d0ed3278978701ecaa70ff",
+      "storage": "git"
+    },
+    {
+      "path": "models/glm/onnx/vision_encoder_fp16.onnx_data",
+      "bytes": 868340736,
+      "sha256": "662efa71b0eebd67d1b2169b90af747dacb4cc95db46785d59b0f03e3bc4a20d",
+      "storage": "nas"
+    },
+    {
+      "path": "models/glm/preprocessor_config.json",
+      "bytes": 366,
+      "sha256": "0d4b3cf5190e6b5b53ac52b1880b111163888bfc975db396561ee78887942fe4",
+      "storage": "git"
+    },
+    {
+      "path": "models/glm/processor_config.json",
+      "bytes": 1495,
+      "sha256": "8dd8262e7ac5495801a1e6b8d6c6035331b2381b930b23eb262fc46604527074",
+      "storage": "git"
+    },
+    {
+      "path": "models/glm/provenance.json",
+      "bytes": 552,
+      "sha256": "0d881cd0527fc0b6d6fd91eb320329ca77a000fc11c5c2ffca8cc762df231f26",
+      "storage": "git"
+    },
+    {
+      "path": "models/glm/tokenizer.json",
+      "bytes": 5420559,
+      "sha256": "c3e229a66a06267194e62055f70cf5580af83b3582f46928fefee8cb9618f499",
+      "storage": "git"
+    },
+    {
+      "path": "models/glm/tokenizer_config.json",
+      "bytes": 5855,
+      "sha256": "49feefa948a21a9386864992b4b5fb7cabc9866a71e57edecb13009afe118fa5",
+      "storage": "git"
+    },
+    {
+      "path": "models/paddle/PP-OCRv5_mobile_det.tar",
+      "bytes": 4843520,
+      "sha256": "781056046c9ed77a15c94681605db6a0f62317c2e9cce6931c71da2478d4bc30",
+      "storage": "git"
+    },
+    {
+      "path": "models/paddle/PP-OCRv6_small_rec.tar",
+      "bytes": 21319680,
+      "sha256": "d267ab077a44a0eedb1ea8f8c542d263f211de8e9d7a029bf9fcfff7e5a88fb1",
+      "storage": "git"
+    },
+    {
+      "path": "models/title-references/catalog.json",
+      "bytes": 5838595,
+      "sha256": "dd7ad98d7f333eda786d82677f4b9b5cb8b7a99e55affcc206660ae5fe9b398b",
+      "storage": "git"
+    }
+  ]
+}

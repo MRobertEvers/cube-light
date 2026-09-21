@@ -48,7 +48,9 @@ export function statusText(task: ImageScanTask): string {
 		case 'loading':
 			return 'Loading OCR model';
 		case 'scanning':
-			return `${task.completed} of ${task.total} regions scanned`;
+			return task.phaseLabel
+				? `${task.phaseLabel} · ${task.completed}%`
+				: `${task.completed} of ${task.total} regions scanned`;
 		case 'adding':
 			return 'Adding identified cards';
 		case 'completed':

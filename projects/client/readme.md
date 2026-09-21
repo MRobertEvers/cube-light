@@ -20,3 +20,7 @@ This project has a service worker which is compiled separately from the nextjs a
 
 `src/service-worker/service-worker.ts` contains the code to register the worker on the client.
 `service-worker/service-worker.sw.ts` is the service worker itself.
+
+## Photo-import OCR research
+
+The active photo-import client is Client v2. See its [browser-only card-name recognition analysis](../clientv2/readme.md#browser-only-card-name-recognition-experiment-and-implementation) for the pipeline, measured speed/accuracy comparisons, integration status, and reproduction commands.

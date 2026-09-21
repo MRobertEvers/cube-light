@@ -1,0 +1,6 @@
+import{readFile,writeFile}from'node:fs/promises';
+import{createHash}from'node:crypto';
+const id=process.argv[2]||'fresh-integrated-v3',read=async p=>JSON.parse(await readFile(new URL(p,import.meta.url),'utf8')),run=await read('photo-results/'+id+'.json'),catalog=await read('res/card-names.json'),experiments=await read('photo-results/new-experiment-summary.json');
+const imageSha256=createHash('sha256').update(await readFile(new URL('./res/IMG_8535.jpeg',import.meta.url))).digest('hex');
+const summary={imageSha256,date:new Date().toISOString(),run:id,scope:'One development photo; acceptance rules tuned on this photo',engine:run.engine,names:run.names,distinctCorrect:run.metrics.uniqueCorrect,distinctTotal:run.metrics.uniqueTotal,correctTitleInstances:run.metrics.correct,falsePositives:run.metrics.falsePositives.map(c=>c.name),meetsTarget:run.meetsTarget,totalMs:run.totalMs,environment:run.environment,catalogSize:catalog.length,usesCachedProposals:run.usesCachedProposals,audit:run.audit,timings:run.passes.map(p=>({engine:p.engine,totalMs:p.totalMs,loadMs:p.loadMs,regions:p.outputs?.length,subpasses:p.engine==='font-proposals'?p.passes:undefined})),experiments};
+await writeFile(new URL('experimental-benchmark-summary.json',import.meta.url),JSON.stringify(summary,null,2)+'\n');console.log(JSON.stringify(summary,null,2));

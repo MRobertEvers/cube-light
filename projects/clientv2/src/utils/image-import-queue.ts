@@ -12,7 +12,12 @@ import {
 import { resolvedCandidateAdditions } from './image-import-auto-add';
 
 export type ImageScanStatus =
-	'queued' | 'loading' | 'scanning' | 'adding' | 'completed' | 'error';
+	| 'queued'
+	| 'loading'
+	| 'scanning'
+	| 'adding'
+	| 'completed'
+	| 'error';
 
 export type ImageScanTask = {
 	id: string;
@@ -24,6 +29,7 @@ export type ImageScanTask = {
 	total: number;
 	region: ImageRegion | null;
 	candidates: CardImageCandidate[];
+	phaseLabel?: string;
 	addedCounts: Record<string, number>;
 	plannedCounts: Record<string, number>;
 	error: string | null;
@@ -213,6 +219,7 @@ class ImageImportQueue {
 								update.phase === 'loading'
 									? 'loading'
 									: 'scanning';
+							task.phaseLabel = update.message;
 							task.completed = update.completed;
 							task.total = update.total;
 							task.region = update.region;

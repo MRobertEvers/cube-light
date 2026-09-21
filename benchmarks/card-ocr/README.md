@@ -1,3 +1,5 @@
+> **Tabletop scanner:** the fresh browser pipeline recovered **12/12 names with zero accepted false matches in 173.5 seconds** on the supplied development photo. See [EXPERIMENT-STATUS.md](EXPERIMENT-STATUS.md) for the upload harness, reproduction commands and limits.
+
 # Browser OCR feasibility test for MTG card names
 
 ## Result (20 September 2026)

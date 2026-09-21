@@ -1,0 +1,18 @@
+{
+  "entryPoint": "projects/clientv2/src/utils/card-image-ocr.ts:scanCardImage",
+  "date": "2026-09-21",
+  "milliseconds": 174445.19999998808,
+  "distinctNames": 12,
+  "acceptedTitles": 17,
+  "falsePositives": 0,
+  "forbiddenFixtureRequests": [],
+  "productionBundle": {
+    "milliseconds": 192294,
+    "distinctNames": 12,
+    "falsePositives": 0,
+    "audit": {
+      "forbidden": [],
+      "errors": []
+    }
+  }
+}

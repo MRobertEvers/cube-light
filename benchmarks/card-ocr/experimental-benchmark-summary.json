@@ -1,0 +1,114 @@
+{
+  "imageSha256": "2acd047f7b498525ffea38984dc7eb2dfb59c1e87e87e47751a8774eeba81aeb",
+  "date": "2026-09-21T21:48:04.498Z",
+  "run": "fresh-integrated-v3",
+  "scope": "One development photo; acceptance rules tuned on this photo",
+  "engine": "experimental-text-only",
+  "names": [
+    "Aether Chaser",
+    "Aether Swooper",
+    "Cloudsculpt Technician",
+    "Cryogen Relic",
+    "Galvanic Blast",
+    "Gearseeker Serpent",
+    "Inventor's Axe",
+    "Inventor's Goggles",
+    "Kenku Artificer",
+    "Melded Moxite",
+    "Metallic Rebuke",
+    "Selfcraft Mechan"
+  ],
+  "distinctCorrect": 12,
+  "distinctTotal": 12,
+  "correctTitleInstances": 17,
+  "falsePositives": [],
+  "meetsTarget": true,
+  "totalMs": 173477.80000001192,
+  "catalogSize": 34299,
+  "usesCachedProposals": false,
+  "audit": {
+    "nonReadRequests": [],
+    "blockedFixtureRequests": []
+  },
+  "timings": [
+    {
+      "engine": "paddle",
+      "totalMs": 40629.90000003576,
+      "loadMs": 5556.100000023842,
+      "regions": 48
+    },
+    {
+      "engine": "font-proposals",
+      "totalMs": 82457.79999995232,
+      "regions": 4069,
+      "subpasses": [
+        {
+          "mode": "light",
+          "totalMs": 20033.5,
+          "outputs": 558
+        },
+        {
+          "mode": "ink",
+          "totalMs": 36445.90000003576,
+          "outputs": 2413
+        },
+        {
+          "mode": "plane",
+          "totalMs": 25977.80000001192,
+          "outputs": 1098
+        }
+      ]
+    },
+    {
+      "engine": "font-refinement",
+      "totalMs": 10757.699999988079,
+      "regions": 2220
+    },
+    {
+      "engine": "printed-reference-title-matching",
+      "totalMs": 6309.899999976158,
+      "loadMs": 6090.699999988079,
+      "regions": 27
+    },
+    {
+      "engine": "glm-finite-catalog",
+      "totalMs": 32075.30000001192,
+      "loadMs": 2918.699999988079,
+      "regions": 18
+    }
+  ],
+  "experiments": [
+    {
+      "id": "parseq-v1",
+      "milliseconds": 9118.699999988079,
+      "exportMaxError": 0.0000095367431640625,
+      "regions": 60,
+      "correctNames": 1,
+      "falsePositives": [],
+      "scope": "60 cached automatically selected crops"
+    },
+    {
+      "id": "parseq-ar-v2",
+      "milliseconds": 9796.600000023842,
+      "exportMaxError": 0.000012874603271484375,
+      "regions": 60,
+      "correctNames": 0,
+      "falsePositives": [],
+      "scope": "60 cached automatically selected crops"
+    },
+    {
+      "id": "card-context-v1",
+      "milliseconds": 72367.80000001192,
+      "regions": 30,
+      "result": "Unreliable transcriptions; not used for acceptance"
+    },
+    {
+      "id": "references-v1",
+      "milliseconds": 3337.600000023842,
+      "referenceCount": 352,
+      "correctNames": 2,
+      "falsePositives": [],
+      "scope": "60 cached automatically selected crops"
+    }
+  ]
+}

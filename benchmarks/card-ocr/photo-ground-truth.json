@@ -83,7 +83,7 @@
     },
     {
       "id": "card-08",
-      "name": "Galvanic Discharge",
+      "name": "Melded Moxite",
       "visibility": "full",
       "box": [
         3470,
@@ -94,7 +94,7 @@
     },
     {
       "id": "card-09",
-      "name": "Galvanic Discharge",
+      "name": "Melded Moxite",
       "visibility": "partial",
       "box": [
         3100,
@@ -105,7 +105,7 @@
     },
     {
       "id": "card-10",
-      "name": "Galvanic Discharge",
+      "name": "Melded Moxite",
       "visibility": "partial",
       "box": [
         3244,
@@ -116,7 +116,7 @@
     },
     {
       "id": "card-11",
-      "name": "Galvanic Discharge",
+      "name": "Melded Moxite",
       "visibility": "partial",
       "box": [
         3319,
@@ -389,5 +389,7 @@
         72
       ]
     }
-  ]
+  ],
+  "annotationRevision": 2,
+  "correction": "User confirmed cards 08\u201311 are Melded Moxite. Evaluation labels are never provided to inference."
 }

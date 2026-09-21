@@ -1,0 +1,2103 @@
+{
+  "date": "2026-09-21T18:48:51.872Z",
+  "browser": "153.0.8010.52",
+  "platform": "darwin",
+  "arch": "arm64",
+  "imageSha256": "2acd047f7b498525ffea38984dc7eb2dfb59c1e87e87e47751a8774eeba81aeb",
+  "catalogSize": 34299,
+  "photoUploads": [],
+  "pageErrors": [],
+  "scope": "OCR only; development photo, not a held-out test",
+  "names": [
+    "Aether Chaser",
+    "Aether Swooper",
+    "Cryogen Relic",
+    "Gearseeker Serpent",
+    "Kenku Artificer",
+    "Metallic Rebuke",
+    "Selfcraft Mechan"
+  ],
+  "milliseconds": 101610.10000002384,
+  "metrics": {
+    "accepted": 12,
+    "correct": 12,
+    "precision": 1,
+    "recall": 0.34285714285714286,
+    "fullCorrect": 12,
+    "fullTotal": 19,
+    "partialCorrect": 0,
+    "partialTotal": 16,
+    "uniqueCorrect": 7,
+    "uniqueTotal": 12,
+    "missing": [
+      {
+        "id": "card-01",
+        "name": "Inventor's Goggles",
+        "visibility": "full",
+        "box": [
+          1882,
+          1002,
+          395,
+          56
+        ]
+      },
+      {
+        "id": "card-02",
+        "name": "Inventor's Goggles",
+        "visibility": "partial",
+        "box": [
+          1359,
+          1049,
+          125,
+          53
+        ]
+      },
+      {
+        "id": "card-03",
+        "name": "Inventor's Goggles",
+        "visibility": "partial",
+        "box": [
+          1503,
+          1015,
+          169,
+          53
+        ]
+      },
+      {
+        "id": "card-04",
+        "name": "Inventor's Goggles",
+        "visibility": "partial",
+        "box": [
+          1691,
+          1015,
+          163,
+          53
+        ]
+      },
+      {
+        "id": "card-05",
+        "name": "Inventor's Axe",
+        "visibility": "full",
+        "box": [
+          454,
+          1152,
+          473,
+          116
+        ]
+      },
+      {
+        "id": "card-06",
+        "name": "Inventor's Axe",
+        "visibility": "partial",
+        "box": [
+          294,
+          1262,
+          160,
+          72
+        ]
+      },
+      {
+        "id": "card-07",
+        "name": "Galvanic Blast",
+        "visibility": "full",
+        "box": [
+          2427,
+          1037,
+          385,
+          50
+        ]
+      },
+      {
+        "id": "card-08",
+        "name": "Melded Moxite",
+        "visibility": "full",
+        "box": [
+          3470,
+          968,
+          357,
+          106
+        ]
+      },
+      {
+        "id": "card-09",
+        "name": "Melded Moxite",
+        "visibility": "partial",
+        "box": [
+          3100,
+          952,
+          135,
+          41
+        ]
+      },
+      {
+        "id": "card-10",
+        "name": "Melded Moxite",
+        "visibility": "partial",
+        "box": [
+          3244,
+          949,
+          78,
+          41
+        ]
+      },
+      {
+        "id": "card-11",
+        "name": "Melded Moxite",
+        "visibility": "partial",
+        "box": [
+          3319,
+          971,
+          132,
+          44
+        ]
+      },
+      {
+        "id": "card-13",
+        "name": "Kenku Artificer",
+        "visibility": "partial",
+        "box": [
+          2029,
+          1503,
+          160,
+          63
+        ]
+      },
+      {
+        "id": "card-15",
+        "name": "Aether Swooper",
+        "visibility": "partial",
+        "box": [
+          658,
+          1857,
+          204,
+          81
+        ]
+      },
+      {
+        "id": "card-16",
+        "name": "Aether Swooper",
+        "visibility": "partial",
+        "box": [
+          867,
+          1807,
+          204,
+          81
+        ]
+      },
+      {
+        "id": "card-17",
+        "name": "Aether Swooper",
+        "visibility": "partial",
+        "box": [
+          1087,
+          1776,
+          169,
+          75
+        ]
+      },
+      {
+        "id": "card-18",
+        "name": "Aether Chaser",
+        "visibility": "full",
+        "box": [
+          0,
+          2123,
+          175,
+          138
+        ]
+      },
+      {
+        "id": "card-22",
+        "name": "Cloudsculpt Technician",
+        "visibility": "full",
+        "box": [
+          3711,
+          1544,
+          323,
+          97
+        ]
+      },
+      {
+        "id": "card-23",
+        "name": "Cloudsculpt Technician",
+        "visibility": "full",
+        "box": [
+          4037,
+          1635,
+          423,
+          207
+        ]
+      },
+      {
+        "id": "card-24",
+        "name": "Cloudsculpt Technician",
+        "visibility": "partial",
+        "box": [
+          3360,
+          1534,
+          110,
+          60
+        ]
+      },
+      {
+        "id": "card-25",
+        "name": "Cloudsculpt Technician",
+        "visibility": "partial",
+        "box": [
+          3476,
+          1531,
+          200,
+          85
+        ]
+      },
+      {
+        "id": "card-29",
+        "name": "Gearseeker Serpent",
+        "visibility": "partial",
+        "box": [
+          1726,
+          2543,
+          229,
+          100
+        ]
+      },
+      {
+        "id": "card-32",
+        "name": "Selfcraft Mechan",
+        "visibility": "partial",
+        "box": [
+          2690,
+          2302,
+          72,
+          91
+        ]
+      },
+      {
+        "id": "card-33",
+        "name": "Selfcraft Mechan",
+        "visibility": "partial",
+        "box": [
+          2781,
+          2267,
+          125,
+          91
+        ]
+      }
+    ],
+    "hits": [
+      {
+        "id": "card-12",
+        "name": "Kenku Artificer",
+        "visibility": "full",
+        "box": [
+          2202,
+          1488,
+          413,
+          66
+        ],
+        "text": "Kynku Artificer"
+      },
+      {
+        "id": "card-14",
+        "name": "Aether Swooper",
+        "visibility": "full",
+        "box": [
+          1278,
+          1744,
+          470,
+          75
+        ],
+        "text": "Acther Swooper"
+      },
+      {
+        "id": "card-19",
+        "name": "Aether Chaser",
+        "visibility": "full",
+        "box": [
+          185,
+          1948,
+          435,
+          175
+        ],
+        "text": "Aether Chaser"
+      },
+      {
+        "id": "card-30",
+        "name": "Selfcraft Mechan",
+        "visibility": "full",
+        "box": [
+          2546,
+          2167,
+          413,
+          169
+        ],
+        "text": "Selfcraft Mechan"
+      },
+      {
+        "id": "card-35",
+        "name": "Cryogen Relic",
+        "visibility": "full",
+        "box": [
+          3827,
+          2220,
+          423,
+          72
+        ],
+        "text": "Cryogen Relic"
+      },
+      {
+        "id": "card-34",
+        "name": "Cryogen Relic",
+        "visibility": "full",
+        "box": [
+          3470,
+          2214,
+          294,
+          69
+        ],
+        "text": "Cryogen Relic"
+      },
+      {
+        "id": "card-31",
+        "name": "Selfcraft Mechan",
+        "visibility": "full",
+        "box": [
+          2919,
+          2214,
+          423,
+          97
+        ],
+        "text": "Selfcraft Mechan"
+      },
+      {
+        "id": "card-20",
+        "name": "Aether Chaser",
+        "visibility": "full",
+        "box": [
+          4879,
+          2371,
+          401,
+          91
+        ],
+        "text": "Aether Chaser"
+      },
+      {
+        "id": "card-28",
+        "name": "Gearseeker Serpent",
+        "visibility": "full",
+        "box": [
+          1954,
+          2424,
+          482,
+          153
+        ],
+        "text": "Gearseeker Serpent"
+      },
+      {
+        "id": "card-21",
+        "name": "Aether Chaser",
+        "visibility": "full",
+        "box": [
+          4979,
+          2471,
+          432,
+          91
+        ],
+        "text": "Aether Chaser"
+      },
+      {
+        "id": "card-26",
+        "name": "Metallic Rebuke",
+        "visibility": "full",
+        "box": [
+          827,
+          2646,
+          545,
+          188
+        ],
+        "text": "Metallic Rebuke"
+      },
+      {
+        "id": "card-27",
+        "name": "Metallic Rebuke",
+        "visibility": "full",
+        "box": [
+          473,
+          2809,
+          338,
+          132
+        ],
+        "text": "Metallic Rebuke"
+      }
+    ],
+    "falsePositives": [],
+    "meetsTarget": false
+  },
+  "experiments": [
+    {
+      "name": "tesseract-1400",
+      "milliseconds": 18076.19999998808,
+      "distinctNames": 0,
+      "fullTitles": 0,
+      "allKnownInstances": 0,
+      "falsePositives": 0
+    },
+    {
+      "name": "paddle-whole",
+      "milliseconds": 7639.5,
+      "distinctNames": 0,
+      "fullTitles": 0,
+      "allKnownInstances": 0,
+      "falsePositives": 0
+    },
+    {
+      "name": "paddle-1400",
+      "milliseconds": 27085.899999976158,
+      "distinctNames": 6,
+      "fullTitles": 9,
+      "allKnownInstances": 9,
+      "falsePositives": 0
+    },
+    {
+      "name": "paddle-sensitive",
+      "milliseconds": 42068.5,
+      "distinctNames": 7,
+      "fullTitles": 10,
+      "allKnownInstances": 10,
+      "falsePositives": 0
+    },
+    {
+      "name": "paddle-v6-1400",
+      "milliseconds": 32353.80000001192,
+      "distinctNames": 5,
+      "fullTitles": 9,
+      "allKnownInstances": 9,
+      "falsePositives": 0
+    },
+    {
+      "name": "direct-edges-v3",
+      "milliseconds": 25927.899999976158,
+      "distinctNames": 5,
+      "fullTitles": 7,
+      "allKnownInstances": 7,
+      "falsePositives": 0
+    },
+    {
+      "name": "english-edges-v3",
+      "milliseconds": 17170.399999976158,
+      "distinctNames": 5,
+      "fullTitles": 7,
+      "allKnownInstances": 7,
+      "falsePositives": 0
+    },
+    {
+      "name": "server-edges-v3",
+      "milliseconds": 119858.39999997616,
+      "distinctNames": 3,
+      "fullTitles": 3,
+      "allKnownInstances": 3,
+      "falsePositives": 0
+    },
+    {
+      "name": "direct-enhanced",
+      "milliseconds": 26690.299999952316,
+      "distinctNames": 5,
+      "fullTitles": 7,
+      "allKnownInstances": 7,
+      "falsePositives": 0
+    },
+    {
+      "name": "direct-stretch",
+      "milliseconds": 15860.900000035763,
+      "distinctNames": 5,
+      "fullTitles": 6,
+      "allKnownInstances": 6,
+      "falsePositives": 0
+    }
+  ],
+  "passes": [
+    {
+      "engine": "paddle",
+      "model": "PP-OCRv6_small_rec",
+      "detector": "PP-OCRv5_mobile_det",
+      "tileSize": 960,
+      "overlap": 200,
+      "scale": 1,
+      "detThresh": 0.1,
+      "boxThresh": 0.3,
+      "width": 5712,
+      "height": 4284,
+      "loadMs": 5818.200000047684,
+      "totalMs": 40823.60000002384,
+      "regions": 48
+    },
+    {
+      "engine": "paddle",
+      "model": "PP-OCRv6_small_rec",
+      "detector": "PP-OCRv6_small_det",
+      "tileSize": 1400,
+      "overlap": 300,
+      "scale": 1,
+      "detThresh": 0.3,
+      "boxThresh": 0.6,
+      "width": 5712,
+      "height": 4284,
+      "loadMs": 7956.399999976158,
+      "totalMs": 34002.39999997616,
+      "regions": 20
+    },
+    {
+      "engine": "direct",
+      "recModel": "small",
+      "stretch": 1,
+      "enhance": false,
+      "trim": false,
+      "mode": "edges",
+      "width": 5712,
+      "height": 4284,
+      "totalMs": 25924.900000035763,
+      "regions": 280
+    }
+  ],
+  "accepted": [
+    {
+      "text": "Kynku Artificer",
+      "ocrScore": 0.9315179944038391,
+      "name": "Kenku Artificer",
+      "similarity": 0.9333333333333333,
+      "margin": 0.1333333333333333,
+      "status": "accepted",
+      "alternatives": [
+        {
+          "name": "Kenku Artificer",
+          "score": 0.9333333333333333,
+          "exact": false
+        },
+        {
+          "name": "Synod Artificer",
+          "score": 0.8,
+          "exact": false
+        },
+        {
+          "name": "Reclusive Artificer",
+          "score": 0.5789473684210527,
+          "exact": false
+        }
+      ],
+      "poly": [
+        [
+          2223,
+          1523
+        ],
+        [
+          2397,
+          1506
+        ],
+        [
+          2400,
+          1530
+        ],
+        [
+          2226,
+          1547
+        ]
+      ],
+      "box": {
+        "x": 2223,
+        "y": 1506,
+        "w": 177,
+        "h": 41
+      }
+    },
+    {
+      "text": "Acther Swooper",
+      "ocrScore": 0.950688762324197,
+      "name": "Aether Swooper",
+      "similarity": 0.9285714285714286,
+      "margin": 0.2857142857142858,
+      "status": "accepted",
+      "alternatives": [
+        {
+          "name": "Aether Swooper",
+          "score": 0.9285714285714286,
+          "exact": false
+        },
+        {
+          "name": "Gale Swooper",
+          "score": 0.6428571428571428,
+          "exact": false
+        },
+        {
+          "name": "Aether Searcher",
+          "score": 0.6,
+          "exact": false
+        }
+      ],
+      "poly": [
+        [
+          1294,
+          1781
+        ],
+        [
+          1498,
+          1771
+        ],
+        [
+          1499,
+          1794
+        ],
+        [
+          1295,
+          1804
+        ]
+      ],
+      "box": {
+        "x": 1294,
+        "y": 1771,
+        "w": 205,
+        "h": 33
+      }
+    },
+    {
+      "text": "Aether Chaser",
+      "ocrScore": 0.9272537667017716,
+      "name": "Aether Chaser",
+      "similarity": 1,
+      "margin": 0.23076923076923084,
+      "status": "accepted",
+      "alternatives": [
+        {
+          "name": "Aether Chaser",
+          "score": 1,
+          "exact": true
+        },
+        {
+          "name": "Aether Charge",
+          "score": 0.7692307692307692,
+          "exact": false
+        },
+        {
+          "name": "Aether Channeler",
+          "score": 0.75,
+          "exact": false
+        }
+      ],
+      "poly": [
+        [
+          179.12312727272726,
+          2092.1368363636366
+        ],
+        [
+          622.3743272727273,
+          1923.3991636363637
+        ],
+        [
+          635.4210545454546,
+          1957.6711636363636
+        ],
+        [
+          192.16985454545454,
+          2126.4088363636365
+        ]
+      ],
+      "box": {
+        "x": 179.12312727272726,
+        "y": 1923.3991636363637,
+        "w": 456.2979272727273,
+        "h": 203.0096727272728
+      }
+    },
+    {
+      "text": "Selfcraft Mechan",
+      "ocrScore": 0.998708114027977,
+      "name": "Selfcraft Mechan",
+      "similarity": 1,
+      "margin": 0.4375,
+      "status": "accepted",
+      "alternatives": [
+        {
+          "name": "Selfcraft Mechan",
+          "score": 1,
+          "exact": true
+        },
+        {
+          "name": "Survey Mechan",
+          "score": 0.5625,
+          "exact": false
+        },
+        {
+          "name": "Red Tiger Mechan",
+          "score": 0.5,
+          "exact": false
+        }
+      ],
+      "poly": [
+        [
+          2561,
+          2270
+        ],
+        [
+          2762,
+          2229
+        ],
+        [
+          2767,
+          2256
+        ],
+        [
+          2566,
+          2297
+        ]
+      ],
+      "box": {
+        "x": 2561,
+        "y": 2229,
+        "w": 206,
+        "h": 68
+      }
+    },
+    {
+      "text": "Cryogen Relic",
+      "ocrScore": 0.9908367166152368,
+      "name": "Cryogen Relic",
+      "similarity": 1,
+      "margin": 0.3846153846153846,
+      "status": "accepted",
+      "alternatives": [
+        {
+          "name": "Cryogen Relic",
+          "score": 1,
+          "exact": true
+        },
+        {
+          "name": "Rusted Relic",
+          "score": 0.6153846153846154,
+          "exact": false
+        },
+        {
+          "name": "Cryogenic Stasis",
+          "score": 0.5625,
+          "exact": false
+        }
+      ],
+      "poly": [
+        [
+          3830,
+          2232
+        ],
+        [
+          4000,
+          2240
+        ],
+        [
+          3999,
+          2265
+        ],
+        [
+          3829,
+          2257
+        ]
+      ],
+      "box": {
+        "x": 3829,
+        "y": 2232,
+        "w": 171,
+        "h": 33
+      }
+    },
+    {
+      "text": "Cryogen Relic",
+      "ocrScore": 0.9872309015347407,
+      "name": "Cryogen Relic",
+      "similarity": 1,
+      "margin": 0.3846153846153846,
+      "status": "accepted",
+      "alternatives": [
+        {
+          "name": "Cryogen Relic",
+          "score": 1,
+          "exact": true
+        },
+        {
+          "name": "Rusted Relic",
+          "score": 0.6153846153846154,
+          "exact": false
+        },
+        {
+          "name": "Cryogenic Stasis",
+          "score": 0.5625,
+          "exact": false
+        }
+      ],
+      "poly": [
+        [
+          3484,
+          2235
+        ],
+        [
+          3653,
+          2233
+        ],
+        [
+          3653,
+          2259
+        ],
+        [
+          3484,
+          2261
+        ]
+      ],
+      "box": {
+        "x": 3484,
+        "y": 2233,
+        "w": 169,
+        "h": 28
+      }
+    },
+    {
+      "text": "Selfcraft Mechan",
+      "ocrScore": 0.9983602277934551,
+      "name": "Selfcraft Mechan",
+      "similarity": 1,
+      "margin": 0.4375,
+      "status": "accepted",
+      "alternatives": [
+        {
+          "name": "Selfcraft Mechan",
+          "score": 1,
+          "exact": true
+        },
+        {
+          "name": "Survey Mechan",
+          "score": 0.5625,
+          "exact": false
+        },
+        {
+          "name": "Red Tiger Mechan",
+          "score": 0.5,
+          "exact": false
+        }
+      ],
+      "poly": [
+        [
+          2928,
+          2270
+        ],
+        [
+          3134,
+          2251
+        ],
+        [
+          3137,
+          2278
+        ],
+        [
+          2931,
+          2297
+        ]
+      ],
+      "box": {
+        "x": 2928,
+        "y": 2251,
+        "w": 209,
+        "h": 46
+      }
+    },
+    {
+      "text": "Aether Chaser",
+      "ocrScore": 0.9832066618479215,
+      "name": "Aether Chaser",
+      "similarity": 1,
+      "margin": 0.23076923076923084,
+      "status": "accepted",
+      "alternatives": [
+        {
+          "name": "Aether Chaser",
+          "score": 1,
+          "exact": true
+        },
+        {
+          "name": "Aether Charge",
+          "score": 0.7692307692307692,
+          "exact": false
+        },
+        {
+          "name": "Aether Channeler",
+          "score": 0.75,
+          "exact": false
+        }
+      ],
+      "poly": [
+        [
+          4879,
+          2394
+        ],
+        [
+          5047,
+          2394
+        ],
+        [
+          5047,
+          2434
+        ],
+        [
+          4879,
+          2434
+        ]
+      ],
+      "box": {
+        "x": 4879,
+        "y": 2394,
+        "w": 168,
+        "h": 40
+      }
+    },
+    {
+      "text": "Gearseeker Serpent",
+      "ocrScore": 0.9926408463054233,
+      "name": "Gearseeker Serpent",
+      "similarity": 1,
+      "margin": 0.38888888888888884,
+      "status": "accepted",
+      "alternatives": [
+        {
+          "name": "Gearseeker Serpent",
+          "score": 1,
+          "exact": true
+        },
+        {
+          "name": "River Serpent",
+          "score": 0.6111111111111112,
+          "exact": false
+        },
+        {
+          "name": "Harbor Serpent",
+          "score": 0.6111111111111112,
+          "exact": false
+        }
+      ],
+      "poly": [
+        [
+          1944.5984727272726,
+          2528.222072727273
+        ],
+        [
+          2418.0713454545453,
+          2419.9277454545454
+        ],
+        [
+          2426.444618181818,
+          2456.5364727272727
+        ],
+        [
+          1952.9717454545453,
+          2564.8308
+        ]
+      ],
+      "box": {
+        "x": 1944.5984727272726,
+        "y": 2419.9277454545454,
+        "w": 481.8461454545454,
+        "h": 144.90305454545478
+      }
+    },
+    {
+      "text": "Aether Chaser",
+      "ocrScore": 0.971017810014578,
+      "name": "Aether Chaser",
+      "similarity": 1,
+      "margin": 0.23076923076923084,
+      "status": "accepted",
+      "alternatives": [
+        {
+          "name": "Aether Chaser",
+          "score": 1,
+          "exact": true
+        },
+        {
+          "name": "Aether Charge",
+          "score": 0.7692307692307692,
+          "exact": false
+        },
+        {
+          "name": "Aether Channeler",
+          "score": 0.75,
+          "exact": false
+        }
+      ],
+      "poly": [
+        [
+          4997,
+          2500
+        ],
+        [
+          5160,
+          2503
+        ],
+        [
+          5160,
+          2530
+        ],
+        [
+          4997,
+          2527
+        ]
+      ],
+      "box": {
+        "x": 4997,
+        "y": 2500,
+        "w": 163,
+        "h": 30
+      }
+    },
+    {
+      "text": "Metallic Rebuke",
+      "ocrScore": 0.9985864877700805,
+      "name": "Metallic Rebuke",
+      "similarity": 1,
+      "margin": 0.33333333333333326,
+      "status": "accepted",
+      "alternatives": [
+        {
+          "name": "Metallic Rebuke",
+          "score": 1,
+          "exact": true
+        },
+        {
+          "name": "Hellish Rebuke",
+          "score": 0.6666666666666667,
+          "exact": false
+        },
+        {
+          "name": "Metallic Mimic",
+          "score": 0.6,
+          "exact": false
+        }
+      ],
+      "poly": [
+        [
+          851,
+          2777
+        ],
+        [
+          1100,
+          2717
+        ],
+        [
+          1108,
+          2748
+        ],
+        [
+          858,
+          2807
+        ]
+      ],
+      "box": {
+        "x": 851,
+        "y": 2717,
+        "w": 257,
+        "h": 90
+      }
+    },
+    {
+      "text": "Metallic Rebuke",
+      "ocrScore": 0.9981566389401754,
+      "name": "Metallic Rebuke",
+      "similarity": 1,
+      "margin": 0.33333333333333326,
+      "status": "accepted",
+      "alternatives": [
+        {
+          "name": "Metallic Rebuke",
+          "score": 1,
+          "exact": true
+        },
+        {
+          "name": "Hellish Rebuke",
+          "score": 0.6666666666666667,
+          "exact": false
+        },
+        {
+          "name": "Metallic Mimic",
+          "score": 0.6,
+          "exact": false
+        }
+      ],
+      "poly": [
+        [
+          524,
+          2888
+        ],
+        [
+          773,
+          2805
+        ],
+        [
+          783,
+          2836
+        ],
+        [
+          534,
+          2919
+        ]
+      ],
+      "box": {
+        "x": 524,
+        "y": 2805,
+        "w": 259,
+        "h": 114
+      }
+    }
+  ],
+  "annotationRevision": 2,
+  "followup": {
+    "date": "2026-09-21T21:09:57.128Z",
+    "bestComposite": {
+      "names": [
+        "Aether Chaser",
+        "Aether Swooper",
+        "Cloudsculpt Technician",
+        "Cryogen Relic",
+        "Gearseeker Serpent",
+        "Inventor's Axe",
+        "Inventor's Goggles",
+        "Kenku Artificer",
+        "Melded Moxite",
+        "Metallic Rebuke",
+        "Selfcraft Mechan"
+      ],
+      "metrics": {
+        "accepted": 17,
+        "correct": 17,
+        "precision": 1,
+        "recall": 0.4857142857142857,
+        "fullCorrect": 17,
+        "fullTotal": 19,
+        "partialCorrect": 0,
+        "partialTotal": 16,
+        "uniqueCorrect": 11,
+        "uniqueTotal": 12,
+        "missing": [
+          {
+            "id": "card-02",
+            "name": "Inventor's Goggles",
+            "visibility": "partial",
+            "box": [
+              1359,
+              1049,
+              125,
+              53
+            ]
+          },
+          {
+            "id": "card-03",
+            "name": "Inventor's Goggles",
+            "visibility": "partial",
+            "box": [
+              1503,
+              1015,
+              169,
+              53
+            ]
+          },
+          {
+            "id": "card-04",
+            "name": "Inventor's Goggles",
+            "visibility": "partial",
+            "box": [
+              1691,
+              1015,
+              163,
+              53
+            ]
+          },
+          {
+            "id": "card-06",
+            "name": "Inventor's Axe",
+            "visibility": "partial",
+            "box": [
+              294,
+              1262,
+              160,
+              72
+            ]
+          },
+          {
+            "id": "card-07",
+            "name": "Galvanic Blast",
+            "visibility": "full",
+            "box": [
+              2427,
+              1037,
+              385,
+              50
+            ]
+          },
+          {
+            "id": "card-09",
+            "name": "Melded Moxite",
+            "visibility": "partial",
+            "box": [
+              3100,
+              952,
+              135,
+              41
+            ]
+          },
+          {
+            "id": "card-10",
+            "name": "Melded Moxite",
+            "visibility": "partial",
+            "box": [
+              3244,
+              949,
+              78,
+              41
+            ]
+          },
+          {
+            "id": "card-11",
+            "name": "Melded Moxite",
+            "visibility": "partial",
+            "box": [
+              3319,
+              971,
+              132,
+              44
+            ]
+          },
+          {
+            "id": "card-13",
+            "name": "Kenku Artificer",
+            "visibility": "partial",
+            "box": [
+              2029,
+              1503,
+              160,
+              63
+            ]
+          },
+          {
+            "id": "card-15",
+            "name": "Aether Swooper",
+            "visibility": "partial",
+            "box": [
+              658,
+              1857,
+              204,
+              81
+            ]
+          },
+          {
+            "id": "card-16",
+            "name": "Aether Swooper",
+            "visibility": "partial",
+            "box": [
+              867,
+              1807,
+              204,
+              81
+            ]
+          },
+          {
+            "id": "card-17",
+            "name": "Aether Swooper",
+            "visibility": "partial",
+            "box": [
+              1087,
+              1776,
+              169,
+              75
+            ]
+          },
+          {
+            "id": "card-18",
+            "name": "Aether Chaser",
+            "visibility": "full",
+            "box": [
+              0,
+              2123,
+              175,
+              138
+            ]
+          },
+          {
+            "id": "card-24",
+            "name": "Cloudsculpt Technician",
+            "visibility": "partial",
+            "box": [
+              3360,
+              1534,
+              110,
+              60
+            ]
+          },
+          {
+            "id": "card-25",
+            "name": "Cloudsculpt Technician",
+            "visibility": "partial",
+            "box": [
+              3476,
+              1531,
+              200,
+              85
+            ]
+          },
+          {
+            "id": "card-29",
+            "name": "Gearseeker Serpent",
+            "visibility": "partial",
+            "box": [
+              1726,
+              2543,
+              229,
+              100
+            ]
+          },
+          {
+            "id": "card-32",
+            "name": "Selfcraft Mechan",
+            "visibility": "partial",
+            "box": [
+              2690,
+              2302,
+              72,
+              91
+            ]
+          },
+          {
+            "id": "card-33",
+            "name": "Selfcraft Mechan",
+            "visibility": "partial",
+            "box": [
+              2781,
+              2267,
+              125,
+              91
+            ]
+          }
+        ],
+        "hits": [
+          {
+            "id": "card-12",
+            "name": "Kenku Artificer",
+            "visibility": "full",
+            "box": [
+              2202,
+              1488,
+              413,
+              66
+            ],
+            "text": "Kynku Artificer"
+          },
+          {
+            "id": "card-14",
+            "name": "Aether Swooper",
+            "visibility": "full",
+            "box": [
+              1278,
+              1744,
+              470,
+              75
+            ],
+            "text": "Acther Swooper"
+          },
+          {
+            "id": "card-19",
+            "name": "Aether Chaser",
+            "visibility": "full",
+            "box": [
+              185,
+              1948,
+              435,
+              175
+            ],
+            "text": "Aether Chaser"
+          },
+          {
+            "id": "card-30",
+            "name": "Selfcraft Mechan",
+            "visibility": "full",
+            "box": [
+              2546,
+              2167,
+              413,
+              169
+            ],
+            "text": "Selfcraft Mechan"
+          },
+          {
+            "id": "card-35",
+            "name": "Cryogen Relic",
+            "visibility": "full",
+            "box": [
+              3827,
+              2220,
+              423,
+              72
+            ],
+            "text": "Cryogen Relic"
+          },
+          {
+            "id": "card-34",
+            "name": "Cryogen Relic",
+            "visibility": "full",
+            "box": [
+              3470,
+              2214,
+              294,
+              69
+            ],
+            "text": "Cryogen Relic"
+          },
+          {
+            "id": "card-31",
+            "name": "Selfcraft Mechan",
+            "visibility": "full",
+            "box": [
+              2919,
+              2214,
+              423,
+              97
+            ],
+            "text": "Selfcraft Mechan"
+          },
+          {
+            "id": "card-20",
+            "name": "Aether Chaser",
+            "visibility": "full",
+            "box": [
+              4879,
+              2371,
+              401,
+              91
+            ],
+            "text": "Aether Chaser"
+          },
+          {
+            "id": "card-28",
+            "name": "Gearseeker Serpent",
+            "visibility": "full",
+            "box": [
+              1954,
+              2424,
+              482,
+              153
+            ],
+            "text": "Gearseeker Serpent"
+          },
+          {
+            "id": "card-21",
+            "name": "Aether Chaser",
+            "visibility": "full",
+            "box": [
+              4979,
+              2471,
+              432,
+              91
+            ],
+            "text": "Aether Chaser"
+          },
+          {
+            "id": "card-26",
+            "name": "Metallic Rebuke",
+            "visibility": "full",
+            "box": [
+              827,
+              2646,
+              545,
+              188
+            ],
+            "text": "Metallic Rebuke"
+          },
+          {
+            "id": "card-27",
+            "name": "Metallic Rebuke",
+            "visibility": "full",
+            "box": [
+              473,
+              2809,
+              338,
+              132
+            ],
+            "text": "Metallic Rebuke"
+          },
+          {
+            "id": "card-08",
+            "name": "Melded Moxite",
+            "visibility": "full",
+            "box": [
+              3470,
+              968,
+              357,
+              106
+            ],
+            "text": "Printed-name glyph fit"
+          },
+          {
+            "id": "card-05",
+            "name": "Inventor's Axe",
+            "visibility": "full",
+            "box": [
+              454,
+              1152,
+              473,
+              116
+            ],
+            "text": "Printed-name glyph fit"
+          },
+          {
+            "id": "card-23",
+            "name": "Cloudsculpt Technician",
+            "visibility": "full",
+            "box": [
+              4037,
+              1635,
+              423,
+              207
+            ],
+            "text": "Printed-name glyph fit"
+          },
+          {
+            "id": "card-22",
+            "name": "Cloudsculpt Technician",
+            "visibility": "full",
+            "box": [
+              3711,
+              1544,
+              323,
+              97
+            ],
+            "text": "Printed-name glyph fit"
+          },
+          {
+            "id": "card-01",
+            "name": "Inventor's Goggles",
+            "visibility": "full",
+            "box": [
+              1882,
+              1002,
+              395,
+              56
+            ],
+            "text": "GLM / printed-name agreement"
+          }
+        ],
+        "falsePositives": [],
+        "meetsTarget": false
+      },
+      "totalMs": null,
+      "integrated": false
+    },
+    "opticalComposite": {
+      "names": [
+        "Aether Chaser",
+        "Aether Swooper",
+        "Cloudsculpt Technician",
+        "Cryogen Relic",
+        "Gearseeker Serpent",
+        "Inventor's Axe",
+        "Kenku Artificer",
+        "Melded Moxite",
+        "Metallic Rebuke",
+        "Selfcraft Mechan"
+      ],
+      "metrics": {
+        "accepted": 16,
+        "correct": 16,
+        "precision": 1,
+        "recall": 0.45714285714285713,
+        "fullCorrect": 16,
+        "fullTotal": 19,
+        "partialCorrect": 0,
+        "partialTotal": 16,
+        "uniqueCorrect": 10,
+        "uniqueTotal": 12,
+        "missing": [
+          {
+            "id": "card-01",
+            "name": "Inventor's Goggles",
+            "visibility": "full",
+            "box": [
+              1882,
+              1002,
+              395,
+              56
+            ]
+          },
+          {
+            "id": "card-02",
+            "name": "Inventor's Goggles",
+            "visibility": "partial",
+            "box": [
+              1359,
+              1049,
+              125,
+              53
+            ]
+          },
+          {
+            "id": "card-03",
+            "name": "Inventor's Goggles",
+            "visibility": "partial",
+            "box": [
+              1503,
+              1015,
+              169,
+              53
+            ]
+          },
+          {
+            "id": "card-04",
+            "name": "Inventor's Goggles",
+            "visibility": "partial",
+            "box": [
+              1691,
+              1015,
+              163,
+              53
+            ]
+          },
+          {
+            "id": "card-06",
+            "name": "Inventor's Axe",
+            "visibility": "partial",
+            "box": [
+              294,
+              1262,
+              160,
+              72
+            ]
+          },
+          {
+            "id": "card-07",
+            "name": "Galvanic Blast",
+            "visibility": "full",
+            "box": [
+              2427,
+              1037,
+              385,
+              50
+            ]
+          },
+          {
+            "id": "card-09",
+            "name": "Melded Moxite",
+            "visibility": "partial",
+            "box": [
+              3100,
+              952,
+              135,
+              41
+            ]
+          },
+          {
+            "id": "card-10",
+            "name": "Melded Moxite",
+            "visibility": "partial",
+            "box": [
+              3244,
+              949,
+              78,
+              41
+            ]
+          },
+          {
+            "id": "card-11",
+            "name": "Melded Moxite",
+            "visibility": "partial",
+            "box": [
+              3319,
+              971,
+              132,
+              44
+            ]
+          },
+          {
+            "id": "card-13",
+            "name": "Kenku Artificer",
+            "visibility": "partial",
+            "box": [
+              2029,
+              1503,
+              160,
+              63
+            ]
+          },
+          {
+            "id": "card-15",
+            "name": "Aether Swooper",
+            "visibility": "partial",
+            "box": [
+              658,
+              1857,
+              204,
+              81
+            ]
+          },
+          {
+            "id": "card-16",
+            "name": "Aether Swooper",
+            "visibility": "partial",
+            "box": [
+              867,
+              1807,
+              204,
+              81
+            ]
+          },
+          {
+            "id": "card-17",
+            "name": "Aether Swooper",
+            "visibility": "partial",
+            "box": [
+              1087,
+              1776,
+              169,
+              75
+            ]
+          },
+          {
+            "id": "card-18",
+            "name": "Aether Chaser",
+            "visibility": "full",
+            "box": [
+              0,
+              2123,
+              175,
+              138
+            ]
+          },
+          {
+            "id": "card-24",
+            "name": "Cloudsculpt Technician",
+            "visibility": "partial",
+            "box": [
+              3360,
+              1534,
+              110,
+              60
+            ]
+          },
+          {
+            "id": "card-25",
+            "name": "Cloudsculpt Technician",
+            "visibility": "partial",
+            "box": [
+              3476,
+              1531,
+              200,
+              85
+            ]
+          },
+          {
+            "id": "card-29",
+            "name": "Gearseeker Serpent",
+            "visibility": "partial",
+            "box": [
+              1726,
+              2543,
+              229,
+              100
+            ]
+          },
+          {
+            "id": "card-32",
+            "name": "Selfcraft Mechan",
+            "visibility": "partial",
+            "box": [
+              2690,
+              2302,
+              72,
+              91
+            ]
+          },
+          {
+            "id": "card-33",
+            "name": "Selfcraft Mechan",
+            "visibility": "partial",
+            "box": [
+              2781,
+              2267,
+              125,
+              91
+            ]
+          }
+        ],
+        "hits": [
+          {
+            "id": "card-12",
+            "name": "Kenku Artificer",
+            "visibility": "full",
+            "box": [
+              2202,
+              1488,
+              413,
+              66
+            ],
+            "text": "Kynku Artificer"
+          },
+          {
+            "id": "card-14",
+            "name": "Aether Swooper",
+            "visibility": "full",
+            "box": [
+              1278,
+              1744,
+              470,
+              75
+            ],
+            "text": "Acther Swooper"
+          },
+          {
+            "id": "card-19",
+            "name": "Aether Chaser",
+            "visibility": "full",
+            "box": [
+              185,
+              1948,
+              435,
+              175
+            ],
+            "text": "Aether Chaser"
+          },
+          {
+            "id": "card-30",
+            "name": "Selfcraft Mechan",
+            "visibility": "full",
+            "box": [
+              2546,
+              2167,
+              413,
+              169
+            ],
+            "text": "Selfcraft Mechan"
+          },
+          {
+            "id": "card-35",
+            "name": "Cryogen Relic",
+            "visibility": "full",
+            "box": [
+              3827,
+              2220,
+              423,
+              72
+            ],
+            "text": "Cryogen Relic"
+          },
+          {
+            "id": "card-34",
+            "name": "Cryogen Relic",
+            "visibility": "full",
+            "box": [
+              3470,
+              2214,
+              294,
+              69
+            ],
+            "text": "Cryogen Relic"
+          },
+          {
+            "id": "card-31",
+            "name": "Selfcraft Mechan",
+            "visibility": "full",
+            "box": [
+              2919,
+              2214,
+              423,
+              97
+            ],
+            "text": "Selfcraft Mechan"
+          },
+          {
+            "id": "card-20",
+            "name": "Aether Chaser",
+            "visibility": "full",
+            "box": [
+              4879,
+              2371,
+              401,
+              91
+            ],
+            "text": "Aether Chaser"
+          },
+          {
+            "id": "card-28",
+            "name": "Gearseeker Serpent",
+            "visibility": "full",
+            "box": [
+              1954,
+              2424,
+              482,
+              153
+            ],
+            "text": "Gearseeker Serpent"
+          },
+          {
+            "id": "card-21",
+            "name": "Aether Chaser",
+            "visibility": "full",
+            "box": [
+              4979,
+              2471,
+              432,
+              91
+            ],
+            "text": "Aether Chaser"
+          },
+          {
+            "id": "card-26",
+            "name": "Metallic Rebuke",
+            "visibility": "full",
+            "box": [
+              827,
+              2646,
+              545,
+              188
+            ],
+            "text": "Metallic Rebuke"
+          },
+          {
+            "id": "card-27",
+            "name": "Metallic Rebuke",
+            "visibility": "full",
+            "box": [
+              473,
+              2809,
+              338,
+              132
+            ],
+            "text": "Metallic Rebuke"
+          },
+          {
+            "id": "card-08",
+            "name": "Melded Moxite",
+            "visibility": "full",
+            "box": [
+              3470,
+              968,
+              357,
+              106
+            ],
+            "text": "Printed-name glyph fit"
+          },
+          {
+            "id": "card-05",
+            "name": "Inventor's Axe",
+            "visibility": "full",
+            "box": [
+              454,
+              1152,
+              473,
+              116
+            ],
+            "text": "Printed-name glyph fit"
+          },
+          {
+            "id": "card-23",
+            "name": "Cloudsculpt Technician",
+            "visibility": "full",
+            "box": [
+              4037,
+              1635,
+              423,
+              207
+            ],
+            "text": "Printed-name glyph fit"
+          },
+          {
+            "id": "card-22",
+            "name": "Cloudsculpt Technician",
+            "visibility": "full",
+            "box": [
+              3711,
+              1544,
+              323,
+              97
+            ],
+            "text": "Printed-name glyph fit"
+          }
+        ],
+        "falsePositives": [],
+        "meetsTarget": false
+      }
+    },
+    "experiments": [
+      {
+        "file": "glm-title-regions",
+        "scope": "Uses cached automatic crop proposals",
+        "milliseconds": 16968.899999976158,
+        "regions": 91,
+        "distinctNames": 6,
+        "correctTitleInstances": 8,
+        "falsePositives": []
+      },
+      {
+        "file": "glm-constrained-first",
+        "scope": "Partial region experiment",
+        "milliseconds": 27946.30000001192,
+        "regions": 12,
+        "distinctNames": 0,
+        "correctTitleInstances": 0,
+        "falsePositives": [
+          "Mission Briefing",
+          "_____"
+        ]
+      },
+      {
+        "file": "glm-constrained-v2",
+        "scope": "Partial region experiment",
+        "milliseconds": 34594.30000001192,
+        "regions": 20,
+        "distinctNames": 0,
+        "correctTitleInstances": 0,
+        "falsePositives": [
+          "Brand",
+          "Capital Punishment"
+        ]
+      },
+      {
+        "file": "glm-constrained-v3",
+        "scope": "Partial region experiment",
+        "milliseconds": 36951.10000002384,
+        "regions": 18,
+        "distinctNames": 1,
+        "correctTitleInstances": 1,
+        "falsePositives": [
+          "X",
+          "Brand",
+          "Capital Punishment",
+          "_____"
+        ]
+      },
+      {
+        "file": "glm-constrained-preserve-crops-v4",
+        "scope": "Partial region experiment",
+        "milliseconds": 168649.39999997616,
+        "timings": {
+          "selectionMs": 423.39999997615814,
+          "loadMs": 2791.600000023842,
+          "inferenceMs": 165434.39999997616
+        },
+        "regions": 60,
+        "distinctNames": 2,
+        "correctTitleInstances": 2,
+        "falsePositives": [
+          "Munitions Enthusiast",
+          "X",
+          "Brand",
+          "Capital Punishment",
+          "_____",
+          "1996 World Champion",
+          "_____",
+          "_____",
+          "_____",
+          "_____",
+          "_____",
+          "Kenku Artificer",
+          "Chaosphere"
+        ]
+      }
+    ]
+  }
+}
