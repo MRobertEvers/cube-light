@@ -1,6 +1,9 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { fetchAPIDecks, FetchDecksResponse } from '../../api/fetch-api-decks';
-import { fetchSortedDeck } from '../../workers/deck.functions';
+import { groupDeck } from '../../workers/deck.functions';
+import type { FetchAPIDeckResponse } from '../../api/fetch-api-deck';
+import type { ToriMTG } from '../../torimtg/types';
+import { readAvailable } from '../../torimtg/ui-api';
 import { GetDeckResponse } from '../../workers/deck.worker.messages';
 
 export type DecksState = {
@@ -10,6 +13,8 @@ export type DecksState = {
 	errorsById: Record<string, string>;
 	listRequestId: string | null;
 	requestIdsById: Record<string, string>;
+	listRevision: number;
+	revisionsById: Record<string, number>;
 };
 
 const initialState: DecksState = {
@@ -18,21 +23,41 @@ const initialState: DecksState = {
 	listError: null,
 	errorsById: {},
 	listRequestId: null,
-	requestIdsById: {}
+	requestIdsById: {},
+	listRevision: 0,
+	revisionsById: {}
 };
 
-export const loadDecks = createAsyncThunk('decks/loadList', async () =>
-	fetchAPIDecks()
-);
+export const loadDecks = createAsyncThunk('decks/loadList', async function (_input: void, api) {
+	const { tori } = api.extra as { tori: ToriMTG };
+	await readAvailable<FetchDecksResponse>(tori, { type: 'decks' });
+	const snapshot = await tori.queries.read<FetchDecksResponse>({ type: 'decks' });
+	return { data: snapshot.data || [], revision: snapshot.localRevision };
+});
 export const loadDeck = createAsyncThunk(
 	'decks/loadDeck',
-	async (deckId: string) => fetchSortedDeck(deckId)
+	async function (deckId: string, api) {
+		const { tori } = api.extra as { tori: ToriMTG };
+		await readAvailable<FetchAPIDeckResponse>(tori, { type: 'deck', id: deckId });
+		const snapshot = await tori.queries.read<FetchAPIDeckResponse>({ type: 'deck', id: deckId });
+		if (!snapshot.data) throw new Error('This deck was deleted or is not downloaded.');
+		return { data: groupDeck(snapshot.data), revision: snapshot.localRevision };
+	}
 );
 
 export const decksSlice = createSlice({
 	name: 'decks',
 	initialState,
 	reducers: {
+		listReceived: function (state, action: PayloadAction<{ data: FetchDecksResponse; revision: number }>) {
+			if (action.payload.revision >= state.listRevision) { state.list = action.payload.data; state.listRevision = action.payload.revision; }
+		},
+		deckDeleted: function (state, action: PayloadAction<{ deckId: string; revision: number }>) {
+			const { deckId, revision } = action.payload;
+			if (revision < (state.revisionsById[deckId] || 0)) return;
+			delete state.byId[deckId]; state.revisionsById[deckId] = revision;
+			state.errorsById[deckId] = 'This deck has been deleted.';
+		},
 		setInitialDecks: function (
 			state,
 			action: PayloadAction<FetchDecksResponse>
@@ -41,9 +66,11 @@ export const decksSlice = createSlice({
 		},
 		setInitialDeck: function (
 			state,
-			action: PayloadAction<{ deckId: string; data: GetDeckResponse }>
+			action: PayloadAction<{ deckId: string; data: GetDeckResponse; revision?: number }>
 		) {
+			if (action.payload.revision !== undefined && action.payload.revision < (state.revisionsById[action.payload.deckId] || 0)) return;
 			state.byId[action.payload.deckId] = action.payload.data;
+			if (action.payload.revision !== undefined) state.revisionsById[action.payload.deckId] = action.payload.revision;
 		}
 	},
 	extraReducers: function (builder) {
@@ -54,7 +81,7 @@ export const decksSlice = createSlice({
 			})
 			.addCase(loadDecks.fulfilled, (state, action) => {
 				if (state.listRequestId !== action.meta.requestId) return;
-				state.list = action.payload;
+				if (action.payload.revision >= state.listRevision) { state.list = action.payload.data; state.listRevision = action.payload.revision; }
 				state.listRequestId = null;
 			})
 			.addCase(loadDecks.rejected, (state, action) => {
@@ -72,7 +99,7 @@ export const decksSlice = createSlice({
 				const deckId = action.meta.arg;
 				if (state.requestIdsById[deckId] !== action.meta.requestId)
 					return;
-				state.byId[deckId] = action.payload;
+				if (action.payload.revision >= (state.revisionsById[deckId] || 0)) { state.byId[deckId] = action.payload.data; state.revisionsById[deckId] = action.payload.revision; }
 				delete state.requestIdsById[deckId];
 			})
 			.addCase(loadDeck.rejected, (state, action) => {

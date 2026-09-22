@@ -1,78 +1,12 @@
-import { useMemo, useEffect, useRef } from 'react';
-import { OnMessageResponseHandler, Message } from './utils/messageToolkit';
+import { useRef } from 'react';
+import type { OnMessageResponseHandler, Message } from './utils/messageToolkit';
+import { handleDeckMessage } from './deck.worker';
 
-const globalWorker: {
-	worker?: Worker;
-	listeners: Set<OnMessageResponseHandler>;
-} = {
-	listeners: new Set()
-};
-
-/**
- * This hook is to capture that and provide types for the postmessage.
- *
- * Additionally, this captures the worker in a global so that it can be referenced in more
- * than one component without duplication.
- *
- * THIS IS SAFE TO CALL MORE THAN ONCE!
- */
-export function useDeckWorker(
-	onmessage: OnMessageResponseHandler
-): <T, R>(message: Message<T, R>) => void {
-	const onmessageRef = useRef(onmessage);
-	onmessageRef.current = onmessage;
-
-	const worker = useMemo(function () {
-		if (typeof Worker !== 'undefined') {
-			if (!globalWorker.worker) {
-				globalWorker.worker = new Worker(
-					new URL('./deck.worker.ts', import.meta.url),
-					{
-						type: 'module'
-					}
-				);
-				globalWorker.listeners = new Set();
-			}
-
-			return globalWorker.worker;
-		}
-	}, []);
-
-	useEffect(() => {
-		if (!worker) {
-			return;
-		}
-		const newListener: OnMessageResponseHandler = function newListener(
-			message
-		) {
-			return onmessageRef.current(message);
-		};
-
-		globalWorker.listeners.add(newListener);
-
-		worker.onmessage = function (e: MessageEvent) {
-			for (const listener of globalWorker.listeners) {
-				listener(e.data);
-			}
-		};
-
-		return function () {
-			globalWorker.listeners.delete(newListener);
-			queueMicrotask(() => {
-				if (
-					globalWorker.listeners.size === 0 &&
-					globalWorker.worker === worker
-				) {
-					worker.terminate();
-					delete globalWorker.worker;
-				}
-			});
-		};
-	}, [worker]);
-
-	return function <T, R>(message: Message<T, R>) {
-		if (worker !== undefined) {
-			worker.postMessage(message);
-		}
-	};
+/** Compatibility hook: domain operations now execute through Redux/core in the window. */
+export function useDeckWorker(onmessage: OnMessageResponseHandler): <T, R>(message: Message<T, R>) => void {
+    const handler = useRef(onmessage);
+    handler.current = onmessage;
+    return function <T, R>(message: Message<T, R>): void {
+        void handleDeckMessage(message).then((reply) => { if (reply) void handler.current(reply); });
+    };
 }

@@ -56,7 +56,8 @@ test('existing rows get stable typed public IDs and API routes reject row IDs', 
 				queryCardInfo: async function () {
 					return [];
 				},
-				getCardDataByUuids: async function () {
+				getCardRulesByUuids: async function () { return []; },
+			getCardDataByUuids: async function () {
 					return [];
 				}
 			})

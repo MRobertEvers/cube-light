@@ -78,7 +78,7 @@ export const saveCrop = createAsyncThunk(
 		const { dispatch } = context;
 		await withMinimumStatusDuration(async () => {
 			await fetchAPISetBannerCrop(deckId, crop);
-			const deck = await dispatch(loadDeck(deckId)).unwrap();
+			const { data: deck } = await dispatch(loadDeck(deckId)).unwrap();
 			// Re-render the moved art with the blend and subject settings already in place.
 			if (deck.icon)
 				await generateAndSaveBannerBlend(
@@ -105,7 +105,7 @@ export const saveBlend = createAsyncThunk(
 	async (args: { deckId: string; config: BannerBlendConfig }, context) => {
 		const { deckId, config } = args;
 		const { dispatch } = context;
-		const deck = await dispatch(loadDeck(deckId)).unwrap();
+		const { data: deck } = await dispatch(loadDeck(deckId)).unwrap();
 		await generateAndSaveBannerBlend(
 			deckId,
 			deck,

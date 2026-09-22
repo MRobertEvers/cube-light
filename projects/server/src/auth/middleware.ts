@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
-import { readCookie, SESSION_COOKIE, setSessionCookie } from './cookies';
-import { Session, SessionStore } from './sessions';
+import { TokenStore } from './tokens';
+type Session = { userId: number; username: string };
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -13,7 +13,7 @@ function hostname(url: string): string | null {
 }
 
 /**
- * Origins allowed to send the session cookie: CLIENT_ORIGINS (comma-separated) when set,
+ * Origins allowed to call authenticated endpoints: CLIENT_ORIGINS when set,
  * otherwise any page on the same host as the server, which is how the client finds it.
  */
 function originAllowed(origin: string, req: Request): boolean {
@@ -28,8 +28,8 @@ function originAllowed(origin: string, req: Request): boolean {
 }
 
 /**
- * Allowed origins get credentialed CORS; everyone else still reads public data with
- * `*`, which browsers never pair with cookies. Pages from other origins cannot make
+ * Allowed origins can send bearer headers; everyone else can read public data.
+ * Pages from other origins cannot make
  * changes: they are refused before any route runs.
  */
 export function cors(req: Request, res: Response, next: NextFunction): void {
@@ -37,8 +37,7 @@ export function cors(req: Request, res: Response, next: NextFunction): void {
 	const allowed = !!origin && originAllowed(origin, req);
 	res.setHeader('Vary', 'Origin');
 	res.setHeader('Access-Control-Allow-Origin', allowed ? origin! : '*');
-	if (allowed) res.setHeader('Access-Control-Allow-Credentials', 'true');
-	res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+	res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 	res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
 	if (req.method === 'OPTIONS') {
 		res.sendStatus(204);
@@ -55,16 +54,13 @@ export function currentSession(res: Response): Session | undefined {
 	return res.locals.session;
 }
 
-/** Attaches the cookie's session, if any, to res.locals and renews its expiry. */
-export function loadSession(sessions: SessionStore) {
+/** Production authentication accepts only bearer access tokens, never session cookies. */
+export function loadBearerSession(tokens: TokenStore) {
 	return function (req: Request, res: Response, next: NextFunction): void {
-		const id = readCookie(req, SESSION_COOKIE);
-		const found = id ? sessions.get(id) : null;
-		if (id && found) {
-			res.locals.session = found.session;
-			res.locals.sessionId = id;
-			if (found.renewed) setSessionCookie(req, res, id);
-		}
+		const header = req.get('Authorization');
+		const match = header && header.length <= 2055 && /^Bearer ([A-Za-z0-9_.-]+)$/i.exec(header);
+		const session = match ? tokens.access(match[1]) : null;
+		if (session) { res.locals.session = session; res.locals.tokenFamilyId = session.familyId; }
 		next();
 	};
 }
@@ -79,6 +75,7 @@ export function requireSession(publicPrefixes: string[]) {
 			next();
 			return;
 		}
+		res.setHeader('WWW-Authenticate', 'Bearer');
 		res.status(401).json({ error: 'Sign in required' });
 	};
 }

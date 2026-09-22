@@ -9,7 +9,6 @@ import { createRoutes } from './routes/routes';
 import { CardImageService } from './images/card-images';
 import { FileImageCache } from './images/FileImageCache';
 import { createKVStore } from './auth/kv-store';
-import { SessionStore } from './auth/sessions';
 import { UserStore } from './auth/UserStore';
 
 const PORT = 4040;
@@ -26,7 +25,6 @@ async function main() {
 	const kv = createKVStore();
 	const auth = {
 		users: await UserStore.Sqlite('database.sqlite'),
-		sessions: new SessionStore(kv),
 		kv
 	};
 

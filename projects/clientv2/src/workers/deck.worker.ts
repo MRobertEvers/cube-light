@@ -6,10 +6,9 @@ import {
 } from './deck.functions';
 import { createHandler } from './utils/messageToolkit';
 import { DeckWorkerMessages } from './deck.worker.messages';
-import { createOnMessageHandler } from './utils/workerToolkit';
 import { createNameLookupTree } from '../utils/lookup-tables/create-name-lookup-tree';
 
-const handler = createHandler((builder) => {
+export const handleDeckMessage = createHandler((builder) => {
 	builder.addCase(DeckWorkerMessages.getSuggestions, async (message) => {
 		const { query, requestId } = message.payload;
 		try {
@@ -55,5 +54,3 @@ const handler = createHandler((builder) => {
 	);
 	return builder;
 });
-
-onmessage = createOnMessageHandler(handler);

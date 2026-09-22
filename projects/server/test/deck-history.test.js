@@ -139,6 +139,7 @@ test('banner crops are validated, saved, returned, and recorded in history', asy
 			queryCardInfo: async function () {
 				return [];
 			},
+			getCardRulesByUuids: async function () { return []; },
 			getCardDataByUuids: async function () {
 				return [];
 			}

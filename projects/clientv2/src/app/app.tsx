@@ -5,6 +5,7 @@ import { Routes } from './routes';
 import { AuthGate } from '../components/Auth/AuthGate';
 import { configureStore } from '../store/configure-store';
 import { startDeferredWorkRunner } from '../utils/deferred-work-runner';
+import { OfflineStatus } from '../components/OfflineStatus/OfflineStatus';
 
 import '../assets/common.css';
 
@@ -27,6 +28,7 @@ function SignedInApp() {
 	return (
 		<div className={'application-container'}>
 			<Routes />
+			<OfflineStatus />
 		</div>
 	);
 }

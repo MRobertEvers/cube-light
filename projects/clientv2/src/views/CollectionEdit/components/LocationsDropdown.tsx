@@ -5,6 +5,7 @@ import {
 	fetchAPIStorageLocations
 } from 'src/api/fetch-api-storage-locations';
 import { ComboBox, ComboBoxEvent } from 'src/components/ComboBox/ComboBox';
+import { observeLocalQuery } from '../../../torimtg/observe';
 
 interface LocationsDropdownProps {
 	value: string | null;
@@ -20,6 +21,7 @@ export function LocationsDropdown(props: LocationsDropdownProps) {
 
 	useEffect(() => {
 		fetchAPIStorageLocations().then(setLocations);
+		return observeLocalQuery<FetchStorageLocationsResponse>({ type: 'locations' }, setLocations);
 	}, []);
 
 	const locationSuggestions = useMemo(

@@ -1,5 +1,60 @@
 # Deployment and NAS storage
 
+## Offline PWA and bearer authentication
+
+The client now saves domain edits to IndexedDB through Redux/ToriMTG before the
+service worker sends them to the API. Install dependencies in both `clientv2` and
+`server` before building; their build scripts compile `projects/torimtg-core`.
+The client build includes `/sw.js` and `/manifest.webmanifest`. Its API base now
+defaults to same-origin `/api`: Vite and `serve-client.mjs` proxy this to
+`http://127.0.0.1:4040` (set `API_ORIGIN` for the production static server).
+An explicit `VITE_BACKEND_HOST_URI` still overrides the default.
+
+Use HTTPS for LAN/installed use, or `http://localhost` for local development.
+Plain HTTP `.local` hostnames cannot register a worker. Restart the Vite development
+process after changing its worker build configuration. The development worker
+handles synchronization; test offline shell installation using a production build.
+Serve `sw.js` with revalidation, never an immutable cache header or HTML fallback.
+
+On first server startup, existing decks, collections, locations, profiles, and work
+items become explicit opening-balance events in the same application database.
+The original tables/history remain preserved. The v1 client uses `/sync/v1/*`;
+legacy domain mutation endpoints return 426 so old clients cannot bypass the ledger.
+Deploy the matching frontend/backend together. Back up the complete SQLite database
+before rollout, including the new event, checkpoint, token, receipt, and blob tables.
+
+Authentication uses signed bearer access tokens (15 minutes) and rotating refresh
+tokens (30-day absolute lifetime). Both carry a `generation` claim that must equal
+`Users.token_generation`. `POST /auth/revoke-all`, authenticated with a bearer access
+token, increments that principal's generation and revokes every device. Single-device
+logout revokes its token family. Token metadata and the signing key persist across
+server restarts; protect the database and backups as credentials. The worker stores
+tokens in a private IndexedDB control record and renews them automatically. They
+are excluded from Redux, domain events, and unsynced-edit exports.
+
+The sync panel shows pending edits, failures, conflicts, last validation, persistent
+storage, and export. Cached decks work offline after the initial download. Card
+metadata and optional OCR assets that have never been downloaded remain unavailable
+offline; large OCR engines/models are deliberately excluded from mandatory shell
+installation. Background Sync is optional: reopening/focusing the app also resumes
+the same durable queue. Closed-app execution depends on browser scheduling.
+
+Validation commands:
+
+```sh
+npm --prefix projects/torimtg-core run build
+npm --prefix projects/torimtg-core test
+npm --prefix projects/server test
+npm --prefix projects/clientv2 run typecheck
+npm --prefix projects/clientv2 test
+npm --prefix projects/clientv2 run test:offline
+node --test deploy/test/*.test.mjs
+```
+
+The real-browser offline test uses an isolated temporary database, an ephemeral API
+port, and installed Google Chrome through Playwright. It never uses production
+credentials or the working application's database.
+
 Client v2 uses the combined browser card-name scanner. Direct local scans keep the photograph in the browser; deferred mobile work uploads it to this application's API for processing by a desktop browser. Small models and configuration files live in `projects/clientv2/public/ocr` and are tracked in Git. `ocr-assets.json` records the SHA-256 and size of every runtime asset. All seven current declared assets fit GitHub; the largest is the 73.01 MiB Paddle medium verifier. There are no GLM runtime assets. The default card-aware and alternative text-only pipelines use WASM without WebGPU.
 
 Set `CUBE_NAS_ROOT` to the mounted private NAS directory allocated to this project, outside the checkout. No credentials are stored in the repository. Alternatively, installation can read a NAS HTTP(S) base URL from `CUBE_NAS_URL`. URLs with embedded credentials are rejected; use an authenticated mount for protected shares.

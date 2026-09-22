@@ -1,7 +1,6 @@
 import { json, Router } from 'express';
 import type { Request, Response } from 'express';
 
-import { clearSessionCookie, setSessionCookie } from '../auth/cookies';
 import { KVStore } from '../auth/kv-store';
 import { currentSession } from '../auth/middleware';
 import {
@@ -11,7 +10,8 @@ import {
 	UNUSED_PASSWORD_HASH,
 	verifyPassword
 } from '../auth/passwords';
-import { SessionStore } from '../auth/sessions';
+import { SyncRepository } from '../sync/repository';
+import { TokenStore } from '../auth/tokens';
 import {
 	ProfileCrop,
 	publicUser,
@@ -56,11 +56,19 @@ function throttled(
 
 export function createRoutesAuth(
 	users: UserStore,
-	sessions: SessionStore,
-	kv: KVStore
+	tokens: TokenStore,
+	kv: KVStore,
+	sync?: SyncRepository
 ) {
 	const app = Router();
 	app.use('/auth', json());
+	app.use('/auth', (_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
+	function exposedUser(user: Parameters<typeof publicUser>[0]) {
+		const result = publicUser(user);
+		const profile = sync?.readState(`profile_${result.id}`);
+		if (profile?.kind === 'profile') result.profile = profile.profile;
+		return result;
+	}
 
 	/** Replaces any current session so a sign-in never reuses an ID issued before it. */
 	async function startSession(
@@ -69,17 +77,32 @@ export function createRoutesAuth(
 		userId: number,
 		username: string
 	) {
-		if (res.locals.sessionId) sessions.destroy(res.locals.sessionId);
-		setSessionCookie(req, res, sessions.create({ userId, username }));
+		if (res.locals.tokenFamilyId) tokens.revoke(res.locals.tokenFamilyId);
+		const issued = tokens.issue(userId, username);
 		const user = await users.findById(userId);
-		res.json({ user: user ? publicUser(user) : null });
+		res.json({ user: user ? exposedUser(user) : null, ...(sync ? { serverInstanceId: sync.serverInstanceId } : {}), ...(issued ? { tokens: issued } : {}) });
 	}
+
+	app.post('/auth/refresh', async (req, res) => {
+		const pair = tokens?.rotate(req.body?.refreshToken, req.body?.requestId);
+		if (!pair) { res.status(401).json({ error: 'Refresh expired or revoked. Sign in again.' }); return; }
+		const session = tokens!.identity(pair.familyId);
+		const user = session ? await users.findById(session.userId) : null;
+		if (!user) { tokens!.revoke(pair.familyId); res.status(401).json({ error: 'Account no longer available.' }); return; }
+		res.json({ user: exposedUser(user), setupRequired: false, serverInstanceId: sync?.serverInstanceId, tokens: pair });
+	});
+	app.post('/auth/revoke-all', (_req, res) => {
+		const principal = currentSession(res);
+		if (!tokens || !principal) { res.status(401).json({ error: 'Sign in required' }); return; }
+		res.json({ generation: tokens.revokePrincipal(principal.userId) });
+	});
 
 	app.get('/auth/session', async (_req: Request, res: Response) => {
 		const session = currentSession(res);
 		const user = session ? await users.findById(session.userId) : undefined;
 		res.json({
-			user: user ? publicUser(user) : null,
+			user: user ? exposedUser(user) : null,
+			...(sync ? { serverInstanceId: sync.serverInstanceId } : {}),
 			setupRequired: !(await users.hasAccounts())
 		});
 	});
@@ -182,8 +205,8 @@ export function createRoutesAuth(
 	});
 
 	app.post('/auth/logout', (req: Request, res: Response) => {
-		if (res.locals.sessionId) sessions.destroy(res.locals.sessionId);
-		clearSessionCookie(req, res);
+		if (res.locals.tokenFamilyId) tokens?.revoke(res.locals.tokenFamilyId);
+		if (typeof req.body?.refreshToken === 'string') tokens?.revokeRefresh(req.body.refreshToken);
 		res.sendStatus(204);
 	});
 

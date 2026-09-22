@@ -1,5 +1,8 @@
 import { SqliteDatabase, SqliteTransaction, placeholders } from '../sqlite';
 import { createPublicId, PublicIdKind } from './public-id';
+import { SyncRepository } from '../../sync/repository';
+import { TokenStore } from '../../auth/tokens';
+import { TokenTransaction } from './token-transaction';
 
 export type Deck = {
 	DeckId: number;
@@ -107,7 +110,12 @@ function timestamp(): string {
 }
 
 export class Database {
-	private constructor(private readonly db: SqliteDatabase) {}
+	readonly sync: SyncRepository;
+	readonly tokens: TokenStore;
+	private constructor(private readonly db: SqliteDatabase) {
+		this.sync = new SyncRepository(db);
+		this.tokens = new TokenStore(this);
+	}
 
 	static async Sqlite(filepath: string): Promise<Database> {
 		const db = new SqliteDatabase(filepath);
@@ -119,6 +127,23 @@ export class Database {
 			await db.close();
 			throw error;
 		}
+	}
+
+	/** Keeps multi-step credential operations atomic without exposing SQL to auth. */
+	tokenTransaction<T>(callback: (tx: TokenTransaction) => T): T {
+		return this.db.transaction((tx) => callback(new TokenTransaction(tx)));
+	}
+
+	getOrCreateTokenSigningKey(secret: string): string {
+		return this.db.transaction((tx) => {
+			tx.run(
+				'INSERT OR IGNORE INTO AuthSigningKeys(Id, Secret) VALUES (1, ?)',
+				[secret]
+			);
+			return tx.get<{ Secret: string }>(
+				'SELECT Secret FROM AuthSigningKeys WHERE Id=1'
+			)!.Secret;
+		});
 	}
 
 	private async initialize(): Promise<void> {
@@ -194,6 +219,10 @@ export class Database {
 				CreatedAt DATETIME NOT NULL,
 				UpdatedAt DATETIME NOT NULL
 			);
+			CREATE TABLE IF NOT EXISTS AuthSigningKeys (Id INTEGER PRIMARY KEY CHECK(Id=1), Secret TEXT NOT NULL);
+			CREATE TABLE IF NOT EXISTS AuthTokenFamilies (Id TEXT PRIMARY KEY, UserId INTEGER NOT NULL, Username TEXT NOT NULL, ExpiresAt INTEGER NOT NULL, Revoked INTEGER NOT NULL DEFAULT 0, CurrentHash TEXT NOT NULL, Generation INTEGER NOT NULL DEFAULT 0);
+			CREATE TABLE IF NOT EXISTS AuthAccessTokens (Hash TEXT PRIMARY KEY, FamilyId TEXT NOT NULL REFERENCES AuthTokenFamilies(Id), ExpiresAt INTEGER NOT NULL);
+			CREATE TABLE IF NOT EXISTS AuthRefreshTokens (Hash TEXT PRIMARY KEY, FamilyId TEXT NOT NULL REFERENCES AuthTokenFamilies(Id), RequestId TEXT, IssuedAt INTEGER, NextHash TEXT);
 			CREATE TABLE IF NOT EXISTS StorageLocations (
 				StorageLocationId INTEGER PRIMARY KEY AUTOINCREMENT,
 				Name VARCHAR(1024) NOT NULL,
@@ -216,6 +245,21 @@ export class Database {
 				UpdatedAt DATETIME NOT NULL
 			);
 		`);
+		const userColumns = await this.db.all<{ name: string }>(
+			'PRAGMA table_info(Users)'
+		);
+		if (!userColumns.some((column) => column.name === 'token_generation'))
+			await this.db.exec(
+				'ALTER TABLE Users ADD COLUMN token_generation INTEGER NOT NULL DEFAULT 0'
+			);
+		const familyColumns = await this.db.all<{ name: string }>(
+			'PRAGMA table_info(AuthTokenFamilies)'
+		);
+		if (!familyColumns.some((column) => column.name === 'Generation'))
+			await this.db.exec(
+				'ALTER TABLE AuthTokenFamilies ADD COLUMN Generation INTEGER NOT NULL DEFAULT 0'
+			);
+		await this.tokens.initialize();
 		const workColumns = await this.db.all<{ name: string }>(
 			'PRAGMA table_info(WorkItems)'
 		);
@@ -276,9 +320,9 @@ export class Database {
 		this.db.transaction((tx) => {
 			const used = new Set(
 				tx
-					.all<{ PublicId: string }>(
-						`SELECT PublicId FROM ${table} WHERE PublicId IS NOT NULL`
-					)
+					.all<{
+						PublicId: string;
+					}>(`SELECT PublicId FROM ${table} WHERE PublicId IS NOT NULL`)
 					.map((row) => row.PublicId)
 			);
 			const missing = tx.all<{ id: number }>(

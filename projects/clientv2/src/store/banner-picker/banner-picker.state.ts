@@ -67,7 +67,7 @@ export const saveBannerSelection = createAsyncThunk(
 		const { deckId, deckName, uuid } = args;
 		const { dispatch } = context;
 		await fetchAPIUpdateDeck(deckId, deckName, uuid);
-		const deck = await dispatch(loadDeck(deckId)).unwrap();
+		const { data: deck } = await dispatch(loadDeck(deckId)).unwrap();
 		const config = deck.icon
 			? configForNewArtwork(
 					normalizeBannerBlendConfig(deck.bannerBlend?.config),

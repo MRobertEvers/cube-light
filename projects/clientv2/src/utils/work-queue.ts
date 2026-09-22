@@ -1,4 +1,5 @@
 import type { CardImagePipeline } from './image-scan-pipelines';
+import { observeLocalQuery } from '../torimtg/observe';
 import { useSyncExternalStore } from 'react';
 import {
 	fetchAPIDeleteWork,
@@ -23,6 +24,7 @@ class WorkQueue {
 	private listeners = new Set<() => void>();
 	private pollTimer: number | undefined;
 	private inFlight: Promise<void> | null = null;
+	private stopObserving: (() => void) | null = null;
 
 	constructor() {
 		this.subscribe = this.subscribe.bind(this);
@@ -49,12 +51,15 @@ class WorkQueue {
 	}
 
 	private start() {
+		this.stopObserving = observeLocalQuery<{ items: WorkItem[] }>({ type: 'work' }, (data) => this.publish({ items: data.items, error: false }));
 		document.addEventListener('visibilitychange', this.onVisible);
 		window.addEventListener('online', this.onVisible);
 		void this.refresh();
 	}
 
 	private stop() {
+		this.stopObserving?.(); this.stopObserving = null;
+		this.snapshot = { items: null, error: false };
 		document.removeEventListener('visibilitychange', this.onVisible);
 		window.removeEventListener('online', this.onVisible);
 		window.clearTimeout(this.pollTimer);

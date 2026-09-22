@@ -418,7 +418,7 @@ export function Deck(props: DeckProps) {
 		return (
 			<Page>
 				{!showInitialLoading && error ? (
-					<p>Unable to load deck.</p>
+					<p>{error}</p>
 				) : (
 					<LoadingIndicator />
 				)}

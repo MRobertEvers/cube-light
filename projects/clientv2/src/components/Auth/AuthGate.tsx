@@ -139,6 +139,7 @@ export function AuthGate(props: React.PropsWithChildren) {
 	return (
 		<AuthContext.Provider value={{ user: state.user, signOut, updateUser }}>
 			<PageErrorBoundary
+				key={state.user.id}
 				resetKey={state.epoch}
 				sessionEnded={state.expired}
 			>
@@ -156,8 +157,8 @@ export function AuthGate(props: React.PropsWithChildren) {
 							Your session ended
 						</h1>
 						<p className={styles.lede}>
-							Sign in again to continue. Retry anything that
-							didn’t save.
+							Your edits remain saved on this device. Sign in
+							again to resume synchronization.
 						</p>
 						<SignInForm
 							initialUsername={state.user.username}

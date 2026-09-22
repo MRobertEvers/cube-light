@@ -1,0 +1,15 @@
+{
+  "id": "/",
+  "name": "ToriMTG",
+  "short_name": "ToriMTG",
+  "description": "Your Magic decks, available offline.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#171b20",
+  "theme_color": "#171b20",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

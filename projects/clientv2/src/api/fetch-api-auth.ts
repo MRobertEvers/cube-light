@@ -27,8 +27,8 @@ export async function fetchAPISession(): Promise<FetchAPISessionResponse> {
 }
 
 /**
- * Signs in, or with `setup` creates the server's first account. The server answers
- * with an HttpOnly session cookie that the browser sends on later requests.
+ * Signs in, or creates the first account. The core persists the server-issued
+ * bearer/refresh pair privately and returns only public user information.
  */
 export async function fetchAPISignIn(
 	username: string,

@@ -1,7 +1,7 @@
 import { fetchAPINameLookup } from '../api/fetch-api-get-card-names-lookup';
 
 import { fetchAPIAddCard } from '../api/fetch-api-add-card';
-import { fetchAPIDeck } from '../api/fetch-api-deck';
+import { fetchAPIDeck, FetchAPIDeckResponse } from '../api/fetch-api-deck';
 import { fetchAPISetCard, SetCardAction } from '../api/fetch-api-set-card';
 import { GetDeckResponse } from './deck.worker.messages';
 import type { NameIndexSearchCursor } from '../utils/lookup-tables/name-index-wasm';
@@ -48,7 +48,10 @@ export async function fetchSortedDeck(
 	deckId: string
 ): Promise<GetDeckResponse> {
 	const data = await fetchAPIDeck(deckId);
+	return groupDeck(data);
+}
 
+export function groupDeck(data: FetchAPIDeckResponse): GetDeckResponse {
 	const { cards } = data;
 
 	const deck: GetDeckResponse['deck'] = {

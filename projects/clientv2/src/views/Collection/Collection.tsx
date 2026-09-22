@@ -16,6 +16,7 @@ import { ControlledInput } from './components/ControlledInput';
 import { scls } from 'src/utils/scls';
 
 import styles from './Collection.module.css';
+import { observeLocalQuery } from '../../torimtg/observe';
 
 export type HomeProps = {
 	initialData?: FetchDecksResponse;
@@ -58,6 +59,9 @@ export function Collection(props: HomeProps) {
 
 	useEffect(() => {
 		load();
+		const stopCollections = observeLocalQuery<FetchCollectionsResponse>({ type: 'collections' }, setCollections);
+		const stopLocations = observeLocalQuery<FetchStorageLocationsResponse>({ type: 'locations' }, setStorageLocations);
+		return function () { stopCollections(); stopLocations(); };
 	}, [load]);
 
 	const listLen = useMemo(() => {

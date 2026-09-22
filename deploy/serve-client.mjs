@@ -2,6 +2,7 @@
 // Small production static server for the built client. Use HTTPS at a reverse
 // proxy for LAN access. Retained hashed assets keep in-flight tabs compatible.
 import http from "node:http";
+import https from "node:https";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
@@ -20,6 +21,7 @@ const types = {
   ".mjs": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".json": "application/json",
+  ".webmanifest": "application/manifest+json",
   ".wasm": "application/wasm",
   ".woff": "font/woff",
   ".woff2": "font/woff2",
@@ -29,6 +31,19 @@ const types = {
 };
 const server = http.createServer(async (req, res) => {
   try {
+    if (req.url === '/api' || req.url.startsWith('/api/')) {
+      const upstream = new URL(process.env.API_ORIGIN || 'http://127.0.0.1:4040');
+      const transport = upstream.protocol === 'https:' ? https : http;
+      const forwarded = transport.request(upstream, {
+        method: req.method, path: req.url.slice(4) || '/',
+        headers: { ...req.headers, 'x-forwarded-prefix': '/api' }
+      }, function (response) {
+        res.writeHead(response.statusCode, response.headers); response.pipe(res);
+      });
+      forwarded.on('error', function () { if (!res.headersSent) res.writeHead(502); res.end('API unavailable'); });
+      req.pipe(forwarded);
+      return;
+    }
     if (!["GET", "HEAD"].includes(req.method)) {
       res.writeHead(405);
       res.end();

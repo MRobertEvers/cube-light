@@ -69,6 +69,7 @@ test('generated banners persist, have immutable URLs, and reject stale renders',
 			queryCardInfo: async function () {
 				return [];
 			},
+			getCardRulesByUuids: async function () { return []; },
 			getCardDataByUuids: async function () {
 				return [];
 			}
@@ -181,6 +182,7 @@ test('v2 subject-protection configs validate, persist, change the revision, and 
 			queryCardInfo: async function () {
 				return [];
 			},
+			getCardRulesByUuids: async function () { return []; },
 			getCardDataByUuids: async function () {
 				return [];
 			}
@@ -457,6 +459,7 @@ test("decks without chosen art save and serve blends for their first card's art"
 			queryCardInfo: async function () {
 				return [card];
 			},
+			getCardRulesByUuids: async function () { return []; },
 			getCardDataByUuids: async function () {
 				return [card];
 			}

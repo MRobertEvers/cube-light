@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { apiFetch } from '../api/utils';
+import { API_URI } from '../config/api-url';
 import type {
 	CardListLintRequest,
 	CardListLintResponse,
@@ -46,6 +48,12 @@ function connect() {
 			listener({ kind: 'failed', error: 'The card checker stopped.' });
 	};
 	shared = connection;
+	void apiFetch(`${API_URI}/suggest/card-names/index`).then((response) => response.arrayBuffer()).then((indexBytes) => {
+		worker.postMessage({ kind: 'initialize', indexBytes }, [indexBytes]);
+	}).catch(() => {
+		fail();
+		for (const listener of connection.listeners) listener({ kind: 'failed', error: 'Download the card-name pack while online to check names offline.' });
+	});
 	return connection;
 }
 

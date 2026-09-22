@@ -10,6 +10,7 @@ import { Page } from '../../components/Page/Page';
 import { NextPage } from '../../components/Page/NextPage';
 import styles from './deck-history.module.css';
 import { useMinimumVisible } from '../../hooks/useMinimumVisible';
+import { observeLocalQuery } from '../../torimtg/observe';
 
 function CardChanges(props: {
 	cards: DeckHistoryCard[];
@@ -64,6 +65,7 @@ export function DeckHistoryPage(props: { deckId: string }) {
 
 	useEffect(() => {
 		let active = true;
+		const unsubscribe = observeLocalQuery<DeckHistoryResponse>({ type: 'history', id: deckId }, (history) => { if (active) setResult({ deckId, history, error: false }); });
 		fetchAPIDeckHistory(deckId).then(
 			(result) => {
 				if (active)
@@ -76,6 +78,7 @@ export function DeckHistoryPage(props: { deckId: string }) {
 		);
 		return function () {
 			active = false;
+			unsubscribe();
 		};
 	}, [deckId]);
 

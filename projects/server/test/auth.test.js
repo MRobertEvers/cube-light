@@ -5,11 +5,11 @@ const path = require('node:path');
 const test = require('node:test');
 const express = require('express');
 const { createKVStore } = require('../build/src/auth/kv-store');
-const { SessionStore } = require('../build/src/auth/sessions');
+const { Database } = require('../build/src/database/app/database');
 const { UserStore } = require('../build/src/auth/UserStore');
 const {
 	cors,
-	loadSession,
+	loadBearerSession,
 	requireSession
 } = require('../build/src/auth/middleware');
 const { createRoutesAuth } = require('../build/src/routes/auth');
@@ -20,11 +20,12 @@ async function startServer() {
 	);
 	const users = await UserStore.Sqlite(path.join(directory, 'app.sqlite'));
 	const kv = createKVStore();
-	const sessions = new SessionStore(kv);
+	const database = await Database.Sqlite(path.join(directory, 'app.sqlite'));
+	const tokens = database.tokens;
 	const app = express();
 	app.use(cors);
-	app.use(loadSession(sessions));
-	app.use(createRoutesAuth(users, sessions, kv));
+	app.use(loadBearerSession(tokens));
+	app.use(createRoutesAuth(users, tokens, kv));
 	app.use(requireSession(['/auth', '/public']));
 	app.get('/public/ping', (_req, res) => res.json({ ok: true }));
 	app.get('/private', (_req, res) =>
@@ -41,6 +42,7 @@ async function startServer() {
 		close: async function () {
 			await new Promise((resolve) => server.close(resolve));
 			await users.close();
+			await database.close();
 			fs.rmSync(directory, { recursive: true, force: true });
 		}
 	};
@@ -64,12 +66,11 @@ function post(url, body, headersArg) {
 /**
  * @param {Response} response
  */
-function sessionCookie(response) {
-	const header = response.headers.get('set-cookie');
-	assert.ok(header, 'expected Set-Cookie');
-	assert.match(header, /HttpOnly/);
-	assert.match(header, /SameSite=Lax/);
-	return header.split(';')[0];
+async function bearer(response) {
+    assert.equal(response.headers.get('set-cookie'), null);
+    const body = await response.clone().json();
+    assert.equal(body.tokens.tokenType, 'Bearer');
+    return `Bearer ${body.tokens.accessToken}`;
 }
 
 test('first-run setup, sign in, protected routes, and sign out', async () => {
@@ -106,8 +107,8 @@ test('first-run setup, sign in, protected routes, and sign out', async () => {
 			password: 'correct horse'
 		});
 		assert.equal(setup.status, 200);
-		assert.deepEqual((await setup.json()).user.username, 'Owner');
-		const setupCookie = sessionCookie(setup);
+		assert.deepEqual((await setup.clone().json()).user.username, 'Owner');
+		const setupCookie = await bearer(setup);
 		assert.equal(
 			(
 				await post(`${base}/auth/setup`, {
@@ -133,27 +134,27 @@ test('first-run setup, sign in, protected routes, and sign out', async () => {
 		const login = await post(
 			`${base}/auth/login`,
 			{ username: 'OWNER', password: 'correct horse' },
-			{ Cookie: setupCookie }
+			{ Authorization: setupCookie }
 		);
 		assert.equal(login.status, 200);
-		const cookie = sessionCookie(login);
+		const cookie = await bearer(login);
 		assert.notEqual(cookie, setupCookie);
 		assert.equal(
 			(
 				await fetch(`${base}/private`, {
-					headers: { Cookie: setupCookie }
+					headers: { Authorization: setupCookie }
 				})
 			).status,
 			401
 		);
 
 		const session = await (
-			await fetch(`${base}/auth/session`, { headers: { Cookie: cookie } })
+			await fetch(`${base}/auth/session`, { headers: { Authorization: cookie } })
 		).json();
 		assert.equal(session.user.username, 'Owner');
 		assert.equal(session.setupRequired, false);
 		const privateRead = await fetch(`${base}/private`, {
-			headers: { Cookie: cookie }
+			headers: { Authorization: cookie }
 		});
 		assert.deepEqual(await privateRead.json(), { user: 'Owner' });
 
@@ -166,7 +167,7 @@ test('first-run setup, sign in, protected routes, and sign out', async () => {
 		const profileUpdate = await fetch(`${base}/auth/profile`, {
 			method: 'PUT',
 			headers: {
-				Cookie: cookie,
+				Authorization: cookie,
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(profile)
@@ -184,19 +185,19 @@ test('first-run setup, sign in, protected routes, and sign out', async () => {
 			401
 		);
 		const refreshedSession = await (
-			await fetch(`${base}/auth/session`, { headers: { Cookie: cookie } })
+			await fetch(`${base}/auth/session`, { headers: { Authorization: cookie } })
 		).json();
 		assert.deepEqual(refreshedSession.user.profile, profile);
 
 		const logout = await post(
 			`${base}/auth/logout`,
 			{},
-			{ Cookie: cookie }
+			{ Authorization: cookie }
 		);
 		assert.equal(logout.status, 204);
-		assert.match(logout.headers.get('set-cookie'), /Max-Age=0/);
+		assert.equal(logout.headers.get('set-cookie'), null);
 		assert.equal(
-			(await fetch(`${base}/private`, { headers: { Cookie: cookie } }))
+			(await fetch(`${base}/private`, { headers: { Authorization: cookie } }))
 				.status,
 			401
 		);
@@ -205,7 +206,7 @@ test('first-run setup, sign in, protected routes, and sign out', async () => {
 	}
 });
 
-test('credentialed CORS only for the same host, and foreign origins cannot write', async () => {
+test('bearer CORS only for the same host, and foreign origins cannot write', async () => {
 	const server = await startServer();
 	try {
 		const { base } = server;
@@ -219,7 +220,7 @@ test('credentialed CORS only for the same host, and foreign origins cannot write
 		);
 		assert.equal(
 			ownClient.headers.get('access-control-allow-credentials'),
-			'true'
+			null
 		);
 
 		const foreign = await fetch(`${base}/public/ping`, {
@@ -246,6 +247,7 @@ test('credentialed CORS only for the same host, and foreign origins cannot write
 			}
 		});
 		assert.equal(preflight.status, 204);
+		assert.match(preflight.headers.get('access-control-allow-headers'), /Authorization/);
 	} finally {
 		await server.close();
 	}

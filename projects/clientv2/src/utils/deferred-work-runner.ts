@@ -7,7 +7,7 @@ import {
 	WorkClaimLostError,
 	type WorkItem
 } from 'src/api/fetch-api-work';
-import { API_URI } from 'src/config/api-url';
+import { withCore } from '../torimtg/ui-api';
 import { imageImportQueue, type ImageScanRunner } from './image-import-queue';
 import { isMobileDevice } from './is-mobile-device';
 import { workQueue } from './work-queue';
@@ -24,7 +24,7 @@ const claims = new Map<string, string>();
 // Without this a reloaded or closed tab would leave its items stuck until the lease lapses.
 window.addEventListener('pagehide', () => {
 	for (const [workId, token] of claims) {
-		navigator.sendBeacon(`${API_URI}/work/${workId}/release`, token);
+		void withCore((core) => core.commands.execute({ type: 'work.release', id: workId, token })).catch(() => undefined);
 	}
 });
 

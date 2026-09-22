@@ -1,6 +1,9 @@
 import { parseArgs } from 'node:util';
 import { build, createServer, preview } from 'vite';
 import { config } from '../vite.config.mts';
+import { buildWorker } from './pwa.mjs';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 
 /** @param {string[]} args */
 async function main(args) {
@@ -40,6 +43,18 @@ async function main(args) {
 		return;
 	}
 	if (command !== 'dev') throw new Error(`Unknown Vite command: ${command}`);
+	const workerOutput = path.resolve('.pwa-dev');
+	await buildWorker({ root: process.cwd(), outDir: workerOutput, production: false });
+	options.plugins = [...options.plugins, {
+		name: 'development-service-worker',
+		configureServer: function (server) {
+			server.middlewares.use('/sw.js', async (_req, res) => {
+				res.setHeader('Content-Type', 'text/javascript');
+				res.setHeader('Cache-Control', 'no-store');
+				res.end(await readFile(path.join(workerOutput, 'sw.js')));
+			});
+		}
+	}];
 	const server = await createServer(options);
 	await server.listen();
 	server.printUrls();

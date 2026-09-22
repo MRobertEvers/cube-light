@@ -1,4 +1,6 @@
-import React, { ReactNode, useMemo, useState } from 'react';
+import React, { ReactNode, useMemo, useState, useEffect } from 'react';
+import { withCore } from '../../torimtg/ui-api';
+import { tori } from '../../torimtg';
 import { CardPrinting } from '../../api/fetch-api-card-printings';
 
 import styles from './printing-picker.module.css';
@@ -6,15 +8,6 @@ import styles from './printing-picker.module.css';
 type PrintingView = 'grid' | 'compact';
 const PRINTING_VIEW_KEY = 'printing-picker-view';
 
-function readPrintingView(): PrintingView {
-	try {
-		return localStorage.getItem(PRINTING_VIEW_KEY) === 'compact'
-			? 'compact'
-			: 'grid';
-	} catch {
-		return 'grid';
-	}
-}
 
 export type PrintingPickerProps = {
 	printings: CardPrinting[];
@@ -35,7 +28,24 @@ export type PrintingPickerProps = {
 
 export function PrintingPicker(props: PrintingPickerProps) {
 	const { printings, selectedUuid, onSelect, name, image, disabled } = props;
-	const [view, setView] = useState<PrintingView>(readPrintingView);
+	const [view, setView] = useState<PrintingView>('grid');
+	const [saveError, setSaveError] = useState<string | null>(null);
+	useEffect(() => {
+		async function read() {
+			await withCore(async (core) => {
+				const snapshot = await core.queries.read<{ printingView: PrintingView }>({ type: 'profile' });
+				if (snapshot.data) setView(snapshot.data.printingView);
+				else if (localStorage.getItem(PRINTING_VIEW_KEY)) {
+					const user = (await core.session()).user!;
+					const printingView = localStorage.getItem(PRINTING_VIEW_KEY) === 'compact' ? 'compact' : 'grid';
+					await core.commands.execute({ type: 'profile.printingView', id: `profile_${user.id}`, userId: user.id, printingView });
+					localStorage.removeItem(PRINTING_VIEW_KEY); setView(printingView);
+				}
+			});
+		}
+		void read().catch(() => undefined);
+		return tori.subscribe(() => { void read().catch(() => undefined); });
+	}, []);
 	const [query, setQuery] = useState('');
 
 	const visiblePrintings = useMemo(() => {
@@ -51,12 +61,15 @@ export function PrintingPicker(props: PrintingPickerProps) {
 	const empty = printings.length === 0;
 	if (empty && props.placeholder === undefined) return null;
 
-	function changeView(next: PrintingView) {
-		setView(next);
+	async function changeView(next: PrintingView) {
 		try {
-			localStorage.setItem(PRINTING_VIEW_KEY, next);
-		} catch {
-			/* preference is optional */
+			await withCore(async (core) => {
+				const user = (await core.session()).user!;
+				await core.commands.execute({ type: 'profile.printingView', id: `profile_${user.id}`, userId: user.id, printingView: next });
+			});
+			setView(next); setSaveError(null);
+		} catch (error) {
+			setSaveError(error instanceof Error ? error.message : 'Could not save this preference.');
 		}
 	}
 	function imageFor(printing: CardPrinting) {
@@ -71,6 +84,7 @@ export function PrintingPicker(props: PrintingPickerProps) {
 		<div
 			className={`${styles['picker']} ${props.fill ? styles['fill'] : ''}`}
 		>
+			{saveError && <p role="alert">{saveError}</p>}
 			<div className={styles['tools']}>
 				<input
 					className={styles['search']}

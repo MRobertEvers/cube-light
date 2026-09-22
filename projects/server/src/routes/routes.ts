@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { KVStore } from '../auth/kv-store';
-import { cors, loadSession, requireSession } from '../auth/middleware';
-import { SessionStore } from '../auth/sessions';
+import { cors, loadBearerSession, requireSession } from '../auth/middleware';
 import { UserStore } from '../auth/UserStore';
 import { Database } from '../database/app/database';
 import { CardDatabase } from '../database/cards/CardDatabase';
@@ -15,13 +14,13 @@ import { createRoutes_StorageLocations } from './storage-locations';
 import { createRoutesImages } from './images';
 import { createRoutesWork } from './work';
 import { createRoutesAuth } from './auth';
+import { createSyncRoutes } from '../sync/routes';
 
 /** Card data and images are the same for everyone; all else needs a session. */
 const PUBLIC_PREFIXES = ['/auth', '/suggest', '/cards', '/images'];
 
 export type AuthServices = {
 	users: UserStore;
-	sessions: SessionStore;
 	kv: KVStore;
 };
 
@@ -35,9 +34,20 @@ export function createRoutes(
 	let pathBuilder = new PathBuilder();
 
 	app.use(cors);
-	app.use(loadSession(auth.sessions));
-	app.use(createRoutesAuth(auth.users, auth.sessions, auth.kv));
+	const syncReady = database.sync.initialize();
+	app.use(async (_req, _res, next) => { await syncReady; next(); });
+	app.use(loadBearerSession(database.tokens));
+	// Old clients must refresh, rather than write behind the canonical event ledger.
+	app.use((req, res, next) => {
+		if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && /^(\/decks|\/collection|\/storage-location|\/work|\/auth\/profile)(\/|$)/.test(req.path)) {
+			res.status(426).json({ error: 'Refresh the application to use local-first synchronization.' });
+			return;
+		}
+		next();
+	});
+	app.use(createRoutesAuth(auth.users, database.tokens, auth.kv, database.sync));
 	app.use(requireSession(PUBLIC_PREFIXES));
+	app.use(createSyncRoutes(database.sync, cardDatabase));
 
 	app.use(createRoutesSuggest(pathBuilder.routes('/suggest'), cardDatabase));
 	app.use(

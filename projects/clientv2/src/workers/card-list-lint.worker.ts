@@ -1,4 +1,3 @@
-import { API_URI } from '../config/api-url';
 import { CardListLintWasm } from '../utils/card-list-lint-wasm';
 import { locateCardName, parseCardList } from '../utils/parse-card-list';
 
@@ -16,6 +15,7 @@ export type CardListProblem = {
 };
 
 export type CardListLintRequest =
+	| { kind: 'initialize'; indexBytes: ArrayBuffer }
 	| { kind: 'analyze'; id: number; text: string }
 	| { kind: 'complete'; id: number; query: string };
 export type CardListLintResponse =
@@ -36,18 +36,17 @@ function post(message: CardListLintResponse) {
 	return (self as unknown as Worker).postMessage(message);
 }
 
-// Both downloads are cached by the browser; the name index is ~770 KB for every printed card name.
+let acceptIndex: (bytes: ArrayBuffer) => void;
+const indexReady = new Promise<ArrayBuffer>((resolve) => { acceptIndex = resolve; });
+// Domain/catalog bytes arrive from the window's Redux/core path. Only static WASM is fetched here.
 const lint = (async function () {
-	const [moduleResponse, indexResponse] = await Promise.all([
+	const [moduleResponse, indexBytes] = await Promise.all([
 		fetch(new URL('../wasm/card-list-lint.wasm', import.meta.url)),
-		fetch(`${API_URI}/suggest/card-names/index`)
+		indexReady
 	]);
-	if (!moduleResponse.ok || !indexResponse.ok)
+	if (!moduleResponse.ok)
 		throw new Error('Could not download the card name index.');
-	const [moduleBytes, indexBytes] = await Promise.all([
-		moduleResponse.arrayBuffer(),
-		indexResponse.arrayBuffer()
-	]);
+	const moduleBytes = await moduleResponse.arrayBuffer();
 	return CardListLintWasm.create(moduleBytes, new Uint8Array(indexBytes));
 })();
 lint.then(
@@ -108,6 +107,7 @@ self.addEventListener(
 	'message',
 	async (event: MessageEvent<CardListLintRequest>) => {
 		const request = event.data;
+		if (request.kind === 'initialize') { acceptIndex(request.indexBytes); return; }
 		if (request.kind === 'analyze') latestAnalysis = request.id;
 		let checker: CardListLintWasm;
 		try {

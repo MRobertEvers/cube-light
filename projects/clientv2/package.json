@@ -14,28 +14,36 @@
 		"build:wasm:card-list-lint": "emcc native/card_list_lint.c -O3 -Wall -Wextra -sSTANDALONE_WASM=1 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=16777216 -sEXPORTED_FUNCTIONS='[\"_malloc\",\"_free\"]' --no-entry -o src/wasm/card-list-lint.wasm",
 		"install:ocr": "node ../../scripts/ocr-assets.mjs install",
 		"verify:ocr": "node ../../scripts/ocr-assets.mjs verify",
-		"prebuild": "npm run verify:ocr",
-		"test": "node --import ./test/register.mjs --test test/*.test.ts"
+		"prebuild": "npm run build:core && npm run verify:ocr",
+		"test": "node --import ./test/register.mjs --test test/*.test.ts",
+		"build:core": "npm --prefix ../torimtg-core run build",
+		"predev": "npm run build:core",
+		"pretypecheck": "npm run build:core",
+		"pretest": "npm run build:core",
+		"test:offline": "npm run build && npm --prefix ../server run compile && node --test test/offline-browser.mjs"
 	},
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
 		"@paddleocr/paddleocr-js": "0.4.2",
 		"@reduxjs/toolkit": "^2.12.0",
+		"@techstark/opencv-js": "4.10.0-release.1",
+		"@torimtg/core": "file:../torimtg-core",
+		"js-yaml": "4.3.2",
+		"onnxruntime-web": "1.30.0",
 		"react": "^19.3.0",
 		"react-dom": "^19.3.0",
 		"react-redux": "^9.3.0",
 		"react-router-dom": "^7.18.4",
 		"redux": "^5.0.1",
-		"@techstark/opencv-js": "4.10.0-release.1",
-		"tesseract.js": "7.0.0",
-		"onnxruntime-web": "1.30.0",
-		"js-yaml": "4.3.2"
+		"tesseract.js": "7.0.0"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.63.0",
 		"@types/react": "^19.3.0",
 		"@types/react-dom": "^19.3.0",
 		"@vitejs/plugin-react": "^6.1.1",
+		"fake-indexeddb": "^6.2.5",
 		"typescript": "^7.0.2",
 		"vite": "^8.3.0"
 	}
