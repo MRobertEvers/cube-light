@@ -11,11 +11,12 @@ export const cardNameLookupSlice = createSlice({
 	initialState: initialCardNameLookupSlice,
 	// Ignore this field for typed reducers
 	reducers: {},
-	extraReducers: (builder) =>
-		builder.addCase(
+	extraReducers: function (builder) {
+		return builder.addCase(
 			ActionsCardNameLookup.getCardNameLookup.fulfilled,
 			(slice, action) => {
 				slice.cardNameLookupTable = action.payload;
 			}
-		)
+		);
+	}
 });

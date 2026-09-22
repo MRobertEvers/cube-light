@@ -86,4 +86,4 @@ for (let i = 0; i < 40; i++) {
 if (!ready) throw Error("LaunchAgent did not become healthy; inspect " + logs);
 console.log("Deployed Client v2: http://localhost:3000");
 console.log("LaunchAgent:", plist);
-console.log("LAN clients need an HTTPS reverse proxy for WebGPU.");
+console.log("The Paddle scanner uses WASM; WebGPU is not required.");

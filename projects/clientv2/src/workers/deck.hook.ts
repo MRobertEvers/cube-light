@@ -22,7 +22,7 @@ export function useDeckWorker(
 	const onmessageRef = useRef(onmessage);
 	onmessageRef.current = onmessage;
 
-	const worker = useMemo(() => {
+	const worker = useMemo(function () {
 		if (typeof Worker !== 'undefined') {
 			if (!globalWorker.worker) {
 				globalWorker.worker = new Worker(
@@ -42,18 +42,21 @@ export function useDeckWorker(
 		if (!worker) {
 			return;
 		}
-		const newListener: OnMessageResponseHandler = (message) =>
-			onmessageRef.current(message);
+		const newListener: OnMessageResponseHandler = function newListener(
+			message
+		) {
+			return onmessageRef.current(message);
+		};
 
 		globalWorker.listeners.add(newListener);
 
-		worker.onmessage = (e: MessageEvent) => {
+		worker.onmessage = function (e: MessageEvent) {
 			for (const listener of globalWorker.listeners) {
 				listener(e.data);
 			}
 		};
 
-		return () => {
+		return function () {
 			globalWorker.listeners.delete(newListener);
 			queueMicrotask(() => {
 				if (
@@ -67,7 +70,7 @@ export function useDeckWorker(
 		};
 	}, [worker]);
 
-	return <T, R>(message: Message<T, R>) => {
+	return function <T, R>(message: Message<T, R>) {
 		if (worker !== undefined) {
 			worker.postMessage(message);
 		}

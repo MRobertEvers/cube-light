@@ -1,11 +1,20 @@
 import { getCV } from './edge-titles.js';
 import { createRecognizer } from './direct-recognizer.js';
-export async function readPaddleRegions(
-	image,
-	rows,
-	names,
-	{ onProgress = () => {}, isCancelled = () => false } = {}
-) {
+/**
+ * @param {import('./types.js').ScanImage} image
+ * @param {import('./types.js').TitleRow[]} rows
+ * @param {string[]} names
+ * @param {import('./types.js').ScanCallbacks} [options]
+ */
+export async function readPaddleRegions(image, rows, names, options) {
+	const {
+		onProgress = function () {},
+		isCancelled = function () {
+			return false;
+		}
+	} = options === undefined ? {} : options;
+
+	onProgress({ phase: 'Prepare verifier', completed: 0, total: 0 });
 	const started = performance.now(),
 		reader = await createRecognizer('medium', 1, false, 0, true),
 		{ cv } = await getCV(),
@@ -17,6 +26,12 @@ export async function readPaddleRegions(
 		outputs = [],
 		queue = [...rows],
 		loadMs = performance.now() - started;
+	onProgress({ phase: 'Prepare verifier', completed: 1, total: 1 });
+	onProgress({
+		phase: 'Verify ambiguous names',
+		completed: 0,
+		total: queue.length
+	});
 	try {
 		for (const row of queue) {
 			if (isCancelled()) throw Error('Cancelled');

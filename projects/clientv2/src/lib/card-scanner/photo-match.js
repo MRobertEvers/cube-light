@@ -1,17 +1,27 @@
 // Pure browser/Node module. No photo labels, coordinates, or expected deck list.
-export const normalize = (text) =>
-	text
+/**
+ * @param {string} text
+ */
+export function normalize(text) {
+	return text
 		.normalize('NFKD')
 		.replace(/[\u0300-\u036f]/g, '')
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, ' ')
 		.trim();
-const grams = (s) => {
+}
+/**
+ * @param {string} s
+ */
+function grams(s) {
 	const out = new Set();
 	s = s.replaceAll(' ', '');
 	for (let i = 0; i < s.length - 2; i++) out.add(s.slice(i, i + 3));
 	return out;
-};
+}
+/**
+ * @param {string[]} names
+ */
 export function buildIndex(names) {
 	const entries = [...new Set(names)]
 		.filter((name) => !name.startsWith('A-'))
@@ -29,6 +39,10 @@ export function buildIndex(names) {
 	});
 	return { entries, postings };
 }
+/**
+ * @param {string} a
+ * @param {string} b
+ */
 function distance(a, b) {
 	let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
 	for (let i = 1; i <= a.length; i++) {
@@ -43,6 +57,10 @@ function distance(a, b) {
 	}
 	return prev[b.length];
 }
+/**
+ * @param {string} text
+ * @param {import('./types.js').NameIndex} index
+ */
 export function rankNames(text, index) {
 	const key = normalize(text);
 	if (key.length < 5 || key.length > 55) return [];
@@ -62,6 +80,9 @@ export function rankNames(text, index) {
 	}
 	return [...byName.values()].sort((a, b) => b.score - a.score).slice(0, 3);
 }
+/**
+ * @param {import('./types.js').Polygon} poly
+ */
 export function bounds(poly) {
 	const xs = poly.map((p) => p[0]),
 		ys = poly.map((p) => p[1]);
@@ -72,6 +93,10 @@ export function bounds(poly) {
 		h: Math.max(...ys) - Math.min(...ys)
 	};
 }
+/**
+ * @param {import('./types.js').Bounds} a
+ * @param {import('./types.js').Bounds} b
+ */
 export function sameLine(a, b) {
 	const ac = [a.x + a.w / 2, a.y + a.h / 2],
 		bc = [b.x + b.w / 2, b.y + b.h / 2];
@@ -82,6 +107,10 @@ export function sameLine(a, b) {
 }
 const NON_TITLE =
 	/^(?:when|whenever|if |you |your |target |this |that |the |may |pay |sacrifice |counter |creature\b|artifact\b|instant\b|sorcery\b|enchantment\b|flying\b|affinity\b|improvise\b|sometimes\b|equip\b)/i;
+/**
+ * @param {Array<{items: import('./types.js').TextDetection[]}>} outputs
+ * @param {import('./types.js').NameIndex} index
+ */
 export function matchDetections(outputs, index) {
 	const candidates = [];
 	for (const item of outputs.flatMap((o) => o.items)) {
@@ -113,10 +142,13 @@ export function matchDetections(outputs, index) {
 			sameLine(c.box, candidate.box)
 		);
 		if (duplicate) {
-			const priority = (c) =>
-				(c.status === 'accepted' ? 10 : 0) +
-				c.similarity +
-				c.ocrScore * 0.01;
+			function priority(c) {
+				return (
+					(c.status === 'accepted' ? 10 : 0) +
+					c.similarity +
+					c.ocrScore * 0.01
+				);
+			}
 			if (priority(candidate) > priority(duplicate))
 				Object.assign(duplicate, candidate);
 		} else candidates.push(candidate);

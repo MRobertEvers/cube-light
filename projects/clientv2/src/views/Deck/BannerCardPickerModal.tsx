@@ -36,7 +36,9 @@ export function BannerCardPickerModal(props: {
 			void dispatch(
 				loadBannerPrintings({ deckId, name: picker.chosenName })
 			);
-		return () => previousFocus?.focus();
+		return function () {
+			return previousFocus?.focus();
+		};
 	}, [visible, deckId, dispatch]);
 
 	if (!visible) return null;
@@ -56,10 +58,10 @@ export function BannerCardPickerModal(props: {
 		picker.selectedUuid !== picker.currentUuid &&
 		!picker.saving;
 
-	const chooseName = (name: string) => {
+	function chooseName(name: string) {
 		dispatch(chooseBannerCard(name));
 		void dispatch(loadBannerPrintings({ deckId, name }));
-	};
+	}
 	const placeholder = !showPrintings ? (
 		<p>Select a card above to choose its printing.</p>
 	) : picker.loading ? (
@@ -81,7 +83,7 @@ export function BannerCardPickerModal(props: {
 	) : (
 		<p>No artwork is available for this card.</p>
 	);
-	const save = async () => {
+	async function save() {
 		if (!picker.selectedUuid || !canSave) return;
 		try {
 			await dispatch(
@@ -95,7 +97,7 @@ export function BannerCardPickerModal(props: {
 		} catch {
 			/* The Redux state keeps the error and selection for retry. */
 		}
-	};
+	}
 
 	return (
 		<Modal wide>

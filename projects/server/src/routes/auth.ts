@@ -18,9 +18,12 @@ const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_LIMIT_PER_USERNAME = 10;
 const LOGIN_LIMIT_PER_ADDRESS = 50;
 
-function credentials(req: Request): { username: string; password: string } | null {
+function credentials(
+	req: Request
+): { username: string; password: string } | null {
 	const { username, password } = req.body || {};
-	if (typeof username !== 'string' || typeof password !== 'string') return null;
+	if (typeof username !== 'string' || typeof password !== 'string')
+		return null;
 	if (password.length > MAX_PASSWORD_LENGTH) return null;
 	return { username: username.trim(), password };
 }
@@ -29,22 +32,37 @@ function credentials(req: Request): { username: string; password: string } | nul
  * Counts an attempt against each key for the window. Past any limit, answers 429 with
  * Retry-After and returns true.
  */
-function throttled(kv: KVStore, res: Response, limits: [string, number][]): boolean {
+function throttled(
+	kv: KVStore,
+	res: Response,
+	limits: [string, number][]
+): boolean {
 	for (const [key, limit] of limits) {
 		if (kv.incr(key, LOGIN_WINDOW_MS) <= limit) continue;
 		res.setHeader('Retry-After', String(Math.ceil(kv.ttl(key) / 1000)));
-		res.status(429).json({ error: 'Too many sign-in attempts. Try again later.' });
+		res.status(429).json({
+			error: 'Too many sign-in attempts. Try again later.'
+		});
 		return true;
 	}
 	return false;
 }
 
-export function createRoutesAuth(users: UserStore, sessions: SessionStore, kv: KVStore) {
+export function createRoutesAuth(
+	users: UserStore,
+	sessions: SessionStore,
+	kv: KVStore
+) {
 	const app = Router();
 	app.use('/auth', json());
 
 	/** Replaces any current session so a sign-in never reuses an ID issued before it. */
-	function startSession(req: Request, res: Response, userId: number, username: string) {
+	function startSession(
+		req: Request,
+		res: Response,
+		userId: number,
+		username: string
+	) {
 		if (res.locals.sessionId) sessions.destroy(res.locals.sessionId);
 		setSessionCookie(req, res, sessions.create({ userId, username }));
 		res.json({ user: publicUser({ UserId: userId, Username: username }) });
@@ -53,7 +71,9 @@ export function createRoutesAuth(users: UserStore, sessions: SessionStore, kv: K
 	app.get('/auth/session', async (_req: Request, res: Response) => {
 		const session = currentSession(res);
 		res.json({
-			user: session ? { id: session.userId, username: session.username } : null,
+			user: session
+				? { id: session.userId, username: session.username }
+				: null,
 			setupRequired: !(await users.hasAccounts())
 		});
 	});
@@ -101,12 +121,19 @@ export function createRoutesAuth(users: UserStore, sessions: SessionStore, kv: K
 			return;
 		}
 		if (await users.hasAccounts()) {
-			res.status(403).json({ error: 'This server already has an account.' });
+			res.status(403).json({
+				error: 'This server already has an account.'
+			});
 			return;
 		}
-		const userId = await users.createFirst(given.username, await hashPassword(given.password));
+		const userId = await users.createFirst(
+			given.username,
+			await hashPassword(given.password)
+		);
 		if (userId === null) {
-			res.status(403).json({ error: 'This server already has an account.' });
+			res.status(403).json({
+				error: 'This server already has an account.'
+			});
 			return;
 		}
 		startSession(req, res, userId, given.username);

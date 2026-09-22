@@ -3,12 +3,21 @@ const { spawn } = require('node:child_process');
 const children = [];
 let stopping = false;
 
-function stopChildren(signal = 'SIGTERM') {
+/**
+ * @param {NodeJS.Signals} [signalArg]
+ */
+function stopChildren(signalArg) {
+	const signal = signalArg === undefined ? 'SIGTERM' : signalArg;
+
 	if (stopping) return;
 	stopping = true;
 	for (const child of children) child.kill(signal);
 }
 
+/**
+ * @param {string} name
+ * @param {string[]} args
+ */
 function start(name, args) {
 	const child = spawn(process.execPath, args, { stdio: 'inherit' });
 	children.push(child);

@@ -36,8 +36,12 @@ const TOOL_LABELS: Record<Tool, string> = {
 	foreground: 'Keep brush',
 	background: 'Blend brush'
 };
-const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
-const round = (n: number) => Math.round(n * 10000) / 10000;
+function clamp01(n: number) {
+	return Math.min(1, Math.max(0, n));
+}
+function round(n: number) {
+	return Math.round(n * 10000) / 10000;
+}
 
 /**
  * Edits a protected-subject selection in normalized source-image coordinates. Nothing here
@@ -77,7 +81,13 @@ export function SubjectProtection(props: Props) {
 	});
 	const previewStale = !!preview && preview.key !== key;
 
-	useEffect(() => () => cancelSubjectMaskPreview(), []);
+	useEffect(
+		() =>
+			function () {
+				return cancelSubjectMaskPreview();
+			},
+		[]
+	);
 	useEffect(() => {
 		setPreview(null);
 	}, [src]);
@@ -86,15 +96,19 @@ export function SubjectProtection(props: Props) {
 	useEffect(() => {
 		const element = overlay.current?.parentElement;
 		if (!element) return;
-		const measure = () =>
-			setSize({
-				width: element.clientWidth,
-				height: element.clientHeight
+		const measuredElement = element;
+		function measure() {
+			return setSize({
+				width: measuredElement.clientWidth,
+				height: measuredElement.clientHeight
 			});
+		}
 		measure();
 		const observer = new ResizeObserver(measure);
 		observer.observe(element);
-		return () => observer.disconnect();
+		return function () {
+			return observer.disconnect();
+		};
 	}, []);
 
 	useEffect(() => {
@@ -181,19 +195,19 @@ export function SubjectProtection(props: Props) {
 		context.putImageData(image, 0, 0);
 	}, [preview]);
 
-	const point = (event: React.PointerEvent): [number, number] => {
+	function point(event: React.PointerEvent): [number, number] {
 		const bounds = event.currentTarget.getBoundingClientRect();
 		return [
 			round(clamp01((event.clientX - bounds.left) / bounds.width)),
 			round(clamp01((event.clientY - bounds.top) / bounds.height))
 		];
-	};
-	const commitRect = (rect: BannerProtectRect) => {
+	}
+	function commitRect(rect: BannerProtectRect) {
 		if (rect.width < 0.02 || rect.height < 0.02) return;
 		onChange({ ...current, source: src, rect });
-	};
+	}
 
-	const runPreview = async () => {
+	async function runPreview() {
 		const requestKey = key;
 		setStatus({
 			running: true,
@@ -236,7 +250,7 @@ export function SubjectProtection(props: Props) {
 						: 'Unable to preview the subject mask.'
 			});
 		}
-	};
+	}
 
 	const strokesFull = current.strokes.length >= MAX_PROTECT_STROKES;
 	return (
@@ -296,7 +310,7 @@ export function SubjectProtection(props: Props) {
 					onPointerDown={
 						disabled
 							? undefined
-							: (event) => {
+							: function (event) {
 									const [x, y] = point(event);
 									event.currentTarget.setPointerCapture(
 										event.pointerId
@@ -400,7 +414,11 @@ export function SubjectProtection(props: Props) {
 				<button
 					type="button"
 					onClick={() =>
-						onChange({ ...current, source: src, strokes: [] })
+						onChange({
+							...current,
+							source: src,
+							strokes: []
+						})
 					}
 					disabled={disabled || !current.strokes.length}
 				>

@@ -19,7 +19,7 @@ const { targets } = JSON.parse(
 const commands = targets.flatMap((target) =>
 	target.sources
 		.filter((source) => source.endsWith('.c'))
-		.map((source) => {
+		.map(function (source) {
 			const file = path.join(root, source);
 			return {
 				directory: root,

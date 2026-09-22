@@ -45,18 +45,18 @@ function runWorker<T extends BannerWorkerResponse>(
 	// Starting new work of the same kind terminates the obsolete worker immediately.
 	running[slot]?.cancel();
 	const id = nextId++;
-	return new Promise<T>((resolve, reject) => {
+	return new Promise<T>(function (resolve, reject) {
 		const worker = new Worker(
 			new URL('./banner-blend.worker.ts', import.meta.url),
 			{ type: 'module' }
 		);
-		const finish = () => {
+		function finish() {
 			window.clearTimeout(timeout);
 			worker.terminate();
 			if (running[slot] === entry) delete running[slot];
-		};
+		}
 		const entry: Running = {
-			cancel: () => {
+			cancel: function () {
 				finish();
 				reject(new BannerBlendCancelled());
 			}
@@ -70,7 +70,9 @@ function runWorker<T extends BannerWorkerResponse>(
 				)
 			);
 		}, timeoutMs);
-		worker.onmessage = (event: MessageEvent<BannerWorkerResponse>) => {
+		worker.onmessage = function (
+			event: MessageEvent<BannerWorkerResponse>
+		) {
 			const data = event.data;
 			if (data.id !== id) return; // Stale message from an earlier request.
 			if ('progress' in data) {
@@ -81,7 +83,7 @@ function runWorker<T extends BannerWorkerResponse>(
 			if ('error' in data) reject(new Error(data.error));
 			else resolve(data as T);
 		};
-		worker.onerror = () => {
+		worker.onerror = function () {
 			finish();
 			reject(
 				new Error(
@@ -97,11 +99,14 @@ function runWorker<T extends BannerWorkerResponse>(
 export async function generateAndSaveBannerBlend(
 	deckId: string,
 	deck: FetchAPIDeckResponse,
-	config: BannerBlendConfig = normalizeBannerBlendConfig(
-		deck.bannerBlend?.config
-	),
+	configArg?: BannerBlendConfig,
 	onProgress?: (message: string, fraction?: number) => void
 ): Promise<void> {
+	const config =
+		configArg === undefined
+			? normalizeBannerBlendConfig(deck.bannerBlend?.config)
+			: configArg;
+
 	if (!deck.icon) throw new Error('Choose banner artwork first.');
 	const job: BannerBlendJob = {
 		src: deck.icon,
@@ -160,7 +165,9 @@ export async function previewBannerBlend(
 	const result = await runWorker<
 		Extract<BannerWorkerResponse, { images: unknown }>
 	>('preview', { kind: 'generate', job }, undefined, 120000);
-	const url = (data: string) => `data:image/png;base64,${data}`;
+	function url(data: string) {
+		return `data:image/png;base64,${data}`;
+	}
 	return {
 		desktop: url(result.images.desktop),
 		mobile: url(result.images.mobile),

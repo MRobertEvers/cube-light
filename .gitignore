@@ -33,6 +33,6 @@
 **/__pycache__/
 
 # Large OCR weights are installed from the private NAS (see scripts/ocr-assets.mjs).
-/projects/clientv2/public/ocr/models/glm/onnx/*.onnx_data
+/projects/clientv2/public/ocr/models/**/*.onnx_data
 # Pin the deployed client dependency graph.
 !projects/clientv2/package-lock.json

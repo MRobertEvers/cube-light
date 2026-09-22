@@ -13,9 +13,12 @@ export type FetchDecksDeckResponse = {
 export type FetchDecksResponse = Array<FetchDecksDeckResponse>;
 
 export async function fetchAPIDecks(
-	pageStart: number = 0,
-	pageSize: number = 15
+	pageStartArg?: number,
+	pageSizeArg?: number
 ): Promise<FetchDecksResponse> {
+	const pageStart = pageStartArg === undefined ? 0 : pageStartArg;
+	const pageSize = pageSizeArg === undefined ? 15 : pageSizeArg;
+
 	const q = new URLSearchParams();
 	if (pageStart > 0) {
 		q.set('pageStart', pageStart.toString());

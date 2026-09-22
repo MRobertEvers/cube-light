@@ -24,9 +24,11 @@ const MAX_STROKES = 64,
 	MAX_STROKE_POINTS = 512,
 	MAX_CONFIG_JSON = 96 * 1024;
 
-const unit = (n: unknown): n is number =>
-	typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1;
+function unit(n: unknown): n is number {
+	return typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1;
+}
 function validProtection(protection: any): boolean {
+	const { rect } = protection ?? {};
 	if (protection === null) return true;
 	if (
 		!protection ||
@@ -38,7 +40,6 @@ function validProtection(protection: any): boolean {
 		protection.strokes.length > MAX_STROKES
 	)
 		return false;
-	const { rect } = protection;
 	if (
 		rect !== null &&
 		(!rect ||
@@ -169,7 +170,11 @@ export function createBannerBlendRoutes(
 			res.sendStatus(400);
 			return;
 		}
-		const buffers = {} as { desktop: Buffer; mobile: Buffer; tile: Buffer };
+		const buffers = {} as {
+			desktop: Buffer;
+			mobile: Buffer;
+			tile: Buffer;
+		};
 		for (const variant of ['desktop', 'mobile', 'tile'] as const) {
 			if (
 				typeof images[variant] !== 'string' ||

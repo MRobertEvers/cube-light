@@ -22,7 +22,9 @@ const names = prepareCardNames([
 	'Forest',
 	'Rope'
 ]);
-const match = (text: string) => bestCardName(text, names)?.name ?? null;
+function match(text: string) {
+	return bestCardName(text, names)?.name ?? null;
+}
 
 test('matches blurry title reads', () => {
 	assert.equal(match('Hedge Whihyperer'), 'Hedge Whisperer');

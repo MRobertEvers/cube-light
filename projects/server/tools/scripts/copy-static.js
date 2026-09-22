@@ -1,6 +1,9 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 
+/**
+ * @param {string} root
+ */
 async function copyStatic(root) {
 	const sourceAssets = path.join(root, 'src/assets');
 	const targetAssets = path.join(root, 'build/src/assets');
@@ -11,10 +14,12 @@ async function copyStatic(root) {
 		fs.mkdir(targetPublic, { recursive: true })
 	]);
 
-	await fs.copyFile(
-		path.join(sourceAssets, 'AllPrintings.sqlite'),
-		path.join(targetAssets, 'AllPrintings.sqlite')
+	const source = await fs.realpath(
+		path.join(sourceAssets, 'AllPrintings.sqlite')
 	);
+	const target = path.join(targetAssets, 'AllPrintings.sqlite');
+	await fs.rm(target, { force: true });
+	await fs.symlink(source, target);
 }
 
 if (require.main === module) {

@@ -99,7 +99,7 @@ def main() -> None:
         if journal.exists() and journal.stat().st_size:
             raise ValueError("Close the server and checkpoint AllPrintings.sqlite before refreshing")
 
-        os.replace(sqlite_output, ASSETS / "AllPrintings.sqlite")
+        os.replace(sqlite_output, (ASSETS / "AllPrintings.sqlite").resolve())
         for suffix in ("-wal", "-shm"):
             (ASSETS / f"AllPrintings.sqlite{suffix}").unlink(missing_ok=True)
         print(f"Installed MTGJSON {sqlite_meta[1]}: {count} cards, {name_count} names")

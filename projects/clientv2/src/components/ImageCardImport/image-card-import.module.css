@@ -364,3 +364,6 @@
 	font-size: 13px;
 	font-weight: 400;
 }
+
+.controls select { width:100%; padding:10px; border:1px solid #cac4c1; border-radius:8px; background:white; color:#202020; font:inherit; }
+.controls label > small { font-weight:400; color:#5c626a; line-height:1.4; }

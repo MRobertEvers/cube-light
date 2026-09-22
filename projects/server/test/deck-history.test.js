@@ -90,7 +90,9 @@ test('history endpoint returns named cards with their UUIDs', async () => {
 		{ uuid: 'card-a', action: 'add', count: 2 }
 	]);
 	const cards = {
-		queryCardInfo: async () => [{ uuid: 'card-a', name: 'Example card' }]
+		queryCardInfo: async function () {
+			return [{ uuid: 'card-a', name: 'Example card' }];
+		}
 	};
 	const app = express();
 	app.use(
@@ -134,8 +136,12 @@ test('banner crops are validated, saved, returned, and recorded in history', asy
 	app.use(express.json());
 	app.use(
 		createRoutesDecksId(new PathBuilder('/decks/:id'), database, {
-			queryCardInfo: async () => [],
-			getCardDataByUuids: async () => []
+			queryCardInfo: async function () {
+				return [];
+			},
+			getCardDataByUuids: async function () {
+				return [];
+			}
 		})
 	);
 	const server = await new Promise((resolve) => {
@@ -147,12 +153,13 @@ test('banner crops are validated, saved, returned, and recorded in history', asy
 			desktop: { x: 0.25, y: 0.7, zoom: 1.4 },
 			mobile: { x: 1.12, y: 0.3, zoom: 2 }
 		};
-		const put = (bannerCrop) =>
-			fetch(`${url}/banner-crop`, {
+		function put(bannerCrop) {
+			return fetch(`${url}/banner-crop`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ bannerCrop })
 			});
+		}
 		assert.equal((await put(crop)).status, 204);
 		assert.deepEqual((await (await fetch(url)).json()).bannerCrop, crop);
 		assert.equal(
@@ -166,12 +173,13 @@ test('banner crops are validated, saved, returned, and recorded in history', asy
 			400
 		);
 		assert.deepEqual((await (await fetch(url)).json()).bannerCrop, crop);
-		const putStyle = (topStyle) =>
-			fetch(`${url}/top-style`, {
+		function putStyle(topStyle) {
+			return fetch(`${url}/top-style`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ topStyle })
 			});
+		}
 		assert.equal((await (await fetch(url)).json()).topStyle, 'card');
 		assert.equal((await putStyle('full-art')).status, 204);
 		assert.equal((await (await fetch(url)).json()).topStyle, 'full-art');

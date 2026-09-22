@@ -1,3 +1,4 @@
+import { progressFor } from './scan-progress';
 /** Browser-only scanner shared with the 12/12 tabletop benchmark. */
 export type ImageRegion = {
 	x: number;
@@ -18,6 +19,7 @@ export type ScanProgress = {
 	region: ImageRegion | null;
 	candidates: CardImageCandidate[];
 	message?: string;
+	indeterminate?: boolean;
 };
 type PipelineCandidate = {
 	name: string;
@@ -34,14 +36,11 @@ type PipelineEvent = {
 	total?: number;
 	region?: { x: number; y: number; w: number; h: number };
 };
-export type ScanOptions = {
-	useGLM?: boolean;
-	verifier?: 'glm' | 'paddle-medium' | 'none';
-};
+import type { CardImagePipeline } from './image-scan-pipelines';
+export type ScanOptions = { pipeline?: CardImagePipeline };
 
 type PipelineOptions = {
-	verifier?: ScanOptions['verifier'];
-	useGLM?: boolean;
+	pipeline?: CardImagePipeline;
 	url: string;
 	names: string[];
 	isCancelled: () => boolean;
@@ -52,15 +51,6 @@ type PipelineOptions = {
 	) => Promise<void>;
 };
 type PipelineResult = { candidates: PipelineCandidate[]; totalMs: number };
-const stages: Record<string, [number, number]> = {
-	'Read visible titles': [0, 24],
-	'Title proposals: light': [24, 36],
-	'Title proposals: ink': [36, 57],
-	'Title proposals: plane': [57, 72],
-	'Refine printed-name matches': [72, 78],
-	'Load printed titles': [78, 82],
-	'Verify ambiguous names': [82, 99]
-};
 function convert(candidates: PipelineCandidate[]): CardImageCandidate[] {
 	return candidates
 		.filter((c) => c.status === 'accepted')
@@ -78,21 +68,26 @@ export async function scanCardImage(
 	names: string[],
 	onProgress: (progress: ScanProgress) => void,
 	isCancelled: () => boolean,
-	options: ScanOptions = {}
+	optionsArg?: ScanOptions
 ): Promise<{
 	candidates: CardImageCandidate[];
 	width: number;
 	height: number;
 }> {
+	const options = optionsArg === undefined ? {} : optionsArg;
+
 	let candidates: CardImageCandidate[] = [],
-		completed = 0;
+		completed = 0,
+		message = 'Loading card scanner',
+		indeterminate = true;
 	onProgress({
 		phase: 'loading',
 		completed: 0,
 		total: 100,
 		region: null,
 		candidates,
-		message: 'Loading card scanner'
+		message: 'Loading card scanner',
+		indeterminate: true
 	});
 	const image = await createImageBitmap(file),
 		width = image.width,
@@ -100,30 +95,25 @@ export async function scanCardImage(
 	image.close();
 	const url = URL.createObjectURL(file);
 	try {
-		const module = await import(
-			'../lib/card-scanner/experimental-scanner.js'
-		);
+		const module =
+			await import('../lib/card-scanner/experimental-scanner.js');
 		const scan = module.scanExperimental as unknown as (
 			options: PipelineOptions
 		) => Promise<PipelineResult>;
 		const result = await scan({
-			useGLM: options.useGLM ?? true,
-			verifier: options.verifier,
+			pipeline: options.pipeline ?? 'card-aware',
 			url,
 			names,
 			isCancelled,
-			onProgress: (event) => {
-				const [start, end] = stages[event.phase] ?? [
-					completed,
+			onProgress: function (event) {
+				const update = progressFor(
+					options.pipeline ?? 'card-aware',
+					event,
 					completed
-				];
-				const ratio = event.total
-					? Math.min(1, (event.completed ?? 0) / event.total)
-					: 0;
-				completed = Math.max(
-					completed,
-					Math.floor(start + (end - start) * ratio)
 				);
+				completed = update.completed;
+				message = update.message;
+				indeterminate = update.indeterminate;
 				const r = event.region;
 				onProgress({
 					phase: 'scanning',
@@ -133,10 +123,11 @@ export async function scanCardImage(
 						? { x: r.x, y: r.y, width: r.w, height: r.h }
 						: null,
 					candidates: [...candidates],
-					message: event.phase
+					message,
+					indeterminate
 				});
 			},
-			onStage: async (_stage, data) => {
+			onStage: async function (_stage, data) {
 				if (data.candidates) candidates = convert(data.candidates);
 				onProgress({
 					phase: 'scanning',
@@ -144,18 +135,20 @@ export async function scanCardImage(
 					total: 100,
 					region: null,
 					candidates: [...candidates],
-					message: 'Reviewing identified names'
+					message,
+					indeterminate
 				});
 			}
 		});
 		candidates = convert(result.candidates);
 		onProgress({
 			phase: 'scanning',
-			completed: 100,
+			completed: 99,
 			total: 100,
 			region: null,
 			candidates,
-			message: 'Scan complete'
+			message: 'Finishing analysis',
+			indeterminate: false
 		});
 		return { candidates, width, height };
 	} finally {

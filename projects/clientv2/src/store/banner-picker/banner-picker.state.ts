@@ -84,7 +84,7 @@ export const bannerPickerSlice = createSlice({
 	name: 'bannerPicker',
 	initialState,
 	reducers: {
-		openBannerPicker(
+		openBannerPicker: function (
 			state,
 			action: PayloadAction<{
 				deckId: string;
@@ -108,17 +108,20 @@ export const bannerPickerSlice = createSlice({
 				currentUuid
 			});
 		},
-		closeBannerPicker(state) {
+		closeBannerPicker: function (state) {
 			Object.assign(state, initialState);
 		},
-		setBannerQuery(state, action: PayloadAction<string>) {
+		setBannerQuery: function (state, action: PayloadAction<string>) {
 			state.query = action.payload;
 			state.suggestionsOpen = true;
 		},
-		setBannerSuggestionsOpen(state, action: PayloadAction<boolean>) {
+		setBannerSuggestionsOpen: function (
+			state,
+			action: PayloadAction<boolean>
+		) {
 			state.suggestionsOpen = action.payload;
 		},
-		chooseBannerCard(state, action: PayloadAction<string>) {
+		chooseBannerCard: function (state, action: PayloadAction<string>) {
 			if (!state.names.includes(action.payload)) return;
 			if (state.chosenName !== action.payload)
 				state.selectedUuid =
@@ -133,14 +136,14 @@ export const bannerPickerSlice = createSlice({
 			state.suggestionsOpen = false;
 			state.saveError = null;
 		},
-		selectBannerPrinting(state, action: PayloadAction<string>) {
+		selectBannerPrinting: function (state, action: PayloadAction<string>) {
 			if (state.printings.some((item) => item.uuid === action.payload)) {
 				state.selectedUuid = action.payload;
 				state.saveError = null;
 			}
 		}
 	},
-	extraReducers: (builder) => {
+	extraReducers: function (builder) {
 		builder
 			.addCase(loadBannerPrintings.pending, (state, action) => {
 				if (
@@ -209,6 +212,6 @@ export const {
 	selectBannerPrinting
 } = bannerPickerSlice.actions;
 
-export const selectBannerPicker = (state: {
-	bannerPicker: BannerPickerState;
-}) => state.bannerPicker;
+export function selectBannerPicker(state: { bannerPicker: BannerPickerState }) {
+	return state.bannerPicker;
+}

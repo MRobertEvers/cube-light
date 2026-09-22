@@ -1,11 +1,25 @@
 import { getCV, tightInkCrops } from './edge-titles.js';
 import { features, normalize, blurred } from './refine-font.js';
-export async function scanReferenceTitles({
-	image: suppliedImage,
-	rows: suppliedRows,
-	onProgress = () => {},
-	isCancelled = () => false
-} = {}) {
+/**
+ * @typedef {Object} ReferenceScanOptions
+ * @property {import('./types.js').ScanImage} image
+ * @property {import('./types.js').ReferenceRow[]} rows
+ * @property {import('./types.js').ProgressCallback} [onProgress]
+ * @property {import('./types.js').CancellationCallback} [isCancelled]
+ *
+ * @param {ReferenceScanOptions} [options]
+ */
+export async function scanReferenceTitles(options) {
+	const {
+		image: suppliedImage,
+		rows: suppliedRows,
+		onProgress = function () {},
+		isCancelled = function () {
+			return false;
+		}
+	} = options === undefined ? {} : options;
+
+	onProgress({ phase: 'Load printed titles', completed: 0, total: 0 });
 	const start = performance.now(),
 		allReferences = await (
 			await fetch('/ocr/models/title-references/' + 'catalog.json')
@@ -18,6 +32,11 @@ export async function scanReferenceTitles({
 			: allReferences,
 		{ cv } = await getCV(),
 		templates = new Map();
+	onProgress({
+		phase: 'Load printed titles',
+		completed: 0,
+		total: manifest.length
+	});
 	for (const ref of manifest) {
 		if (isCancelled()) throw Error('Cancelled');
 		let response = await fetch('/ocr/models/title-references/' + ref.file);
@@ -92,6 +111,7 @@ export async function scanReferenceTitles({
 			total: manifest.length
 		});
 	}
+	onProgress({ phase: 'Load printed titles', completed: manifest.length, total: manifest.length });
 	console.log('Reference templates ready', templates.size);
 	const loadMs = performance.now() - start,
 		image = suppliedImage,
@@ -109,6 +129,11 @@ export async function scanReferenceTitles({
 		rows = suppliedRows,
 		outputs = [];
 	try {
+		onProgress({
+			phase: 'Compare printed titles',
+			completed: 0,
+			total: rows.length
+		});
 		for (const row of rows) {
 			if (isCancelled()) throw Error('Cancelled');
 			const from = cv.matFromArray(4, 1, cv.CV_32FC2, row.poly.flat()),
@@ -159,6 +184,11 @@ export async function scanReferenceTitles({
 			}
 			candidates.sort((a, b) => b.score - a.score);
 			outputs.push({ poly: row.poly, candidates });
+			onProgress({
+				phase: 'Compare printed titles',
+				completed: outputs.length,
+				total: rows.length
+			});
 			console.log(
 				'Reference',
 				outputs.length,

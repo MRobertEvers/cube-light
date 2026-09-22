@@ -1,4 +1,4 @@
 import icon from '../../assets/icons/keyboard_return-24px.svg?raw';
-import IconTemplate from './IconTemplate';
+import { IconTemplate } from './IconTemplate';
 
-export default IconTemplate(icon);
+export const EnterIcon = IconTemplate(icon);

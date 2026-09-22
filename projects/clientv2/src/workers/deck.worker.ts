@@ -50,9 +50,9 @@ const handler = createHandler((builder) => {
 		);
 		return result;
 	});
-	builder.addCase(DeckWorkerMessages.getLookupTree, async (message) => {
-		return createNameLookupTree(message.payload);
-	});
+	builder.addCase(DeckWorkerMessages.getLookupTree, async (message) =>
+		createNameLookupTree(message.payload)
+	);
 	return builder;
 });
 

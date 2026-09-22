@@ -65,12 +65,12 @@ export async function applyImport(
 	deck: Deck,
 	resolved: ResolvedImport
 ): Promise<number> {
+	const { firstCard } = resolved;
 	if (resolved.edits.length === 0) return 0;
 	const edit = database.applyDeckCardEdit(
 		String(deck.DeckId),
 		resolved.edits
 	);
-	const { firstCard } = resolved;
 	if (edit?.cardsIn.length && !deck.Art && firstCard) {
 		const art = cardImagePath(firstCard.scryfallId, 'art_crop');
 		if (art) await database.setDeckArt(deck.DeckId, art, firstCard.uuid);

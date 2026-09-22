@@ -32,7 +32,14 @@ function derive(
 export async function hashPassword(password: string): Promise<string> {
 	const salt = randomBytes(16);
 	const key = await derive(password, salt, N, R, P);
-	return ['scrypt', N, R, P, salt.toString('base64'), key.toString('base64')].join('$');
+	return [
+		'scrypt',
+		N,
+		R,
+		P,
+		salt.toString('base64'),
+		key.toString('base64')
+	].join('$');
 }
 
 export async function verifyPassword(
@@ -49,8 +56,12 @@ export async function verifyPassword(
 		Number(r),
 		Number(p)
 	);
-	return actual.length === expected.length && timingSafeEqual(actual, expected);
+	return (
+		actual.length === expected.length && timingSafeEqual(actual, expected)
+	);
 }
 
 /** Checked in place of a missing user's hash so response time does not reveal which usernames exist. */
-export const UNUSED_PASSWORD_HASH = hashPassword(randomBytes(16).toString('hex'));
+export const UNUSED_PASSWORD_HASH = hashPassword(
+	randomBytes(16).toString('hex')
+);

@@ -53,18 +53,21 @@ export function PrintingPicker(props: PrintingPickerProps) {
 	const empty = printings.length === 0;
 	if (empty && props.placeholder === undefined) return null;
 
-	const changeView = (next: PrintingView) => {
+	function changeView(next: PrintingView) {
 		setView(next);
 		try {
 			localStorage.setItem(PRINTING_VIEW_KEY, next);
 		} catch {
 			/* preference is optional */
 		}
-	};
-	const imageFor = (printing: CardPrinting) =>
-		(view === 'compact' || image === 'art'
-			? (printing.art ?? printing.image)
-			: (printing.image ?? printing.art)) ?? undefined;
+	}
+	function imageFor(printing: CardPrinting) {
+		return (
+			(view === 'compact' || image === 'art'
+				? (printing.art ?? printing.image)
+				: (printing.image ?? printing.art)) ?? undefined
+		);
+	}
 
 	return (
 		<div

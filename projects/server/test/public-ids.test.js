@@ -53,8 +53,12 @@ test('existing rows get stable typed public IDs and API routes reject row IDs', 
 		const app = express();
 		app.use(
 			createRoutesDecks(new PathBuilder('/decks'), database, {
-				queryCardInfo: async () => [],
-				getCardDataByUuids: async () => []
+				queryCardInfo: async function () {
+					return [];
+				},
+				getCardDataByUuids: async function () {
+					return [];
+				}
 			})
 		);
 		app.use('/collection', createRoutes_Collections(database));
@@ -65,12 +69,13 @@ test('existing rows get stable typed public IDs and API routes reject row IDs', 
 			);
 		});
 		const base = `http://127.0.0.1:${server.address().port}`;
-		const post = (url, name) =>
-			fetch(base + url, {
+		function post(url, name) {
+			return fetch(base + url, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ name })
 			});
+		}
 		const createdDeck = await (await post('/decks', 'New deck')).json();
 		const createdCollection = await (
 			await post('/collection', 'New collection')

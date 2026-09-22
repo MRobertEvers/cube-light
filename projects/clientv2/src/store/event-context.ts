@@ -14,4 +14,6 @@ export const EventContext = createContext({
 	useReducer: useReducer
 });
 
-export const useEventContext = () => useContext(EventContext);
+export function useEventContext() {
+	return useContext(EventContext);
+}

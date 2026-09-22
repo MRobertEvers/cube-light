@@ -19,18 +19,22 @@ export function createReducerManager<T>(
 	const reducers: Record<string, Reducer<any>> = { ...initialReducers };
 
 	// Create the initial combinedReducer
-	const combine = () => combineReducers(reducers) as unknown as Reducer<T>;
+	function combine() {
+		return combineReducers(reducers) as unknown as Reducer<T>;
+	}
 	let combinedReducer = combine();
 
 	// An array which is used to delete state keys when reducers are removed
 	let keysToRemove: Array<keyof T> = [];
 
 	return {
-		getReducerMap: () => reducers as ReducersMapObject<T>,
+		getReducerMap: function () {
+			return reducers as ReducersMapObject<T>;
+		},
 
 		// The root reducer function exposed by this object
 		// This will be passed to the store
-		reduce: (state: T | undefined, action: UnknownAction) => {
+		reduce: function (state: T | undefined, action: UnknownAction) {
 			// If any reducers have been removed, clean up their state first
 			if (state && keysToRemove.length > 0) {
 				state = { ...state };
@@ -45,7 +49,7 @@ export function createReducerManager<T>(
 		},
 
 		// Adds a new reducer with the specified key
-		add: <K extends keyof T>(key: K, reducer: Reducer<T[K]>) => {
+		add: function <K extends keyof T>(key: K, reducer: Reducer<T[K]>) {
 			if (!key || reducers[key as string]) {
 				return;
 			}
@@ -58,7 +62,7 @@ export function createReducerManager<T>(
 		},
 
 		// Removes a reducer with the specified key
-		remove: (key: keyof T) => {
+		remove: function (key: keyof T) {
 			if (!key || !reducers[key as string]) {
 				return;
 			}

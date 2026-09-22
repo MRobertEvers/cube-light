@@ -2,23 +2,64 @@ import { makeFontIndex, lookup } from './font-ocr.js';
 import { titleProposals } from './title-proposals.js';
 import { stripCanvas, tightInkCrops, lightTitleBand } from './edge-titles.js';
 import { rectifyPlane } from './rectify-plane.js';
-export async function freshProposals(
-	image,
-	names,
-	{ onProgress = () => {}, isCancelled = () => false } = {}
-) {
+/**
+ * @param {import('./types.js').ScanImage} image
+ * @param {string[]} names
+ * @param {import('./types.js').ScanCallbacks} [options]
+ */
+export async function freshProposals(image, names, options) {
+	const {
+		onProgress = function () {},
+		isCancelled = function () {
+			return false;
+		}
+	} = options === undefined ? {} : options;
+
 	const start = performance.now(),
+		physicalNames = names.filter((n) => !n.startsWith('A-')),
 		outputs = [],
 		passes = [];
 	for (const mode of ['light', 'ink', 'plane']) {
+		onProgress({
+			phase: 'Build title index: ' + mode,
+			completed: 0,
+			total: physicalNames.length
+		});
 		const began = performance.now(),
 			index = await makeFontIndex(
-				names.filter((n) => !n.startsWith('A-')),
-				mode === 'light' ? 0 : 1.3
+				physicalNames,
+				mode === 'light' ? 0 : 1.3,
+				'beleren.woff',
+				(e) =>
+					onProgress({
+						...e,
+						phase: 'Build title index: ' + mode
+					})
 			),
-			plane = mode === 'plane' ? await rectifyPlane(image) : null,
+			plane =
+				mode === 'plane'
+					? await (async function () {
+							onProgress({
+								phase: 'Straighten card plane',
+								completed: 0,
+								total: 0
+							});
+							const result = await rectifyPlane(image);
+							onProgress({
+								phase: 'Straighten card plane',
+								completed: 1,
+								total: 1
+							});
+							return result;
+						})()
+					: null,
 			source = plane?.canvas || image,
 			lines = await titleProposals(source);
+		onProgress({
+			phase: 'Title proposals: ' + mode,
+			completed: 0,
+			total: lines.length
+		});
 		let count = 0;
 		for (const line of lines) {
 			if (isCancelled()) throw Error('Cancelled');
@@ -60,8 +101,14 @@ export async function freshProposals(
 						[band.canvas.width, 0],
 						[band.canvas.width, band.canvas.height],
 						[0, band.canvas.height]
-					].map(([x, y]) =>
-						strip.toImage(x + band.left, y + band.top)
+					].map(
+						/**
+						 * @param {number[]} values
+						 */
+						(values) => {
+							const [x, y] = values;
+							return strip.toImage(x + band.left, y + band.top);
+						}
 					);
 				outputs.push({
 					mode,
@@ -80,6 +127,11 @@ export async function freshProposals(
 				await new Promise((r) => setTimeout(r, 0));
 			}
 		}
+		onProgress({
+			phase: 'Title proposals: ' + mode,
+			completed: lines.length,
+			total: lines.length
+		});
 		passes.push({
 			mode,
 			totalMs: performance.now() - began,

@@ -50,16 +50,16 @@ export function MobileDeckHeader(props: Props) {
 
 	useEffect(() => {
 		if (!menuOpen) return;
-		const onPointerDown = (event: PointerEvent) => {
+		function onPointerDown(event: PointerEvent) {
 			if (!menu.current?.contains(event.target as Node))
 				setMenuOpen(false);
-		};
-		const onKeyDown = (event: KeyboardEvent) => {
+		}
+		function onKeyDown(event: KeyboardEvent) {
 			if (event.key === 'Escape') setMenuOpen(false);
-		};
+		}
 		window.addEventListener('pointerdown', onPointerDown);
 		window.addEventListener('keydown', onKeyDown);
-		return () => {
+		return function () {
 			window.removeEventListener('pointerdown', onPointerDown);
 			window.removeEventListener('keydown', onKeyDown);
 		};
@@ -145,13 +145,15 @@ function useBannerCollapse(
 	useEffect(() => {
 		const element = bar.current;
 		if (!element) return;
+		const measuredElement = element;
 		let frame = 0;
-		const measure = () => {
+		function measure() {
 			frame = 0;
 			let progress = 0;
 			if (banner) {
 				const rect = banner.getBoundingClientRect();
-				const barBottom = element.getBoundingClientRect().bottom;
+				const barBottom =
+					measuredElement.getBoundingClientRect().bottom;
 				progress = rect.height
 					? Math.min(
 							1,
@@ -159,16 +161,19 @@ function useBannerCollapse(
 						)
 					: 0;
 			}
-			element.style.setProperty('--collapse', progress.toFixed(3));
+			measuredElement.style.setProperty(
+				'--collapse',
+				progress.toFixed(3)
+			);
 			setCollapsed(progress > 0.5);
-		};
-		const schedule = () => {
+		}
+		function schedule() {
 			if (!frame) frame = requestAnimationFrame(measure);
-		};
+		}
 		measure();
 		window.addEventListener('scroll', schedule, { passive: true });
 		window.addEventListener('resize', schedule);
-		return () => {
+		return function () {
 			cancelAnimationFrame(frame);
 			window.removeEventListener('scroll', schedule);
 			window.removeEventListener('resize', schedule);

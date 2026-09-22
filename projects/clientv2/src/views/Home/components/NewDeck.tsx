@@ -56,7 +56,9 @@ export function NewDeckModal(props: NewDeckModalProps) {
 						</Button>
 						<Button
 							onClick={() =>
-								onEvent({ type: NewDeckModalEventType.CLOSE })
+								onEvent({
+									type: NewDeckModalEventType.CLOSE
+								})
 							}
 						>
 							Cancel

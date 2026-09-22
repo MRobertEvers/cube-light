@@ -5,6 +5,6 @@ results-photo.json
 results-multi.json
 results-multi-titles.json
 __pycache__/
-models/
-photo-results/
+/models
+/photo-results
 res/IMG_8535.jpeg

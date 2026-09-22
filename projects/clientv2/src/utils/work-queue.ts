@@ -1,3 +1,4 @@
+import type { CardImagePipeline } from './image-scan-pipelines';
 import { useSyncExternalStore } from 'react';
 import {
 	fetchAPIDeleteWork,
@@ -23,20 +24,29 @@ class WorkQueue {
 	private pollTimer: number | undefined;
 	private inFlight: Promise<void> | null = null;
 
-	subscribe = (listener: () => void) => {
+	constructor() {
+		this.subscribe = this.subscribe.bind(this);
+		this.getSnapshot = this.getSnapshot.bind(this);
+		this.onVisible = this.onVisible.bind(this);
+	}
+
+	subscribe(listener: () => void) {
+		const instance = this;
 		this.listeners.add(listener);
 		if (this.listeners.size === 1) this.start();
-		return () => {
-			this.listeners.delete(listener);
-			if (this.listeners.size === 0) this.stop();
+		return function unsubscribe() {
+			instance.listeners.delete(listener);
+			if (instance.listeners.size === 0) instance.stop();
 		};
-	};
+	}
 
-	getSnapshot = () => this.snapshot;
+	getSnapshot() {
+		return this.snapshot;
+	}
 
-	private onVisible = () => {
+	private onVisible() {
 		if (document.visibilityState === 'visible') void this.refresh();
-	};
+	}
 
 	private start() {
 		document.addEventListener('visibilitychange', this.onVisible);
@@ -60,7 +70,11 @@ class WorkQueue {
 		this.inFlight ??= fetchAPIWorkItems()
 			.then(
 				(items) => this.publish({ items, error: false }),
-				() => this.publish({ ...this.snapshot, error: true })
+				() =>
+					this.publish({
+						...this.snapshot,
+						error: true
+					})
 			)
 			.finally(() => {
 				this.inFlight = null;
@@ -81,8 +95,14 @@ class WorkQueue {
 		}, ACTIVE_POLL_MS);
 	}
 
-	async queueCardImage(deckId: string, file: File): Promise<WorkItem> {
-		const item = await fetchAPIQueueCardImage(deckId, file);
+	async queueCardImage(
+		deckId: string,
+		file: File,
+		pipelineArg?: CardImagePipeline
+	): Promise<WorkItem> {
+		const pipeline = pipelineArg === undefined ? 'card-aware' : pipelineArg;
+
+		const item = await fetchAPIQueueCardImage(deckId, file, pipeline);
 		void this.refresh();
 		return item;
 	}

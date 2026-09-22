@@ -7,11 +7,9 @@ import { evaluatePhoto } from "./evaluate-photo.js";
 const exec = promisify(execFile),
   origin = process.env.PROFILE_ORIGIN || "http://127.0.0.1:3000",
   runs = Number(process.env.PROFILE_RUNS || 2),
-  verifier =
-    process.env.PROFILE_VERIFIER ||
-    (process.env.PROFILE_GLM === "false" ? "none" : "glm"),
-  useGLM = verifier === "glm",
+  pipeline = process.env.PROFILE_PIPELINE || "card-aware",
   profileId = process.env.PROFILE_ID || "client-memory";
+if (!["card-aware", "paddle-only"].includes(pipeline)) throw Error("Invalid PROFILE_PIPELINE");
 if (!/^[a-z0-9-]+$/.test(profileId)) throw Error("Invalid PROFILE_ID");
 const assets = new URL("../../projects/clientv2/dist/assets/", import.meta.url),
   entry = (await readdir(assets)).find((f) =>
@@ -43,9 +41,8 @@ rootPid = info.processInfo.find((p) => p.type === "browser").id;
 const sourceCommit = (await exec("git", ["rev-parse", "HEAD"])).stdout.trim();
 const environment = {
   headless: true,
-  useGLM,
-  verifier,
-  webGPUHidden: !useGLM,
+  pipeline,
+  webGPUHidden: true,
   bundle: entry,
   browser: browser.version(),
   platform: process.platform,
@@ -134,8 +131,7 @@ await page.addInitScript(() => {
     }).observe({ type: "longtask", buffered: true });
   } catch {}
 });
-if (!useGLM)
-  await page.addInitScript(() =>
+await page.addInitScript(() =>
     Object.defineProperty(navigator, "gpu", {
       value: undefined,
       configurable: true,
@@ -145,14 +141,14 @@ await cdp.send("Network.setBlockedURLs", {
   urls: [
     "*/photo-results/*",
     "*/photo-ground-truth.json",
-    ...(!useGLM ? ["*/ocr/models/glm/*"] : []),
+    "*/ocr/models/glm/*",
   ],
 });
 cdp.on("Network.requestWillBeSent", (e) => {
   if (
     e.request.url.includes("/photo-results/") ||
     e.request.url.includes("/photo-ground-truth.json") ||
-    (!useGLM && e.request.url.includes("/ocr/models/glm/"))
+    e.request.url.includes("/ocr/models/glm/")
   )
     forbidden.push(e.request.url);
 });
@@ -196,8 +192,8 @@ try {
     phase = "module-loading";
     console.log("RUN", run);
     const result = await page.evaluate(
-      async ({ entry, useGLM, verifier }) => {
-        const stages = [];
+      async ({ entry, pipeline }) => {
+        const stages = [], progress = [];
         globalThis.__profileTasks = [];
         const { scanExperimental } = await import("/assets/" + entry),
           names = await (await fetch("/ocr/card-names.json")).json(),
@@ -205,13 +201,13 @@ try {
         const result = await scanExperimental({
           url: globalThis.__profilePhotoUrl,
           names,
-          useGLM,
-          verifier,
+          pipeline,
           onStage: async (stage, data) => {
             if (data.candidates)
               stages.push({ stage, candidates: data.candidates });
           },
           onProgress: (event) => {
+            progress.push({ms: performance.now()-start, ...event});
             void window.profilePhase({ phase: event.phase });
           },
         });
@@ -226,8 +222,9 @@ try {
             maxMs: Math.max(0, ...tasks.map((t) => t.duration)),
           };
         return {
-          useGLM,
+          pipeline,
           stages,
+          progress,
           names: result.names,
           candidates: result.candidates,
           totalMs: result.totalMs,
@@ -238,7 +235,7 @@ try {
           longTasks,
         };
       },
-      { entry, useGLM, verifier },
+      { entry, pipeline },
     );
     const truth = JSON.parse(
       await readFile(
@@ -297,7 +294,7 @@ try {
     sampling: {
       rssIntervalMs: 1000,
       heapIntervalMs: 2000,
-      forcedGC: "Only after both measured runs; no forced GC between scans",
+      forcedGC: "Only after all measured runs; no forced GC between scans",
       httpCache:
         "Normal browser HTTP cache; fixture passed as a Blob URL, no Playwright request routing",
     },

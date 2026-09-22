@@ -1,19 +1,31 @@
 // CTC prefix beam search over the entire catalog. No fixture-specific names.
 const alphabet = "abcdefghijklmnopqrstuvwxyz-,'æ ";
-const clean = (s) =>
-	s
+/**
+ * @param {string} s
+ */
+function clean(s) {
+	return s
 		.normalize('NFKD')
 		.replace(/[\u0300-\u036f]/g, '')
 		.toLowerCase()
 		.replace(/[^a-z\-',æ ]/g, ' ')
 		.replace(/\s+/g, ' ')
 		.trim();
-const logadd = (a, b) =>
-	a === -Infinity
+}
+/**
+ * @param {number} a
+ * @param {number} b
+ */
+function logadd(a, b) {
+	return a === -Infinity
 		? b
 		: b === -Infinity
 			? a
 			: Math.max(a, b) + Math.log1p(Math.exp(-Math.abs(a - b)));
+}
+/**
+ * @param {string[]} names
+ */
 export function makeLexicon(names) {
 	const nodes = [{ next: new Map(), length: 0, char: -1, names: [] }];
 	for (const name of names) {
@@ -38,18 +50,33 @@ export function makeLexicon(names) {
 	}
 	return nodes;
 }
+/**
+ * @typedef {Object} LexiconOptions
+ * @property {number} [beamWidth]
+ * @property {number} [bonus]
+ * @property {number} [skip]
+ * @property {number} [blankIndex]
+ *
+ * @param {ArrayLike<number>} probabilities
+ * @param {number} steps
+ * @param {string[]} sourceChars
+ * @param {ReturnType<typeof makeLexicon>} nodes
+ * @param {LexiconOptions} [options]
+ */
 export function decodeLexicon(
 	probabilities,
 	steps,
 	sourceChars,
 	nodes,
-	{
+	options
+) {
+	const {
 		beamWidth = 160,
 		bonus = 0.2,
 		skip = 2,
 		blankIndex = sourceChars.length - 1
-	} = {}
-) {
+	} = options === undefined ? {} : options;
+
 	const classes = sourceChars.length,
 		blank = blankIndex,
 		groups = Array.from({ length: alphabet.length }, () => []);
@@ -72,14 +99,14 @@ export function decodeLexicon(
 				Math.max(1e-12, probabilities[t * classes + blank])
 			),
 			next = new Map();
-		const entry = (id) => {
+		function entry(id) {
 			let r = next.get(id);
 			if (!r) {
 				r = { id, b: -Infinity, n: -Infinity };
 				next.set(id, r);
 			}
 			return r;
-		};
+		}
 		for (const state of beam) {
 			const node = nodes[state.id],
 				same = entry(state.id);

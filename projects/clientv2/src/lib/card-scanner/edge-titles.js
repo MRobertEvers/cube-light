@@ -1,16 +1,30 @@
 import cvModule from '@techstark/opencv-js';
 let ready;
 export async function getCV() {
-	return (ready ||= (async () => {
+	return (ready ||= (async function () {
 		const cv = cvModule instanceof Promise ? await cvModule : cvModule;
 		if (!cv.Mat) await new Promise((r) => (cv.onRuntimeInitialized = r));
 		return { cv };
 	})());
 }
-export async function findTitleStrips(
-	image,
-	{ saturation = 125, value = 100, hueLow = 3, hueHigh = 30 } = {}
-) {
+/**
+ * @typedef {Object} TitleStripOptions
+ * @property {number} [saturation]
+ * @property {number} [value]
+ * @property {number} [hueLow]
+ * @property {number} [hueHigh]
+ *
+ * @param {import('./types.js').ScanImage} image
+ * @param {TitleStripOptions} [options]
+ */
+export async function findTitleStrips(image, options) {
+	const {
+		saturation = 125,
+		value = 100,
+		hueLow = 3,
+		hueHigh = 30
+	} = options === undefined ? {} : options;
+
 	const { cv } = await getCV(),
 		scale = Math.min(1, 2200 / image.width);
 	const canvas = document.createElement('canvas');
@@ -86,11 +100,25 @@ export async function findTitleStrips(
 			m?.delete();
 	}
 }
-export function stripCanvas(
-	image,
-	line,
-	{ offset = 0.055, height = 0.06, padding = 0.04, right = 0.12 } = {}
-) {
+/**
+ * @typedef {Object} StripCanvasOptions
+ * @property {number} [offset]
+ * @property {number} [height]
+ * @property {number} [padding]
+ * @property {number} [right]
+ *
+ * @param {import('./types.js').ScanImage} image
+ * @param {{x1: number, y1: number, length: number, angle: number}} line
+ * @param {StripCanvasOptions} [options]
+ */
+export function stripCanvas(image, line, options) {
+	const {
+		offset = 0.055,
+		height = 0.06,
+		padding = 0.04,
+		right = 0.12
+	} = options === undefined ? {} : options;
+
 	// Read below each edge. Full card width is never supplied by annotations.
 	const width = line.length,
 		h = Math.max(16, width * height),
@@ -109,10 +137,9 @@ export function stripCanvas(
 	ctx.drawImage(image, 0, 0);
 	const c = Math.cos(line.angle),
 		s = Math.sin(line.angle);
-	const toImage = (x, y) => [
-		line.x1 + c * x - s * y,
-		line.y1 + s * x + c * y
-	];
+	function toImage(x, y) {
+		return [line.x1 + c * x - s * y, line.y1 + s * x + c * y];
+	}
 	return {
 		canvas,
 		poly: [
@@ -121,11 +148,15 @@ export function stripCanvas(
 			toImage(width * (1 - right), top + h),
 			toImage(width * padding, top + h)
 		],
-		toImage: (x, y) =>
-			toImage(x / factor + width * padding, y / factor + top)
+		toImage: function (x, y) {
+			return toImage(x / factor + width * padding, y / factor + top);
+		}
 	};
 }
 
+/**
+ * @param {import('./types.js').ScanImage} input
+ */
 export function trimTitleBand(input) {
 	const ctx = input.getContext('2d', { willReadFrequently: true }),
 		{ width: w, height: h } = input,
@@ -194,10 +225,18 @@ export function trimTitleBand(input) {
 }
 
 // Locate ink components inside a rectified strip; discard the connected dark frame.
-export async function tightInkCrops(
-	input,
-	{ allowTall = false, globalLevels = false } = {}
-) {
+/**
+ * @typedef {Object} InkCropOptions
+ * @property {boolean} [allowTall]
+ * @property {boolean} [globalLevels]
+ *
+ * @param {import('./types.js').ScanImage} input
+ * @param {InkCropOptions} [options]
+ */
+export async function tightInkCrops(input, options) {
+	const { allowTall = false, globalLevels = false } =
+		options === undefined ? {} : options;
+
 	const { cv } = await getCV(),
 		src = cv.imread(input),
 		gray = new cv.Mat(),
@@ -338,6 +377,9 @@ export async function tightInkCrops(
 }
 
 // A high row quantile follows the light title background without cutting through dark letters.
+/**
+ * @param {import('./types.js').ScanImage} input
+ */
 export function lightTitleBand(input) {
 	const { width: w, height: h } = input,
 		ctx = input.getContext('2d', { willReadFrequently: true }),
@@ -377,6 +419,9 @@ export function lightTitleBand(input) {
 		});
 }
 
+/**
+ * @param {import('./types.js').ScanImage} input
+ */
 export async function mserInkCrops(input) {
 	const { cv } = await getCV(),
 		src = cv.imread(input),

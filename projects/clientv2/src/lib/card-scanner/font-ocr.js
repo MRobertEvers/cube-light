@@ -11,7 +11,15 @@ import {
 const W = 96,
 	H = 16,
 	D = W * H;
-function descriptor(input, shear = 0, blur = 0) {
+/**
+ * @param {import('./types.js').ScanImage} input
+ * @param {number} [shearArg]
+ * @param {number} [blurArg]
+ */
+function descriptor(input, shearArg, blurArg) {
+	const shear = shearArg === undefined ? 0 : shearArg;
+	const blur = blurArg === undefined ? 0 : blurArg;
+
 	const c = document.createElement('canvas');
 	c.width = W;
 	c.height = H;
@@ -44,7 +52,18 @@ function descriptor(input, shear = 0, blur = 0) {
 	for (let i = 0; i < W; i++) proj[i] /= pnorm;
 	return { v, proj };
 }
-async function makeFontIndex(names, blur = 0, fontFile = 'beleren.woff') {
+/**
+ * @param {string[]} names
+ * @param {number} [blurArg]
+ * @param {string} [fontFileArg]
+ * @param {import('./types.js').ProgressCallback} [onProgressArg]
+ */
+async function makeFontIndex(names, blurArg, fontFileArg, onProgressArg) {
+	const blur = blurArg === undefined ? 0 : blurArg;
+	const fontFile = fontFileArg === undefined ? 'beleren.woff' : fontFileArg;
+	const onProgress =
+		onProgressArg === undefined ? function () {} : onProgressArg;
+
 	const font = await new FontFace(
 		'OCRFont',
 		`url(/ocr/models/fonts/${fontFile})`
@@ -70,13 +89,21 @@ async function makeFontIndex(names, blur = 0, fontFile = 'beleren.woff') {
 		features.set(f.v, i * D);
 		projections.set(f.proj, i * W);
 		if (i % 1000 === 0) {
-			console.log('Font index', i);
+			onProgress({ completed: i, total: names.length });
 			await new Promise((r) => setTimeout(r, 0));
 		}
 	}
+	onProgress({ completed: names.length, total: names.length });
 	return { names, features, projections };
 }
-function lookup(c, index, shear = 0) {
+/**
+ * @param {import('./types.js').ScanImage} c
+ * @param {Awaited<ReturnType<typeof makeFontIndex>>} index
+ * @param {number} [shearArg]
+ */
+function lookup(c, index, shearArg) {
+	const shear = shearArg === undefined ? 0 : shearArg;
+
 	const f = descriptor(c, shear),
 		short = [];
 	for (let i = 0; i < index.names.length; i++) {
@@ -90,12 +117,19 @@ function lookup(c, index, shear = 0) {
 		}
 	}
 	return short
-		.map(({ i }) => {
-			let score = 0;
-			for (let j = 0; j < D; j++)
-				score += f.v[j] * index.features[i * D + j];
-			return { name: index.names[i], score };
-		})
+		.map(
+			/**
+			 * @param {{ i: number; score: number; }} options
+			 */
+			(options) => {
+				const { i } = options;
+
+				let score = 0;
+				for (let j = 0; j < D; j++)
+					score += f.v[j] * index.features[i * D + j];
+				return { name: index.names[i], score };
+			}
+		)
 		.sort((a, b) => b.score - a.score)
 		.slice(0, 5);
 }

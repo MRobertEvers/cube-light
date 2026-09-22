@@ -51,7 +51,12 @@ let lint: CardListLintWasm;
 before(async () => {
 	lint = await ready;
 });
-const suggest = (name: string) => lint.suggest(name).map(({ name }) => name);
+function suggest(name: string) {
+	return lint.suggest(name).map((options) => {
+		const { name } = options;
+		return name;
+	});
+}
 
 test('finds names the way the server does: exact and ASCII case-insensitive', () => {
 	assert.equal(lint.count, 16);
@@ -131,7 +136,7 @@ test('completes by word prefixes, best first', () => {
 	assert.deepEqual(lint.complete(''), []);
 });
 
-test('rejects a malformed name index', async () => {
+test('rejects a malformed name index', async function () {
 	await assert.rejects(
 		CardListLintWasm.create(
 			readFileSync(
@@ -144,10 +149,10 @@ test('rejects a malformed name index', async () => {
 });
 
 test('locates the card name within a line', () => {
-	const span = (line: string) => {
+	function span(line: string) {
 		const found = locateCardName(line);
 		return found && line.slice(found.start, found.end);
-	};
+	}
 	assert.equal(span('4 lightning bolt'), 'lightning bolt');
 	assert.equal(span('  2x Counterspell (MH2) 267'), 'Counterspell');
 	assert.equal(span('SB: 1 Duress'), 'Duress');
@@ -160,16 +165,17 @@ test('locates the card name within a line', () => {
 });
 
 test('locates the count and printing around a card name', () => {
-	const parts = (line: string) => {
+	function parts(line: string) {
 		const found = locateCardName(line)!;
-		const slice = (span: { start: number; end: number } | null) =>
-			span && line.slice(span.start, span.end);
+		function slice(span: { start: number; end: number } | null) {
+			return span && line.slice(span.start, span.end);
+		}
 		return {
 			count: slice(found.count),
 			printing: slice(found.printing),
 			setCode: found.printing?.setCode ?? null
 		};
-	};
+	}
 	assert.deepEqual(parts('4 Lightning Bolt'), {
 		count: '4',
 		printing: null,

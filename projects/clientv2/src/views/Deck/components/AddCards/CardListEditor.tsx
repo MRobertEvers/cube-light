@@ -115,8 +115,11 @@ export function mergeLines(
 	const firstSpan = locateCardName(lines[first - 1] ?? '');
 	const duplicateSpan = locateCardName(lines[duplicate - 1] ?? '');
 	if (!firstSpan || !duplicateSpan || duplicate <= first) return;
-	const countOf = (line: string, span: CardNameSpan) =>
-		span.count ? Number(line.slice(span.count.start, span.count.end)) : 1;
+	function countOf(line: string, span: CardNameSpan) {
+		return span.count
+			? Number(line.slice(span.count.start, span.count.end))
+			: 1;
+	}
 	const total = Math.min(
 		999,
 		countOf(lines[first - 1], firstSpan) +
@@ -200,10 +203,10 @@ export function CardListEditor(props: CardListEditorProps) {
 	const [target, setTargetState] = useState<CompletionTarget | null>(null);
 	// Selection events can arrive before a render commits, so they read the target from here.
 	const targetRef = useRef<CompletionTarget | null>(null);
-	const setTarget = (next: CompletionTarget | null) => {
+	function setTarget(next: CompletionTarget | null) {
 		targetRef.current = next;
 		setTargetState(next);
-	};
+	}
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [typingLine, setTypingLine] = useState<number | null>(null);
 	// A line's menu, opened from its marker or from the line itself (right click, double tap).
@@ -296,7 +299,9 @@ export function CardListEditor(props: CardListEditorProps) {
 			}))
 		);
 		observer.observe(textarea);
-		return () => observer.disconnect();
+		return function () {
+			return observer.disconnect();
+		};
 	}, [textareaRef]);
 
 	useEffect(
@@ -311,7 +316,9 @@ export function CardListEditor(props: CardListEditorProps) {
 			() => setTypingLine(null),
 			TYPING_IDLE_MS
 		);
-		return () => window.clearTimeout(timer);
+		return function () {
+			return window.clearTimeout(timer);
+		};
 	}, [typingLine, value]);
 
 	useEffect(() => setActiveIndex(0), [options.join('\n')]);
@@ -331,15 +338,15 @@ export function CardListEditor(props: CardListEditorProps) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [menu?.line]);
 
-	const closeCompletions = () => {
+	function closeCompletions() {
 		if (targetRef.current) {
 			setTarget(null);
 			onCompletionQuery(null);
 		}
-	};
+	}
 
 	/** Keeps the completion target only while the caret stays where it was typed. */
-	const syncCaret = () => {
+	function syncCaret() {
 		const textarea = textareaRef.current;
 		if (!textarea) return;
 		const caret = textarea.selectionStart;
@@ -357,25 +364,25 @@ export function CardListEditor(props: CardListEditorProps) {
 			(caret !== current.caret || textarea.selectionEnd !== caret)
 		)
 			closeCompletions();
-	};
+	}
 
-	const accept = (name: string) => {
+	function accept(name: string) {
 		const textarea = textareaRef.current;
 		if (!textarea || !target) return;
 		replaceInLine(textarea, target.line, target.start, target.end, name);
 		setTarget(null);
 		onCompletionQuery(null);
-	};
+	}
 
-	const fix = (problem: CardListProblem, name: string) => {
+	function fix(problem: CardListProblem, name: string) {
 		const textarea = textareaRef.current;
 		if (!textarea) return;
 		setMenu(null);
 		replaceInLine(textarea, problem.line, problem.start, problem.end, name);
-	};
+	}
 
 	/** Selects the line's count for typing over, adding a count of 1 when it has none. */
-	const editCount = (line: number, span: CardNameSpan) => {
+	function editCount(line: number, span: CardNameSpan) {
 		const textarea = textareaRef.current;
 		if (!textarea) return;
 		setMenu(null);
@@ -394,9 +401,9 @@ export function CardListEditor(props: CardListEditorProps) {
 				offset + span.start + 1
 			);
 		}
-	};
+	}
 
-	const setPrinting = (line: number, setCode: string | null) => {
+	function setPrinting(line: number, setCode: string | null) {
 		const textarea = textareaRef.current;
 		setPrintingLine(null);
 		if (!textarea) return;
@@ -413,21 +420,22 @@ export function CardListEditor(props: CardListEditorProps) {
 		else if (setCode)
 			replaceInLine(textarea, line, span.end, span.end, ` (${setCode})`);
 		else textarea.focus();
-	};
+	}
 
-	const openMenu = (line: number, atName: boolean) => {
+	function openMenu(line: number, atName: boolean) {
 		if (!locateCardName(lines[line - 1] ?? '')) return false;
 		closeCompletions();
 		setMenu({ line, atName });
 		return true;
-	};
+	}
 
-	const rowTop = (line: number) =>
-		metrics
+	function rowTop(line: number) {
+		return metrics
 			? metrics.top + (line - 1) * metrics.lineHeight - scroll.top
 			: 0;
+	}
 	/** The line under a pointer; below the last line counts as the last line. */
-	const lineAt = (clientY: number) => {
+	function lineAt(clientY: number) {
 		const textarea = textareaRef.current;
 		if (!textarea || !metrics) return null;
 		const y =
@@ -437,10 +445,10 @@ export function CardListEditor(props: CardListEditorProps) {
 			textarea.scrollTop;
 		if (y < 0) return null;
 		return Math.min(Math.floor(y / metrics.lineHeight) + 1, lines.length);
-	};
+	}
 
 	/** Phones get the caret at the end of the tapped line; a second tap opens its menu. */
-	const tap = (event: React.MouseEvent<HTMLTextAreaElement>) => {
+	function tap(event: React.MouseEvent<HTMLTextAreaElement>) {
 		const line = lineAt(event.clientY);
 		if (line === null) return;
 		const previous = lastTap.current;
@@ -456,20 +464,20 @@ export function CardListEditor(props: CardListEditorProps) {
 		const textarea = event.currentTarget;
 		const end = lineOffset(textarea.value, line) + lines[line - 1].length;
 		textarea.setSelectionRange(end, end);
-	};
+	}
 
 	/** The caret line and the columns of the selection on it, or null across lines. */
-	const selectionOnLine = (textarea: HTMLTextAreaElement) => {
+	function selectionOnLine(textarea: HTMLTextAreaElement) {
 		const { line, column, lineText } = caretPosition(
 			textarea.value,
 			textarea.selectionStart
 		);
 		const end = column + textarea.selectionEnd - textarea.selectionStart;
 		return end <= lineText.length ? { line, column, end, lineText } : null;
-	};
+	}
 
 	/** Tab takes the top suggestion for an unknown name the selection is in or just after. */
-	const acceptSuggestion = () => {
+	function acceptSuggestion() {
 		const textarea = textareaRef.current;
 		const at = textarea && selectionOnLine(textarea);
 		// Checked even before the squiggle shows, so Tab mid-typing still corrects.
@@ -483,13 +491,13 @@ export function CardListEditor(props: CardListEditorProps) {
 			return false;
 		fix(problem, problem.suggestions[0]);
 		return true;
-	};
+	}
 
 	/**
 	 * Enter on a card line's count confirms it, moving to the line's end instead of
 	 * splitting the count from the name. At the very start of the line it still splits.
 	 */
-	const confirmCount = () => {
+	function confirmCount() {
 		const textarea = textareaRef.current;
 		const at = textarea && selectionOnLine(textarea);
 		const span = at && locateCardName(at.lineText);
@@ -503,13 +511,13 @@ export function CardListEditor(props: CardListEditorProps) {
 		const end = lineOffset(textarea.value, at.line) + at.lineText.length;
 		textarea.setSelectionRange(end, end);
 		return true;
-	};
+	}
 
 	/**
 	 * Tab steps through the line's count, name and set code, selecting each to type over;
 	 * Shift+Tab steps back. Returns false past either end, leaving Tab to move focus.
 	 */
-	const stepField = (backward: boolean) => {
+	function stepField(backward: boolean) {
 		const textarea = textareaRef.current;
 		const at = textarea && selectionOnLine(textarea);
 		const span = at && locateCardName(at.lineText);
@@ -534,9 +542,10 @@ export function CardListEditor(props: CardListEditorProps) {
 				within: { start: printing.start, end: length }
 			}
 		].filter((field) => !!field);
-		const current = fields.findIndex(
-			({ within }) => at.column >= within.start && at.end <= within.end
-		);
+		const current = fields.findIndex((options) => {
+			const { within } = options;
+			return at.column >= within.start && at.end <= within.end;
+		});
 		const next = fields[current + (backward ? -1 : 1)];
 		if (current < 0 || !next) return false;
 		const offset = lineOffset(textarea.value, at.line);
@@ -546,12 +555,15 @@ export function CardListEditor(props: CardListEditorProps) {
 			offset + next.select.end
 		);
 		return true;
-	};
+	}
 
-	const rowVisible = (line: number) =>
-		!!metrics &&
-		rowTop(line) >= metrics.top - metrics.lineHeight / 2 &&
-		rowTop(line) + metrics.lineHeight <= scroll.height + metrics.top;
+	function rowVisible(line: number) {
+		return (
+			!!metrics &&
+			rowTop(line) >= metrics.top - metrics.lineHeight / 2 &&
+			rowTop(line) + metrics.lineHeight <= scroll.height + metrics.top
+		);
+	}
 
 	// What Tab would put in place of an unknown name at the caret, when no list is open.
 	const hintProblem =

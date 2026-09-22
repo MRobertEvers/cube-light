@@ -40,6 +40,7 @@ function workItemResponse(req: Request, item: WorkItem) {
 	return {
 		workId: item.PublicId,
 		kind: item.Kind,
+		pipeline: item.Pipeline,
 		deck: item.DeckPublicId
 			? { deckId: item.DeckPublicId, name: item.DeckName }
 			: null,
@@ -77,7 +78,9 @@ export function createRoutesWork(
 	app.get('/work', async (req: Request, res: Response) => {
 		const items = await database.listWorkItems();
 		res.setHeader('Cache-Control', 'no-store');
-		res.json({ items: items.map((item) => workItemResponse(req, item)) });
+		res.json({
+			items: items.map((item) => workItemResponse(req, item))
+		});
 	});
 
 	app.post(
@@ -86,8 +89,10 @@ export function createRoutesWork(
 		async (req: Request, res: Response) => {
 			const deckId = req.query.deckId;
 			const fileName = req.query.fileName;
+			const pipeline = req.query.pipeline ?? 'card-aware';
 			const contentType = req.get('Content-Type')?.split(';')[0].trim();
 			if (
+				(pipeline !== 'card-aware' && pipeline !== 'paddle-only') ||
 				typeof deckId !== 'string' ||
 				typeof fileName !== 'string' ||
 				fileName.length > 255 ||
@@ -106,6 +111,7 @@ export function createRoutesWork(
 			}
 			const workId = await database.createWorkItem({
 				kind: 'card-image-ocr',
+				pipeline,
 				deckId: deck.DeckId,
 				fileName: fileName || 'photo',
 				contentType,

@@ -77,6 +77,7 @@ export type StorageLocation = {
 	Name: string;
 };
 
+export type CardImagePipeline = 'card-aware' | 'paddle-only';
 export type WorkItemKind = 'card-image-ocr';
 export type WorkItemStatus = 'pending' | 'running' | 'completed' | 'failed';
 
@@ -84,6 +85,7 @@ export type WorkItemStatus = 'pending' | 'running' | 'completed' | 'failed';
 export type WorkItem = {
 	PublicId: string;
 	Kind: WorkItemKind;
+	Pipeline: CardImagePipeline;
 	DeckPublicId: string | null;
 	DeckName: string | null;
 	Status: WorkItemStatus;
@@ -97,7 +99,7 @@ export type WorkItem = {
 	UpdatedAt: string;
 };
 
-const WORK_ITEM_COLUMNS = `w.PublicId, w.Kind, d.PublicId AS DeckPublicId, d.Name AS DeckName, w.Status,
+const WORK_ITEM_COLUMNS = `w.PublicId, w.Kind, w.Pipeline, d.PublicId AS DeckPublicId, d.Name AS DeckName, w.Status,
 	w.FileName, w.Completed, w.Total, w.CardsAdded, w.Error, w.LeaseExpiresAt, w.CreatedAt, w.UpdatedAt`;
 
 function timestamp(): string {
@@ -167,6 +169,7 @@ export class Database {
 				WorkItemId INTEGER PRIMARY KEY AUTOINCREMENT,
 				PublicId TEXT NOT NULL UNIQUE,
 				Kind TEXT NOT NULL,
+                Pipeline TEXT NOT NULL DEFAULT 'card-aware',
 				DeckId INTEGER REFERENCES Decks(DeckId) ON DELETE CASCADE,
 				Status TEXT NOT NULL CHECK (Status IN ('pending', 'running', 'completed', 'failed')),
 				FileName TEXT NOT NULL,
@@ -209,6 +212,13 @@ export class Database {
 				UpdatedAt DATETIME NOT NULL
 			);
 		`);
+		const workColumns = await this.db.all<{ name: string }>(
+			'PRAGMA table_info(WorkItems)'
+		);
+		if (!workColumns.some((c) => c.name === 'Pipeline'))
+			await this.db.exec(
+				"ALTER TABLE WorkItems ADD COLUMN Pipeline TEXT NOT NULL DEFAULT 'card-aware'"
+			);
 		const columns = await this.db.all<{ name: string }>(
 			'PRAGMA table_info(Decks)'
 		);
@@ -654,8 +664,11 @@ export class Database {
 		config: string,
 		revision: string,
 		images: { desktop: Buffer; mobile: Buffer; tile: Buffer },
-		historyValue = config
+		historyValueArg?: string
 	): Promise<boolean> {
+		const historyValue =
+			historyValueArg === undefined ? config : historyValueArg;
+
 		return this.db.transaction((tx) => {
 			const deck = tx.get<Deck>(
 				'SELECT Art, BannerCropJson FROM Decks WHERE DeckId = ?',
@@ -813,6 +826,7 @@ export class Database {
 
 	async createWorkItem(item: {
 		kind: WorkItemKind;
+		pipeline?: CardImagePipeline;
 		deckId: number;
 		fileName: string;
 		contentType: string;
@@ -823,11 +837,12 @@ export class Database {
 			const publicId = createPublicId('work');
 			try {
 				await this.db.run(
-					`INSERT INTO WorkItems (PublicId, Kind, DeckId, Status, FileName, ContentType, Image, CreatedAt, UpdatedAt)
-					VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
+					`INSERT INTO WorkItems (PublicId, Kind, Pipeline, DeckId, Status, FileName, ContentType, Image, CreatedAt, UpdatedAt)
+					VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
 					[
 						publicId,
 						item.kind,
+						item.pipeline ?? 'card-aware',
 						item.deckId,
 						item.fileName,
 						item.contentType,
@@ -911,9 +926,10 @@ export class Database {
 			| { status: 'failed'; error: string }
 	): Promise<boolean> {
 		const result = await this.db.run(
-			`UPDATE WorkItems SET Status = ?, CardsAdded = ?, Error = ?, ClaimToken = NULL, LeaseExpiresAt = NULL, UpdatedAt = ?
+			`UPDATE WorkItems SET Status = ?, Completed = CASE WHEN ? = 'completed' THEN Total ELSE Completed END, CardsAdded = ?, Error = ?, ClaimToken = NULL, LeaseExpiresAt = NULL, UpdatedAt = ?
 			WHERE PublicId = ? AND ClaimToken = ? AND Status = 'running'`,
 			[
+				outcome.status,
 				outcome.status,
 				outcome.status === 'completed' ? outcome.cardsAdded : 0,
 				outcome.status === 'failed' ? outcome.error : null,

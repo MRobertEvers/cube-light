@@ -24,19 +24,18 @@ export function LocationsDropdown(props: LocationsDropdownProps) {
 
 	const locationSuggestions = useMemo(
 		() =>
-			locations.map((loc) => {
-				return {
-					id: loc.storage_location_id,
-					value: loc,
-					label: loc.name
-				};
-			}),
+			locations.map((loc) => ({
+				id: loc.storage_location_id,
+				value: loc,
+				label: loc.name
+			})),
 		[locations]
 	);
 
-	const ddValue = useMemo(() => {
-		return locations.find((loc) => loc.storage_location_id === value);
-	}, [value]);
+	const ddValue = useMemo(
+		() => locations.find((loc) => loc.storage_location_id === value),
+		[value]
+	);
 
 	const [controlledValue, setControlledValue] = useState<string>(
 		ddValue?.name ?? ''

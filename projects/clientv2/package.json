@@ -4,10 +4,10 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"dev": "vite --port 3000",
+		"dev": "node tools/vite.mjs dev",
 		"start": "npm run dev",
-		"build": "vite build",
-		"preview": "vite preview --port 3000",
+		"build": "node tools/vite.mjs build",
+		"preview": "node tools/vite.mjs preview",
 		"typecheck": "tsc --noEmit",
 		"build:wasm": "npm run build:wasm:banner-blend && npm run build:wasm:card-list-lint",
 		"build:wasm:banner-blend": "emcc native/banner_blend.c -O3 -Wall -Wextra -Wno-unused-parameter -sSTANDALONE_WASM=1 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=16777216 -sEXPORTED_FUNCTIONS='[\"_malloc\",\"_free\"]' --no-entry -o src/wasm/banner-blend.wasm",
@@ -28,7 +28,6 @@
 		"react-router-dom": "^7.18.4",
 		"redux": "^5.0.1",
 		"@techstark/opencv-js": "4.10.0-release.1",
-		"transformers-v4": "npm:@huggingface/transformers@4.3.0",
 		"tesseract.js": "7.0.0",
 		"onnxruntime-web": "1.30.0",
 		"js-yaml": "4.3.2"

@@ -1,3 +1,4 @@
+import type { CardImagePipeline } from './image-scan-pipelines';
 import { fetchAPICardNames } from 'src/api/fetch-api-card-names';
 import {
 	fetchAPIImportCards,
@@ -12,24 +13,21 @@ import {
 import { resolvedCandidateAdditions } from './image-import-auto-add';
 
 export type ImageScanStatus =
-	| 'queued'
-	| 'loading'
-	| 'scanning'
-	| 'adding'
-	| 'completed'
-	| 'error';
+	'queued' | 'loading' | 'scanning' | 'adding' | 'completed' | 'error';
 
 export type ImageScanTask = {
 	id: string;
 	deckId: string;
 	imageUrl: string;
 	fileName: string;
+	pipeline: CardImagePipeline;
 	status: ImageScanStatus;
 	completed: number;
 	total: number;
 	region: ImageRegion | null;
 	candidates: CardImageCandidate[];
 	phaseLabel?: string;
+	progressIndeterminate?: boolean;
 	addedCounts: Record<string, number>;
 	plannedCounts: Record<string, number>;
 	error: string | null;
@@ -62,14 +60,22 @@ class ImageImportQueue {
 	private running = false;
 	private nextId = 0;
 
-	subscribe = (listener: () => void) => {
-		this.listeners.add(listener);
-		return () => {
-			this.listeners.delete(listener);
-		};
-	};
+	constructor() {
+		this.subscribe = this.subscribe.bind(this);
+		this.getSnapshot = this.getSnapshot.bind(this);
+	}
 
-	getSnapshot = () => this.snapshot;
+	subscribe(listener: () => void) {
+		const instance = this;
+		this.listeners.add(listener);
+		return function unsubscribe() {
+			instance.listeners.delete(listener);
+		};
+	}
+
+	getSnapshot() {
+		return this.snapshot;
+	}
 
 	private publish() {
 		this.snapshot = this.tasks.map((args) => {
@@ -92,8 +98,12 @@ class ImageImportQueue {
 	enqueue(
 		deckId: string,
 		file: File,
-		runner: ImageScanRunner | null = null
+		runnerArg?: ImageScanRunner | null,
+		pipelineArg?: CardImagePipeline
 	): string {
+		const runner = runnerArg === undefined ? null : runnerArg;
+		const pipeline = pipelineArg === undefined ? 'card-aware' : pipelineArg;
+
 		const id = `scan-${++this.nextId}`;
 		this.tasks.push({
 			id,
@@ -101,6 +111,7 @@ class ImageImportQueue {
 			file,
 			imageUrl: URL.createObjectURL(file),
 			fileName: file.name,
+			pipeline,
 			status: 'queued',
 			completed: 0,
 			total: 0,
@@ -220,6 +231,7 @@ class ImageImportQueue {
 									? 'loading'
 									: 'scanning';
 							task.phaseLabel = update.message;
+							task.progressIndeterminate = update.indeterminate;
 							task.completed = update.completed;
 							task.total = update.total;
 							task.region = update.region;
@@ -228,17 +240,26 @@ class ImageImportQueue {
 							this.scheduleResolvedMatches(task);
 							this.publish();
 						},
-						() => !!task.error || !!runner?.isLost()
+						() => !!task.error || !!runner?.isLost(),
+						{ pipeline: task.pipeline }
 					);
 					if (runner?.isLost()) throw new WorkClaimLostError();
 					if (!task.error) {
 						task.status = 'adding';
+						task.completed = 99;
+						task.total = 100;
+						task.progressIndeterminate = true;
 						task.region = null;
 						this.publish();
 					}
 					if (runner && !task.error) await this.commit(task, runner);
 					await task.writes;
-					if (!task.error) task.status = 'completed';
+					if (!task.error) {
+						task.status = 'completed';
+						task.completed = 100;
+						task.total = 100;
+						task.progressIndeterminate = false;
+					}
 				} catch (error) {
 					task.error =
 						error instanceof Error

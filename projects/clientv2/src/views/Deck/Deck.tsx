@@ -289,7 +289,8 @@ export function Deck(props: DeckProps) {
 	// Photos queued from a phone finish on a desktop; this page may be open on either.
 	const addedFromQueuedWork = (useWorkQueue().items ?? [])
 		.filter(
-			(item) => item.deck?.deckId === deckId && item.status === 'completed'
+			(item) =>
+				item.deck?.deckId === deckId && item.status === 'completed'
 		)
 		.reduce((total, item) => total + item.cardsAdded, 0);
 	const nameInputRef = useRef<HTMLInputElement>(null);
@@ -302,8 +303,12 @@ export function Deck(props: DeckProps) {
 	const topBannerCard = selectedBanner ?? bannerCards[0];
 
 	const [isEditMode, setIsEditMode] = useQueryState('edit', {
-		parse: (value: string) => value === 'true',
-		serialize: (value: boolean) => value.toString()
+		parse: function (value: string) {
+			return value === 'true';
+		},
+		serialize: function (value: boolean) {
+			return value.toString();
+		}
 	});
 	const previewIcon = data?.icon;
 	const bannerCrop = data?.bannerCrop ?? DEFAULT_BANNER_CROP;
@@ -331,11 +336,11 @@ export function Deck(props: DeckProps) {
 			} as React.CSSProperties)
 		: undefined;
 
-	const setEditing = (editing: boolean) => {
+	function setEditing(editing: boolean) {
 		setDetailsDraft(null);
 		setSaveError(null);
 		setIsEditMode(editing);
-	};
+	}
 
 	const refreshDeck = useCallback(
 		() => storeDispatch(loadDeck(deckId)),
@@ -350,9 +355,10 @@ export function Deck(props: DeckProps) {
 
 	// The add-cards modal belongs to this page; don't let it reappear on the next visit.
 	useEffect(
-		() => () => {
-			storeDispatch(closeAddCards());
-		},
+		() =>
+			function () {
+				storeDispatch(closeAddCards());
+			},
 		[deckId, storeDispatch]
 	);
 
@@ -362,12 +368,13 @@ export function Deck(props: DeckProps) {
 
 	// Appearance settings may be saved from another tab; pick those changes up on return.
 	useEffect(() => {
-		const onVisible = () => {
+		function onVisible() {
 			if (document.visibilityState === 'visible') void refreshDeck();
-		};
+		}
 		document.addEventListener('visibilitychange', onVisible);
-		return () =>
-			document.removeEventListener('visibilitychange', onVisible);
+		return function () {
+			return document.removeEventListener('visibilitychange', onVisible);
+		};
 	}, [refreshDeck]);
 
 	useEffect(() => {
@@ -384,7 +391,7 @@ export function Deck(props: DeckProps) {
 	);
 	const closeManaging = useCallback(() => setManaging(null), []);
 
-	const saveName = async () => {
+	async function saveName() {
 		if (!data || !name.trim() || isSaving) return;
 		const nextName = name.trim();
 		setSaveError(null);
@@ -412,7 +419,7 @@ export function Deck(props: DeckProps) {
 		} finally {
 			setIsSaving(false);
 		}
-	};
+	}
 
 	if (!data || showInitialLoading) {
 		return (

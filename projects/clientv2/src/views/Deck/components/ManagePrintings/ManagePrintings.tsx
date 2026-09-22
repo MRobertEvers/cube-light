@@ -70,15 +70,19 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 			.finally(() => {
 				if (!controller.signal.aborted) setLoading(false);
 			});
-		return () => controller.abort();
+		return function () {
+			return controller.abort();
+		};
 	}, [group.name]);
 
 	useEffect(() => {
-		const closeOnEscape = (event: KeyboardEvent) => {
+		function closeOnEscape(event: KeyboardEvent) {
 			if (event.key === 'Escape' && !saving) onCancel();
-		};
+		}
 		window.addEventListener('keydown', closeOnEscape);
-		return () => window.removeEventListener('keydown', closeOnEscape);
+		return function () {
+			return window.removeEventListener('keydown', closeOnEscape);
+		};
 	}, [onCancel, saving]);
 
 	const info = useMemo(() => {
@@ -121,7 +125,9 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 			);
 	}, [printings, query, initial]);
 
-	const countOf = (uuid: string) => counts.get(uuid) ?? 0;
+	function countOf(uuid: string) {
+		return counts.get(uuid) ?? 0;
+	}
 	const rows = order.filter((uuid) => countOf(uuid) > 0);
 	const total = rows.reduce((sum, uuid) => sum + countOf(uuid), 0);
 	const edit: DeckCardsEdit = {
@@ -133,16 +139,16 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 	const dirty = edit.remove.length > 0 || edit.upsert.length > 0;
 	const unused = choices.filter((printing) => countOf(printing.uuid) === 0);
 
-	const setCount = (uuid: string, count: number) => {
+	function setCount(uuid: string, count: number) {
 		const next = Math.max(0, Math.min(MAX_COPIES, count));
 		setCounts((previous) => new Map(previous).set(uuid, next));
 		if (next > 0)
 			setOrder((previous) =>
 				previous.includes(uuid) ? previous : [...previous, uuid]
 			);
-	};
+	}
 
-	const save = async () => {
+	async function save() {
 		if (!dirty || saving) return;
 		setSaving(true);
 		setSaveError(null);
@@ -152,11 +158,12 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 			setSaveError('Unable to save these printings. Please try again.');
 			setSaving(false);
 		}
-	};
+	}
 
 	const summary = `${total} ${total === 1 ? 'copy' : 'copies'} across ${rows.length} ${rows.length === 1 ? 'printing' : 'printings'}`;
-	const nameOf = (printing: PrintingInfo) =>
-		printing.setName ?? printing.setCode;
+	function nameOf(printing: PrintingInfo) {
+		return printing.setName ?? printing.setCode;
+	}
 
 	return (
 		<section

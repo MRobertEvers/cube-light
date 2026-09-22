@@ -1,3 +1,8 @@
+import {
+	IMAGE_PIPELINES,
+	DEFAULT_IMAGE_PIPELINE,
+	type CardImagePipeline
+} from 'src/utils/image-scan-pipelines';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { fetchAPICreateDeck } from 'src/api/fetch-api-create-deck';
@@ -21,6 +26,9 @@ type Props = {
 
 export function ImageCardImport(props: Props) {
 	const { mode, deckId, onClose, onComplete } = props;
+	const [pipeline, setPipeline] = useState<CardImagePipeline>(
+		DEFAULT_IMAGE_PIPELINE
+	);
 	const [file, setFile] = useState<File | null>(null);
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [deckName, setDeckName] = useState('');
@@ -36,27 +44,30 @@ export function ImageCardImport(props: Props) {
 	const deferToDesktop = isMobile && !scanHere;
 
 	useEffect(
-		() => () => {
-			if (previewUrl) URL.revokeObjectURL(previewUrl);
-		},
+		() =>
+			function () {
+				if (previewUrl) URL.revokeObjectURL(previewUrl);
+			},
 		[previewUrl]
 	);
 	useEffect(() => {
-		const onKeyDown = (event: KeyboardEvent) => {
+		function onKeyDown(event: KeyboardEvent) {
 			if (event.key === 'Escape' && !isStarting) onClose();
-		};
+		}
 		window.addEventListener('keydown', onKeyDown);
-		return () => window.removeEventListener('keydown', onKeyDown);
+		return function () {
+			return window.removeEventListener('keydown', onKeyDown);
+		};
 	}, [isStarting, onClose]);
 
-	const selectFile = (selected: File | null) => {
+	function selectFile(selected: File | null) {
 		if (!selected) return;
 		setFile(selected);
 		setPreviewUrl(URL.createObjectURL(selected));
 		setError(null);
-	};
+	}
 
-	const start = async () => {
+	async function start() {
 		if (!file || isStarting || (mode === 'create' && !deckName.trim()))
 			return;
 		setIsStarting(true);
@@ -69,11 +80,16 @@ export function ImageCardImport(props: Props) {
 				setCreatedDeckId(targetDeckId);
 			}
 			if (deferToDesktop) {
-				await workQueue.queueCardImage(targetDeckId, file);
+				await workQueue.queueCardImage(targetDeckId, file, pipeline);
 				onComplete(targetDeckId);
 				return;
 			}
-			const taskId = imageImportQueue.enqueue(targetDeckId, file);
+			const taskId = imageImportQueue.enqueue(
+				targetDeckId,
+				file,
+				null,
+				pipeline
+			);
 			onComplete(targetDeckId, taskId);
 		} catch (cause) {
 			setError(
@@ -85,7 +101,7 @@ export function ImageCardImport(props: Props) {
 			);
 			setIsStarting(false);
 		}
-	};
+	}
 
 	return createPortal(
 		<div className={styles.backdrop}>
@@ -147,6 +163,32 @@ export function ImageCardImport(props: Props) {
 								/>
 							</label>
 						)}
+						<label>
+							Scan pipeline
+							<select
+								aria-label="Scan pipeline"
+								value={pipeline}
+								disabled={isStarting}
+								onChange={(e) =>
+									setPipeline(
+										e.target.value as CardImagePipeline
+									)
+								}
+							>
+								{IMAGE_PIPELINES.map((p) => (
+									<option key={p.value} value={p.value}>
+										{p.label}
+									</option>
+								))}
+							</select>
+							<small>
+								{
+									IMAGE_PIPELINES.find(
+										(p) => p.value === pipeline
+									)?.description
+								}
+							</small>
+						</label>
 						<div className={styles.photoField}>
 							<span id="image-import-photo-label">
 								Card photo
@@ -222,10 +264,10 @@ export function ImageCardImport(props: Props) {
 								<span>
 									Scan on this device instead
 									<small id="image-import-mobile-warning">
-										Scanning is data and energy intensive: it
-										downloads large recognition models and can
-										drain your battery. Wi-Fi and a charger are
-										recommended.
+										Scanning is data and energy intensive:
+										it downloads large recognition models
+										and can drain your battery. Wi-Fi and a
+										charger are recommended.
 									</small>
 								</span>
 							</label>

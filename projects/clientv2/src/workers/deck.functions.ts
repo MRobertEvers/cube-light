@@ -24,8 +24,10 @@ export async function fetchSortedSuggestions(
 export async function fetchAddCardCommand(
 	deckId: string,
 	cardName: string,
-	count = 1
+	countArg?: number
 ): Promise<boolean> {
+	const count = countArg === undefined ? 1 : countArg;
+
 	return fetchAPIAddCard(deckId, cardName, count);
 }
 

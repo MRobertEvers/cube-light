@@ -18,19 +18,27 @@ export type UseQueryStateReturn<T> = [
  */
 export function useQueryState<T = string>(
 	key: string,
-	options: Partial<UseQueryStateOptions<T>> = {}
+	optionsArg?: Partial<UseQueryStateOptions<T>>
 ): UseQueryStateReturn<T | null> {
+	const options = optionsArg === undefined ? {} : optionsArg;
+
 	// Memoizing the update function has the advantage of making it
 	// immutable as long as `history` stays the same.
 	// It reduces the amount of reactivity needed to update the state.
 
-	const { parse = (x) => x as unknown as T, serialize = (x) => `${x}` } =
-		options;
-	const getValue = (): T | null => {
+	const {
+		parse = function (x) {
+			return x as unknown as T;
+		},
+		serialize = function (x) {
+			return `${x}`;
+		}
+	} = options;
+	function getValue(): T | null {
 		const query = new URLSearchParams(window.location.search);
 		const value = query.get(key);
 		return value ? parse(value) : null;
-	};
+	}
 
 	// Update the state value only when the relevant key changes.
 	// Because we're not calling getValue in the function argument
@@ -40,11 +48,11 @@ export function useQueryState<T = string>(
 
 	const update = React.useCallback(
 		(stateUpdater: React.SetStateAction<T | null>) => {
-			const isUpdaterFunction = (
+			function isUpdaterFunction(
 				input: any
-			): input is (prevState: T | null) => T | null => {
+			): input is (prevState: T | null) => T | null {
 				return typeof input === 'function';
-			};
+			}
 
 			// Resolve the new value based on old value & updater
 			const oldValue = getValue();
@@ -74,12 +82,12 @@ export function useQueryState<T = string>(
 	);
 
 	React.useEffect(() => {
-		const onStateChange = () => {
+		function onStateChange() {
 			setValue(getValue());
-		};
+		}
 
 		window.addEventListener('popstate', onStateChange);
-		return () => {
+		return function () {
 			window.removeEventListener('popstate', onStateChange);
 		};
 	}, [key, value, setValue]);

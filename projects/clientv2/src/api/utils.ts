@@ -4,7 +4,9 @@ const unauthorizedListeners = new Set<UnauthorizedListener>();
 /** Called whenever the server answers 401, meaning the session has ended. Returns an unsubscribe. */
 export function onUnauthorized(listener: UnauthorizedListener): () => void {
 	unauthorizedListeners.add(listener);
-	return () => unauthorizedListeners.delete(listener);
+	return function () {
+		return unauthorizedListeners.delete(listener);
+	};
 }
 
 /**

@@ -9,12 +9,9 @@ export type LogoInkwellPulseProps = {
 	style?: React.CSSProperties;
 };
 
-export function LogoInkwellPulse({
-	active = true,
-	size = 32,
-	className,
-	style
-}: LogoInkwellPulseProps) {
+export function LogoInkwellPulse(options: LogoInkwellPulseProps) {
+	const { active = true, size = 32, className, style } = options;
+
 	const classes = [
 		styles.root,
 		active ? styles.active : styles.idle,

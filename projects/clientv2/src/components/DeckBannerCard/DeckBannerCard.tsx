@@ -35,7 +35,9 @@ export function DeckBannerCard(props: Props) {
 						frame={crop.desktop}
 						onChange={
 							onCropChange
-								? (frame) => onCropChange('desktop', frame)
+								? function (frame) {
+										return onCropChange('desktop', frame);
+									}
 								: undefined
 						}
 						label={
@@ -51,7 +53,9 @@ export function DeckBannerCard(props: Props) {
 						frame={crop.mobile}
 						onChange={
 							onCropChange
-								? (frame) => onCropChange('mobile', frame)
+								? function (frame) {
+										return onCropChange('mobile', frame);
+									}
 								: undefined
 						}
 						label={

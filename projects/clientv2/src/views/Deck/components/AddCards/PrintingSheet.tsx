@@ -52,7 +52,9 @@ export function PrintingSheet(props: PrintingSheetProps) {
 				))
 					setStatus('failed');
 			});
-		return () => controller.abort();
+		return function () {
+			return controller.abort();
+		};
 	}, [name]);
 
 	const lineUuid =

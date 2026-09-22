@@ -57,7 +57,7 @@ export function currentSession(res: Response): Session | undefined {
 
 /** Attaches the cookie's session, if any, to res.locals and renews its expiry. */
 export function loadSession(sessions: SessionStore) {
-	return (req: Request, res: Response, next: NextFunction): void => {
+	return function (req: Request, res: Response, next: NextFunction): void {
 		const id = readCookie(req, SESSION_COOKIE);
 		const found = id ? sessions.get(id) : null;
 		if (id && found) {
@@ -71,7 +71,7 @@ export function loadSession(sessions: SessionStore) {
 
 /** Answers 401 unless there is a session or the path starts with one of publicPrefixes. */
 export function requireSession(publicPrefixes: string[]) {
-	return (req: Request, res: Response, next: NextFunction): void => {
+	return function (req: Request, res: Response, next: NextFunction): void {
 		const open = publicPrefixes.some(
 			(prefix) => req.path === prefix || req.path.startsWith(prefix + '/')
 		);

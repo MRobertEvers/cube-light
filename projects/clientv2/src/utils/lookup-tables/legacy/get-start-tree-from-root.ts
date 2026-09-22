@@ -65,8 +65,13 @@ function compareLaxSpecialCharacters(char: string) {
 export function getStartTreeFromRootEx(
 	base: string,
 	lookupTree: any,
-	equivalentBranches: (char: string) => string[] = compareNoCase
+	equivalentBranchesArg?: (char: string) => string[]
 ): any {
+	const equivalentBranches =
+		equivalentBranchesArg === undefined
+			? compareNoCase
+			: equivalentBranchesArg;
+
 	let lookup: any = lookupTree;
 
 	for (const char of base) {

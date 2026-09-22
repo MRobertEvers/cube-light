@@ -22,8 +22,10 @@ export async function fetchAPISession(): Promise<FetchAPISessionResponse> {
 export async function fetchAPISignIn(
 	username: string,
 	password: string,
-	setup = false
+	setupArg?: boolean
 ): Promise<AuthUser> {
+	const setup = setupArg === undefined ? false : setupArg;
+
 	const response = await apiFetch(
 		`${API_URI}/auth/${setup ? 'setup' : 'login'}`,
 		{

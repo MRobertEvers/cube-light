@@ -61,7 +61,7 @@ export class CardListLintWasm {
 		blob: Uint8Array
 	): Promise<CardListLintWasm> {
 		const { instance } = await WebAssembly.instantiate(bytes, {
-			env: { emscripten_notify_memory_growth: () => {} }
+			env: { emscripten_notify_memory_growth: function () {} }
 		});
 		return new CardListLintWasm(instance, blob);
 	}
@@ -77,7 +77,9 @@ export class CardListLintWasm {
 	}
 
 	/** Known names within a small edit distance of `name`, closest first. */
-	suggest(name: string, limit = 3): CardNameSuggestion[] {
+	suggest(name: string, limitArg?: number): CardNameSuggestion[] {
+		const limit = limitArg === undefined ? 3 : limitArg;
+
 		const found = this.wasm.cl_suggest(
 			this.query,
 			this.setQuery(name),
@@ -94,7 +96,9 @@ export class CardListLintWasm {
 	}
 
 	/** Names whose words start with the words of `prefix`, best first. */
-	complete(prefix: string, limit = 8): string[] {
+	complete(prefix: string, limitArg?: number): string[] {
+		const limit = limitArg === undefined ? 8 : limitArg;
+
 		const found = this.wasm.cl_complete(
 			this.query,
 			this.setQuery(prefix),

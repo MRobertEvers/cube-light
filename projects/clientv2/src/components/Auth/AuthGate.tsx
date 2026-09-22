@@ -53,12 +53,19 @@ export function AuthGate(props: React.PropsWithChildren) {
 	const load = useCallback(() => {
 		setState({ status: 'loading' });
 		fetchAPISession().then(
-			({ user, setupRequired }) =>
-				setState(
+			(options) => {
+				const { user, setupRequired } = options;
+				return setState(
 					user
-						? { status: 'signed-in', user, expired: false, epoch: 0 }
+						? {
+								status: 'signed-in',
+								user,
+								expired: false,
+								epoch: 0
+							}
 						: { status: 'signed-out', setupRequired }
-				),
+				);
+			},
 			() => setState({ status: 'unreachable' })
 		);
 	}, []);
@@ -82,13 +89,14 @@ export function AuthGate(props: React.PropsWithChildren) {
 		setState({ status: 'signed-out', setupRequired: false });
 	}, []);
 
-	const signedIn = (user: AuthUser) =>
-		setState((current) => ({
+	function signedIn(user: AuthUser) {
+		return setState((current) => ({
 			status: 'signed-in',
 			user,
 			expired: false,
 			epoch: current.status === 'signed-in' ? current.epoch + 1 : 0
 		}));
+	}
 
 	if (state.status === 'loading') return <LoadingIndicator />;
 
@@ -114,10 +122,7 @@ export function AuthGate(props: React.PropsWithChildren) {
 						: undefined
 				}
 			>
-				<SignInForm
-					setup={state.setupRequired}
-					onSignedIn={signedIn}
-				/>
+				<SignInForm setup={state.setupRequired} onSignedIn={signedIn} />
 			</AuthScreen>
 		);
 
@@ -141,8 +146,8 @@ export function AuthGate(props: React.PropsWithChildren) {
 							Your session ended
 						</h1>
 						<p className={styles.lede}>
-							Sign in again to continue. Retry anything that didn’t
-							save.
+							Sign in again to continue. Retry anything that
+							didn’t save.
 						</p>
 						<SignInForm
 							initialUsername={state.user.username}

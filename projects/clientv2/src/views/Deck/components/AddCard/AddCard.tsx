@@ -1,8 +1,8 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Spinner } from '../../../../components/Spinner/Spinner';
 import { useDeckWorker } from '../../../../workers/deck.hook';
-import EnterIcon from '../../../../components/Icons/EnterIcon';
-import AlertIcon from '../../../../components/Icons/AlertIcon';
+import { EnterIcon } from '../../../../components/Icons/EnterIcon';
+import { AlertIcon } from '../../../../components/Icons/AlertIcon';
 import { createResponseHandler } from '../../../../workers/utils/messageToolkit';
 import { DeckWorkerMessages } from '../../../../workers/deck.worker.messages';
 import { Button } from 'src/components/Button/Button';
@@ -61,59 +61,76 @@ export function AddCard(props: AddCardProps) {
 	useEffect(() => {
 		const previousFocus = document.activeElement as HTMLElement | null;
 		addItemInputRef.current?.focus();
-		return () => previousFocus?.focus();
+		return function () {
+			return previousFocus?.focus();
+		};
 	}, []);
 
-	const workerResponseHandler = useMemo(() => {
-		return createResponseHandler((builder) => {
-			builder.addCase(
-				DeckWorkerMessages.getSuggestions,
-				async (response) => {
-					const {
-						query,
-						requestId,
-						sorted,
-						set,
-						error: searchError
-					} = response.payload;
-					if (
-						requestId !== requestIdRef.current ||
-						query !== queryRef.current
-					)
-						return;
-					await waitForMinimumStatusDuration(searchStartedAt.current);
-					if (
-						requestId !== requestIdRef.current ||
-						query !== queryRef.current
-					)
-						return;
-					dispatch(Actions.setSuggestionsData({ sorted, set }));
-					setIsSearching(false);
-					if (searchError)
-						setError('Unable to search cards. Please try again.');
-					dispatch(
-						Actions.setViewIsDropDownVisible(
-							sorted.length > 0 &&
-								document.activeElement ===
-									addItemInputRef.current
+	const workerResponseHandler = useMemo(
+		() =>
+			createResponseHandler((builder) => {
+				builder.addCase(
+					DeckWorkerMessages.getSuggestions,
+					async (response) => {
+						const {
+							query,
+							requestId,
+							sorted,
+							set,
+							error: searchError
+						} = response.payload;
+						if (
+							requestId !== requestIdRef.current ||
+							query !== queryRef.current
 						)
-					);
-				}
-			);
-			builder.addCase(DeckWorkerMessages.addCard, async (response) => {
-				if (!response.payload) {
-					await waitForMinimumStatusDuration(submitStartedAt.current);
-					setIsSubmitting(false);
-					setError('Unable to add this card. Please try again.');
-					return;
-				}
-				await storeDispatch(loadDeck(deckId));
-				await waitForMinimumStatusDuration(submitStartedAt.current);
-				onEvent({ type: AddCardEventType.SUBMIT });
-			});
-			return builder;
-		});
-	}, [deckId, dispatch, onEvent, storeDispatch]);
+							return;
+						await waitForMinimumStatusDuration(
+							searchStartedAt.current
+						);
+						if (
+							requestId !== requestIdRef.current ||
+							query !== queryRef.current
+						)
+							return;
+						dispatch(Actions.setSuggestionsData({ sorted, set }));
+						setIsSearching(false);
+						if (searchError)
+							setError(
+								'Unable to search cards. Please try again.'
+							);
+						dispatch(
+							Actions.setViewIsDropDownVisible(
+								sorted.length > 0 &&
+									document.activeElement ===
+										addItemInputRef.current
+							)
+						);
+					}
+				);
+				builder.addCase(
+					DeckWorkerMessages.addCard,
+					async (response) => {
+						if (!response.payload) {
+							await waitForMinimumStatusDuration(
+								submitStartedAt.current
+							);
+							setIsSubmitting(false);
+							setError(
+								'Unable to add this card. Please try again.'
+							);
+							return;
+						}
+						await storeDispatch(loadDeck(deckId));
+						await waitForMinimumStatusDuration(
+							submitStartedAt.current
+						);
+						onEvent({ type: AddCardEventType.SUBMIT });
+					}
+				);
+				return builder;
+			}),
+		[deckId, dispatch, onEvent, storeDispatch]
+	);
 
 	const postToWorker = useDeckWorker(workerResponseHandler);
 	const exactMatch = suggestions.sorted.find(
@@ -126,7 +143,9 @@ export function AddCard(props: AddCardProps) {
 			: null;
 	const canSubmit = Boolean(resolvedCardName) && !isSubmitting;
 
-	function selectSuggestion(suggestion: string, keepFocus = true) {
+	function selectSuggestion(suggestion: string, keepFocusArg?: boolean) {
+		const keepFocus = keepFocusArg === undefined ? true : keepFocusArg;
+
 		requestIdRef.current += 1;
 		queryRef.current = suggestion;
 		dispatch(Actions.setViewAddItemText(suggestion));

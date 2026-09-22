@@ -2,6 +2,9 @@ import { getCV } from './edge-titles.js';
 const W = 96,
 	H = 16,
 	D = W * H;
+/**
+ * @param {HTMLCanvasElement} c
+ */
 function features(c) {
 	const ctx = c.getContext('2d', { willReadFrequently: true }),
 		p = ctx.getImageData(0, 0, W, H).data,
@@ -17,12 +20,20 @@ function features(c) {
 	}
 	return v;
 }
+/**
+ * @param {Float32Array} v
+ */
 function normalize(v) {
 	const n = Math.hypot(...v) || 1;
 	return v.map((x) => x / n);
 }
+/**
+ * @param {Float32Array} v
+ * @param {number} sx
+ * @param {number} sy
+ */
 function blurred(v, sx, sy) {
-	const kernel = (s) => {
+	const kernel = function kernel(s) {
 			const r = Math.ceil(s * 3),
 				k = [];
 			let sum = 0;
@@ -31,7 +42,10 @@ function blurred(v, sx, sy) {
 				k.push(a);
 				sum += a;
 			}
-			return { k: k.map((v) => v / sum), r };
+			return {
+				k: k.map((v) => v / sum),
+				r
+			};
 		},
 		kx = kernel(sx),
 		ky = kernel(sy),
@@ -59,11 +73,25 @@ function blurred(v, sx, sy) {
 	}
 	return normalize(out);
 }
-export async function refineFontMatches(
-	image,
-	rough,
-	{ broadBlur = false } = {}
-) {
+/**
+ * @typedef {Object} RefineOptions
+ * @property {boolean} [broadBlur]
+ * @property {import('./types.js').ProgressCallback} [onProgress]
+ * @property {import('./types.js').CancellationCallback} [isCancelled]
+ *
+ * @param {import('./types.js').ScanImage} image
+ * @param {import('./types.js').TitleRow[]} rough
+ * @param {RefineOptions} [options]
+ */
+export async function refineFontMatches(image, rough, options) {
+	const {
+		broadBlur = false,
+		onProgress = function () {},
+		isCancelled = function () {
+			return false;
+		}
+	} = options === undefined ? {} : options;
+
 	const { cv } = await getCV(),
 		font = await new FontFace(
 			'OCRFitFont',
@@ -78,7 +106,7 @@ export async function refineFontMatches(
 		cache = new Map(),
 		target = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, W, 0, W, H, 0, H]),
 		results = [];
-	const template = (name) => {
+	function template(name) {
 		if (cache.has(name)) return cache.get(name);
 		const c = document.createElement('canvas'),
 			ctx = c.getContext('2d', { willReadFrequently: true });
@@ -99,9 +127,18 @@ export async function refineFontMatches(
 		const v = features(normalized);
 		cache.set(name, v);
 		return v;
-	};
+	}
 	try {
-		for (const r of rough) {
+		for (const [position, r] of rough.entries()) {
+			if (isCancelled()) throw Error('Cancelled');
+			if (position % 20 === 0) {
+				onProgress({
+					phase: 'Refine printed-name matches',
+					completed: position,
+					total: rough.length
+				});
+				await new Promise((resolve) => setTimeout(resolve, 0));
+			}
 			if (
 				!r.candidates[0] ||
 				r.candidates[0].score < 0.32 ||
@@ -172,6 +209,11 @@ export async function refineFontMatches(
 			M.delete();
 			out.delete();
 		}
+		onProgress({
+			phase: 'Refine printed-name matches',
+			completed: rough.length,
+			total: rough.length
+		});
 		return results;
 	} finally {
 		src.delete();

@@ -58,11 +58,15 @@ export function localDeckArtUrl(
 
 export class CardImageService {
 	private readonly inFlight = new Map<string, Promise<Buffer | null>>();
+	private readonly fetchImage: typeof fetch;
 
 	constructor(
 		private readonly cache: ImageCache,
-		private readonly fetchImage: typeof fetch = fetch
-	) {}
+		fetchImageArg?: typeof fetch
+	) {
+		const fetchImage = fetchImageArg === undefined ? fetch : fetchImageArg;
+		this.fetchImage = fetchImage;
+	}
 
 	async get(id: string, variant: ImageVariant): Promise<Buffer | null> {
 		const key = `${variant}/${id.toLowerCase()}.jpg`;

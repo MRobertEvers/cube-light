@@ -38,12 +38,10 @@ export function createRoutes_Collections(database: Database) {
 			pageLimit
 		);
 
-		const response = collections.map((collection) => {
-			return {
-				collection_id: collection.PublicId,
-				name: collection.Name
-			};
-		});
+		const response = collections.map((collection) => ({
+			collection_id: collection.PublicId,
+			name: collection.Name
+		}));
 
 		res.status(200);
 		res.setHeader('Content-Type', 'application/json');

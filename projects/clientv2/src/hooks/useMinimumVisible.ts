@@ -23,7 +23,9 @@ export function useMinimumVisible(active: boolean): boolean {
 			},
 			Math.max(0, remaining)
 		);
-		return () => window.clearTimeout(timer);
+		return function () {
+			return window.clearTimeout(timer);
+		};
 	}, [active, visible]);
 
 	return active || visible;

@@ -30,17 +30,17 @@ function connect() {
 		status: 'loading' as CardListLintStatus,
 		listeners: new Set<Listener>()
 	};
-	const fail = () => {
+	function fail() {
 		connection.status = 'failed';
 		worker.terminate();
 		if (shared === connection) shared = null;
-	};
-	worker.onmessage = (event: MessageEvent<CardListLintResponse>) => {
+	}
+	worker.onmessage = function (event: MessageEvent<CardListLintResponse>) {
 		if (event.data.kind === 'ready') connection.status = 'ready';
 		if (event.data.kind === 'failed') fail();
 		for (const listener of connection.listeners) listener(event.data);
 	};
-	worker.onerror = () => {
+	worker.onerror = function () {
 		fail();
 		for (const listener of connection.listeners)
 			listener({ kind: 'failed', error: 'The card checker stopped.' });
@@ -49,14 +49,17 @@ function connect() {
 	return connection;
 }
 
-const send = (request: CardListLintRequest) =>
-	connect().worker.postMessage(request);
+function send(request: CardListLintRequest) {
+	return connect().worker.postMessage(request);
+}
 
 /**
  * Checks a card list against every known card name in a WebAssembly worker, re-running
  * shortly after each edit, and answers autocomplete queries for the editor.
  */
-export function useCardListLint(text: string, delayMs = 120) {
+export function useCardListLint(text: string, delayMsArg?: number) {
+	const delayMs = delayMsArg === undefined ? 120 : delayMsArg;
+
 	const [status, setStatus] = useState<CardListLintStatus>(
 		() => connect().status
 	);
@@ -69,7 +72,7 @@ export function useCardListLint(text: string, delayMs = 120) {
 	useEffect(() => {
 		const connection = connect();
 		setStatus(connection.status);
-		const listener: Listener = (message) => {
+		const listener: Listener = function listener(message) {
 			if (message.kind === 'ready') setStatus('ready');
 			else if (message.kind === 'failed') {
 				setStatus('failed');
@@ -87,7 +90,7 @@ export function useCardListLint(text: string, delayMs = 120) {
 				setCompletions({ query: message.query, names: message.names });
 		};
 		connection.listeners.add(listener);
-		return () => {
+		return function () {
 			connection.listeners.delete(listener);
 		};
 	}, []);
@@ -104,7 +107,9 @@ export function useCardListLint(text: string, delayMs = 120) {
 			() => send({ kind: 'analyze', id, text }),
 			delayMs
 		);
-		return () => window.clearTimeout(timer);
+		return function () {
+			return window.clearTimeout(timer);
+		};
 	}, [text, delayMs, status]);
 
 	/** Asks for names completing `query`; null clears the current completions. */

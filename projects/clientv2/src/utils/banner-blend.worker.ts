@@ -36,13 +36,15 @@ export type BannerWorkerResponse =
 	  }
 	| { id: number; error: string };
 
-const post = (message: BannerWorkerResponse, transfer: Transferable[] = []) =>
-	(self as unknown as Worker).postMessage(message, transfer);
+function post(message: BannerWorkerResponse, transferArg?: Transferable[]) {
+	const transfer = transferArg === undefined ? [] : transferArg;
+	return (self as unknown as Worker).postMessage(message, transfer);
+}
 
 // All numeric pixel work runs in WebAssembly (native/banner_blend.c) for speed and cross-browser bit identity.
 let wasmModule: Promise<BannerWasm> | null = null;
 function loadWasm(): Promise<BannerWasm> {
-	wasmModule ??= (async () => {
+	wasmModule ??= (async function () {
 		const response = await fetch(
 			new URL('../wasm/banner-blend.wasm', import.meta.url)
 		);
@@ -181,14 +183,15 @@ async function encodePng(canvas: OffscreenCanvas): Promise<string> {
 
 async function generate(id: number, job: BannerBlendJob) {
 	const timings: Record<string, number> = {};
-	const progress = (message: string, fraction: number) =>
-		post({ id, progress: { message, fraction } });
+	function progress(message: string, fraction: number) {
+		return post({ id, progress: { message, fraction } });
+	}
 	let mark = performance.now();
-	const lap = (name: string) => {
+	function lap(name: string) {
 		const now = performance.now();
 		timings[name] = Math.round(now - mark);
 		mark = now;
-	};
+	}
 	progress('Loading banner artwork…', 0.02);
 	const [wasm, bitmap] = await Promise.all([loadWasm(), decode(job.src)]);
 	try {
@@ -206,7 +209,7 @@ async function generate(id: number, job: BannerBlendJob) {
 				{
 					feather: config.feather,
 					decontamination: config.decontamination,
-					onStage: (stage) => {
+					onStage: function (stage) {
 						if (stage === 'segment')
 							progress(
 								'Finding the protected subject (GrabCut)…',
@@ -298,8 +301,8 @@ async function mask(
 			{
 				feather,
 				decontamination: 0,
-				onStage: (stage) =>
-					post({
+				onStage: function (stage) {
+					return post({
 						id,
 						progress: {
 							message:
@@ -308,7 +311,8 @@ async function mask(
 									: 'Refining edges…',
 							fraction: stage === 'segment' ? 0.2 : 0.75
 						}
-					})
+					});
+				}
 			}
 		);
 		const alpha = new Uint8ClampedArray(layer.alpha.length);

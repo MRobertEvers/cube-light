@@ -4,10 +4,8 @@ export type IconProps = React.DetailedHTMLProps<
 	HTMLSpanElement
 >;
 
-function IconTemplate(svg: string) {
-	return (props: IconProps) => (
-		<span {...props} dangerouslySetInnerHTML={{ __html: svg }} />
-	);
+export function IconTemplate(svg: string) {
+	return function (props: IconProps) {
+		return <span {...props} dangerouslySetInnerHTML={{ __html: svg }} />;
+	};
 }
-
-export default IconTemplate;

@@ -1,7 +1,15 @@
 // Regularized Richardson–Lucy deconvolution. No synthesized letters or card prior.
-export function deblurImageData(pixels, sigma = 2, iterations = 12) {
-	const { width: w, height: h, data } = pixels,
-		n = w * h,
+/**
+ * @param {ImageData} pixels
+ * @param {number} [sigmaArg]
+ * @param {number} [iterationsArg]
+ */
+export function deblurImageData(pixels, sigmaArg, iterationsArg) {
+	const { width: w, height: h, data } = pixels;
+	const sigma = sigmaArg === undefined ? 2 : sigmaArg;
+	const iterations = iterationsArg === undefined ? 12 : iterationsArg;
+
+	const n = w * h,
 		r = Math.ceil(sigma * 3),
 		kernel = [];
 	let total = 0;
@@ -12,7 +20,7 @@ export function deblurImageData(pixels, sigma = 2, iterations = 12) {
 	}
 	for (let i = 0; i < kernel.length; i++) kernel[i] /= total;
 	const temp = new Float32Array(n);
-	const blur = (input, out) => {
+	function blur(input, out) {
 		for (let y = 0; y < h; y++)
 			for (let x = 0; x < w; x++) {
 				let s = 0;
@@ -31,7 +39,7 @@ export function deblurImageData(pixels, sigma = 2, iterations = 12) {
 						kernel[d + r];
 				out[y * w + x] = s;
 			}
-	};
+	}
 	const original = new Float32Array(n);
 	for (let i = 0; i < n; i++)
 		original[i] =

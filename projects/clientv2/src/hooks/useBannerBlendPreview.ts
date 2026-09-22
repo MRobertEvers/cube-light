@@ -46,7 +46,7 @@ export function useBannerBlendPreview(
 						);
 				});
 		}, PREVIEW_DELAY_MS);
-		return () => {
+		return function () {
 			active = false;
 			window.clearTimeout(timer);
 			cancelBannerBlendPreview();

@@ -9,7 +9,14 @@ const { Database } = require('../build/src/database/app/database');
 const { createRoutesDecks } = require('../build/src/routes/decks');
 const { PathBuilder } = require('../build/src/utils/PathBuilder');
 
-function png(width, height, noise = false) {
+/**
+ * @param {number} width
+ * @param {number} height
+ * @param {boolean} [noiseArg]
+ */
+function png(width, height, noiseArg) {
+	const noise = noiseArg === undefined ? false : noiseArg;
+
 	function chunk(name, data) {
 		const type = Buffer.from(name),
 			raw = Buffer.concat([type, data]);
@@ -59,8 +66,12 @@ test('generated banners persist, have immutable URLs, and reject stale renders',
 	const app = express();
 	app.use(
 		createRoutesDecks(new PathBuilder('/decks'), database, {
-			queryCardInfo: async () => [],
-			getCardDataByUuids: async () => []
+			queryCardInfo: async function () {
+				return [];
+			},
+			getCardDataByUuids: async function () {
+				return [];
+			}
 		})
 	);
 	const server = await new Promise((resolve) => {
@@ -86,12 +97,13 @@ test('generated banners persist, have immutable URLs, and reject stale renders',
 			tile: png(640, 224).toString('base64')
 		};
 		const payload = { source: base + art, config, crop, images };
-		const put = (body) =>
-			fetch(`${url}/banner-blend`, {
+		function put(body) {
+			return fetch(`${url}/banner-blend`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
 			});
+		}
 		assert.equal((await put(payload)).status, 204);
 		let response = await (await fetch(url)).json();
 		assert.deepEqual(response.bannerBlend.config, config);
@@ -166,8 +178,12 @@ test('v2 subject-protection configs validate, persist, change the revision, and 
 	const app = express();
 	app.use(
 		createRoutesDecks(new PathBuilder('/decks'), database, {
-			queryCardInfo: async () => [],
-			getCardDataByUuids: async () => []
+			queryCardInfo: async function () {
+				return [];
+			},
+			getCardDataByUuids: async function () {
+				return [];
+			}
 		})
 	);
 	const server = await new Promise((resolve) => {
@@ -185,12 +201,13 @@ test('v2 subject-protection configs validate, persist, change the revision, and 
 			mobile: png(720, 224).toString('base64'),
 			tile: png(640, 224).toString('base64')
 		};
-		const put = (body) =>
-			fetch(`${url}/banner-blend`, {
+		function put(body) {
+			return fetch(`${url}/banner-blend`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
 			});
+		}
 		const protection = {
 			source: base + art,
 			rect: { x: 0.2, y: 0.05, width: 0.66, height: 0.9 },
@@ -236,12 +253,12 @@ test('v2 subject-protection configs validate, persist, change the revision, and 
 			legacy
 		);
 
-		const bad = async (mutate) => {
+		async function bad(mutate) {
 			const c = structuredClone(config);
 			mutate(c);
 			return (await put({ source: base + art, config: c, crop, images }))
 				.status;
-		};
+		}
 		assert.equal(
 			await bad((c) => {
 				c.feather = 40;
@@ -437,8 +454,12 @@ test("decks without chosen art save and serve blends for their first card's art"
 	const app = express();
 	app.use(
 		createRoutesDecks(new PathBuilder('/decks'), database, {
-			queryCardInfo: async () => [card],
-			getCardDataByUuids: async () => [card]
+			queryCardInfo: async function () {
+				return [card];
+			},
+			getCardDataByUuids: async function () {
+				return [card];
+			}
 		})
 	);
 	const server = await new Promise((resolve) => {

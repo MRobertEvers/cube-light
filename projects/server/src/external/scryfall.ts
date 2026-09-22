@@ -18,11 +18,9 @@ export async function fetchCardDataByScryFallIds(
 	ids: string[]
 ): Promise<ScryfallApiResponse> {
 	const requestBody = JSON.stringify({
-		identifiers: ids.map((id) => {
-			return {
-				id
-			};
-		})
+		identifiers: ids.map((id) => ({
+			id
+		}))
 	});
 
 	const resp = await fetch(SCRYFALL_API, {

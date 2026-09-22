@@ -28,12 +28,13 @@ test('queues a photo, lets one runner claim it, and adds its cards once', async 
 	try {
 		await once(server, 'listening');
 		const base = `http://127.0.0.1:${server.address().port}`;
-		const post = (url, body) =>
-			fetch(`${base}${url}`, {
+		function post(url, body) {
+			return fetch(`${base}${url}`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
 			});
+		}
 		const { deckId } = await (
 			await post('/decks/', { name: 'Phone deck' })
 		).json();

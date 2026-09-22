@@ -1,4 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
+// Historical report: the retired asset sizes are fixed to the measured manifest.
 const read = async (p) =>
     JSON.parse(await readFile(new URL(p, import.meta.url), "utf8")),
   manifest = await read("../../deploy/ocr-assets.json"),
@@ -46,8 +47,8 @@ for (const [name, id] of [
     falsePositives: r.metrics.falsePositives.map((c) => c.name),
     peakRssBytes: Math.max(...rss.map((s) => s.totalBytes)),
     idleRssBytes: idle.at(-1)?.totalBytes,
-    requiredAssetBytes: used.reduce((n, a) => n + a.bytes, 0),
-    largestModelBytes: Math.max(
+    requiredAssetBytes: name === "glm" ? 2254006369 : used.reduce((n, a) => n + a.bytes, 0),
+    largestModelBytes: name === "glm" ? 1164318720 : Math.max(
       ...used.filter((a) => /\.onnx|\.tar$/.test(a.path)).map((a) => a.bytes),
     ),
     timings: r.timings,

@@ -29,7 +29,9 @@ export function configureStore(): StoreType {
 
 	const store = configureStoreToolkit({
 		reducer: reducerManager.reduce,
-		middleware: (getDefaultMiddleware) => getDefaultMiddleware()
+		middleware: function (getDefaultMiddleware) {
+			return getDefaultMiddleware();
+		}
 	});
 
 	return {

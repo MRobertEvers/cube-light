@@ -3,8 +3,15 @@ const crypto = require('node:crypto');
 const test = require('node:test');
 const { KVStore } = require('../build/Release/kv_store.node');
 
-const store = () => new KVStore(crypto.randomBytes(16));
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+function store() {
+	return new KVStore(crypto.randomBytes(16));
+}
+/**
+ * @param {number} ms
+ */
+function sleep(ms) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 test('set, get, overwrite, and delete', () => {
 	const kv = store();
@@ -57,7 +64,8 @@ test('sweep reclaims expired keys without disturbing live ones', async () => {
 	for (let i = 0; i < 5000; i++) kv.set(`live:${i}`, String(i));
 	await sleep(40);
 	let removed = 0;
-	for (let pass = 0; pass < 100 && kv.size > 5000; pass++) removed += kv.sweep(1024);
+	for (let pass = 0; pass < 100 && kv.size > 5000; pass++)
+		removed += kv.sweep(1024);
 	assert.equal(removed, 5000);
 	assert.equal(kv.size, 5000);
 	for (let i = 0; i < 5000; i++) assert.equal(kv.get(`live:${i}`), String(i));
@@ -90,7 +98,9 @@ test('matches a Map under random inserts and deletes', () => {
 	const kv = store();
 	const model = new Map();
 	let seed = 1;
-	const random = () => ((seed = (seed * 1103515245 + 12345) >>> 0) % 3000);
+	function random() {
+		return (seed = (seed * 1103515245 + 12345) >>> 0) % 3000;
+	}
 	for (let step = 0; step < 200000; step++) {
 		const key = `k${random()}`;
 		if (step % 3 === 0) {

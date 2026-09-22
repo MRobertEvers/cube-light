@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 export default defineConfig({
+  publicDir: "../../projects/clientv2/public",
   optimizeDeps: {
     include: [
       "@paddleocr/paddleocr-js",
@@ -7,7 +8,6 @@ export default defineConfig({
       "@techstark/opencv-js",
       "onnxruntime-web",
       "js-yaml",
-      "@huggingface/transformers",
     ],
   },
   server: { hmr: false, watch: { ignored: ["**/photo-results/**", "**/models/**"] } },

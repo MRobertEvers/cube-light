@@ -181,21 +181,23 @@ function extractPalette(image: HTMLImageElement): CardPalette | null {
 			bucket.lightness += lightness * weight;
 		}
 
-		const windowWeight = (index: number) =>
-			[-1, 0, 1].reduce(
+		function windowWeight(index: number) {
+			return [-1, 0, 1].reduce(
 				(sum, offset) =>
 					sum +
 					buckets[(index + offset + HUE_BUCKETS) % HUE_BUCKETS]
 						.weight,
 				0
 			);
-		const windowCount = (index: number) =>
-			[-1, 0, 1].reduce(
+		}
+		function windowCount(index: number) {
+			return [-1, 0, 1].reduce(
 				(sum, offset) =>
 					sum +
 					buckets[(index + offset + HUE_BUCKETS) % HUE_BUCKETS].count,
 				0
 			);
+		}
 		let best = -1;
 		let bestWeight = 0;
 		for (let index = 0; index < HUE_BUCKETS; index++) {
@@ -207,7 +209,7 @@ function extractPalette(image: HTMLImageElement): CardPalette | null {
 		}
 		if (best < 0) return null;
 
-		const summarize = (index: number) => {
+		function summarize(index: number) {
 			const neighbors = [-1, 0, 1].map(
 				(offset) =>
 					buckets[(index + offset + HUE_BUCKETS) % HUE_BUCKETS]
@@ -229,14 +231,17 @@ function extractPalette(image: HTMLImageElement): CardPalette | null {
 				saturation: totals.saturation / totals.weight,
 				lightness: totals.lightness / totals.weight
 			};
-		};
-		const distanceFromDominant = (index: number) =>
-			(Math.min(
-				Math.abs(index - best),
-				HUE_BUCKETS - Math.abs(index - best)
-			) *
-				360) /
-			HUE_BUCKETS;
+		}
+		function distanceFromDominant(index: number) {
+			return (
+				(Math.min(
+					Math.abs(index - best),
+					HUE_BUCKETS - Math.abs(index - best)
+				) *
+					360) /
+				HUE_BUCKETS
+			);
+		}
 
 		// A contrasting accent must also be colorful enough to stand out. Otherwise
 		// muted scenery can displace a more characteristic subject color.
@@ -335,16 +340,16 @@ export function useCardPalette(
 		let active = true;
 		const image = new Image();
 		image.crossOrigin = 'anonymous';
-		image.onload = () => {
+		image.onload = function () {
 			const palette = extractPalette(image);
 			if (palette) paletteCache.set(imageUrl, palette);
 			if (active) setResult({ url: imageUrl, palette });
 		};
-		image.onerror = () => {
+		image.onerror = function () {
 			if (active) setResult({ url: imageUrl, palette: null });
 		};
 		image.src = imageUrl;
-		return () => {
+		return function () {
 			active = false;
 			image.onload = null;
 			image.onerror = null;

@@ -66,10 +66,12 @@ export function SuggestionInput(props: SuggestionInputProps) {
 		}
 	}, [activeIndex, showSuggestions]);
 
-	const select = (suggestion: string, keepFocus = true) => {
+	function select(suggestion: string, keepFocusArg?: boolean) {
+		const keepFocus = keepFocusArg === undefined ? true : keepFocusArg;
+
 		setActiveIndex(-1);
 		onSelect(suggestion, keepFocus);
-	};
+	}
 
 	return (
 		<div className={styles['search-field']}>

@@ -33,28 +33,32 @@ function createRunner(workId: string, token: string): ImageScanRunner {
 	let total = 0;
 	let lost = false;
 	let lastSent = 0;
-	const send = () => {
+	function send() {
 		lastSent = Date.now();
 		fetchAPIWorkProgress(workId, token, completed, total).catch((error) => {
 			if (error instanceof WorkClaimLostError) lost = true;
 		});
-	};
+	}
 	// Loading the OCR model reports no progress for a while; keep the lease alive regardless.
 	const heartbeat = window.setInterval(send, HEARTBEAT_MS);
 	claims.set(workId, token);
 	return {
 		workId,
-		progress(nextCompleted, nextTotal) {
+		progress: function (nextCompleted, nextTotal) {
 			completed = nextCompleted;
 			total = nextTotal;
 			if (Date.now() - lastSent >= PROGRESS_MIN_INTERVAL_MS) send();
 		},
-		commit: (cards) => fetchAPICompleteWork(workId, token, cards),
-		fail(error) {
+		commit: function (cards) {
+			return fetchAPICompleteWork(workId, token, cards);
+		},
+		fail: function (error) {
 			void fetchAPIFailWork(workId, token, error).catch(() => {});
 		},
-		isLost: () => lost,
-		finished() {
+		isLost: function () {
+			return lost;
+		},
+		finished: function () {
 			window.clearInterval(heartbeat);
 			claims.delete(workId);
 			void workQueue.refresh().finally(() => handled.delete(workId));
@@ -81,7 +85,12 @@ export async function runWorkItemHere(item: WorkItem): Promise<string | null> {
 	void workQueue.refresh();
 	try {
 		const file = await fetchAPIWorkImage(item);
-		return imageImportQueue.enqueue(item.deck.deckId, file, runner);
+		return imageImportQueue.enqueue(
+			item.deck.deckId,
+			file,
+			runner,
+			item.pipeline ?? 'card-aware'
+		);
 	} catch (error) {
 		runner.fail(
 			error instanceof Error

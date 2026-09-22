@@ -1,6 +1,9 @@
 // Exact CTC forward likelihood for independently proposed catalog names.
-const clean = (s) =>
-	s
+/**
+ * @param {string} s
+ */
+function clean(s) {
+	return s
 		.normalize('NFKD')
 		.replace(/[\u0300-\u036f]/g, '')
 		.toLowerCase()
@@ -8,13 +11,28 @@ const clean = (s) =>
 		.replace(/[^a-z0-9\-',æ ]/g, ' ')
 		.replace(/\s+/g, ' ')
 		.trim();
-const add = (a, b) =>
-	a === -Infinity
+}
+/**
+ * @param {number} a
+ * @param {number} b
+ */
+function add(a, b) {
+	return a === -Infinity
 		? b
 		: b === -Infinity
 			? a
 			: Math.max(a, b) + Math.log1p(Math.exp(-Math.abs(a - b)));
-export function scoreCTCNames(probabilities, steps, chars, names, blank = 0) {
+}
+/**
+ * @param {ArrayLike<number>} probabilities
+ * @param {number} steps
+ * @param {string[]} chars
+ * @param {string[]} names
+ * @param {number} [blankArg]
+ */
+export function scoreCTCNames(probabilities, steps, chars, names, blankArg) {
+	const blank = blankArg === undefined ? 0 : blankArg;
+
 	const groups = new Map();
 	for (let i = 0; i < chars.length; i++) {
 		if (i === blank) continue;
@@ -24,7 +42,7 @@ export function scoreCTCNames(probabilities, steps, chars, names, blank = 0) {
 	}
 	const cache = new Map(),
 		classes = chars.length;
-	const sequence = (c) => {
+	function sequence(c) {
 		if (cache.has(c)) return cache.get(c);
 		const ids = c === null ? [blank] : groups.get(c);
 		if (!ids) return null;
@@ -36,7 +54,7 @@ export function scoreCTCNames(probabilities, steps, chars, names, blank = 0) {
 		}
 		cache.set(c, p);
 		return p;
-	};
+	}
 	const pb = sequence(null),
 		results = [];
 	for (const name of new Set(names)) {

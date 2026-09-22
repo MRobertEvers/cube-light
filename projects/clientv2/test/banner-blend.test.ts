@@ -7,10 +7,16 @@ import { DEFAULT_BANNER_BLEND } from '../src/utils/banner-blend';
 const wasm = await BannerWasm.create(
 	readFileSync(new URL('../src/wasm/banner-blend.wasm', import.meta.url))
 );
-const blendBannerPixels: BannerWasm['blend'] = (...args) => wasm.blend(...args);
+const blendBannerPixels: BannerWasm['blend'] = function blendBannerPixels(
+	...args
+) {
+	return wasm.blend(...args);
+};
 const width = 160,
 	height = 48;
-function fixture(solid = false) {
+function fixture(solidArg?: boolean) {
+	const solid = solidArg === undefined ? false : solidArg;
+
 	const pixels = new Uint8ClampedArray(width * height * 4);
 	for (let y = 0; y < height; y++)
 		for (let x = 0; x < width; x++) {

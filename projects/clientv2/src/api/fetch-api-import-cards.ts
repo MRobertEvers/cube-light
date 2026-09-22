@@ -4,11 +4,14 @@ import { apiFetch } from './utils';
 export type ImportedCard = { name: string; count: number; setCode?: string };
 
 export class ImportCardsError extends Error {
-	constructor(
-		message: string,
-		readonly unknownCards: string[] = []
-	) {
+	readonly unknownCards: string[];
+
+	constructor(message: string, unknownCardsArg?: string[]) {
+		const unknownCards =
+			unknownCardsArg === undefined ? [] : unknownCardsArg;
+
 		super(message);
+		this.unknownCards = unknownCards;
 	}
 }
 

@@ -27,13 +27,11 @@ export function TextInputButtonGroup(props: TextInputButtonGroupProps) {
 
 	const listSuggestions = useMemo(() => {
 		if (!suggestions) return [];
-		return suggestions.map((s) => {
-			return {
-				id: s,
-				value: s,
-				label: s
-			};
-		});
+		return suggestions.map((s) => ({
+			id: s,
+			value: s,
+			label: s
+		}));
 	}, [suggestions]);
 
 	const comboBoxOnEvent = useCallback(

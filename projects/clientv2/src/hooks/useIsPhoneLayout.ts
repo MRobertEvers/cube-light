@@ -6,7 +6,9 @@ const PHONE_QUERY = '(max-width: 680px)';
 function subscribe(onChange: () => void) {
 	const query = window.matchMedia(PHONE_QUERY);
 	query.addEventListener('change', onChange);
-	return () => query.removeEventListener('change', onChange);
+	return function () {
+		return query.removeEventListener('change', onChange);
+	};
 }
 
 function isPhone() {

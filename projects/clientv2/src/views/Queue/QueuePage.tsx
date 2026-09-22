@@ -87,7 +87,7 @@ function WorkRow(props: {
 	const [actionError, setActionError] = useState<string | null>(null);
 	const deck = item.deck;
 
-	const act = async (action: () => Promise<void>, message: string) => {
+	async function act(action: () => Promise<void>, message: string) {
 		setBusy(true);
 		setActionError(null);
 		try {
@@ -97,18 +97,23 @@ function WorkRow(props: {
 		} finally {
 			setBusy(false);
 		}
-	};
+	}
 
-	const scanHere = () =>
-		act(async () => {
+	function scanHere() {
+		return act(async () => {
 			if (isMobile && !allowMobileScan) return;
 			const taskId = await runWorkItemHere(item);
 			if (!taskId || !deck)
 				throw new Error('Another device already started this scan');
 			navigate(`/deck/${deck.deckId}/scan/${taskId}`);
 		}, 'Could not start the scan');
-	const remove = () =>
-		act(() => workQueue.remove(item.workId), 'Could not remove this item');
+	}
+	function remove() {
+		return act(
+			() => workQueue.remove(item.workId),
+			'Could not remove this item'
+		);
+	}
 
 	return (
 		<QueueRow
@@ -168,7 +173,9 @@ function WorkRow(props: {
 						className={styles.button}
 						disabled={busy || (isMobile && !allowMobileScan)}
 						onClick={() => void scanHere()}
-						aria-describedby={isMobile ? mobileWarningId : undefined}
+						aria-describedby={
+							isMobile ? mobileWarningId : undefined
+						}
 					>
 						{isMobile ? 'Scan on this device' : 'Scan here now'}
 					</button>
@@ -224,7 +231,7 @@ function LocalScanRow(props: { task: ImageScanTask }) {
 			title="Card photo scanning on this device"
 			status={statusText(task)}
 			tone={tone}
-			progress={task.total > 0 ? task.completed / task.total : null}
+			progress={task.total > 0 && !task.progressIndeterminate ? task.completed / task.total : null}
 			meta={task.fileName}
 			error={task.error}
 		>
@@ -261,7 +268,7 @@ export function QueuePage() {
 	const isEmpty =
 		items !== null && items.length === 0 && localOnly.length === 0;
 
-	const clearFinished = async () => {
+	async function clearFinished() {
 		setClearing(true);
 		try {
 			for (const item of finished) await workQueue.remove(item.workId);
@@ -270,7 +277,7 @@ export function QueuePage() {
 		} finally {
 			setClearing(false);
 		}
-	};
+	}
 
 	return (
 		<NextPage title="Queued work">

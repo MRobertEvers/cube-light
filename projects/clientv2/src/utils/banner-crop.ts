@@ -9,6 +9,9 @@ export const DEFAULT_BANNER_CROP: BannerCrop = {
 	mobile: { x: 0.5, y: 0.5, zoom: 1 }
 };
 
-export function clamp(value: number, min = 0, max = 1): number {
+export function clamp(value: number, minArg?: number, maxArg?: number): number {
+	const min = minArg === undefined ? 0 : minArg;
+	const max = maxArg === undefined ? 1 : maxArg;
+
 	return Math.min(max, Math.max(min, value));
 }

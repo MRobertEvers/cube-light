@@ -1,6 +1,8 @@
 export class PathBuilder {
 	private currentPath: string = '';
-	constructor(startPath: string = '') {
+	constructor(startPathArg?: string) {
+		const startPath = startPathArg === undefined ? '' : startPathArg;
+
 		this.currentPath = startPath;
 	}
 

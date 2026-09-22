@@ -32,11 +32,12 @@ export type CardListLintResponse =
 const SUGGESTIONS = 3;
 const COMPLETIONS = 8;
 
-const post = (message: CardListLintResponse) =>
-	(self as unknown as Worker).postMessage(message);
+function post(message: CardListLintResponse) {
+	return (self as unknown as Worker).postMessage(message);
+}
 
 // Both downloads are cached by the browser; the name index is ~770 KB for every printed card name.
-const lint = (async () => {
+const lint = (async function () {
 	const [moduleResponse, indexResponse] = await Promise.all([
 		fetch(new URL('../wasm/card-list-lint.wasm', import.meta.url)),
 		fetch(`${API_URI}/suggest/card-names/index`)
@@ -66,7 +67,10 @@ function verdict(checker: CardListLintWasm, name: string): string[] | null {
 	if (result === undefined) {
 		result = checker.find(name)
 			? null
-			: checker.suggest(name, SUGGESTIONS).map(({ name }) => name);
+			: checker.suggest(name, SUGGESTIONS).map((options) => {
+					const { name } = options;
+					return name;
+				});
 		if (verdicts.size > 5000) verdicts.clear();
 		verdicts.set(key, result);
 	}

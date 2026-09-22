@@ -65,11 +65,12 @@ export function SpotlightCard(props: SpotlightCardProps) {
 									frame={crop.desktop}
 									onChange={
 										onCropChange
-											? (frame) =>
-													onCropChange(
+											? function (frame) {
+													return onCropChange(
 														'desktop',
 														frame
-													)
+													);
+												}
 											: undefined
 									}
 									label={
@@ -88,11 +89,12 @@ export function SpotlightCard(props: SpotlightCardProps) {
 									frame={crop.mobile}
 									onChange={
 										onCropChange
-											? (frame) =>
-													onCropChange(
+											? function (frame) {
+													return onCropChange(
 														'mobile',
 														frame
-													)
+													);
+												}
 											: undefined
 									}
 									label={

@@ -23,15 +23,16 @@ const wasm = await BannerWasm.create(
 );
 // Mirrors the C constants and gate (native/banner_blend.c).
 const SURFACE_START = 0.68;
-const smooth = (lo: number, hi: number, n: number) => {
+function smooth(lo: number, hi: number, n: number) {
 	const t = Math.min(1, Math.max(0, (n - lo) / (hi - lo)));
 	return t * t * (3 - 2 * t);
-};
-const foregroundGate = (distance: number, half: number) =>
-	1 - smooth(half * 0.15, half, distance);
+}
+function foregroundGate(distance: number, half: number) {
+	return 1 - smooth(half * 0.15, half, distance);
+}
 
 function rng(seed: number) {
-	return () => {
+	return function () {
 		seed ^= seed << 13;
 		seed ^= seed >>> 17;
 		seed ^= seed << 5;
@@ -132,8 +133,9 @@ function synthetic(width: number, height: number) {
 			const p = y * width + x;
 			truth[p] = coverage >= 0.5 ? 1 : 0;
 			const noise = (random() - 0.5) * 30,
-				mix = (fg: number, bg: number) =>
-					coverage * fg + (1 - coverage) * bg + noise;
+				mix = function mix(fg: number, bg: number) {
+					return coverage * fg + (1 - coverage) * bg + noise;
+				};
 			rgba[p * 4] = mix(200, 60);
 			rgba[p * 4 + 1] = mix(120, 110);
 			rgba[p * 4 + 2] = mix(70, 170);
@@ -141,22 +143,24 @@ function synthetic(width: number, height: number) {
 		}
 	return { rgba, truth };
 }
-const rectProtection = (
+function rectProtection(
 	x: number,
 	y: number,
 	w: number,
 	h: number
-): BannerProtection => ({
-	source: '/art.jpg',
-	rect: { x, y, width: w, height: h },
-	strokes: []
-});
+): BannerProtection {
+	return {
+		source: '/art.jpg',
+		rect: { x, y, width: w, height: h },
+		strokes: []
+	};
+}
 
 test('GrabCut recovers a subject from a rough rectangle and is deterministic', () => {
 	const width = 96,
 		height = 64,
 		{ rgba, truth } = synthetic(width, height);
-	const run = () => {
+	function run() {
 		const rgb = new Float64Array(width * height * 3);
 		for (let p = 0; p < width * height; p++)
 			for (let c = 0; c < 3; c++) rgb[p * 3 + c] = rgba[p * 4 + c];
@@ -171,7 +175,7 @@ test('GrabCut recovers a subject from a rough rectangle and is deterministic', (
 			),
 			5
 		);
-	};
+	}
 	const labels = run();
 	assert.deepEqual(labels, run());
 	let wrong = 0;
@@ -484,9 +488,10 @@ test('the WASM wrapper frees its scratch memory', () => {
 	const w = 640,
 		h = 224,
 		rgba = new Uint8ClampedArray(w * h * 4).fill(200);
-	const memory = () =>
-		(wasm as unknown as { wasm: { memory: WebAssembly.Memory } }).wasm
-			.memory.buffer.byteLength;
+	function memory() {
+		return (wasm as unknown as { wasm: { memory: WebAssembly.Memory } })
+			.wasm.memory.buffer.byteLength;
+	}
 	wasm.blend(rgba, w, h, DEFAULT_BANNER_BLEND);
 	const size = memory();
 	for (let i = 0; i < 20; i++)

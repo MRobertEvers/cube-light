@@ -9,9 +9,12 @@ export type FetchStorageLocationsResponse =
 	Array<FetchStorageLocationsLocationResponse>;
 
 export async function fetchAPIStorageLocations(
-	pageStart: number = 0,
-	pageSize: number = 15
+	pageStartArg?: number,
+	pageSizeArg?: number
 ): Promise<FetchStorageLocationsResponse> {
+	const pageStart = pageStartArg === undefined ? 0 : pageStartArg;
+	const pageSize = pageSizeArg === undefined ? 15 : pageSizeArg;
+
 	const q = new URLSearchParams();
 	if (pageStart > 0) {
 		q.set('page-token', pageStart.toString());

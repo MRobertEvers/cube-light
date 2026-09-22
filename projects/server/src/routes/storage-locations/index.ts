@@ -39,12 +39,10 @@ export function createRoutes_StorageLocations(database: Database) {
 			pageLimit
 		);
 
-		const response = locations.map((location) => {
-			return {
-				storage_location_id: location.PublicId,
-				name: location.Name
-			};
-		});
+		const response = locations.map((location) => ({
+			storage_location_id: location.PublicId,
+			name: location.Name
+		}));
 
 		res.status(200);
 		res.setHeader('Content-Type', 'application/json');

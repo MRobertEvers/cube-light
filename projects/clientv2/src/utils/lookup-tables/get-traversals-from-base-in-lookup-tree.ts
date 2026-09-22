@@ -19,8 +19,13 @@ export function compareLaxSpecialCharacters(char: string) {
 export function getTraversalsFromBaseInLookupTreeSimple(
 	base: string,
 	lookupTree: any,
-	equivalentBranches: (char: string) => string[] = compareNoCase
+	equivalentBranchesArg?: (char: string) => string[]
 ): Array<[string, any]> {
+	const equivalentBranches =
+		equivalentBranchesArg === undefined
+			? compareNoCase
+			: equivalentBranchesArg;
+
 	let level: [string[], any][] = [[[], lookupTree]];
 	let next: [string[], any][] = [];
 
@@ -47,9 +52,16 @@ export function getTraversalsFromBaseInLookupTreeSimple(
 export function getTraversalsFromBaseInLookupTree(
 	base: string,
 	lookupTree: any,
-	equivalentBranches: (char: string) => string[] = compareNoCase,
-	ignoreChars: string[] = [',', "'"]
+	equivalentBranchesArg?: (char: string) => string[],
+	ignoreCharsArg?: string[]
 ): Array<[string, any]> {
+	const equivalentBranches =
+		equivalentBranchesArg === undefined
+			? compareNoCase
+			: equivalentBranchesArg;
+	const ignoreChars =
+		ignoreCharsArg === undefined ? [',', "'"] : ignoreCharsArg;
+
 	let level: [string[], any][] = [[[], lookupTree]];
 	let next: [string[], any][] = [];
 

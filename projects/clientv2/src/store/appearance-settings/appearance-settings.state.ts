@@ -32,25 +32,29 @@ export type AppearanceSettingsState = {
 	status: Record<Section, Status>;
 };
 
-const emptyStatus = (): Status => ({
-	saving: false,
-	message: null,
-	error: null
-});
-const initialState = (): AppearanceSettingsState => ({
-	deckId: null,
-	paletteDraft: null,
-	cropDraft: null,
-	styleDraft: null,
-	blendDraft: null,
-	status: {
-		palette: emptyStatus(),
-		crop: emptyStatus(),
-		style: emptyStatus(),
-		banner: emptyStatus(),
-		blend: emptyStatus()
-	}
-});
+function emptyStatus(): Status {
+	return {
+		saving: false,
+		message: null,
+		error: null
+	};
+}
+function initialState(): AppearanceSettingsState {
+	return {
+		deckId: null,
+		paletteDraft: null,
+		cropDraft: null,
+		styleDraft: null,
+		blendDraft: null,
+		status: {
+			palette: emptyStatus(),
+			crop: emptyStatus(),
+			style: emptyStatus(),
+			banner: emptyStatus(),
+			blend: emptyStatus()
+		}
+	};
+}
 
 export const savePalette = createAsyncThunk(
 	'appearanceSettings/savePalette',
@@ -136,13 +140,13 @@ export const appearanceSettingsSlice = createSlice({
 	name: 'appearanceSettings',
 	initialState: initialState(),
 	reducers: {
-		openAppearanceDeck(state, action: PayloadAction<string>) {
+		openAppearanceDeck: function (state, action: PayloadAction<string>) {
 			if (state.deckId !== action.payload)
 				Object.assign(state, initialState(), {
 					deckId: action.payload
 				});
 		},
-		changePaletteColor(
+		changePaletteColor: function (
 			state,
 			action: PayloadAction<{
 				key: keyof CardPalette;
@@ -158,23 +162,26 @@ export const appearanceSettingsSlice = createSlice({
 			};
 			state.status.palette = emptyStatus();
 		},
-		useCardColors(state) {
+		useCardColors: function (state) {
 			state.paletteDraft = { value: null };
 			state.status.palette = emptyStatus();
 		},
-		changeCrop(state, action: PayloadAction<BannerCrop>) {
+		changeCrop: function (state, action: PayloadAction<BannerCrop>) {
 			state.cropDraft = action.payload;
 			state.status.crop = emptyStatus();
 		},
-		changeStyle(state, action: PayloadAction<DeckTopStyle>) {
+		changeStyle: function (state, action: PayloadAction<DeckTopStyle>) {
 			state.styleDraft = action.payload;
 			state.status.style = emptyStatus();
 		},
-		changeBlend(state, action: PayloadAction<BannerBlendConfig>) {
+		changeBlend: function (
+			state,
+			action: PayloadAction<BannerBlendConfig>
+		) {
 			state.blendDraft = action.payload;
 			state.status.blend = emptyStatus();
 		},
-		renderProgress(
+		renderProgress: function (
 			state,
 			action: PayloadAction<{
 				deckId: string;
@@ -189,7 +196,7 @@ export const appearanceSettingsSlice = createSlice({
 			state.status[action.payload.section].progress =
 				action.payload.progress ?? null;
 		},
-		bannerSaved(state, action: PayloadAction<string>) {
+		bannerSaved: function (state, action: PayloadAction<string>) {
 			if (state.deckId !== action.payload) return;
 			state.cropDraft = null;
 			state.status.banner = {
@@ -198,11 +205,11 @@ export const appearanceSettingsSlice = createSlice({
 				error: null
 			};
 		},
-		bannerPickerOpened(state) {
+		bannerPickerOpened: function (state) {
 			state.status.banner = emptyStatus();
 		}
 	},
-	extraReducers: (builder) => {
+	extraReducers: function (builder) {
 		builder
 			.addCase(saveBlend.pending, (state, action) => {
 				if (state.deckId === action.meta.arg.deckId)
@@ -330,9 +337,11 @@ export const appearanceSettingsSlice = createSlice({
 });
 
 export const appearanceActions = appearanceSettingsSlice.actions;
-export const selectAppearanceSettings = (state: {
+export function selectAppearanceSettings(state: {
 	appearanceSettings: AppearanceSettingsState;
-}) => state.appearanceSettings;
+}) {
+	return state.appearanceSettings;
+}
 
 function samePalette(a: CardPalette | null, b: CardPalette | null): boolean {
 	if (!a || !b) return a === b;

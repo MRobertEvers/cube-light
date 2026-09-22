@@ -1,4 +1,7 @@
 import { findTitleStrips } from './edge-titles.js';
+/**
+ * @param {import('./types.js').ScanImage} image
+ */
 export async function titleProposals(image) {
 	const original = await findTitleStrips(image),
 		extra = await findTitleStrips(image, {
@@ -35,8 +38,28 @@ export async function titleProposals(image) {
 				cx = points.reduce((s, p) => s + p[0] / 4, 0),
 				cy = points.reduce((s, p) => s + p[1] / 4, 0);
 			const slope =
-					points.reduce((s, [x, y]) => s + (x - cx) * (y - cy), 0) /
-					points.reduce((s, [x]) => s + (x - cx) ** 2, 0),
+					points.reduce(
+						/**
+						 * @param {number} s
+						 * @param {number[]} values
+						 */
+						(s, values) => {
+							const [x, y] = values;
+							return s + (x - cx) * (y - cy);
+						},
+						0
+					) /
+					points.reduce(
+						/**
+						 * @param {number} s
+						 * @param {number[]} values
+						 */
+						(s, values) => {
+							const [x] = values;
+							return s + (x - cx) ** 2;
+						},
+						0
+					),
 				angle = Math.atan(slope),
 				y1 = cy + (a.x1 - cx) * slope,
 				y2 = cy + (b.x2 - cx) * slope;

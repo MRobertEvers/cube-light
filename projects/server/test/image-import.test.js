@@ -26,12 +26,13 @@ test('imports reviewed card names as one deck edit and rejects unknown names ato
 	try {
 		await once(server, 'listening');
 		const base = `http://127.0.0.1:${server.address().port}`;
-		const request = (url, body) =>
-			fetch(`${base}${url}`, {
+		function request(url, body) {
+			return fetch(`${base}${url}`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
 			});
+		}
 		const created = await request('/decks/', { name: 'Photo deck' });
 		assert.equal(created.status, 200);
 		const { deckId } = await created.json();

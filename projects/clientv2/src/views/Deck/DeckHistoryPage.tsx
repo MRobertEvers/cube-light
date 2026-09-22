@@ -69,7 +69,7 @@ export function DeckHistoryPage(props: { deckId: string }) {
 				if (active) setError(true);
 			}
 		);
-		return () => {
+		return function () {
 			active = false;
 		};
 	}, [deckId]);

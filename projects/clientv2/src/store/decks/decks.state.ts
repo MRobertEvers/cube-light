@@ -33,17 +33,20 @@ export const decksSlice = createSlice({
 	name: 'decks',
 	initialState,
 	reducers: {
-		setInitialDecks(state, action: PayloadAction<FetchDecksResponse>) {
+		setInitialDecks: function (
+			state,
+			action: PayloadAction<FetchDecksResponse>
+		) {
 			state.list = action.payload;
 		},
-		setInitialDeck(
+		setInitialDeck: function (
 			state,
 			action: PayloadAction<{ deckId: string; data: GetDeckResponse }>
 		) {
 			state.byId[action.payload.deckId] = action.payload.data;
 		}
 	},
-	extraReducers: (builder) => {
+	extraReducers: function (builder) {
 		builder
 			.addCase(loadDecks.pending, (state, action) => {
 				state.listRequestId = action.meta.requestId;
@@ -87,10 +90,15 @@ export const { setInitialDecks, setInitialDeck } = decksSlice.actions;
 
 type DecksRootState = { decks: DecksState };
 
-export const selectDecks = (state: DecksRootState) => state.decks.list;
-export const selectDecksError = (state: DecksRootState) =>
-	state.decks.listError;
-export const selectDeck = (state: DecksRootState, deckId: string) =>
-	state.decks.byId[deckId];
-export const selectDeckError = (state: DecksRootState, deckId: string) =>
-	state.decks.errorsById[deckId];
+export function selectDecks(state: DecksRootState) {
+	return state.decks.list;
+}
+export function selectDecksError(state: DecksRootState) {
+	return state.decks.listError;
+}
+export function selectDeck(state: DecksRootState, deckId: string) {
+	return state.decks.byId[deckId];
+}
+export function selectDeckError(state: DecksRootState, deckId: string) {
+	return state.decks.errorsById[deckId];
+}

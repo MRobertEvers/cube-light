@@ -44,6 +44,7 @@ try {
   await p.waitForFunction(() => typeof window.scanExperimental === "function");
   const r = await p.evaluate(() =>
     window.scanExperimental({
+      url: "/res/IMG_8535.jpeg",
       onProgress: (p) => console.log(p.phase, p.completed ?? "", p.total ?? ""),
       onStage: window.checkpoint,
     }),

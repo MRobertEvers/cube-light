@@ -1,3 +1,4 @@
+import type { CardImagePipeline } from '../utils/image-scan-pipelines';
 import { API_URI } from '../config/api-url';
 import type { ImportedCard } from './fetch-api-import-cards';
 import { apiFetch } from './utils';
@@ -12,6 +13,7 @@ export type WorkItem = {
 	deck: { deckId: string; name: string } | null;
 	status: WorkItemStatus;
 	fileName: string;
+	pipeline?: CardImagePipeline;
 	progress: { completed: number; total: number };
 	cardsAdded: number;
 	error: string | null;
@@ -52,9 +54,16 @@ export async function fetchAPIWorkItems(): Promise<WorkItem[]> {
 
 export async function fetchAPIQueueCardImage(
 	deckId: string,
-	file: File
+	file: File,
+	pipelineArg?: CardImagePipeline
 ): Promise<WorkItem> {
-	const query = new URLSearchParams({ deckId, fileName: file.name });
+	const pipeline = pipelineArg === undefined ? 'card-aware' : pipelineArg;
+
+	const query = new URLSearchParams({
+		deckId,
+		fileName: file.name,
+		pipeline
+	});
 	const response = await request(`/work/card-image-ocr?${query}`, {
 		method: 'POST',
 		headers: { 'Content-Type': file.type || 'image/jpeg' },

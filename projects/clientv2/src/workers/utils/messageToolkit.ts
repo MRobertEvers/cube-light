@@ -11,12 +11,12 @@ export interface MessageCreator<T, Response = void> {
 export function createMessage<T, Response = void>(
 	name: string
 ): MessageCreator<T, Response> {
-	const creator = (payload: T) => {
+	function creator(payload: T) {
 		return {
 			type: name,
 			payload: payload
 		};
-	};
+	}
 
 	creator.type = name;
 	return creator;
@@ -71,9 +71,9 @@ export interface OnMessageResponseHandler {
 function createHandleMessage(map: {
 	[x: string]: MessageHandler<any, any>;
 }): OnMessageHandler {
-	const handler: OnMessageHandler = async <T, Response>(
+	const handler: OnMessageHandler = async function handler<T, Response>(
 		msg: Message<T, Response>
-	): Promise<Message<Response, void> | undefined> => {
+	): Promise<Message<Response, void> | undefined> {
 		if (msg.type in map) {
 			const cb: MessageHandler<T, Response> = map[msg.type];
 

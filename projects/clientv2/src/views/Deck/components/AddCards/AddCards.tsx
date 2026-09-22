@@ -72,11 +72,14 @@ export function AddCards() {
 		unknownCards.includes(card.name.toLowerCase())
 	);
 	const issues: Issue[] = [
-		...parsed.errors.map(({ line, message }) => ({
-			line,
-			message,
-			skipped: false
-		})),
+		...parsed.errors.map((options) => {
+			const { line, message } = options;
+			return {
+				line,
+				message,
+				skipped: false
+			};
+		}),
 		...problems.map((problem) => ({
 			line: problem.line,
 			message: `Unknown card: ${problem.name}`,
@@ -92,11 +95,14 @@ export function AddCards() {
 					skipped: false
 				}))
 		),
-		...parsed.skipped.map(({ line, message }) => ({
-			line,
-			message,
-			skipped: true
-		})),
+		...parsed.skipped.map((options) => {
+			const { line, message } = options;
+			return {
+				line,
+				message,
+				skipped: true
+			};
+		}),
 		...parsed.notes.map((note) => ({
 			line: note.line,
 			message: note.message,
@@ -129,10 +135,14 @@ export function AddCards() {
 	useEffect(() => {
 		const previousFocus = document.activeElement as HTMLElement | null;
 		textareaRef.current?.focus();
-		return () => previousFocus?.focus();
+		return function () {
+			return previousFocus?.focus();
+		};
 	}, []);
 
-	const onClose = () => dispatch(closeAddCards());
+	function onClose() {
+		return dispatch(closeAddCards());
+	}
 	// State, not a ref, so the back button portals in once the slot mounts.
 	const [backSlot, setBackSlot] = useState<HTMLElement | null>(null);
 
@@ -144,11 +154,14 @@ export function AddCards() {
 		void dispatch(
 			importDeckCards({
 				deckId,
-				cards: parsed.cards.map(({ name, count, setCode }) => ({
-					name,
-					count,
-					setCode
-				}))
+				cards: parsed.cards.map((options) => {
+					const { name, count, setCode } = options;
+					return {
+						name,
+						count,
+						setCode
+					};
+				})
 			})
 		);
 	}

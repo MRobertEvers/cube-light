@@ -29,7 +29,7 @@ function gramsFor(value: string): string[] {
 }
 
 export function prepareCardNames(names: string[]): PreparedCardNames {
-	const entry = (name: string, alias: string): PreparedCardName => {
+	function entry(name: string, alias: string): PreparedCardName {
 		const clean = normalizeCardName(alias);
 		return {
 			name,
@@ -37,7 +37,7 @@ export function prepareCardNames(names: string[]): PreparedCardNames {
 			length: clean.length,
 			words: clean ? clean.split(' ').length : 0
 		};
-	};
+	}
 	// Standalone card names take precedence over the same text used as a face alias.
 	const items = [
 		...names.map((name) => entry(name, name)),

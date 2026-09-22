@@ -1,3 +1,7 @@
+# Current deployment
+
+Client v2 now defaults to the Paddle-medium card-aware pipeline; text-only Paddle is selectable. GLM runtime/model files are removed. See [the current client README](../../projects/clientv2/readme.md), [controlled verifier comparison](verifier-ablation-summary.json), and [latest integration measurement](paddle-current-summary.json). The older report below documents historical experiments, not current installation requirements.
+
 # Browser card-name scanner: 12/12 on the supplied photo
 
 The fresh browser benchmark recovered **12/12 distinct names, with zero accepted false matches, in 173.5 seconds** on 21 September 2026. It correctly located 17 title instances. This is a development result on one photo, with rules tuned on that photo—not a measured accuracy rate on future photos or a complete inventory of obscured cards.

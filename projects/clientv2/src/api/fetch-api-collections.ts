@@ -9,9 +9,12 @@ export type FetchCollectionsResponse =
 	Array<FetchCollectionsCollectionResponse>;
 
 export async function fetchAPICollections(
-	pageStart: number = 0,
-	pageSize: number = 15
+	pageStartArg?: number,
+	pageSizeArg?: number
 ): Promise<FetchCollectionsResponse> {
+	const pageStart = pageStartArg === undefined ? 0 : pageStartArg;
+	const pageSize = pageSizeArg === undefined ? 15 : pageSizeArg;
+
 	const q = new URLSearchParams();
 	if (pageStart > 0) {
 		q.set('page-token', pageStart.toString());

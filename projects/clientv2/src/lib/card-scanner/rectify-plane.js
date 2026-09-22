@@ -1,4 +1,7 @@
 import { getCV, findTitleStrips } from './edge-titles.js';
+/**
+ * @param {import('./types.js').ScanImage} image
+ */
 export async function rectifyPlane(image) {
 	const { cv } = await getCV(),
 		scale = Math.min(1, 2200 / image.width),
@@ -72,13 +75,13 @@ export async function rectifyPlane(image) {
 			to = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, w, 0, w, h, 0, h]),
 			M = cv.getPerspectiveTransform(from, to),
 			m = Array.from(M.data64F);
-		const transform = (x, y) => {
+		function transform(x, y) {
 			const z = m[6] * x + m[7] * y + m[8];
 			return [
 				(m[0] * x + m[1] * y + m[2]) / z,
 				(m[3] * x + m[4] * y + m[5]) / z
 			];
-		};
+		}
 		const edges = await findTitleStrips(image),
 			ys = edges.flatMap((l) => [l.y1, l.y2]),
 			minY = Math.max(0, Math.min(...ys) - 200),
@@ -134,7 +137,7 @@ export async function rectifyPlane(image) {
 			quad: quad.p,
 			matrix: n,
 			inverse: inv,
-			toOriginal: (x, y) => {
+			toOriginal: function (x, y) {
 				const z = inv[6] * x + inv[7] * y + inv[8];
 				return [
 					(inv[0] * x + inv[1] * y + inv[2]) / z,

@@ -26,15 +26,19 @@ export function BannerArtwork(props: Props) {
 	useEffect(() => {
 		const element = viewport.current;
 		if (!element) return;
-		const measure = () =>
-			setBounds({
-				width: element.clientWidth,
-				height: element.clientHeight
+		const measuredElement = element;
+		function measure() {
+			return setBounds({
+				width: measuredElement.clientWidth,
+				height: measuredElement.clientHeight
 			});
+		}
 		measure();
 		const observer = new ResizeObserver(measure);
 		observer.observe(element);
-		return () => observer.disconnect();
+		return function () {
+			return observer.disconnect();
+		};
 	}, []);
 
 	const scale =
@@ -63,7 +67,7 @@ export function BannerArtwork(props: Props) {
 			aria-label={label}
 			onPointerDown={
 				onChange
-					? (event) => {
+					? function (event) {
 							if (!scale) return;
 							pointer.current = {
 								x: event.clientX,
@@ -78,7 +82,7 @@ export function BannerArtwork(props: Props) {
 			}
 			onPointerMove={
 				onChange
-					? (event) => {
+					? function (event) {
 							if (!pointer.current) return;
 							const startLeft =
 								-horizontalOverflow *

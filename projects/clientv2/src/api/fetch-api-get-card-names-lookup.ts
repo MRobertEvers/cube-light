@@ -9,7 +9,7 @@ let NAME_LOOKUP: Promise<NameIndexWasm> | undefined;
 
 export function fetchAPINameLookup(): Promise<NameIndexWasm> {
 	if (!NAME_LOOKUP) {
-		NAME_LOOKUP = (async () => {
+		NAME_LOOKUP = (async function () {
 			const [moduleResponse, indexResponse] = await Promise.all([
 				fetchTimeout(`${API_URI}/suggest/card-names/wasm`),
 				fetchTimeout(`${API_URI}/suggest/card-names/index`)
@@ -22,7 +22,7 @@ export function fetchAPINameLookup(): Promise<NameIndexWasm> {
 				indexResponse.arrayBuffer()
 			]);
 			const module = await WebAssembly.instantiate(moduleBytes, {
-				env: { emscripten_notify_memory_growth: () => {} }
+				env: { emscripten_notify_memory_growth: function () {} }
 			});
 			return new NameIndexWasm(
 				module.instance,

@@ -11,21 +11,31 @@ import {
 	sameLine
 } from './photo-match.js';
 
-export async function scanExperimental({
-	url,
-	names,
-	onProgress = () => {},
-	onStage = async () => {},
-	isCancelled = () => false,
-	useGLM = true,
-	verifier = useGLM ? 'glm' : 'none'
-} = {}) {
-	if (!['glm', 'paddle-medium', 'none'].includes(verifier))
-		throw Error('Unknown verifier');
-	if (verifier === 'glm' && !navigator.gpu)
-		throw Error(
-			'The experimental verifier requires a browser with WebGPU.'
-		);
+/**
+ * @typedef {Object} ExperimentalScanOptions
+ * @property {string} url
+ * @property {string[]} [names]
+ * @property {import('./types.js').ProgressCallback} [onProgress]
+ * @property {import('./types.js').CancellationCallback} [isCancelled]
+ * @property {(stage: string, result: object) => void|Promise<void>} [onStage]
+ * @property {'card-aware'|'paddle-only'} [pipeline]
+ *
+ * @param {ExperimentalScanOptions} [options]
+ */
+export async function scanExperimental(options) {
+	let {
+		url,
+		names,
+		onProgress = function () {},
+		onStage = async function () {},
+		isCancelled = function () {
+			return false;
+		},
+		pipeline = 'card-aware'
+	} = options === undefined ? {} : options;
+
+	if (!['card-aware', 'paddle-only'].includes(pipeline))
+		throw Error('Unknown scan pipeline');
 	const started = performance.now();
 	names ||= await (await fetch('/ocr/card-names.json')).json();
 	const passes = [],
@@ -37,13 +47,29 @@ export async function scanExperimental({
 		detThresh: 0.1,
 		boxThresh: 0.3,
 		isCancelled,
-		onProgress: (p) => onProgress({ ...p, phase: 'Read visible titles' })
+		onProgress: function (p) {
+			return onProgress({
+				...p,
+				phase: p.phase || 'Read visible titles'
+			});
+		}
 	});
 	passes.push(baseline);
 	let candidates = matchDetections(baseline.outputs, index).filter(
 		(c) => c.status === 'accepted'
 	);
 	await onStage('baseline', { candidates, pass: baseline });
+	if (pipeline === 'paddle-only')
+		return {
+			engine: 'paddle-text-only',
+			pipeline,
+			names: [...new Set(candidates.map((c) => c.name))].sort(),
+			candidates,
+			passes,
+			totalMs: performance.now() - started,
+			cancelled: isCancelled(),
+			usesCachedProposals: false
+		};
 	const image = await createImageBitmap(await (await fetch(url)).blob());
 	try {
 		const rough = await freshProposals(image, names, {
@@ -54,13 +80,16 @@ export async function scanExperimental({
 		await onStage('proposals', rough);
 		onProgress({ phase: 'Refine printed-name matches' });
 		const refineStart = performance.now(),
-			refined = await refineFontMatches(image, rough.outputs);
+			refined = await refineFontMatches(image, rough.outputs, {
+				onProgress,
+				isCancelled
+			});
 		passes.push({
 			engine: 'font-refinement',
 			totalMs: performance.now() - refineStart,
 			outputs: refined
 		});
-		const add = (rows, minimum, gap, kind) => {
+		function add(rows, minimum, gap, kind) {
 			for (const row of [...rows].sort(
 				(a, b) =>
 					(b.candidates[0]?.score || 0) -
@@ -87,14 +116,14 @@ export async function scanExperimental({
 						margin: a.score - (b?.score || 0)
 					});
 			}
-		};
+		}
 		add(refined, 0.75, 0.12, 'Printed-name font fit');
 		await onStage('font', { candidates, outputs: refined });
 		const lines = await findTitleStrips(image),
 			typical = [...lines].sort((a, b) => b.length - a.length)[
 				Math.min(12, lines.length - 1)
 			].length;
-		const eligible = (row) => {
+		function eligible(row) {
 			const b = bounds(row.poly),
 				cx = b.x + b.w / 2,
 				cy = b.y + b.h / 2,
@@ -120,8 +149,8 @@ export async function scanExperimental({
 					);
 				})
 			);
-		};
-		const distinct = (rows) => {
+		}
+		function distinct(rows) {
 			const kept = [];
 			for (const r of [...rows].sort(
 				(a, b) => b.candidates[0].score - a.candidates[0].score
@@ -140,10 +169,13 @@ export async function scanExperimental({
 					kept.push(r);
 			}
 			return kept;
-		};
+		}
 		const referenceRows = distinct(
 			refined.filter((r) => r.candidates[0].score >= 0.6 && eligible(r))
-		).map((r) => ({ ...r, seeds: r.candidates.map((c) => c.name) }));
+		).map((r) => ({
+			...r,
+			seeds: r.candidates.map((c) => c.name)
+		}));
 		console.log('Fresh reference queries', referenceRows.length);
 		const references = await scanReferenceTitles({
 			image,
@@ -154,14 +186,12 @@ export async function scanExperimental({
 		passes.push(references);
 		add(references.outputs, 0.85, 0.15, 'Printed reference title');
 		await onStage('references', { candidates, pass: references });
-		const verificationRows =
-			verifier !== 'none'
-				? distinct(
-						rough.outputs.filter(
-							(r) => r.candidates[0].score >= 0.5 && eligible(r)
-						)
-					).slice(0, 60)
-				: [];
+		const verificationRows = distinct(
+			rough.outputs.filter(
+				(r) => r.candidates[0].score >= 0.5 && eligible(r)
+			)
+		).slice(0, 60);
+
 		for (const row of verificationRows) {
 			const box = bounds(row.poly),
 				key = row.candidates[0].name;
@@ -181,12 +211,8 @@ export async function scanExperimental({
 		}
 		console.log('Verifier queries', verificationRows.length);
 		if (verificationRows.length) {
-			const readRegions =
-				verifier === 'paddle-medium'
-					? (await import('./paddle-region-reader.js'))
-							.readPaddleRegions
-					: (await import('./catalog-region-reader.js'))
-							.readCatalogRegions;
+			const { readPaddleRegions: readRegions } =
+				await import('./paddle-region-reader.js');
 			const verification = await readRegions(
 				image,
 				verificationRows,
@@ -201,14 +227,13 @@ export async function scanExperimental({
 				candidates,
 				verification.outputs,
 				rough.outputs,
-				verifier === 'paddle-medium' ? 'Paddle v6 medium' : 'GLM'
+				'Paddle v6 medium'
 			);
 			await onStage('verification', { candidates, pass: verification });
 		}
 		return {
-			engine: 'experimental-text-only-' + verifier,
-			verifier,
-			useGLM: verifier === 'glm',
+			engine: 'card-aware-paddle-medium',
+			pipeline,
 			names: [...new Set(candidates.map((c) => c.name))].sort(),
 			candidates,
 			passes,

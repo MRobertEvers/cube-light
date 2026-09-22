@@ -596,9 +596,8 @@ entry_distance(const char* query, size_t n, uint32_t e, uint32_t bound)
     int prefix = n >= 4 && entry->length > n;
     uint32_t difference =
         entry->length > n ? entry->length - (uint32_t)n : (uint32_t)n - entry->length;
-    return prefix || difference <= bound
-               ? osa_distance(query, n, key, entry->length, bound, prefix)
-               : bound + 1;
+    return prefix || difference <= bound ? osa_distance(query, n, key, entry->length, bound, prefix)
+                                         : bound + 1;
 }
 
 static void

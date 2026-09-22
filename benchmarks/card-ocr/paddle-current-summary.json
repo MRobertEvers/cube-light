@@ -1,0 +1,85 @@
+{
+  "date": "2026-09-22T01:59:11.252Z",
+  "sourceCommit": "468f444228439b67752eb91a291dd236e7a6e964",
+  "note": "Working tree after pipeline/progress changes. One development photo; instrumented run, not a controlled speed comparison.",
+  "environment": {
+    "headless": true,
+    "pipeline": "card-aware",
+    "webGPUHidden": true,
+    "bundle": "experimental-scanner-Cl74phA6.js",
+    "browser": "153.0.8010.53",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M4 Max",
+    "ramBytes": 51539607552,
+    "swapBefore": "vm.swapusage: total = 1024.00M  used = 229.44M  free = 794.56M  (encrypted)",
+    "origin": "http://127.0.0.1:4174",
+    "swapAfter": "vm.swapusage: total = 1024.00M  used = 229.44M  free = 794.56M  (encrypted)"
+  },
+  "totalMs": 227331.59999996424,
+  "correctNames": 12,
+  "correctTitles": 17,
+  "falsePositives": [],
+  "peakSummedRssBytes": 4526325760,
+  "longTasks": {
+    "count": 537,
+    "totalMs": 145720,
+    "blockingMs": 118870,
+    "maxMs": 4140
+  },
+  "timings": [
+    {
+      "engine": "paddle",
+      "totalMs": 55118.5
+    },
+    {
+      "engine": "font-proposals",
+      "totalMs": 131368.39999997616
+    },
+    {
+      "engine": "font-refinement",
+      "totalMs": 19906.5
+    },
+    {
+      "engine": "printed-reference-title-matching",
+      "totalMs": 7703.899999976158
+    },
+    {
+      "engine": "paddle-medium-catalog-verifier",
+      "totalMs": 12296.300000011921
+    }
+  ],
+  "progressPhases": [
+    "Prepare text reader",
+    "Read visible titles",
+    "Build title index: light",
+    "Title proposals: light",
+    "Build title index: ink",
+    "Title proposals: ink",
+    "Build title index: plane",
+    "Straighten card plane",
+    "Title proposals: plane",
+    "Refine printed-name matches",
+    "Load printed titles",
+    "Compare printed titles",
+    "Prepare verifier",
+    "Verify ambiguous names"
+  ],
+  "errors": [],
+  "forbidden": [],
+  "textOnly": {
+    "totalMs": 78913.90000003576,
+    "correctNames": 7,
+    "correctTitles": 10,
+    "falsePositives": [],
+    "peakSummedRssBytes": 2499297280,
+    "longTasks": {
+      "count": 0,
+      "totalMs": 0,
+      "blockingMs": 0,
+      "maxMs": 0
+    },
+    "errors": [],
+    "forbidden": []
+  }
+}

@@ -1,7 +1,7 @@
 const path = require('path');
 const WebpackDevServer = require('webpack-dev-server');
 const webpack = require('webpack');
-const parseArguments = require('./dev-server-options');
+const { parseArguments } = require('./dev-server-options');
 
 const host = '127.0.0.1';
 const port = 3000;

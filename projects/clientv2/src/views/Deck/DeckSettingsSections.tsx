@@ -256,8 +256,11 @@ export function CropSection(props: SectionProps) {
 	const firstGroup = firstGroupName
 		? data.deck.cardCategories[firstGroupName]
 		: undefined;
-	const updateCrop = (variant: keyof BannerCrop, frame: BannerFrame) =>
-		dispatch(appearanceActions.changeCrop({ ...crop, [variant]: frame }));
+	function updateCrop(variant: keyof BannerCrop, frame: BannerFrame) {
+		return dispatch(
+			appearanceActions.changeCrop({ ...crop, [variant]: frame })
+		);
+	}
 	return (
 		<section
 			className={`${styles['editor']} ${styles['crop-editor']}`}
@@ -444,8 +447,9 @@ export function BlendSection(props: SectionProps) {
 	const { deckId, data, view } = props;
 	const dispatch = useAppDispatch();
 	const { blend, status, cropChanged } = view;
-	const change = (update: Partial<BannerBlendConfig>) =>
-		dispatch(appearanceActions.changeBlend({ ...blend, ...update }));
+	function change(update: Partial<BannerBlendConfig>) {
+		return dispatch(appearanceActions.changeBlend({ ...blend, ...update }));
+	}
 	const busy = status.blend.saving || status.crop.saving;
 	const art = data.icon;
 	// A selection drawn on other artwork does not apply; the editor starts fresh for this art.
@@ -541,7 +545,9 @@ export function BlendSection(props: SectionProps) {
 						type="checkbox"
 						checked={blend.contentAware}
 						onChange={(event) =>
-							change({ contentAware: event.target.checked })
+							change({
+								contentAware: event.target.checked
+							})
 						}
 					/>
 					Place the transition away from detailed areas
@@ -556,7 +562,9 @@ export function BlendSection(props: SectionProps) {
 						step="0.01"
 						value={blend.position}
 						onChange={(event) =>
-							change({ position: Number(event.target.value) })
+							change({
+								position: Number(event.target.value)
+							})
 						}
 					/>
 				</label>
@@ -570,7 +578,9 @@ export function BlendSection(props: SectionProps) {
 						step="0.01"
 						value={blend.width}
 						onChange={(event) =>
-							change({ width: Number(event.target.value) })
+							change({
+								width: Number(event.target.value)
+							})
 						}
 					/>
 				</label>

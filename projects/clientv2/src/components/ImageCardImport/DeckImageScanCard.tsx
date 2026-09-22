@@ -46,7 +46,7 @@ export function statusText(task: ImageScanTask): string {
 		case 'queued':
 			return 'Waiting in scan queue';
 		case 'loading':
-			return 'Loading OCR model';
+			return task.phaseLabel || 'Preparing scan';
 		case 'scanning':
 			return task.phaseLabel
 				? `${task.phaseLabel} · ${task.completed}%`
@@ -182,14 +182,18 @@ export function ImageScanContent(props: { task: ImageScanTask }) {
 	useEffect(() => {
 		const preview = previewRef.current;
 		if (!preview) return;
-		const observer = new ResizeObserver(([entry]) => {
+		const observer = new ResizeObserver((values) => {
+			const [entry] = values;
+
 			setPreviewSize({
 				width: entry.contentRect.width,
 				height: entry.contentRect.height
 			});
 		});
 		observer.observe(preview);
-		return () => observer.disconnect();
+		return function () {
+			return observer.disconnect();
+		};
 	}, []);
 
 	useEffect(() => {
@@ -202,12 +206,12 @@ export function ImageScanContent(props: { task: ImageScanTask }) {
 				if (active)
 					setError('Could not load card names for manual entry');
 			});
-		return () => {
+		return function () {
 			active = false;
 		};
 	}, []);
 
-	const add = async (name: string, count: number): Promise<boolean> => {
+	async function add(name: string, count: number): Promise<boolean> {
 		setAdding(true);
 		setError(null);
 		try {
@@ -223,14 +227,16 @@ export function ImageScanContent(props: { task: ImageScanTask }) {
 		} finally {
 			setAdding(false);
 		}
-	};
+	}
 
 	return (
 		<>
 			<div className={modalStyles.progress}>
 				<progress
 					value={
-						task.status === 'queued' || task.status === 'loading'
+						task.status === 'queued' ||
+						task.status === 'loading' ||
+						task.progressIndeterminate
 							? undefined
 							: task.completed
 					}
@@ -468,11 +474,13 @@ function ImageScanDetails(props: { task: ImageScanTask; onClose: () => void }) {
 	const { task, onClose } = props;
 
 	useEffect(() => {
-		const onKeyDown = (event: KeyboardEvent) => {
+		function onKeyDown(event: KeyboardEvent) {
 			if (event.key === 'Escape') onClose();
-		};
+		}
 		window.addEventListener('keydown', onKeyDown);
-		return () => window.removeEventListener('keydown', onKeyDown);
+		return function () {
+			return window.removeEventListener('keydown', onKeyDown);
+		};
 	}, [onClose]);
 
 	return createPortal(
@@ -598,7 +606,15 @@ export function DeckImageScanCard(props: { deckId: string }) {
 						{totalAdded(task)} added
 					</span>
 					{task.total > 0 && (
-						<progress value={task.completed} max={task.total} />
+						<progress
+							aria-label={task.phaseLabel || 'Scan progress'}
+							value={
+								task.progressIndeterminate
+									? undefined
+									: task.completed
+							}
+							max={task.total}
+						/>
 					)}
 					<span className={styles.cardFoot}>
 						Click to inspect extracted cards

@@ -67,7 +67,7 @@ function appendCandidates(items: OcrResultItem[], region: ImageRegion): void {
 	}
 }
 
-self.onmessage = (event: MessageEvent<InputMessage>) => {
+self.onmessage = function (event: MessageEvent<InputMessage>) {
 	const message = event.data;
 	try {
 		if (message.type === 'initialize') {

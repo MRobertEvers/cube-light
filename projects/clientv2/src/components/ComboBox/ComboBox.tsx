@@ -81,7 +81,7 @@ export function ComboBox<T = string>(props: ComboBoxProps<T>) {
 			}
 
 			window.addEventListener('click', onClick);
-			return () => {
+			return function () {
 				window.removeEventListener('click', onClick);
 			};
 		}

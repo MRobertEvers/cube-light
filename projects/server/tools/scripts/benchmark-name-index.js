@@ -17,9 +17,12 @@ const wasmPath = path.join(root, 'build/src/public/name-index.wasm');
 
 // Transpile the real client lookup modules so this benchmark exercises the
 // implementation used in the browser, without requiring a browser test runner.
+/**
+ * @param {'json'|'wasm'} mode
+ */
 function loadClientTypescript(mode) {
 	const ts = require('typescript');
-	require.extensions['.ts'] = (module, filename) => {
+	require.extensions['.ts'] = function (module, filename) {
 		const source = fs.readFileSync(filename, 'utf8');
 		const compiled = ts.transpileModule(source, {
 			compilerOptions: {
@@ -41,6 +44,9 @@ function memory() {
 	return { rss, heapUsed, external, arrayBuffers };
 }
 
+/**
+ * @param {'json'|'wasm'} mode
+ */
 async function worker(mode) {
 	const queries = JSON.parse(fs.readFileSync(0, 'utf8'));
 	const implementation = loadClientTypescript(mode);
@@ -54,19 +60,23 @@ async function worker(mode) {
 	let linearMemory = 0;
 	if (mode === 'json') {
 		const tree = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-		lookup = (query) => implementation(10, query, tree);
+		lookup = function (query) {
+			return implementation(10, query, tree);
+		};
 	} else {
 		const module = await WebAssembly.instantiate(
 			fs.readFileSync(wasmPath),
 			{
-				env: { emscripten_notify_memory_growth: () => {} }
+				env: { emscripten_notify_memory_growth: function () {} }
 			}
 		);
 		const index = new implementation(
 			module.instance,
 			fs.readFileSync(indexPath)
 		);
-		lookup = (query) => index.getFirstNMatches(10, query);
+		lookup = function (query) {
+			return index.getFirstNMatches(10, query);
+		};
 		linearMemory = module.instance.exports.memory.buffer.byteLength;
 	}
 	const initMs = Number(process.hrtime.bigint() - start) / 1e6;
@@ -100,6 +110,9 @@ async function worker(mode) {
 	);
 }
 
+/**
+ * @param {Record<string, unknown>} tree
+ */
 function makeQueries(tree) {
 	const names = [];
 	function visit(branch, prefix) {
@@ -148,6 +161,10 @@ function makeQueries(tree) {
 	};
 }
 
+/**
+ * @param {'json'|'wasm'} mode
+ * @param {string[]} queries
+ */
 function runWorker(mode, queries) {
 	const result = spawnSync(
 		process.execPath,
@@ -164,12 +181,22 @@ function runWorker(mode, queries) {
 	return JSON.parse(result.stdout);
 }
 
+/**
+ * @param {number} bytes
+ */
 function mb(bytes) {
 	return (bytes / 1024 / 1024).toFixed(2);
 }
+/**
+ * @param {string} filename
+ */
 function gzipSize(filename) {
 	return zlib.gzipSync(fs.readFileSync(filename)).length;
 }
+/**
+ * @param {string} label
+ * @param {number} bytes
+ */
 function row(label, bytes) {
 	const filename =
 		label === 'JSON' ? jsonPath : label === 'Index' ? indexPath : wasmPath;
@@ -218,7 +245,7 @@ async function main() {
 	const legacy = loadClientTypescript('json');
 	const NameIndexWasm = loadClientTypescript('wasm');
 	const module = await WebAssembly.instantiate(fs.readFileSync(wasmPath), {
-		env: { emscripten_notify_memory_growth: () => {} }
+		env: { emscripten_notify_memory_growth: function () {} }
 	});
 	const index = new NameIndexWasm(
 		module.instance,
@@ -232,7 +259,9 @@ async function main() {
 		)
 			verificationMismatches++;
 	}
-	const delta = (result, key) => mb(result.after[key] - result.before[key]);
+	function delta(result, key) {
+		return mb(result.after[key] - result.before[key]);
+	}
 	const report = [
 		`# Name lookup benchmark`,
 		``,

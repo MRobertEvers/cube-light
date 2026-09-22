@@ -45,28 +45,35 @@ type OnCardEvent = (event: CardInteractionEvent) => void;
 /** Thumbnails shown in a collapsed row; more printings than this are summed in the pill. */
 const MAX_ROW_THUMBNAILS = 3;
 
-const thumbnailOf = (card: FetchAPIDeckCardResponse) =>
-	card.images?.small ?? card.image;
+function thumbnailOf(card: FetchAPIDeckCardResponse) {
+	return card.images?.small ?? card.image;
+}
 
 /** Hover and focus handlers that preview `card` beside the element. */
 function previewHandlers(
 	card: FetchAPIDeckCardResponse,
 	onCardEvent?: OnCardEvent
 ) {
-	const show = (node: HTMLElement) => {
+	function show(node: HTMLElement) {
 		const bounds = node.getBoundingClientRect();
 		onCardEvent?.({
 			type: CardInteractionEventType.HOVER,
 			payload: { card, position: { x: bounds.left, y: bounds.bottom } }
 		});
-	};
-	const hide = () =>
-		onCardEvent?.({ type: CardInteractionEventType.LEAVE, payload: card });
+	}
+	function hide() {
+		return onCardEvent?.({
+			type: CardInteractionEventType.LEAVE,
+			payload: card
+		});
+	}
 	return {
-		onMouseEnter: (event: React.MouseEvent<HTMLElement>) =>
-			show(event.currentTarget),
-		onFocus: (event: React.FocusEvent<HTMLElement>) =>
-			show(event.currentTarget),
+		onMouseEnter: function (event: React.MouseEvent<HTMLElement>) {
+			return show(event.currentTarget);
+		},
+		onFocus: function (event: React.FocusEvent<HTMLElement>) {
+			return show(event.currentTarget);
+		},
 		onMouseLeave: hide,
 		onBlur: hide
 	};
@@ -264,14 +271,17 @@ export function DecklistGroup(props: DecklistGroupProps) {
 	const { groups, ...rest } = props;
 	return (
 		<>
-			{groups.map(({ groupData, name }) => (
-				<DecklistCategory
-					key={name}
-					name={name}
-					group={groupData}
-					{...rest}
-				/>
-			))}
+			{groups.map((options) => {
+				const { groupData, name } = options;
+				return (
+					<DecklistCategory
+						key={name}
+						name={name}
+						group={groupData}
+						{...rest}
+					/>
+				);
+			})}
 		</>
 	);
 }

@@ -19,8 +19,8 @@ export function protectionLabels(
 	width: number,
 	height: number
 ): Uint8Array {
-	const labels = new Uint8Array(width * height);
 	const { rect } = protection;
+	const labels = new Uint8Array(width * height);
 	if (rect) {
 		labels.fill(GC_BGD);
 		const x0 = Math.floor(rect.x * width),
@@ -34,7 +34,7 @@ export function protectionLabels(
 	for (const stroke of protection.strokes) {
 		const value = stroke.label === 'foreground' ? GC_FGD : GC_BGD;
 		const radius = Math.max(0.75, stroke.radius * width);
-		const disc = (cx: number, cy: number) => {
+		function disc(cx: number, cy: number) {
 			for (
 				let y = Math.max(0, Math.floor(cy - radius));
 				y <= Math.min(height - 1, Math.ceil(cy + radius));
@@ -50,7 +50,7 @@ export function protectionLabels(
 						radius * radius
 					)
 						labels[y * width + x] = value;
-		};
+		}
 		const points = stroke.points;
 		for (let i = 0; i + 1 < points.length; i += 2) {
 			const x = points[i] * width,

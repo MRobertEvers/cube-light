@@ -173,17 +173,19 @@ export function CardPreviewModal(props: CardPreviewModalProps) {
 			.catch(() => {
 				// The image alone is still a usable preview.
 			});
-		return () => {
+		return function () {
 			cancelled = true;
 		};
 	}, [uuid]);
 
 	useEffect(() => {
-		const closeOnEscape = (event: KeyboardEvent) => {
+		function closeOnEscape(event: KeyboardEvent) {
 			if (event.key === 'Escape') onClose();
-		};
+		}
 		window.addEventListener('keydown', closeOnEscape);
-		return () => window.removeEventListener('keydown', closeOnEscape);
+		return function () {
+			return window.removeEventListener('keydown', closeOnEscape);
+		};
 	}, [onClose]);
 
 	if (!card) return null;

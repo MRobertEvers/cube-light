@@ -2,14 +2,23 @@ import { bounds, sameLine } from './photo-match.js';
 
 // Development-fixture heuristic, not calibrated confidence. Both sources must
 // independently rank the same catalog name first at the same image location.
+/**
+ * @param {Array<{name: string, status: string, text: string, poly: import('./types.js').Polygon, box: import('./types.js').Bounds, evidence?: object}>} existing
+ * @param {Array<{poly: import('./types.js').Polygon, result?: {ranked?: Array<{name: string, rawTokenSupport: number}>, searchGap: number}}>} verifierRows
+ * @param {Array<{poly: import('./types.js').Polygon, candidates?: import('./types.js').NameMatch[]}>} opticalRows
+ * @param {string} [verifierArg]
+ */
 export function addTextConsensus(
 	existing,
-	glmRows,
+	verifierRows,
 	opticalRows,
-	verifier = 'GLM'
+	verifierArg
 ) {
+	const verifier =
+		verifierArg === undefined ? 'Paddle v6 medium' : verifierArg;
+
 	const candidates = [...existing];
-	for (const row of glmRows) {
+	for (const row of verifierRows) {
 		const best = row.result?.ranked?.[0];
 		if (
 			!best ||

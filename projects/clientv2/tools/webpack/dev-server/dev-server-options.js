@@ -1,6 +1,9 @@
 const path = require('path');
 const argparse = require('argparse');
 
+/**
+ * @param {{webpackConfig?: string}} baseConfig
+ */
 function parseArguments(baseConfig) {
 	let newConfig = {
 		...baseConfig
@@ -27,4 +30,4 @@ function parseArguments(baseConfig) {
 	return newConfig;
 }
 
-module.exports = parseArguments;
+module.exports = { parseArguments };

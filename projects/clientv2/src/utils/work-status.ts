@@ -1,3 +1,4 @@
+import { phaseForOverall } from './scan-progress';
 import type { WorkItem } from 'src/api/fetch-api-work';
 import type { ImageScanTask } from './image-import-queue';
 import { useImageImportQueue } from './use-image-import-queue';
@@ -15,12 +16,12 @@ export function workStatusText(item: WorkItem, local?: ImageScanTask): string {
 		case 'running':
 			if (local) {
 				if (local.status === 'scanning')
-					return `Scanning here · ${local.completed} of ${local.total} regions`;
+					return local.phaseLabel || 'Scanning here';
 				if (local.status === 'adding') return 'Adding identified cards';
 				return 'Starting the scan here';
 			}
 			return item.progress.total > 0
-				? `Scanning on a computer · ${item.progress.completed} of ${item.progress.total} regions`
+				? `${phaseForOverall(item.pipeline ?? 'card-aware', item.progress.completed, item.progress.total)} on a computer · ${Math.round((item.progress.completed / item.progress.total) * 100)}%`
 				: 'Starting on a computer';
 		case 'completed':
 			return item.cardsAdded === 1
@@ -36,7 +37,7 @@ export function workProgress(
 	item: WorkItem,
 	local?: ImageScanTask
 ): number | null {
-	if (item.status !== 'running') return null;
+	if (item.status !== 'running' || local?.progressIndeterminate) return null;
 	const { completed, total } = local ?? item.progress;
 	return total > 0 ? completed / total : null;
 }

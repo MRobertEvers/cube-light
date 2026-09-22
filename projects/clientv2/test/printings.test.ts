@@ -50,11 +50,10 @@ test('keeps different printings of a name apart and notes repeated ones', () => 
 		].join('\n')
 	);
 	assert.deepEqual(
-		parsed.cards.map(({ count, setCode, lines }) => [
-			count,
-			setCode,
-			lines
-		]),
+		parsed.cards.map((options) => {
+			const { count, setCode, lines } = options;
+			return [count, setCode, lines];
+		}),
 		[
 			[3, 'M10', [1, 3]],
 			[1, '2XM', [2]]
@@ -75,12 +74,10 @@ test('a line without a set uses the printing given for that name', () => {
 		['Lightning Bolt', '3 Consider', '2 Lightning Bolt (M10)'].join('\n')
 	);
 	assert.deepEqual(
-		parsed.cards.map(({ name, count, setCode, lines }) => [
-			name,
-			count,
-			setCode,
-			lines
-		]),
+		parsed.cards.map((options) => {
+			const { name, count, setCode, lines } = options;
+			return [name, count, setCode, lines];
+		}),
 		[
 			['Consider', 3, undefined, [2]],
 			['Lightning Bolt', 3, 'M10', [1, 3]]

@@ -30,22 +30,30 @@ export interface SqliteTransaction {
 export class SqliteDatabase {
 	private readonly db: NativeDatabase;
 
-	constructor(filepath: string, readOnly = false) {
+	constructor(filepath: string, readOnlyArg?: boolean) {
+		const readOnly = readOnlyArg === undefined ? false : readOnlyArg;
+
 		this.db = new DatabaseSync(filepath, { readOnly });
 	}
 
-	async all<T>(sql: string, params: unknown[] = []): Promise<T[]> {
+	async all<T>(sql: string, paramsArg?: unknown[]): Promise<T[]> {
+		const params = paramsArg === undefined ? [] : paramsArg;
+
 		return this.db.prepare(sql).all(...params) as T[];
 	}
 
-	async get<T>(sql: string, params: unknown[] = []): Promise<T | undefined> {
+	async get<T>(sql: string, paramsArg?: unknown[]): Promise<T | undefined> {
+		const params = paramsArg === undefined ? [] : paramsArg;
+
 		return this.db.prepare(sql).get(...params) as T | undefined;
 	}
 
 	async run(
 		sql: string,
-		params: unknown[] = []
+		paramsArg?: unknown[]
 	): Promise<{ lastID: number; changes: number }> {
+		const params = paramsArg === undefined ? [] : paramsArg;
+
 		const result = this.db.prepare(sql).run(...params);
 		return {
 			lastID: Number(result.lastInsertRowid),
@@ -62,14 +70,22 @@ export class SqliteDatabase {
 	}
 
 	transaction<T>(callback: (tx: SqliteTransaction) => T): T {
+		const instance = this;
+
 		this.db.exec('BEGIN');
 		const tx: SqliteTransaction = {
-			all: <R>(sql: string, params: unknown[] = []) =>
-				this.db.prepare(sql).all(...params) as R[],
-			get: <R>(sql: string, params: unknown[] = []) =>
-				this.db.prepare(sql).get(...params) as R | undefined,
-			run: (sql: string, params: unknown[] = []) => {
-				const result = this.db.prepare(sql).run(...params);
+			all: function <R>(sql: string, paramsArg?: unknown[]) {
+				const params = paramsArg === undefined ? [] : paramsArg;
+				return instance.db.prepare(sql).all(...params) as R[];
+			},
+			get: function <R>(sql: string, paramsArg?: unknown[]) {
+				const params = paramsArg === undefined ? [] : paramsArg;
+				return instance.db.prepare(sql).get(...params) as R | undefined;
+			},
+			run: function (sql: string, paramsArg?: unknown[]) {
+				const params = paramsArg === undefined ? [] : paramsArg;
+
+				const result = instance.db.prepare(sql).run(...params);
 				return {
 					lastID: Number(result.lastInsertRowid),
 					changes: Number(result.changes)

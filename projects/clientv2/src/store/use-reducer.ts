@@ -19,7 +19,7 @@ export function useReducer<T>(
 		}
 
 		store.reducerManager.add(key, reducer);
-		return () => {
+		return function () {
 			store.reducerManager.remove(key);
 		};
 	}, []);

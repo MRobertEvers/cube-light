@@ -142,9 +142,10 @@ export class BannerWasm {
 		let module: BannerWasm | null = null;
 		const { instance } = await WebAssembly.instantiate(bytes, {
 			env: {
-				bb_progress: (stage: number) =>
-					module?.onStage?.(STAGES[stage]),
-				emscripten_notify_memory_growth: () => {}
+				bb_progress: function (stage: number) {
+					return module?.onStage?.(STAGES[stage]);
+				},
+				emscripten_notify_memory_growth: function () {}
 			}
 		});
 		module = new BannerWasm(instance);
@@ -153,25 +154,36 @@ export class BannerWasm {
 
 	/** Runs `body` with scratch allocations, freeing them afterwards even on failure. */
 	private scope<R>(body: (alloc: Allocator) => R): R {
+		const instance = this;
+
 		const pointers: number[] = [];
-		const memory = () => this.wasm.memory.buffer;
-		const alloc = <T extends Typed>(
+		function memory() {
+			return instance.wasm.memory.buffer;
+		}
+		function alloc<T extends Typed>(
 			type: TypedConstructor<T>,
 			length: number,
 			init?: ArrayLike<number>
-		): Allocation<T> => {
-			const pointer = this.wasm.malloc(
+		): Allocation<T> {
+			const pointer = instance.wasm.malloc(
 				Math.max(1, length * type.BYTES_PER_ELEMENT)
 			);
 			if (!pointer)
 				throw new Error('The banner processor ran out of memory.');
 			pointers.push(pointer);
 			// Views are recreated on each access: memory growth detaches earlier ArrayBuffers.
-			const view = () => new type(memory(), pointer, length);
+			function view() {
+				return new type(memory(), pointer, length);
+			}
 			if (init) view().set(init);
 			else view().fill(0);
-			return { pointer, read: () => view().slice() as T };
-		};
+			return {
+				pointer,
+				read: function () {
+					return view().slice() as T;
+				}
+			};
+		}
 		try {
 			return body(alloc);
 		} finally {
@@ -236,9 +248,11 @@ export class BannerWasm {
 		w: number,
 		h: number,
 		config: BannerBlendConfig,
-		subject: SubjectFrame | null = null,
+		subjectArg?: SubjectFrame | null,
 		diagnostics?: { path: Float32Array }
 	): Uint8ClampedArray {
+		const subject = subjectArg === undefined ? null : subjectArg;
+
 		const [r, g, b] = [1, 3, 5].map((i) =>
 			parseInt(config.surface.slice(i, i + 2), 16)
 		);
