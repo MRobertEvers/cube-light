@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Small production static server for the built client. Use HTTPS at a reverse
-// proxy for LAN access; localhost itself is a secure context for WebGPU.
+// proxy for LAN access. Retained hashed assets keep in-flight tabs compatible.
 import http from "node:http";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
@@ -10,7 +10,9 @@ const root = path.resolve(
     process.env.CLIENT_DIST_ROOT ||
       fileURLToPath(new URL("../projects/clientv2/dist/", import.meta.url)),
   ),
-  port = Number(process.env.PORT || 3000),
+  retainedAssets = process.env.CLIENT_ASSET_ROOT
+    ? path.resolve(process.env.CLIENT_ASSET_ROOT) : null,
+  port = Number(process.env.PORT ?? 3000),
   host = process.env.HOST || "127.0.0.1";
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -46,17 +48,34 @@ const server = http.createServer(async (req, res) => {
       info = await stat(file);
       if (!info.isFile()) throw Error("directory");
     } catch {
-      if (
+      info = undefined;
+      // Only immutable build assets may outlive their release. Never resurrect
+      // removed model files or serve stale HTML from this fallback directory.
+      if (retainedAssets && pathname.startsWith("/assets/")) {
+        const retainedFile = path.resolve(retainedAssets, pathname.slice("/assets/".length));
+        if (retainedFile.startsWith(retainedAssets + path.sep)) {
+          try {
+            const retainedInfo = await stat(retainedFile);
+            if (retainedInfo.isFile()) {
+              file = retainedFile;
+              info = retainedInfo;
+            }
+          } catch {}
+        }
+      }
+      if (!info && (
         pathname.startsWith("/ocr/") ||
         pathname.startsWith("/assets/") ||
         path.extname(pathname)
-      ) {
+      )) {
         res.writeHead(404);
         res.end("Not found");
         return;
       }
-      file = path.join(root, "index.html");
-      info = await stat(file);
+      if (!info) {
+        file = path.join(root, "index.html");
+        info = await stat(file);
+      }
     }
     const headers = {
       "Content-Type": types[path.extname(file)] || "application/octet-stream",
@@ -94,5 +113,5 @@ const server = http.createServer(async (req, res) => {
   }
 });
 server.listen(port, host, () =>
-  console.log(`Client v2 production server: http://${host}:${port}`),
+  console.log(`Client v2 production server: http://${host}:${server.address().port}`),
 );
