@@ -49,13 +49,19 @@ export function SuggestionInput(props: SuggestionInputProps) {
 		indicator,
 		listLabel
 	} = props;
-	const [activeIndex, setActiveIndex] = useState(-1);
+	const [active, setActive] = useState({ key: '', index: -1 });
 	const listRef = useRef<HTMLUListElement>(null);
 	const listId = useId();
 	const showSuggestions = open && suggestions.length > 0;
 	const suggestionsKey = suggestions.join('\n');
+	const activeIndex =
+		active.key === suggestionsKey && active.index < suggestions.length
+			? active.index
+			: -1;
 
-	useEffect(() => setActiveIndex(-1), [suggestionsKey]);
+	function resetActive() {
+		setActive({ key: suggestionsKey, index: -1 });
+	}
 
 	useEffect(() => {
 		if (showSuggestions && activeIndex >= 0) {
@@ -69,7 +75,7 @@ export function SuggestionInput(props: SuggestionInputProps) {
 	function select(suggestion: string, keepFocusArg?: boolean) {
 		const keepFocus = keepFocusArg === undefined ? true : keepFocusArg;
 
-		setActiveIndex(-1);
+		resetActive();
 		onSelect(suggestion, keepFocus);
 	}
 
@@ -102,7 +108,7 @@ export function SuggestionInput(props: SuggestionInputProps) {
 				onFocus={() => onOpenChange(true)}
 				onBlur={() => onOpenChange(false)}
 				onChange={(event) => {
-					setActiveIndex(-1);
+					resetActive();
 					onChange(event.target.value);
 				}}
 				onKeyDown={(event) => {
@@ -117,12 +123,25 @@ export function SuggestionInput(props: SuggestionInputProps) {
 					) {
 						event.preventDefault();
 						onOpenChange(true);
-						setActiveIndex((current) => {
+						setActive((current) => {
+							const currentIndex =
+								current.key === suggestionsKey
+									? current.index
+									: -1;
 							if (event.key === 'ArrowDown')
-								return (current + 1) % suggestions.length;
-							return current <= 0
-								? suggestions.length - 1
-								: current - 1;
+								return {
+									key: suggestionsKey,
+									index:
+										(currentIndex + 1) %
+										suggestions.length
+								};
+							return {
+								key: suggestionsKey,
+								index:
+									currentIndex <= 0
+										? suggestions.length - 1
+										: currentIndex - 1
+							};
 						});
 					} else if (
 						event.key === 'Enter' &&

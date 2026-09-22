@@ -7,10 +7,7 @@ import { createResponseHandler } from '../../../../workers/utils/messageToolkit'
 import { DeckWorkerMessages } from '../../../../workers/deck.worker.messages';
 import { Button } from 'src/components/Button/Button';
 import { HeaderBackButton } from 'src/components/BackLink/BackLink';
-import {
-	HeaderBackSlot,
-	HeaderBackSlotContext
-} from 'src/components/Header/HeaderBackSlot';
+import { HeaderBackSlot } from 'src/components/Header/HeaderBackSlot';
 import { Counter } from 'src/components/Counter/Counter';
 import { SuggestionInput } from 'src/components/SuggestionInput/SuggestionInput';
 import { useAsyncReducer } from 'src/hooks/useAsyncReducer';
@@ -55,9 +52,6 @@ export function AddCard(props: AddCardProps) {
 	const submitStartedAt = useRef(0);
 	const hintId = useId();
 	const errorId = useId();
-	// State, not a ref, so the back button portals in once the slot mounts.
-	const [backSlot, setBackSlot] = useState<HTMLElement | null>(null);
-
 	useEffect(() => {
 		const previousFocus = document.activeElement as HTMLElement | null;
 		addItemInputRef.current?.focus();
@@ -214,20 +208,20 @@ export function AddCard(props: AddCardProps) {
 				}
 			}}
 		>
-			<HeaderBackSlotContext.Provider value={backSlot}>
-				<header className={styles['top-bar']}>
-					<HeaderBackSlot ref={setBackSlot} />
-					<h2 id="add-card-title">Add a card</h2>
+			<header className={styles['top-bar']}>
+				<HeaderBackSlot>
 					{/* Phones fill the screen and close from the top bar, so Cancel hides. */}
 					<HeaderBackButton
+						inline
 						label="Close add a card"
 						onClick={() => {
 							if (!isSubmitting)
 								onEvent({ type: AddCardEventType.CLOSE });
 						}}
 					/>
-				</header>
-			</HeaderBackSlotContext.Provider>
+				</HeaderBackSlot>
+				<h2 id="add-card-title">Add a card</h2>
+			</header>
 			<div className={styles['body']}>
 				<p className={styles['intro']}>
 					Search for a card, then choose how many to add.

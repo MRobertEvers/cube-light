@@ -311,7 +311,6 @@ export function Deck(props: DeckProps) {
 				item.deck?.deckId === deckId && item.status === 'completed'
 		)
 		.reduce((total, item) => total + item.cardsAdded, 0);
-	const nameInputRef = useRef<HTMLInputElement>(null);
 	const draft = detailsDraft?.deckId === deckId ? detailsDraft : null;
 	const name = draft?.name ?? data?.name ?? '';
 	const bannerCards = data?.cards.filter((card) => !!card.art) ?? [];
@@ -394,10 +393,6 @@ export function Deck(props: DeckProps) {
 			return document.removeEventListener('visibilitychange', onVisible);
 		};
 	}, [refreshDeck]);
-
-	useEffect(() => {
-		if (showDetailsModal) nameInputRef.current?.focus();
-	}, [showDetailsModal]);
 
 	const savePrintings = useCallback(
 		async (edit: DeckCardsEdit) => {
@@ -489,7 +484,11 @@ export function Deck(props: DeckProps) {
 				/>
 			)}
 			{managing ? (
-				<Modal extraWide fullScreenOnMobile>
+				<Modal
+					key={managing.name}
+					extraWide
+					fullScreenOnMobile
+				>
 					<ManagePrintings
 						group={managing}
 						onSave={savePrintings}
@@ -497,7 +496,11 @@ export function Deck(props: DeckProps) {
 					/>
 				</Modal>
 			) : viewEditCard ? (
-				<Modal extraWide fullScreenOnMobile>
+				<Modal
+					key={viewEditCard.uuid}
+					extraWide
+					fullScreenOnMobile
+				>
 					<CardPreviewModal
 						onClose={() => dispatch(Actions.setEditCard(null))}
 						card={viewEditCard}
@@ -535,7 +538,7 @@ export function Deck(props: DeckProps) {
 						<div className={styles['deck-details-fields']}>
 							<label htmlFor="edit-deck-name">Deck name</label>
 							<input
-								ref={nameInputRef}
+								autoFocus
 								id="edit-deck-name"
 								value={name}
 								disabled={isSaving}

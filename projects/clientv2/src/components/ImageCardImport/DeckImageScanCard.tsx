@@ -11,6 +11,7 @@ import { useWorkQueue } from 'src/utils/work-queue';
 import { workProgress, workStatusText } from 'src/utils/work-status';
 import { type ImageRegion } from 'src/utils/card-image-ocr';
 import { LogoInkwellPulse } from 'src/components/LogoInkwellPulse/LogoInkwellPulse';
+import { useDocumentScrollLock } from 'src/hooks/useDocumentScrollLock';
 import modalStyles from './image-card-import.module.css';
 import styles from './deck-image-scan-card.module.css';
 
@@ -472,6 +473,7 @@ export function ImageScanContent(props: { task: ImageScanTask }) {
 
 function ImageScanDetails(props: { task: ImageScanTask; onClose: () => void }) {
 	const { task, onClose } = props;
+	useDocumentScrollLock();
 
 	useEffect(() => {
 		function onKeyDown(event: KeyboardEvent) {

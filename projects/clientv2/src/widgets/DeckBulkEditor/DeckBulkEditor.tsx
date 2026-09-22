@@ -11,15 +11,28 @@ export interface DeckBulkEditor {
 export function DeckBulkEditor(props: DeckBulkEditor) {
 	const { deckId } = props;
 
-	const [deckSearch, setDeckSearch] = useState({});
+	const [loadedSearch, setLoadedSearch] = useState<{
+		deckId: string;
+		search: object;
+	} | null>(null);
+	const deckSearch =
+		loadedSearch?.deckId === deckId ? loadedSearch.search : {};
 	const [value, setValue] = useState('');
 	const [showSuggestions, setShowSuggestions] = useState(false);
 
 	useEffect(() => {
+		let active = true;
 		fetchAPIDeck(deckId).then((deck) => {
-			setDeckSearch(createNameLookupTree(iterDeckCardNames(deck)));
+			if (active)
+				setLoadedSearch({
+					deckId,
+					search: createNameLookupTree(iterDeckCardNames(deck))
+				});
 		});
-	}, []);
+		return function () {
+			active = false;
+		};
+	}, [deckId]);
 
 	return (
 		<div>

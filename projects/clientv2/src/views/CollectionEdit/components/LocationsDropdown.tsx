@@ -34,7 +34,7 @@ export function LocationsDropdown(props: LocationsDropdownProps) {
 
 	const ddValue = useMemo(
 		() => locations.find((loc) => loc.storage_location_id === value),
-		[value]
+		[value, locations]
 	);
 
 	const [controlledValue, setControlledValue] = useState<string>(
@@ -55,7 +55,7 @@ export function LocationsDropdown(props: LocationsDropdownProps) {
 				onChange(null);
 			}
 		},
-		[]
+		[onChange]
 	);
 
 	return (

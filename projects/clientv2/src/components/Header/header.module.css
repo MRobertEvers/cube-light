@@ -1,6 +1,7 @@
 .header {
+	box-sizing: border-box;
 	background-color: #fff;
-	min-height: 64px;
+	min-height: var(--app-header-height);
 	color: var(--theme-text);
 	border-bottom: 1px solid #e5e1df;
 	box-shadow: 0 2px 12px rgba(38, 38, 38, 0.04);
@@ -8,7 +9,7 @@
 
 .header-content {
 	max-width: var(--max-width);
-	min-height: 64px;
+	min-height: var(--app-header-height);
 	margin: 0 auto;
 	padding: 0 20px;
 	display: flex;

@@ -17,7 +17,18 @@ function card(
 		image: '',
 		art: '',
 		types: 'Instant',
-		manaCost: ''
+		manaCost: '',
+		text: '',
+		type: 'Instant',
+		rarity: null,
+		power: null,
+		toughness: null,
+		loyalty: null,
+		defense: null,
+		number: null,
+		artist: null,
+		flavorText: null,
+		legalities: {}
 	};
 }
 

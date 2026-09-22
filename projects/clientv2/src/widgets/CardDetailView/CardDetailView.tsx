@@ -27,13 +27,15 @@ export function CardDetailView(props: CardDetailViewProps) {
 		reducerCardDetailView,
 		initialCardDetailViewState
 	);
-	const showLoading = useMinimumVisible(!isCardDetailViewReady(state));
+	const ready =
+		isCardDetailViewReady(state) && state.cardUuid === cardUuid;
+	const showLoading = useMinimumVisible(!ready);
 
 	useEffect(() => {
 		dispatch(CommandsCardDetailView.initialize({ cardUuid }));
-	}, []);
+	}, [cardUuid, dispatch]);
 
-	if (showLoading || !isCardDetailViewReady(state)) {
+	if (showLoading || !ready) {
 		return <LoadingIndicator />;
 	}
 

@@ -615,6 +615,7 @@ export function BlendSection(props: SectionProps) {
 				{blend.protectSubject && art && (
 					<>
 						<SubjectProtection
+							key={art}
 							src={art}
 							protection={protection}
 							feather={blend.feather}

@@ -11,6 +11,7 @@ import {
 } from '../utils/generate-banner-blend';
 
 type Rendered = { key: string; images: Record<BannerBlendVariant, string> };
+type PreviewError = { key: string; message: string };
 
 const PREVIEW_DELAY_MS = 350;
 
@@ -25,12 +26,11 @@ export function useBannerBlendPreview(
 	enabled: boolean
 ) {
 	const [rendered, setRendered] = useState<Rendered | null>(null);
-	const [error, setError] = useState<string | null>(null);
+	const [failure, setFailure] = useState<PreviewError | null>(null);
 	const key = JSON.stringify([src, crop, config]);
 
 	useEffect(() => {
 		if (!enabled || !src) return;
-		setError(null);
 		let active = true;
 		const timer = window.setTimeout(() => {
 			previewBannerBlend(src, crop, config)
@@ -39,11 +39,13 @@ export function useBannerBlendPreview(
 				})
 				.catch((reason) => {
 					if (active && !(reason instanceof BannerBlendCancelled))
-						setError(
-							reason instanceof Error
-								? reason.message
-								: String(reason)
-						);
+						setFailure({
+							key,
+							message:
+								reason instanceof Error
+									? reason.message
+									: String(reason)
+						});
 				});
 		}, PREVIEW_DELAY_MS);
 		return function () {
@@ -54,6 +56,7 @@ export function useBannerBlendPreview(
 	}, [enabled, key]); // The key captures src, crop and config by value.
 
 	const current = enabled && rendered?.key === key ? rendered.images : null;
+	const error = enabled && failure?.key === key ? failure.message : null;
 	return {
 		images: current,
 		rendering: enabled && !!src && !current && !error,

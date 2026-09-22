@@ -88,9 +88,6 @@ export function SubjectProtection(props: Props) {
 			},
 		[]
 	);
-	useEffect(() => {
-		setPreview(null);
-	}, [src]);
 
 	// Resizing only redraws the overlay; it never recomputes the mask.
 	useEffect(() => {

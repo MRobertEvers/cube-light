@@ -207,13 +207,19 @@ export function CardListEditor(props: CardListEditorProps) {
 		targetRef.current = next;
 		setTargetState(next);
 	}
-	const [activeIndex, setActiveIndex] = useState(0);
+	const [activeOption, setActiveOption] = useState({ key: '', index: 0 });
 	const [typingLine, setTypingLine] = useState<number | null>(null);
+	const typingLineRef = useRef<number | null>(null);
 	// A line's menu, opened from its marker or from the line itself (right click, double tap).
-	const [menu, setMenu] = useState<{ line: number; atName: boolean } | null>(
-		null
-	);
-	const [printingLine, setPrintingLine] = useState<number | null>(null);
+	const [menuState, setMenu] = useState<{
+		line: number;
+		atName: boolean;
+		name: string;
+	} | null>(null);
+	const [printingTarget, setPrintingTarget] = useState<{
+		line: number;
+		name: string;
+	} | null>(null);
 	// Where a collapsed caret sits while the editor has focus, for the Tab hint.
 	const [caret, setCaret] = useState<{ line: number; column: number } | null>(
 		null
@@ -236,7 +242,14 @@ export function CardListEditor(props: CardListEditorProps) {
 	const shownByLine = new Map(
 		shown.map((problem) => [problem.line, problem])
 	);
-	const menuSpan = menu ? locateCardName(lines[menu.line - 1] ?? '') : null;
+	const currentMenuSpan = menuState
+		? locateCardName(lines[menuState.line - 1] ?? '')
+		: null;
+	const menu =
+		menuState && currentMenuSpan?.name === menuState.name
+			? menuState
+			: null;
+	const menuSpan = menu ? currentMenuSpan : null;
 	const menuProblem = menu ? shownByLine.get(menu.line) : undefined;
 	const menuUnknown = !!menu && fresh.some((p) => p.line === menu.line);
 	// While the caret is on a card named on other lines too, those lines are marked.
@@ -251,13 +264,23 @@ export function CardListEditor(props: CardListEditorProps) {
 			)
 		: [];
 	const siblingLines = new Set(namedLines.length > 1 ? namedLines : []);
-	const printingSpan =
-		printingLine !== null
-			? locateCardName(lines[printingLine - 1] ?? '')
+	const currentPrintingSpan = printingTarget
+		? locateCardName(lines[printingTarget.line - 1] ?? '')
+		: null;
+	const printingLine =
+		printingTarget && currentPrintingSpan?.name === printingTarget.name
+			? printingTarget.line
 			: null;
+	const printingSpan = printingLine === null ? null : currentPrintingSpan;
 
 	const options =
 		target && completions?.query === target.query ? completions.names : [];
+	const optionsKey = options.join('\n');
+	const activeIndex =
+		activeOption.key === optionsKey &&
+		activeOption.index < options.length
+			? activeOption.index
+			: 0;
 	// Nothing to offer when the name is already complete.
 	const showCompletions =
 		options.length > 0 &&
@@ -304,32 +327,24 @@ export function CardListEditor(props: CardListEditorProps) {
 		};
 	}, [textareaRef]);
 
-	useEffect(
-		() => onTypingLineChange(typingLine),
-		[typingLine, onTypingLineChange]
-	);
+	function changeTypingLine(next: number | null) {
+		if (typingLineRef.current === next) return;
+		typingLineRef.current = next;
+		setTypingLine(next);
+		onTypingLineChange(next);
+	}
 
 	// A pause in typing counts as moving on, so the warning doesn't wait for a new line.
 	useEffect(() => {
 		if (typingLine === null) return;
 		const timer = window.setTimeout(
-			() => setTypingLine(null),
+			() => changeTypingLine(null),
 			TYPING_IDLE_MS
 		);
 		return function () {
 			return window.clearTimeout(timer);
 		};
 	}, [typingLine, value]);
-
-	useEffect(() => setActiveIndex(0), [options.join('\n')]);
-
-	useEffect(() => {
-		if (menu && !menuSpan) setMenu(null);
-	}, [menu, menuSpan]);
-
-	useEffect(() => {
-		if (printingLine !== null && !printingSpan) setPrintingLine(null);
-	}, [printingLine, printingSpan]);
 
 	useEffect(() => {
 		if (menu)
@@ -357,7 +372,7 @@ export function CardListEditor(props: CardListEditorProps) {
 				? { line, column }
 				: null
 		);
-		setTypingLine((typing) => (typing === line ? typing : null));
+		if (typingLineRef.current !== line) changeTypingLine(null);
 		const current = targetRef.current;
 		if (
 			current &&
@@ -405,7 +420,7 @@ export function CardListEditor(props: CardListEditorProps) {
 
 	function setPrinting(line: number, setCode: string | null) {
 		const textarea = textareaRef.current;
-		setPrintingLine(null);
+		setPrintingTarget(null);
 		if (!textarea) return;
 		const span = locateCardName(textarea.value.split('\n')[line - 1] ?? '');
 		if (!span) return;
@@ -423,9 +438,10 @@ export function CardListEditor(props: CardListEditorProps) {
 	}
 
 	function openMenu(line: number, atName: boolean) {
-		if (!locateCardName(lines[line - 1] ?? '')) return false;
+		const span = locateCardName(lines[line - 1] ?? '');
+		if (!span) return false;
 		closeCompletions();
-		setMenu({ line, atName });
+		setMenu({ line, atName, name: span.name });
 		return true;
 	}
 
@@ -691,7 +707,7 @@ export function CardListEditor(props: CardListEditorProps) {
 							? { line: position.line, column: position.column }
 							: null
 					);
-					setTypingLine(typing ? position.line : null);
+					changeTypingLine(typing ? position.line : null);
 					setTarget(next);
 					onCompletionQuery(next ? next.query : null);
 				}}
@@ -737,7 +753,7 @@ export function CardListEditor(props: CardListEditorProps) {
 				}}
 				onBlur={() => {
 					closeCompletions();
-					setTypingLine(null);
+					changeTypingLine(null);
 					setCaret(null);
 				}}
 				onKeyDown={(event) => {
@@ -777,10 +793,12 @@ export function CardListEditor(props: CardListEditorProps) {
 					) {
 						event.preventDefault();
 						const step = event.key === 'ArrowDown' ? 1 : -1;
-						setActiveIndex(
-							(index) =>
-								(index + step + options.length) % options.length
-						);
+						setActiveOption({
+							key: optionsKey,
+							index:
+								(activeIndex + step + options.length) %
+								options.length
+						});
 					} else if (
 						(event.key === 'Enter' || event.key === 'Tab') &&
 						!event.shiftKey &&
@@ -889,7 +907,10 @@ export function CardListEditor(props: CardListEditorProps) {
 							disabled={menuUnknown}
 							onClick={() => {
 								setMenu(null);
-								setPrintingLine(menu.line);
+								setPrintingTarget({
+									line: menu.line,
+									name: menuSpan.name
+								});
 							}}
 						>
 							<span className={styles['menu-tile-label']}>
@@ -928,11 +949,12 @@ export function CardListEditor(props: CardListEditorProps) {
 			)}
 			{printingLine !== null && printingSpan && (
 				<PrintingSheet
+					key={`${printingLine}:${printingSpan.name}`}
 					name={printingSpan.name}
 					setCode={printingSpan.printing?.setCode ?? null}
 					onPick={(setCode) => setPrinting(printingLine, setCode)}
 					onClose={() => {
-						setPrintingLine(null);
+						setPrintingTarget(null);
 						textareaRef.current?.focus();
 					}}
 				/>
@@ -957,7 +979,9 @@ export function CardListEditor(props: CardListEditorProps) {
 									: undefined
 							}
 							onMouseDown={(event) => event.preventDefault()}
-							onMouseEnter={() => setActiveIndex(index)}
+							onMouseEnter={() =>
+								setActiveOption({ key: optionsKey, index })
+							}
 							onClick={() => accept(name)}
 						>
 							<span className={styles['option-name']}>

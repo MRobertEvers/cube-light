@@ -41,29 +41,6 @@ export function MobileDeckHeader(props: Props) {
 	} = props;
 	const bar = useRef<HTMLElement>(null);
 	const collapsed = useBannerCollapse(bar, banner);
-	const [menuOpen, setMenuOpen] = useState(false);
-	const menu = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		if (!collapsed) setMenuOpen(false);
-	}, [collapsed]);
-
-	useEffect(() => {
-		if (!menuOpen) return;
-		function onPointerDown(event: PointerEvent) {
-			if (!menu.current?.contains(event.target as Node))
-				setMenuOpen(false);
-		}
-		function onKeyDown(event: KeyboardEvent) {
-			if (event.key === 'Escape') setMenuOpen(false);
-		}
-		window.addEventListener('pointerdown', onPointerDown);
-		window.addEventListener('keydown', onKeyDown);
-		return function () {
-			window.removeEventListener('pointerdown', onPointerDown);
-			window.removeEventListener('keydown', onKeyDown);
-		};
-	}, [menuOpen]);
 
 	return (
 		<nav ref={bar} className={styles.header} style={style}>
@@ -90,44 +67,81 @@ export function MobileDeckHeader(props: Props) {
 					</div>
 				</div>
 			</div>
-			<div ref={menu} className={styles.menu} inert={!collapsed}>
-				<button
-					type="button"
-					className={concatClassNames(
-						styles.editToggle,
-						isEditMode ? styles.editing : undefined
-					)}
-					aria-pressed={isEditMode}
-					aria-controls="deck-edit-panel"
-					onClick={onToggleEdit}
-					disabled={isSaving}
-				>
-					<DeckControlIcon
-						name={isEditMode ? 'check' : 'pencil'}
-						size={16}
-					/>
-					{isEditMode ? 'Done' : 'Edit'}
-				</button>
-				<button
-					type="button"
-					className={styles.menuButton}
-					aria-label="Site menu"
-					aria-expanded={menuOpen}
-					aria-controls="mobile-deck-header-menu"
-					onClick={() => setMenuOpen((open) => !open)}
-				>
-					<span className={styles.menuIcon} aria-hidden="true" />
-				</button>
-				{menuOpen && (
-					<div
-						id="mobile-deck-header-menu"
-						className={styles.menuPanel}
-					>
-						<SiteNavLinks onNavigate={() => setMenuOpen(false)} />
-					</div>
-				)}
-			</div>
+			<MobileDeckMenu
+				key={collapsed ? 'collapsed' : 'expanded'}
+				collapsed={collapsed}
+				isEditMode={isEditMode}
+				onToggleEdit={onToggleEdit}
+				isSaving={isSaving}
+			/>
 		</nav>
+	);
+}
+
+function MobileDeckMenu(
+	props: Pick<Props, 'isEditMode' | 'onToggleEdit' | 'isSaving'> & {
+		collapsed: boolean;
+	}
+) {
+	const { collapsed, isEditMode, onToggleEdit, isSaving } = props;
+	const [menuOpen, setMenuOpen] = useState(false);
+	const menu = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!menuOpen) return;
+		function onPointerDown(event: PointerEvent) {
+			if (!menu.current?.contains(event.target as Node))
+				setMenuOpen(false);
+		}
+		function onKeyDown(event: KeyboardEvent) {
+			if (event.key === 'Escape') setMenuOpen(false);
+		}
+		window.addEventListener('pointerdown', onPointerDown);
+		window.addEventListener('keydown', onKeyDown);
+		return function () {
+			window.removeEventListener('pointerdown', onPointerDown);
+			window.removeEventListener('keydown', onKeyDown);
+		};
+	}, [menuOpen]);
+
+	return (
+		<div ref={menu} className={styles.menu} inert={!collapsed}>
+			<button
+				type="button"
+				className={concatClassNames(
+					styles.editToggle,
+					isEditMode ? styles.editing : undefined
+				)}
+				aria-pressed={isEditMode}
+				aria-controls="deck-edit-panel"
+				onClick={onToggleEdit}
+				disabled={isSaving}
+			>
+				<DeckControlIcon
+					name={isEditMode ? 'check' : 'pencil'}
+					size={16}
+				/>
+				{isEditMode ? 'Done' : 'Edit'}
+			</button>
+			<button
+				type="button"
+				className={styles.menuButton}
+				aria-label="Site menu"
+				aria-expanded={menuOpen}
+				aria-controls="mobile-deck-header-menu"
+				onClick={() => setMenuOpen((open) => !open)}
+			>
+				<span className={styles.menuIcon} aria-hidden="true" />
+			</button>
+			{menuOpen && (
+				<div
+					id="mobile-deck-header-menu"
+					className={styles.menuPanel}
+				>
+					<SiteNavLinks onNavigate={() => setMenuOpen(false)} />
+				</div>
+			)}
+		</div>
 	);
 }
 

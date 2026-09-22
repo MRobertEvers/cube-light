@@ -15,28 +15,36 @@
 .header {
 	display: flex;
 	flex: none;
-	flex-wrap: wrap;
 	align-items: center;
 	gap: 8px 16px;
-	padding: 16px 20px 16px 24px;
+	box-sizing: border-box;
+	height: var(--app-header-height);
+	padding: 6px 20px 6px 24px;
 	border-bottom: 1px solid #eee7e4;
 }
 
 .title {
 	flex: 1;
 	min-width: 0;
+	overflow: hidden;
 }
 
 .title h2 {
 	margin: 0;
-	font-size: 1.3rem;
-	line-height: 1.25;
+	overflow: hidden;
+	font-size: 1.2rem;
+	line-height: 1.2;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .title p {
 	margin: 3px 0 0;
+	overflow: hidden;
 	color: #6d6764;
 	font-size: 0.8125rem;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .header-actions {
@@ -89,8 +97,9 @@
 }
 
 .save-error {
-	flex-basis: 100%;
 	margin: 0;
+	padding: 8px 24px;
+	border-bottom: 1px solid #eee7e4;
 	color: #a12323;
 	font-size: 0.875rem;
 }
@@ -463,13 +472,13 @@
 @media (max-width: 680px) {
 	.container {
 		width: 100vw;
-		height: 100dvh;
+		height: 100%;
 		border-radius: 0;
 		box-shadow: none;
 	}
 
 	.header {
-		padding: 10px 12px 10px 16px;
+		padding: 6px 12px 6px 16px;
 	}
 
 	.cancel,

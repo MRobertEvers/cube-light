@@ -30,9 +30,12 @@
 	position: sticky;
 	top: 0;
 	display: flex;
+	flex: none;
 	align-items: center;
 	gap: 10px;
-	padding: 12px 14px;
+	box-sizing: border-box;
+	height: var(--app-header-height);
+	padding: 6px 14px;
 	border-bottom: 1px solid #eee7e4;
 	background: #fff;
 }

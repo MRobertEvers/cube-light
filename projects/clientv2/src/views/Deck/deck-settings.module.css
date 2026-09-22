@@ -1,5 +1,5 @@
 .page {
-	min-height: calc(100vh - 60px);
+	min-height: calc(100vh - var(--app-header-height));
 	background: linear-gradient(
 		180deg,
 		var(--deck-surface) 0,
@@ -132,16 +132,18 @@
 	top: 0;
 	z-index: 3;
 	margin: -24px -24px 20px;
-	padding: 20px 24px 16px;
+	box-sizing: border-box;
+	height: var(--app-header-height);
+	padding: 6px 24px;
 	border-bottom: 1px solid var(--deck-border);
 	border-radius: 14px 14px 0 0;
 	background: white;
 }
 .banner-modal-heading-row {
 	display: flex;
+	height: 100%;
 	justify-content: space-between;
-	align-items: flex-start;
-	flex-wrap: wrap;
+	align-items: center;
 	gap: 12px;
 }
 .banner-modal-heading .actions {
@@ -154,18 +156,22 @@
 	font-size: 1.8rem;
 	font-weight: 400;
 }
-.banner-modal-heading .error,
-.banner-modal-heading [role='status'] {
-	margin: 10px 0 0;
+.banner-modal-status {
+	margin: -10px 0 16px;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--deck-border);
 	font-size: 0.875rem;
 }
 .banner-modal-heading h2 {
 	margin: 0;
-	font-size: 1.35rem;
+	font-size: 1.2rem;
+	line-height: 1.2;
 }
 .banner-modal-heading p {
-	margin: 6px 0 0;
+	margin: 2px 0 0;
 	color: #5e5b5b;
+	font-size: 0.875rem;
+	line-height: 1.2;
 }
 .modal-close {
 	border: 0;

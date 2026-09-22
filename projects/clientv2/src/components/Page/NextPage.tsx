@@ -10,6 +10,6 @@ export function NextPage(
 	const { children, title } = props;
 	useEffect(() => {
 		document.title = title || 'MtG Drachen';
-	}, []);
+	}, [title]);
 	return <>{children}</>;
 }

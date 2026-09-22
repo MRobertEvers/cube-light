@@ -22,7 +22,7 @@ export function useReducer<T>(
 		return function () {
 			store.reducerManager.remove(key);
 		};
-	}, []);
+	}, [key, reducer, store]);
 
 	const state = useSelector((root: any) => root[key]);
 

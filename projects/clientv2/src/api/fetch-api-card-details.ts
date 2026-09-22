@@ -1,20 +1,8 @@
 import { API_URI } from 'src/config/api-url';
 import { fetchTimeout } from './utils';
 
-export type FetchAPICardDetailsResponse = {
-	// From DetailedCardInfo
-	name: string;
-	uuid: string;
-	scryfallId: string;
-	types: string; // Comma separated types above.
-	subtypes: string;
-	manaCost: string; // {X}{W}
+export type CardPreviewDetails = {
 	text: string;
-	setCode: string;
-
-	sets: Array<[string, string]>;
-
-	// Printed face details.
 	type: string | null;
 	rarity: string | null;
 	power: string | null;
@@ -25,6 +13,19 @@ export type FetchAPICardDetailsResponse = {
 	artist: string | null;
 	flavorText: string | null;
 	legalities: Record<string, string>; // format -> Legal/Banned/Restricted
+};
+
+export type FetchAPICardDetailsResponse = CardPreviewDetails & {
+	// From DetailedCardInfo
+	name: string;
+	uuid: string;
+	scryfallId: string;
+	types: string; // Comma separated types above.
+	subtypes: string;
+	manaCost: string; // {X}{W}
+	setCode: string;
+
+	sets: Array<[string, string]>;
 
 	// From Scryfall;
 	image: string | null;

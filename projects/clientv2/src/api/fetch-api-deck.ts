@@ -4,8 +4,9 @@ import type { CardPalette } from '../utils/card-palette';
 import type { BannerCrop } from '../utils/banner-crop';
 import type { DeckTopStyle } from '../utils/deck-top-style';
 import type { BannerBlend } from '../utils/banner-blend';
+import type { CardPreviewDetails } from './fetch-api-card-details';
 
-export type FetchAPIDeckCardResponse = {
+export type FetchAPIDeckCardResponse = CardPreviewDetails & {
 	name: string;
 	count: number;
 	image: string;

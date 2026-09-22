@@ -63,11 +63,17 @@ export function useCardListLint(text: string, delayMsArg?: number) {
 	const [status, setStatus] = useState<CardListLintStatus>(
 		() => connect().status
 	);
-	const [problems, setProblems] = useState<CardListProblem[]>([]);
+	const [analysis, setAnalysis] = useState<{
+		text: string;
+		problems: CardListProblem[];
+	} | null>(null);
 	const [completions, setCompletions] = useState<CardListCompletions | null>(
 		null
 	);
-	const latest = useRef({ analysis: 0, completion: 0 });
+	const latest = useRef({
+		analysis: { id: 0, text: '' },
+		completion: 0
+	});
 
 	useEffect(() => {
 		const connection = connect();
@@ -76,13 +82,15 @@ export function useCardListLint(text: string, delayMsArg?: number) {
 			if (message.kind === 'ready') setStatus('ready');
 			else if (message.kind === 'failed') {
 				setStatus('failed');
-				setProblems([]);
 				setCompletions(null);
 			} else if (
 				message.kind === 'analysis' &&
-				message.id === latest.current.analysis
+				message.id === latest.current.analysis.id
 			)
-				setProblems(message.problems);
+				setAnalysis({
+					text: latest.current.analysis.text,
+					problems: message.problems
+				});
 			else if (
 				message.kind === 'completions' &&
 				message.id === latest.current.completion
@@ -98,11 +106,8 @@ export function useCardListLint(text: string, delayMsArg?: number) {
 	useEffect(() => {
 		if (status === 'failed') return;
 		const id = nextId++;
-		latest.current.analysis = id;
-		if (!text.trim()) {
-			setProblems([]);
-			return;
-		}
+		latest.current.analysis = { id, text };
+		if (!text.trim()) return;
 		const timer = window.setTimeout(
 			() => send({ kind: 'analyze', id, text }),
 			delayMs
@@ -123,5 +128,9 @@ export function useCardListLint(text: string, delayMsArg?: number) {
 		[status]
 	);
 
+	const problems =
+		status !== 'failed' && analysis?.text === text
+			? analysis.problems
+			: [];
 	return { status, problems, completions, requestCompletions };
 }

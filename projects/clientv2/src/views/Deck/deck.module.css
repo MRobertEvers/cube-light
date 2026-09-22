@@ -4,7 +4,7 @@
 }
 
 .deck-theme {
-	min-height: calc(100vh - 60px);
+	min-height: calc(100vh - var(--app-header-height));
 	background: linear-gradient(
 		180deg,
 		var(--deck-surface, #f2efed) 0,

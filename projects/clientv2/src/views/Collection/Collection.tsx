@@ -43,16 +43,22 @@ export function Collection(props: HomeProps) {
 		fetchData();
 	}, []);
 
-	const onCreateCollection = useCallback((name: string) => {
-		fetchAPICreateCollection(name).then(load);
-	}, []);
-	const onCreateLocation = useCallback((name: string) => {
-		fetchAPICreateStorageLocation(name).then(load);
-	}, []);
+	const onCreateCollection = useCallback(
+		(name: string) => {
+			fetchAPICreateCollection(name).then(load);
+		},
+		[load]
+	);
+	const onCreateLocation = useCallback(
+		(name: string) => {
+			fetchAPICreateStorageLocation(name).then(load);
+		},
+		[load]
+	);
 
 	useEffect(() => {
 		load();
-	}, []);
+	}, [load]);
 
 	const listLen = useMemo(() => {
 		const arr = new Array(Math.max(collections.length, locations.length));

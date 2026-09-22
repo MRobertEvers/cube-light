@@ -10,11 +10,9 @@ import { imageImportQueue } from 'src/utils/image-import-queue';
 import { isMobileDevice } from 'src/utils/is-mobile-device';
 import { workQueue } from 'src/utils/work-queue';
 import { HeaderBackButton } from 'src/components/BackLink/BackLink';
-import {
-	HeaderBackSlot,
-	HeaderBackSlotContext
-} from 'src/components/Header/HeaderBackSlot';
+import { HeaderBackSlot } from 'src/components/Header/HeaderBackSlot';
 import { DeckControlIcon } from 'src/views/Deck/DeckControlIcons';
+import { useDocumentScrollLock } from 'src/hooks/useDocumentScrollLock';
 import styles from './image-card-import.module.css';
 
 type Props = {
@@ -26,6 +24,7 @@ type Props = {
 
 export function ImageCardImport(props: Props) {
 	const { mode, deckId, onClose, onComplete } = props;
+	useDocumentScrollLock();
 	const [pipeline, setPipeline] = useState<CardImagePipeline>(
 		DEFAULT_IMAGE_PIPELINE
 	);
@@ -36,8 +35,6 @@ export function ImageCardImport(props: Props) {
 	const [error, setError] = useState<string | null>(null);
 	const [isDragging, setIsDragging] = useState(false);
 	const [createdDeckId, setCreatedDeckId] = useState<string | null>(null);
-	// State, not a ref, so the back button portals in once the slot mounts.
-	const [backSlot, setBackSlot] = useState<HTMLElement | null>(null);
 	// Mobile scans require an explicit opt-in because of data and energy use.
 	const [isMobile] = useState(isMobileDevice);
 	const [scanHere, setScanHere] = useState(false);
@@ -112,16 +109,16 @@ export function ImageCardImport(props: Props) {
 				aria-labelledby="image-import-title"
 			>
 				<header className={styles.header}>
-					<HeaderBackSlot ref={setBackSlot} />
-					<HeaderBackSlotContext.Provider value={backSlot}>
+					<HeaderBackSlot>
 						{/* Phones fill the screen and close from here, so × and Cancel hide. */}
 						<HeaderBackButton
+							inline
 							label="Close image import"
 							onClick={() => {
 								if (!isStarting) onClose();
 							}}
 						/>
-					</HeaderBackSlotContext.Provider>
+					</HeaderBackSlot>
 					<div className={styles.title}>
 						<h2 id="image-import-title">
 							{mode === 'create'

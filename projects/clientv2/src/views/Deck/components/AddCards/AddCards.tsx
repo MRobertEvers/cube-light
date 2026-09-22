@@ -3,10 +3,7 @@ import { useSelector } from 'react-redux';
 import { Button } from 'src/components/Button/Button';
 import { Spinner } from 'src/components/Spinner/Spinner';
 import { HeaderBackButton } from 'src/components/BackLink/BackLink';
-import {
-	HeaderBackSlot,
-	HeaderBackSlotContext
-} from 'src/components/Header/HeaderBackSlot';
+import { HeaderBackSlot } from 'src/components/Header/HeaderBackSlot';
 import { useCardListLint } from 'src/hooks/useCardListLint';
 import {
 	closeAddCards,
@@ -143,9 +140,6 @@ export function AddCards() {
 	function onClose() {
 		return dispatch(closeAddCards());
 	}
-	// State, not a ref, so the back button portals in once the slot mounts.
-	const [backSlot, setBackSlot] = useState<HTMLElement | null>(null);
-
 	function submit() {
 		if (!canSubmit) {
 			textareaRef.current?.focus();
@@ -222,16 +216,16 @@ export function AddCards() {
 			}}
 		>
 			<header className={adderStyles['top-bar']}>
-				<HeaderBackSlot ref={setBackSlot} />
-				<HeaderBackSlotContext.Provider value={backSlot}>
+				<HeaderBackSlot>
 					{/* Phones fill the screen and close from here, so Cancel hides. */}
 					<HeaderBackButton
+						inline
 						label="Close add cards"
 						onClick={() => {
 							if (!isSubmitting) onClose();
 						}}
 					/>
-				</HeaderBackSlotContext.Provider>
+				</HeaderBackSlot>
 				<h2 id="add-cards-title">Add cards</h2>
 			</header>
 			<div className={`${adderStyles['body']} ${styles['body']}`}>

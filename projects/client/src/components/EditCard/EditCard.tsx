@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { FetchDeckCardResponse } from '../../api/fetch-deck';
-import { useEffect } from 'preact/hooks';
 
 import styles from './edit-card.module.css';
 
@@ -26,13 +25,7 @@ export type EditCardModalProps = {
 };
 export function EditCardModal(props: EditCardModalProps) {
 	const { card, onSubmit, onCancel } = props;
-	const [count, setCount] = useState(0);
-
-	useEffect(() => {
-		if (card) {
-			setCount(card.count);
-		}
-	}, [card]);
+	const [count, setCount] = useState(card?.count ?? 0);
 
 	if (!card) {
 		return null;

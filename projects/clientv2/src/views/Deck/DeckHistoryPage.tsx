@@ -53,20 +53,25 @@ const detailLabels: Record<DeckHistoryDetail['field'], string> = {
 
 export function DeckHistoryPage(props: { deckId: string }) {
 	const { deckId } = props;
-	const [history, setHistory] = useState<DeckHistoryResponse | null>(null);
-	const [error, setError] = useState(false);
+	const [result, setResult] = useState<{
+		deckId: string;
+		history: DeckHistoryResponse | null;
+		error: boolean;
+	} | null>(null);
+	const history = result?.deckId === deckId ? result.history : null;
+	const error = result?.deckId === deckId && result.error;
 	const showLoading = useMinimumVisible(!history && !error);
 
 	useEffect(() => {
 		let active = true;
-		setHistory(null);
-		setError(false);
 		fetchAPIDeckHistory(deckId).then(
 			(result) => {
-				if (active) setHistory(result);
+				if (active)
+					setResult({ deckId, history: result, error: false });
 			},
 			() => {
-				if (active) setError(true);
+				if (active)
+					setResult({ deckId, history: null, error: true });
 			}
 		);
 		return function () {

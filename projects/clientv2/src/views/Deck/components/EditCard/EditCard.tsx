@@ -1,15 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import {
-	fetchAPICardDetails,
-	FetchAPICardDetailsResponse
-} from '../../../../api/fetch-api-card-details';
+import type { CardPreviewDetails } from '../../../../api/fetch-api-card-details';
 import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
 
 import { HeaderBackButton } from 'src/components/BackLink/BackLink';
-import {
-	HeaderBackSlot,
-	HeaderBackSlotContext
-} from 'src/components/Header/HeaderBackSlot';
+import { HeaderBackSlot } from 'src/components/Header/HeaderBackSlot';
 import styles from './edit-card.module.css';
 
 export type CardPreviewModalProps = {
@@ -84,7 +78,7 @@ function capitalize(value: string) {
 	return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function CardText(props: { details: FetchAPICardDetailsResponse }) {
+function CardText(props: { details: CardPreviewDetails }) {
 	const { details } = props;
 	const [showAllFormats, setShowAllFormats] = useState(false);
 
@@ -155,28 +149,6 @@ function CardText(props: { details: FetchAPICardDetailsResponse }) {
 /** A large image of one printing in the deck, with its rules text. Editing copies is ManagePrintings' job. */
 export function CardPreviewModal(props: CardPreviewModalProps) {
 	const { card, onClose } = props;
-	const uuid = card?.uuid;
-	const [details, setDetails] = useState<FetchAPICardDetailsResponse | null>(
-		null
-	);
-	// State, not a ref, so the back button portals in once the slot mounts.
-	const [backSlot, setBackSlot] = useState<HTMLElement | null>(null);
-
-	useEffect(() => {
-		setDetails(null);
-		if (!uuid) return;
-		let cancelled = false;
-		fetchAPICardDetails(uuid)
-			.then((result) => {
-				if (!cancelled) setDetails(result);
-			})
-			.catch(() => {
-				// The image alone is still a usable preview.
-			});
-		return function () {
-			cancelled = true;
-		};
-	}, [uuid]);
 
 	useEffect(() => {
 		function closeOnEscape(event: KeyboardEvent) {
@@ -198,14 +170,14 @@ export function CardPreviewModal(props: CardPreviewModalProps) {
 			aria-labelledby="card-modal-title"
 		>
 			<header className={styles['header']}>
-				<HeaderBackSlot ref={setBackSlot} />
-				<HeaderBackSlotContext.Provider value={backSlot}>
+				<HeaderBackSlot>
 					{/* Phones fill the screen and close from here instead of ×. */}
 					<HeaderBackButton
+						inline
 						label="Close card preview"
 						onClick={onClose}
 					/>
-				</HeaderBackSlotContext.Provider>
+				</HeaderBackSlot>
 				<div className={styles['title']}>
 					<h2 id="card-modal-title">
 						{card.name}
@@ -235,7 +207,7 @@ export function CardPreviewModal(props: CardPreviewModalProps) {
 						alt={`${card.name}, ${card.setCode} printing`}
 					/>
 				</div>
-				{details && <CardText details={details} />}
+				<CardText key={card.uuid} details={card} />
 			</div>
 		</section>
 	);

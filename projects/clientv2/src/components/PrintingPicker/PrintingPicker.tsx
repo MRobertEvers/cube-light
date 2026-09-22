@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useMemo, useState } from 'react';
+import React, { ReactNode, useMemo, useState } from 'react';
 import { CardPrinting } from '../../api/fetch-api-card-printings';
 
 import styles from './printing-picker.module.css';
@@ -37,8 +37,6 @@ export function PrintingPicker(props: PrintingPickerProps) {
 	const { printings, selectedUuid, onSelect, name, image, disabled } = props;
 	const [view, setView] = useState<PrintingView>(readPrintingView);
 	const [query, setQuery] = useState('');
-
-	useEffect(() => setQuery(''), [printings]);
 
 	const visiblePrintings = useMemo(() => {
 		const needle = query.trim().toLowerCase();

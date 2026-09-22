@@ -52,7 +52,7 @@ export function Deck(props: DeckProps) {
 	return (
 		<Page>
 			{editCard && (
-				<Modal>
+				<Modal key={editCard.name}>
 					<EditCardModal
 						onSubmit={onSubmitChange}
 						onCancel={() => setEditCard(null)}

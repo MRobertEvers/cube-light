@@ -40,7 +40,6 @@ export function PrintingSheet(props: PrintingSheetProps) {
 
 	useEffect(() => {
 		const controller = new AbortController();
-		setStatus('loading');
 		void fetchAPICardPrintings(name, controller.signal)
 			.then((items) => {
 				setPrintings(items.filter((item) => !!item.image));

@@ -1,4 +1,9 @@
-import React, { createContext, forwardRef, useContext } from 'react';
+import React, {
+	createContext,
+	forwardRef,
+	PropsWithChildren,
+	useContext
+} from 'react';
 
 import styles from './header-back-slot.module.css';
 
@@ -14,8 +19,14 @@ export function useHeaderBackSlot() {
 }
 
 /** The slot element a top bar places where its back button belongs. */
-export const HeaderBackSlot = forwardRef<HTMLDivElement>(
-	function HeaderBackSlot(_props, ref) {
-		return <div ref={ref} className={styles['slot']} data-back-slot="" />;
-	}
-);
+export const HeaderBackSlot = forwardRef<
+	HTMLDivElement,
+	PropsWithChildren
+>(function HeaderBackSlot(props, ref) {
+	const { children } = props;
+	return (
+		<div ref={ref} className={styles['slot']} data-back-slot="">
+			{children}
+		</div>
+	);
+});

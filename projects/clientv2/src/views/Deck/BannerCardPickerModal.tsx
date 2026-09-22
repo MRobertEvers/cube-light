@@ -168,18 +168,21 @@ export function BannerCardPickerModal(props: {
 							</button>
 						</div>
 					</div>
-					{picker.saving && (
-						<p role="status">
-							Generating your banner layouts. This only runs when
-							artwork or blend settings are saved.
-						</p>
-					)}
-					{picker.saveError && (
-						<p className={styles['error']} role="alert">
-							{picker.saveError}
-						</p>
-					)}
 				</header>
+				{picker.saving && (
+					<p className={styles['banner-modal-status']} role="status">
+						Generating your banner layouts. This only runs when
+						artwork or blend settings are saved.
+					</p>
+				)}
+				{picker.saveError && (
+					<p
+						className={`${styles['banner-modal-status']} ${styles['error']}`}
+						role="alert"
+					>
+						{picker.saveError}
+					</p>
+				)}
 				<div className={styles['banner-picker']}>
 					<label htmlFor="banner-card-search">Card name</label>
 					<SuggestionInput
@@ -206,6 +209,11 @@ export function BannerCardPickerModal(props: {
 					</h3>
 					<div className={styles['printing-layout']}>
 						<PrintingPicker
+							key={
+								showPrintings
+									? picker.chosenName
+									: 'no-card'
+							}
 							printings={showPrintings ? picker.printings : []}
 							selectedUuid={picker.selectedUuid}
 							onSelect={(uuid) =>

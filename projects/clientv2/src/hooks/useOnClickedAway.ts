@@ -16,7 +16,7 @@ export function useOnClickedAway(callback: () => void): MutableRefObject<any> {
 		return function () {
 			window.removeEventListener('click', onClick);
 		};
-	}, []);
+	}, [callback]);
 
 	return ref;
 }

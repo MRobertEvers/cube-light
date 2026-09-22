@@ -49,22 +49,21 @@ export function BackLink(props: BackLinkProps) {
 export function HeaderBackButton(props: {
 	label: string;
 	onClick: () => void;
+	/** Renders inside an existing HeaderBackSlot instead of portaling to context. */
+	inline?: boolean;
 }) {
-	const { label, onClick } = props;
+	const { label, onClick, inline = false } = props;
 	const slot = useHeaderBackSlot();
-
-	return (
-		slot &&
-		createPortal(
-			<button
-				type="button"
-				className={styles['header-back']}
-				aria-label={label}
-				onClick={onClick}
-			>
-				<BackIcon size={22} />
-			</button>,
-			slot
-		)
+	const button = (
+		<button
+			type="button"
+			className={styles['header-back']}
+			aria-label={label}
+			onClick={onClick}
+		>
+			<BackIcon size={22} />
+		</button>
 	);
+
+	return inline ? button : slot && createPortal(button, slot);
 }

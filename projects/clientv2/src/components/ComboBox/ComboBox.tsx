@@ -68,16 +68,18 @@ export function ComboBox<T = string>(props: ComboBoxProps<T>) {
 	const Events = useMemo(() => createEvents<T>(), []);
 
 	const [focusRef, setFocusRef] = useState<HTMLDivElement | null>(null);
-	const [showDropDown, setShowDropdown] = useState(
-		showSuggestions === true && suggestions.length !== 0
-	);
+	const [autoOpen, setAutoOpen] = useState(false);
+	const showDropDown =
+		showSuggestions === true
+			? suggestions.length !== 0
+			: showSuggestions === 'auto' && autoOpen;
 
 	useEffect(() => {
 		if (showSuggestions === 'auto' && focusRef) {
 			function onClick(e: MouseEvent) {
 				if (focusRef?.contains(e?.target as Node))
-					setShowDropdown(true);
-				else setShowDropdown(false);
+					setAutoOpen(true);
+				else setAutoOpen(false);
 			}
 
 			window.addEventListener('click', onClick);
@@ -92,7 +94,7 @@ export function ComboBox<T = string>(props: ComboBoxProps<T>) {
 			className={styles['combobox']}
 			ref={setFocusRef}
 			onClick={() => {
-				setShowDropdown(true);
+				setAutoOpen(true);
 			}}
 		>
 			<input
@@ -123,7 +125,7 @@ export function ComboBox<T = string>(props: ComboBoxProps<T>) {
 							e.stopPropagation();
 							e.preventDefault();
 							onEvent(Events.selected(suggestion));
-							setShowDropdown(false);
+							setAutoOpen(false);
 						}}
 						// onFocus={() => {
 						// 	dispatch(Actions.setViewAddItemText(suggestion));
