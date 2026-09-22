@@ -1,0 +1,169 @@
+.tabletop {
+	min-width: 0;
+	border: 1px solid #293634;
+	border-radius: 16px;
+	background: #091210;
+	color: #eef3f1;
+	overflow: hidden;
+}
+
+.toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 16px;
+	padding: 20px 24px;
+	border-bottom: 1px solid #293634;
+}
+
+.toolbar h1 {
+	margin: 0;
+	font-size: 21px;
+}
+
+.toolbar p {
+	margin: 6px 0 0;
+	color: #aabbb5;
+	font-size: 13px;
+}
+
+.size {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 13px;
+	white-space: nowrap;
+}
+
+.size input {
+	width: 110px;
+	accent-color: #bad2c8;
+}
+
+.scroll {
+	overflow: auto;
+	padding: 24px;
+	min-height: 460px;
+}
+
+.columns {
+	display: flex;
+	align-items: flex-start;
+	gap: 18px;
+	width: max-content;
+	min-width: 100%;
+	padding-bottom: 24px;
+}
+
+.column {
+	width: var(--card-width);
+	flex: 0 0 var(--card-width);
+}
+
+.column h2 {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 0 0 14px;
+	color: #aabbb5;
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.column h2 span {
+	font-variant-numeric: tabular-nums;
+	color: #eef3f1;
+}
+
+.stack {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.slot {
+	position: relative;
+	height: calc(var(--card-width) * 0.15);
+}
+
+.slot:last-child {
+	height: auto;
+	aspect-ratio: 5 / 7;
+}
+
+.slot:focus-within {
+	z-index: 2;
+}
+
+.card {
+	position: relative;
+	display: block;
+	width: 100%;
+	aspect-ratio: 5 / 7;
+	padding: 0;
+	border: 0;
+	border-radius: 10px;
+	background: #263631;
+	color: white;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	box-shadow: 0 2px 8px #0009;
+}
+
+.card img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border-radius: inherit;
+}
+
+.card:focus-visible,
+.scroll:focus-visible {
+	outline: 2px solid #d8ece3;
+	outline-offset: 3px;
+}
+
+.quantity {
+	position: absolute;
+	top: 1px;
+	right: -5px;
+	padding: 2px 5px;
+	border: 1px solid #6f8179;
+	border-radius: 5px;
+	background: #111c17;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 18px;
+	box-shadow: 0 2px 5px #0009;
+}
+
+.fallback {
+	display: block;
+	padding: 6px 26px 6px 8px;
+	font-size: 12px;
+}
+
+.empty {
+	padding: 50px 24px;
+	color: #aabbb5;
+	text-align: center;
+}
+
+@media (hover: hover) {
+	.slot:hover {
+		z-index: 3;
+	}
+	.card:hover {
+		outline: 2px solid #d8ece3;
+		outline-offset: 1px;
+	}
+}
+
+@media (max-width: 680px) {
+	.toolbar,
+	.scroll {
+		padding: 18px 14px;
+	}
+}

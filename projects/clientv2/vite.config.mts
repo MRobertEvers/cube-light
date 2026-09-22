@@ -28,6 +28,7 @@ export const config = defineConfig({
 	},
 	server: {
 		port: 3000,
+		strictPort: true,
 		host: true,
 		allowedHosts: ['.local']
 	},

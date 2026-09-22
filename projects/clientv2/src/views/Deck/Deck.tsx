@@ -5,6 +5,7 @@ import { Page } from '../../components/Page/Page';
 import { PageFrame } from '../../components/Page/PageFrame';
 import { DeckHeader } from './DeckHeader';
 import { Decklist } from './components/Decklist/Decklist';
+import { Tabletop } from './components/Tabletop/Tabletop';
 import { CardPreviewModal } from './components/EditCard';
 import { ManagePrintings } from './components/ManagePrintings';
 import { Modal } from './components/Modal';
@@ -26,7 +27,7 @@ import { AddCards } from './components/AddCards';
 import { useAsyncReducer } from 'src/hooks/useAsyncReducer';
 import { AddCardEventType } from './components/AddCard/AddCard';
 import { fetchAPIDeleteDeck } from 'src/api/fetch-api-delete-deck';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { concatClassNames } from 'src/utils/concat-class-names';
 import { DeckControlIcon } from './DeckControlIcons';
 
@@ -60,6 +61,7 @@ import { useImageImportQueue } from 'src/utils/use-image-import-queue';
 import { useWorkQueue } from 'src/utils/work-queue';
 
 export type DeckControlButtonsProps = {
+	view: 'list' | 'tabletop';
 	dispatch: any;
 	deckId: string;
 	isEditMode: boolean;
@@ -85,6 +87,7 @@ function SavingLabel() {
 
 export function DeckControlButtons(props: DeckControlButtonsProps) {
 	const {
+		view,
 		dispatch,
 		isEditMode,
 		onEdit,
@@ -102,6 +105,20 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 	// the panel is all "done" needs to do.
 	return (
 		<div className={styles['deck-controls']}>
+			<nav className={styles['deck-view-switch']} aria-label="Deck view">
+				<Link
+					to={`/deck/${deckId}`}
+					aria-current={view === 'list' ? 'page' : undefined}
+				>
+					Deck list
+				</Link>
+				<Link
+					to={`/deck/${deckId}/tabletop`}
+					aria-current={view === 'tabletop' ? 'page' : undefined}
+				>
+					Tabletop
+				</Link>
+			</nav>
 			<Button
 				className={styles['edit-deck-button']}
 				onClick={isEditMode ? onDone : onEdit}
@@ -245,10 +262,11 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 export type DeckProps = {
 	initialDeckData?: GetDeckResponse;
 	deckId: string;
+	view?: 'list' | 'tabletop';
 };
 
 export function Deck(props: DeckProps) {
-	const { initialDeckData, deckId } = props;
+	const { initialDeckData, deckId, view = 'list' } = props;
 	const [state, dispatch] = useAsyncReducer(reducer, initialState);
 	const storeDispatch = useAppDispatch();
 	const { viewEditCard, viewAddCard } = state;
@@ -421,6 +439,11 @@ export function Deck(props: DeckProps) {
 		}
 	}
 
+	function openCard(card: FetchAPIDeckCardResponse, group: DeckCardGroup) {
+		if (isEditMode) setManaging(group);
+		else dispatch(Actions.setEditCard(card));
+	}
+
 	if (!data || showInitialLoading) {
 		return (
 			<Page>
@@ -562,11 +585,15 @@ export function Deck(props: DeckProps) {
 						src={topBannerCard.art}
 						crop={bannerCrop}
 						name={topBannerCard.name}
+						cardCount={data.deck.count}
 					/>
 				)}
 				<div
 					className={concatClassNames(
 						styles['index-container'],
+						view === 'tabletop'
+							? styles['tabletop-index']
+							: undefined,
 						topStyle === 'full-art'
 							? styles['full-index']
 							: undefined
@@ -579,10 +606,15 @@ export function Deck(props: DeckProps) {
 								src={previewIcon}
 								crop={bannerCrop}
 								name={data.name}
+								cardCount={data.deck.count}
 								updatedAt={data.lastEdit}
+								variant={
+									view === 'tabletop' ? 'mobile' : 'responsive'
+								}
 							/>
 						)}
 						<DeckControlButtons
+							view={view}
 							deckId={deckId}
 							dispatch={dispatch}
 							isEditMode={!!isEditMode}
@@ -607,30 +639,32 @@ export function Deck(props: DeckProps) {
 						)}
 						<DeckStatsSummary deck={data} />
 					</div>
-					<Decklist
-						name={name}
-						deck={data.deck}
-						banner={
-							topBannerCard
-								? {
-										art: topBannerCard.art,
-										name: topBannerCard.name
-									}
-								: null
-						}
-						bannerCrop={bannerCrop}
-						bannerBlend={data.bannerBlend}
-						topStyle={topStyle}
-						editable={!!isEditMode}
-						onCardClick={(
-							card: FetchAPIDeckCardResponse,
-							group: DeckCardGroup
-						) => {
-							if (isEditMode) setManaging(group);
-							else dispatch(Actions.setEditCard(card));
-						}}
-						onManagePrintings={setManaging}
-					/>
+					{view === 'tabletop' ? (
+						<Tabletop
+							cards={data.cards}
+							editable={!!isEditMode}
+							onCardClick={openCard}
+						/>
+					) : (
+						<Decklist
+							name={name}
+							deck={data.deck}
+							banner={
+								topBannerCard
+									? {
+											art: topBannerCard.art,
+											name: topBannerCard.name
+										}
+									: null
+							}
+							bannerCrop={bannerCrop}
+							bannerBlend={data.bannerBlend}
+							topStyle={topStyle}
+							editable={!!isEditMode}
+							onCardClick={openCard}
+							onManagePrintings={setManaging}
+						/>
+					)}
 				</div>
 			</div>
 		</PageFrame>

@@ -76,9 +76,32 @@
 	text-decoration: underline;
 }
 
-.set-code {
+.mana-cost {
+	display: inline-flex;
 	flex: none;
-	margin-right: 24px;
+	align-items: center;
+	gap: 2px;
+	white-space: nowrap;
+}
+
+.mana-symbol {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.3em;
+	height: 1.3em;
+	padding: 0 0.15em;
+	box-sizing: border-box;
+	border-radius: 1em;
+	box-shadow: -0.5px 1px 0 rgba(0, 0, 0, 0.4);
+	color: #1a1614;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1;
+	text-decoration: none;
+}
+
+.set-code {
 	color: #6d6764;
 	font-size: 11px;
 	font-weight: 600;

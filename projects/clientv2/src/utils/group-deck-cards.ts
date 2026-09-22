@@ -8,6 +8,29 @@ export type DeckCardGroup = {
 	printings: FetchAPIDeckCardResponse[];
 };
 
+/** Mana value outside the stack: variable symbols are zero, hybrid costs count once. */
+export function manaValue(manaCost: string): number {
+	return [...manaCost.matchAll(/\{([^}]+)\}/g)].reduce((total, match) => {
+		const values = match[1].split('/').map((symbol) => {
+			if (/^\d+$/.test(symbol)) return Number(symbol);
+			if (/^[XYZP]$/.test(symbol)) return 0;
+			if (symbol === 'HW') return 0.5;
+			return 1;
+		});
+		return total + Math.max(...values);
+	}, 0);
+}
+
+export function compareDeckCardGroupsByManaCost(
+	a: DeckCardGroup,
+	b: DeckCardGroup
+): number {
+	return (
+		manaValue(a.printings[0].manaCost) - manaValue(b.printings[0].manaCost) ||
+		a.name.localeCompare(b.name)
+	);
+}
+
 /** Groups deck entries (one per printing) by card name, keeping the order names first appear. */
 export function groupDeckCardsByName(
 	cards: readonly FetchAPIDeckCardResponse[]

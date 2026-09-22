@@ -53,9 +53,10 @@ export async function fetchSortedDeck(
 	};
 	const deckCards = deck.cardCategories;
 	for (const card of cards) {
-		// TODO: multiple types.
-		if (!(card.types in deckCards)) {
-			deckCards[card.types] = {
+		// Creature takes precedence over other types when grouping the deck.
+		const category = /\bCreature\b/i.test(card.types) ? 'Creature' : card.types;
+		if (!(category in deckCards)) {
+			deckCards[category] = {
 				count: 0,
 				cards: []
 			};
@@ -63,8 +64,8 @@ export async function fetchSortedDeck(
 
 		const count = card.count;
 
-		deckCards[card.types].count += count;
-		deckCards[card.types].cards.push(card);
+		deckCards[category].count += count;
+		deckCards[category].cards.push(card);
 
 		deck.count += count;
 	}

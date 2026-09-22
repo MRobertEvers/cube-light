@@ -28,16 +28,21 @@
 	padding: 0 18px;
 	min-width: 0;
 }
+.titleRow {
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 18px 0 6px;
+}
 .title,
 .titleButton {
 	color: var(--deck-banner-ink, inherit);
 	font-size: 23px;
 	line-height: 1.2;
-	margin: 18px 0 6px;
+	margin: 0;
 }
 .titleButton {
-	display: block;
-	width: 100%;
 	padding: 0;
 	border: 0;
 	background: none;
@@ -48,6 +53,12 @@
 }
 .titleButton:hover {
 	text-decoration: underline;
+}
+.cardCount {
+	color: var(--deck-on-surface, #6d6764);
+	font-size: 14px;
+	font-weight: 700;
+	white-space: nowrap;
 }
 .subtitle {
 	font-size: 14px;
@@ -75,6 +86,9 @@
 	margin: auto 12px;
 	flex-grow: 1;
 }
+.mobile .titleRow {
+	justify-content: center;
+}
 
 @media (max-width: 680px) {
 	.responsive {
@@ -98,5 +112,8 @@
 		text-align: center;
 		margin: auto 12px;
 		flex-grow: 1;
+	}
+	.responsive .titleRow {
+		justify-content: center;
 	}
 }

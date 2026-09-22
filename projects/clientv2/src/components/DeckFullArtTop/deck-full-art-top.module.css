@@ -33,9 +33,16 @@
 	text-shadow: 0 2px 7px rgba(0, 0, 0, 0.65);
 	pointer-events: none;
 }
+.titleRow {
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin: 0 0 8px;
+}
 .title,
 .titleButton {
-	margin: 0 0 8px;
+	margin: 0;
 	color: white;
 	font-size: clamp(2rem, 4vw, 3.5rem);
 	line-height: 1.1;
@@ -53,6 +60,18 @@
 }
 .titleButton:hover {
 	text-decoration: underline;
+}
+.cardCount {
+	padding: 4px 9px;
+	border: 1px solid rgba(255, 255, 255, 0.55);
+	border-radius: 999px;
+	background: rgba(20, 15, 15, 0.28);
+	color: white;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1;
+	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+	white-space: nowrap;
 }
 .subtitle {
 	font-size: 1rem;

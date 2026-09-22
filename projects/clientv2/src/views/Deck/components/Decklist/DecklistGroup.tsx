@@ -3,6 +3,7 @@ import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
 import { DeckGroupData } from '../../../../workers/deck.worker.messages';
 import {
 	DeckCardGroup,
+	compareDeckCardGroupsByManaCost,
 	groupDeckCardsByName
 } from '../../../../utils/group-deck-cards';
 
@@ -44,6 +45,42 @@ type OnCardEvent = (event: CardInteractionEvent) => void;
 
 /** Thumbnails shown in a collapsed row; more printings than this are summed in the pill. */
 const MAX_ROW_THUMBNAILS = 3;
+
+const MANA_COLORS: Record<string, string> = {
+	W: '#f8f3d6',
+	U: '#aad4ee',
+	B: '#c9c1bd',
+	R: '#f2a98e',
+	G: '#9fd3b0'
+};
+
+function ManaCost(props: { cost: string }) {
+	const { cost } = props;
+	if (!cost) return null;
+	return (
+		<span className={styles['mana-cost']} aria-label={`Mana cost: ${cost}`}>
+			{cost.split(/(\{[^}]+\})/).map((part, index) => {
+				const symbol = /^\{([^}]+)\}$/.exec(part)?.[1];
+				if (!symbol) return part;
+				const colors = symbol.split('/').map((value) => MANA_COLORS[value] ?? '#d6d2cf');
+				return (
+					<abbr
+						key={index}
+						className={styles['mana-symbol']}
+						title={part}
+						style={{
+							background: colors.length > 1
+								? `linear-gradient(135deg, ${colors[0]} 50%, ${colors[1]} 50%)`
+								: colors[0]
+						}}
+					>
+						{symbol}
+					</abbr>
+				);
+			})}
+		</span>
+	);
+}
 
 function thumbnailOf(card: FetchAPIDeckCardResponse) {
 	return card.images?.small ?? card.image;
@@ -97,7 +134,7 @@ function CardRow(props: CardRowProps) {
 			<button
 				type="button"
 				className={styles['row']}
-				aria-label={`Open ${group.name}, ${top.setCode} printing`}
+				aria-label={`Open ${group.name}, ${top.setCode} printing${top.manaCost ? `, mana cost ${top.manaCost}` : ''}`}
 				onClick={() =>
 					onCardEvent?.({
 						type: CardInteractionEventType.CLICK,
@@ -107,8 +144,11 @@ function CardRow(props: CardRowProps) {
 				{...previewHandlers(top, onCardEvent)}
 			>
 				<span className={styles['count']}>{group.count}</span>
-				<span className={styles['name']}>{group.name}</span>
-				<span className={styles['set-code']}>{top.setCode}</span>
+				<span className={styles['name']}>
+					{group.name}{' '}
+					<span className={styles['set-code']}>({top.setCode})</span>
+				</span>
+				<ManaCost cost={top.manaCost} />
 			</button>
 		);
 	}
@@ -125,6 +165,7 @@ function CardRow(props: CardRowProps) {
 			>
 				<span className={styles['count']}>{group.count}</span>
 				<span className={styles['name']}>{group.name}</span>
+				<ManaCost cost={top.manaCost} />
 				<span className={styles['thumbnails']} aria-hidden="true">
 					{group.printings
 						.slice(0, MAX_ROW_THUMBNAILS)
@@ -169,7 +210,7 @@ function CardRow(props: CardRowProps) {
 							<button
 								type="button"
 								className={styles['printing']}
-								aria-label={`${card.count} ${group.name}, ${card.setCode} printing`}
+								aria-label={`${card.count} ${group.name}, ${card.setCode} printing${card.manaCost ? `, mana cost ${card.manaCost}` : ''}`}
 								onClick={() =>
 									onCardEvent?.({
 										type: CardInteractionEventType.CLICK,
@@ -186,6 +227,7 @@ function CardRow(props: CardRowProps) {
 								<span className={styles['printing-code']}>
 									{card.setCode}
 								</span>
+								<ManaCost cost={card.manaCost} />
 								<span className={styles['printing-count']}>
 									×{card.count}
 								</span>
@@ -225,7 +267,7 @@ export type DecklistCategoryProps = {
 export function DecklistCategory(props: DecklistCategoryProps) {
 	const { group, name, editable, isExpanded, onToggle, onCardEvent } = props;
 	const cards = useMemo(
-		() => groupDeckCardsByName(group.cards),
+		() => groupDeckCardsByName(group.cards).sort(compareDeckCardGroupsByManaCost),
 		[group.cards]
 	);
 	return (

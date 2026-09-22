@@ -8,6 +8,7 @@ type Props = {
 	src: string | null;
 	crop: BannerCrop;
 	name: string;
+	cardCount?: number;
 	updatedAt: string;
 	variant?: 'responsive' | 'desktop' | 'mobile';
 	onEditDetails?: () => void;
@@ -20,6 +21,7 @@ export function DeckBannerCard(props: Props) {
 		src,
 		crop,
 		name,
+		cardCount,
 		updatedAt,
 		variant = 'responsive',
 		onEditDetails,
@@ -67,18 +69,25 @@ export function DeckBannerCard(props: Props) {
 				</div>
 			</div>
 			<div className={styles.info}>
-				{onEditDetails ? (
-					<button
-						type="button"
-						className={styles.titleButton}
-						onClick={onEditDetails}
-						aria-label="Edit deck details"
-					>
-						{name}
-					</button>
-				) : (
-					<h2 className={styles.title}>{name}</h2>
-				)}
+				<div className={styles.titleRow}>
+					{onEditDetails ? (
+						<button
+							type="button"
+							className={styles.titleButton}
+							onClick={onEditDetails}
+							aria-label="Edit deck details"
+						>
+							{name}
+						</button>
+					) : (
+						<h2 className={styles.title}>{name}</h2>
+					)}
+					{cardCount !== undefined && (
+						<span className={styles.cardCount}>
+							{cardCount} {cardCount === 1 ? 'card' : 'cards'}
+						</span>
+					)}
+				</div>
 				<span className={styles.subtitle}>
 					Updated <strong>{toFriendlyDate(updatedAt)}</strong>
 				</span>

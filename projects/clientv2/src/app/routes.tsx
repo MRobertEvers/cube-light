@@ -4,6 +4,7 @@ import { ParamMapper, PassParams } from 'src/components/PassParams/PassParams';
 import { CollectionEditPage } from 'src/views/CollectionEdit';
 import { CollectionEditPageProps } from 'src/views/CollectionEdit/CollectionEditPage';
 import { DeckPageProps } from 'src/views/Deck/DeckPage';
+import { TabletopPage } from 'src/views/Deck/TabletopPage';
 import { DeckSettingsPage } from 'src/views/Deck/DeckSettingsPage';
 import { DeckHistoryPage } from 'src/views/Deck/DeckHistoryPage';
 import { DeckImageScanPage } from 'src/views/Deck/DeckImageScanPage';
@@ -51,6 +52,12 @@ export function Routes() {
 					path="/deck/:id"
 					element={
 						<PassParams Component={DeckPage} params={DeckMapper} />
+					}
+				/>
+				<Route
+					path="/deck/:id/tabletop"
+					element={
+						<PassParams Component={TabletopPage} params={DeckMapper} />
 					}
 				/>
 				<Route
