@@ -1,7 +1,11 @@
-import { CardDatabase, DetailedCardInfo } from '../database/cards/CardDatabase';
+import {
+	CardDatabase,
+	CardRulesInfo,
+	DetailedCardInfo
+} from '../database/cards/CardDatabase';
 import { cardImageUrl, ImageVariant } from '../images/card-images';
 
-export type DeckOverviewCardInfo = {
+export type DeckOverviewCardInfo = Omit<CardRulesInfo, 'uuid'> & {
 	// From DetailedCardInfo
 	name: string;
 	uuid: string;
@@ -24,6 +28,13 @@ export async function getDeckOverviewCardInfo(
 	imageBaseUrl: string
 ): Promise<Array<DeckOverviewCardInfo>> {
 	const cards = await cardDatabase.getCardDataByUuids(uuids);
+	// Load preview text with the deck, so opening a card needs no extra request.
+	const rules = new Map(
+		(await cardDatabase.getCardRulesByUuids(uuids)).map((row) => [
+			row.uuid,
+			row
+		])
+	);
 
 	const cardMap = cards.reduce(
 		(map, item) => {
@@ -35,6 +46,19 @@ export async function getDeckOverviewCardInfo(
 
 	return uuids.map((uuid) => {
 		const baseCard = cardMap[uuid];
+		const { uuid: _uuid, ...cardRules } = rules.get(uuid) ?? {
+			uuid,
+			type: null,
+			rarity: null,
+			power: null,
+			toughness: null,
+			loyalty: null,
+			defense: null,
+			number: null,
+			artist: null,
+			flavorText: null,
+			legalities: {}
+		};
 		const small = cardImageUrl(imageBaseUrl, baseCard.scryfallId, 'small');
 		const images = small
 			? {
@@ -59,6 +83,7 @@ export async function getDeckOverviewCardInfo(
 
 		return {
 			...baseCard,
+			...cardRules,
 			image: images?.small,
 			images,
 			art: images?.art_crop
