@@ -6,6 +6,7 @@ import { AuthGate } from '../components/Auth/AuthGate';
 import { configureStore } from '../store/configure-store';
 import { startDeferredWorkRunner } from '../utils/deferred-work-runner';
 import { OfflineStatus } from '../components/OfflineStatus/OfflineStatus';
+import { PwaInstallProvider } from '../components/InstallApp/PwaInstallProvider';
 
 import '../assets/common.css';
 
@@ -14,9 +15,11 @@ const store = configureStore();
 export function App() {
 	return (
 		<Provider store={store}>
-			<AuthGate>
-				<SignedInApp />
-			</AuthGate>
+			<PwaInstallProvider>
+				<AuthGate>
+					<SignedInApp />
+				</AuthGate>
+			</PwaInstallProvider>
 		</Provider>
 	);
 }

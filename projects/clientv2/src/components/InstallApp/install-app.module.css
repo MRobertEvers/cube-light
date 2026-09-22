@@ -1,0 +1,107 @@
+.trigger {
+	display: grid;
+	place-items: center;
+	box-sizing: border-box;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	border: 0;
+	border-radius: 8px;
+	background: none;
+	color: #47413f;
+	cursor: pointer;
+}
+
+.trigger:hover {
+	background: #f4f1ef;
+	color: #8e2524;
+}
+
+.trigger:focus-visible {
+	outline: 3px solid rgba(142, 37, 36, 0.2);
+	color: #8e2524;
+}
+
+.icon,
+.shareIcon {
+	width: 23px;
+	height: 23px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.backdrop {
+	position: fixed;
+	z-index: 120;
+	inset: 0;
+	box-sizing: border-box;
+	padding: 20px;
+	display: grid;
+	place-items: center;
+	background: rgba(24, 18, 16, 0.46);
+}
+
+.dialog {
+	box-sizing: border-box;
+	width: min(100%, 360px);
+	padding: 24px;
+	border: 1px solid #ddd6d2;
+	border-radius: 14px;
+	background: #fff;
+	color: #393331;
+	box-shadow: 0 18px 48px rgba(38, 27, 24, 0.24);
+	text-align: center;
+}
+
+.dialogIcon {
+	width: 48px;
+	height: 48px;
+	margin: 0 auto 14px;
+	display: grid;
+	place-items: center;
+	border-radius: 50%;
+	background: #f6efed;
+	color: #8e2524;
+}
+
+.shareIcon {
+	width: 27px;
+	height: 27px;
+}
+
+.dialog h2 {
+	margin: 0 0 8px;
+	font-size: 21px;
+}
+
+.dialog p {
+	margin: 0;
+	color: #665e5a;
+	font-size: 15px;
+	line-height: 1.5;
+}
+
+.close {
+	width: 100%;
+	margin-top: 20px;
+	padding: 10px 16px;
+	border: 0;
+	border-radius: 8px;
+	background: #8e2524;
+	color: #fff;
+	font: inherit;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.close:hover {
+	background: #741d1c;
+}
+
+.close:focus-visible {
+	outline: 3px solid rgba(142, 37, 36, 0.25);
+	outline-offset: 2px;
+}

@@ -4,6 +4,7 @@ import { LogoIcon } from '../LogoIcon/LogoIcon';
 import { HeaderBackSlot } from './HeaderBackSlot';
 import { SiteNavLinks } from './SiteNavLinks';
 import { AccountMenu } from './AccountMenu';
+import { InstallAppButton } from '../InstallApp/InstallAppButton';
 
 import styles from './header.module.css';
 
@@ -32,6 +33,7 @@ export function Header(props: HeaderProps) {
 				</div>
 				<div className={styles['actions']}>{children}</div>
 				<div className={styles['account']}>
+					<InstallAppButton />
 					<AccountMenu />
 				</div>
 			</section>

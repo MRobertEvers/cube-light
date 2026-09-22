@@ -5,6 +5,7 @@ import { BannerArtwork } from '../../../../components/BannerArtwork/BannerArtwor
 import { HeaderBackSlot } from '../../../../components/Header/HeaderBackSlot';
 import { SiteNavLinks } from '../../../../components/Header/SiteNavLinks';
 import { AccountMenu } from '../../../../components/Header/AccountMenu';
+import { InstallAppButton } from '../../../../components/InstallApp/InstallAppButton';
 import type { BannerFrame } from '../../../../utils/banner-crop';
 import styles from './mobile-deck-header.module.css';
 
@@ -54,6 +55,7 @@ export function MobileDeckHeader(props: Props) {
 				key={collapsed ? 'collapsed' : 'expanded'}
 				collapsed={collapsed}
 			/>
+			<InstallAppButton />
 			<AccountMenu />
 		</nav>
 	);

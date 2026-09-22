@@ -67,6 +67,9 @@
 
 .account {
 	flex: none;
+	display: flex;
+	align-items: center;
+	gap: 4px;
 }
 
 /* A back button takes the brand name's room on phones; the icon still links home. */
