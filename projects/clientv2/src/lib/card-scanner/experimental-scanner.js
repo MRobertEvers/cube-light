@@ -2,7 +2,6 @@ import { scanPhoto } from './photo-scan.js';
 import { freshProposals } from './fresh-proposals.js';
 import { refineFontMatches } from './refine-font.js';
 import { scanReferenceTitles } from './reference-titles.js';
-import { readCatalogRegions } from './catalog-region-reader.js';
 import { addTextConsensus } from './consensus.js';
 import { findTitleStrips } from './edge-titles.js';
 import {
@@ -17,9 +16,13 @@ export async function scanExperimental({
 	names,
 	onProgress = () => {},
 	onStage = async () => {},
-	isCancelled = () => false
+	isCancelled = () => false,
+	useGLM = true,
+	verifier = useGLM ? 'glm' : 'none'
 } = {}) {
-	if (!navigator.gpu)
+	if (!['glm', 'paddle-medium', 'none'].includes(verifier))
+		throw Error('Unknown verifier');
+	if (verifier === 'glm' && !navigator.gpu)
 		throw Error(
 			'The experimental verifier requires a browser with WebGPU.'
 		);
@@ -151,12 +154,15 @@ export async function scanExperimental({
 		passes.push(references);
 		add(references.outputs, 0.85, 0.15, 'Printed reference title');
 		await onStage('references', { candidates, pass: references });
-		const glmRows = distinct(
-			rough.outputs.filter(
-				(r) => r.candidates[0].score >= 0.5 && eligible(r)
-			)
-		).slice(0, 60);
-		for (const row of glmRows) {
+		const verificationRows =
+			verifier !== 'none'
+				? distinct(
+						rough.outputs.filter(
+							(r) => r.candidates[0].score >= 0.5 && eligible(r)
+						)
+					).slice(0, 60)
+				: [];
+		for (const row of verificationRows) {
 			const box = bounds(row.poly),
 				key = row.candidates[0].name;
 			row.variants = rough.outputs
@@ -173,22 +179,36 @@ export async function scanExperimental({
 				.slice(0, 3)
 				.map((other) => other.poly);
 		}
-		console.log('Fresh GLM queries', glmRows.length);
-		if (glmRows.length) {
-			const glm = await readCatalogRegions(image, glmRows, names, {
-				onProgress,
-				isCancelled
-			});
-			passes.push(glm);
+		console.log('Verifier queries', verificationRows.length);
+		if (verificationRows.length) {
+			const readRegions =
+				verifier === 'paddle-medium'
+					? (await import('./paddle-region-reader.js'))
+							.readPaddleRegions
+					: (await import('./catalog-region-reader.js'))
+							.readCatalogRegions;
+			const verification = await readRegions(
+				image,
+				verificationRows,
+				names,
+				{
+					onProgress,
+					isCancelled
+				}
+			);
+			passes.push(verification);
 			candidates = addTextConsensus(
 				candidates,
-				glm.outputs,
-				rough.outputs
+				verification.outputs,
+				rough.outputs,
+				verifier === 'paddle-medium' ? 'Paddle v6 medium' : 'GLM'
 			);
-			await onStage('verification', { candidates, pass: glm });
+			await onStage('verification', { candidates, pass: verification });
 		}
 		return {
-			engine: 'experimental-text-only',
+			engine: 'experimental-text-only-' + verifier,
+			verifier,
+			useGLM: verifier === 'glm',
 			names: [...new Set(candidates.map((c) => c.name))].sort(),
 			candidates,
 			passes,

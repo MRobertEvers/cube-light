@@ -22,12 +22,12 @@ export async function createRecognizer(
       p.reject(new Error(e.message || "Recognition worker failed"));
     pending.clear();
   };
-  const call = (pixels) =>
+  const call = (pixels, candidateNames) =>
     new Promise((resolve, reject) => {
       const id = next++;
       pending.set(id, { resolve, reject });
       worker.postMessage(
-        { id, pixels, model, stretch, enhance, deblur, lexical },
+        { id, pixels, model, stretch, enhance, deblur, lexical, candidateNames },
         pixels ? [pixels.data.buffer] : [],
       );
     });
@@ -38,9 +38,10 @@ export async function createRecognizer(
     throw e;
   }
   return {
-    recognize: (canvas) =>
+    recognize: (canvas, candidateNames) =>
       call(
         canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height),
+        candidateNames,
       ),
     dispose: () => worker.terminate(),
   };

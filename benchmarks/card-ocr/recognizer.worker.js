@@ -1,3 +1,4 @@
+import {scoreCTCNames} from './ctc-candidate-score.js';
 import {makeLexicon,decodeLexicon} from "./ctc-lexicon.js";
 import {deblurImageData} from "./deblur.js";
 import * as ort from "onnxruntime-web";
@@ -18,7 +19,7 @@ async function initialize(model) {
   );
 }
 self.onmessage = async ({
-  data: { id, pixels, model, stretch = 1, enhance = false, deblur = 0, lexical = false },
+  data: { id, pixels, model, stretch = 1, enhance = false, deblur = 0, lexical = false, candidateNames },
 }) => {
   try {
     if (!session) await initialize(model);
@@ -102,10 +103,11 @@ self.onmessage = async ({
       prev = idx;
     }
     let hypotheses;
-    if(lexical && text.length>=3){
+    if(lexical && (text.length>=3 || candidateNames?.length)){
       lexicon ||= makeLexicon(await(await fetch('/res/card-names.json')).json());
       hypotheses=decodeLexicon(out.data,steps,['_',...dict],lexicon,{skip:0,blankIndex:0});
     }
+    if(candidateNames?.length)hypotheses=scoreCTCNames(out.data,steps,['_',...dict],[...candidateNames,...(hypotheses||[]).map(h=>h.name)],0);
     input.dispose();
     for (const output of Object.values(outputs)) output.dispose();
     self.postMessage({ id, text, score: count ? sum / count : 0, lexical:hypotheses });

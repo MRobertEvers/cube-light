@@ -34,7 +34,14 @@ type PipelineEvent = {
 	total?: number;
 	region?: { x: number; y: number; w: number; h: number };
 };
+export type ScanOptions = {
+	useGLM?: boolean;
+	verifier?: 'glm' | 'paddle-medium' | 'none';
+};
+
 type PipelineOptions = {
+	verifier?: ScanOptions['verifier'];
+	useGLM?: boolean;
 	url: string;
 	names: string[];
 	isCancelled: () => boolean;
@@ -70,7 +77,8 @@ export async function scanCardImage(
 	file: File,
 	names: string[],
 	onProgress: (progress: ScanProgress) => void,
-	isCancelled: () => boolean
+	isCancelled: () => boolean,
+	options: ScanOptions = {}
 ): Promise<{
 	candidates: CardImageCandidate[];
 	width: number;
@@ -99,6 +107,8 @@ export async function scanCardImage(
 			options: PipelineOptions
 		) => Promise<PipelineResult>;
 		const result = await scan({
+			useGLM: options.useGLM ?? true,
+			verifier: options.verifier,
 			url,
 			names,
 			isCancelled,

@@ -108,6 +108,49 @@ Crucially, it records token likelihoods **before** masking. A forced legal name 
 
 For a close decision where the best GLM and optical names already agree, the verifier can retry up to three alternate geometries previously generated from the image. It keeps the acceptance threshold unchanged. The final run made 18 verifications across 17 selected regions. This recovered **Inventor's Goggles** and one additional Metallic Rebuke title instance, reaching twelve distinct names and seventeen title instances.
 
+### Verifier ablation: replacing GLM with a smaller model
+
+On 22 September 2026 (UTC) we held the image, preprocessing, title proposals, font/reference matching and acceptance cutoffs fixed, then compared three final-stage choices in fresh Chrome sessions. The no-GLM modes blocked requests to every GLM asset and hid `navigator.gpu`; neither attempted to fetch a GLM asset. All three runs scored against annotations only after recognition finished.
+
+| Final verifier | Correct distinct names | Correct title instances | False matches | Whole scan | Verifier stage | Sampled summed Chrome RSS peak |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| No final verifier | 11/12 | 15 | 0 | 139.74 s | 0.00 s | 4.23 GiB |
+| Paddle v6 medium (WASM) | 12/12 | 17 | 0 | 148.07 s | 6.96 s | 3.87 GiB |
+| GLM-OCR FP16 (WebGPU) | 12/12 | 17 | 0 | 222.56 s | 53.20 s | 6.78 GiB |
+
+**GLM added one unique name (Inventor's Goggles) and one additional Metallic Rebuke instance over omitting verification. The 73.01 MiB Paddle v6 medium recognizer recovered those same two instances, so GLM added no observed accuracy over that smaller verifier on this photo.** This is still one development fixture, not proof that their accuracy is equal across other images.
+
+The smaller model is being used as a **verifier**, not being asked to rediscover all cards. [paddle-region-reader.js](src/lib/card-scanner/paddle-region-reader.js) receives the same automatically selected title regions and candidate names used by the GLM verifier. A WASM worker runs PP-OCRv6_medium_rec on each crop. A CTC prefix search over the catalog proposes additional alternatives, and [ctc-candidate-score.js](src/lib/card-scanner/ctc-candidate-score.js) evaluates exact CTC forward likelihoods for the optical seeds and those alternatives. It sums valid character/blank alignments, handles repeated letters, and retains the original model probabilities rather than renormalizing them over the allowed names.
+
+The same optical-name agreement, minimum-length, support and margin checks are then applied. CTC support is normalized by characters, while GLM support is normalized by tokens; their numeric scores are not calibrated or directly comparable confidence probabilities. The cutoffs were kept fixed for this ablation. In a preliminary verifier-only test on 18 cached crop geometries, the approximately 20 MiB small recognizer took 1.82 s and stayed at 11/12; the 73 MiB medium recognizer took 5.80 s and reached 12/12; the 81 MiB server recognizer took 5.84 s and stayed at 11/12. The medium result was subsequently confirmed by the fresh full run above. Cached-crop timings are not full scan times.
+
+The compact configuration needs **109,424,484 bytes / 104.36 MiB of declared assets in total**, including catalogs, the font, the two initial Paddle model archives, and the medium verifier/configuration. Its largest model is **76,554,979 bytes / 73.01 MiB**; no individual model exceeds 100 MiB. The GLM configuration needs **2,254,006,369 bytes / 2,149.59 MiB**. Model/runtime JavaScript, WASM binaries and on-demand reference images are additional. Compact recognition uses WASM and does not require WebGPU, although the browser can still use its GPU for ordinary Canvas/compositing.
+
+The current installed asset manifest contains both verifier alternatives. The deployed default remains GLM until configured otherwise; the compact mode can be selected with `scanCardImage(file, names, onProgress, isCancelled, { verifier: 'paddle-medium' })`, or `scanExperimental({ url, names, verifier: 'paddle-medium' })`. Use `verifier: 'none'` to stop after reference matching. The legacy `useGLM: false` option also selects no verifier. GLM is imported lazily, so it is not initialized by compact scans.
+
+These are single-run observations, not a guaranteed speedup or memory minimum. The GLM control's earlier stages also ran more slowly (54.86 s for initial OCR and 94.10 s for font proposals, versus 36.27 s and 85.17 s in the medium run), so the entire end-to-end difference cannot be attributed solely to verification. Previous GLM runs took 173–192 s overall. Likewise, the no-verifier run's slightly higher RSS than the medium run reflects allocation/collection and run-to-run variation; adding a model is not a memory optimization by itself. The compact pipeline still used several GiB because image copies, font indexes and browser/native allocations remain.
+
+The implementation corresponds to the standard Paddle diagram as follows:
+
+| Standard Paddle module | Used here? |
+| --- | --- |
+| Document Image Orientation Classification | Disabled |
+| Text Image Unwarping | Disabled; our card-plane perspective correction is separate custom geometry |
+| Text Line Orientation Classification | Disabled; title deskew/crop geometry is handled separately |
+| Text Detection | PP-OCRv5_mobile_det in the tiled first pass |
+| Text Recognition | PP-OCRv6_small_rec in the first pass; PP-OCRv6_medium_rec for optional compact verification |
+
+Our catalog/font/reference matching and final verification sit around those detection/recognition modules. This is not the untouched default Paddle document pipeline, and enabling its optional YAML flags alone would not reproduce the card-specific flow.
+
+Evidence: [verifier-ablation-summary.json](../../benchmarks/card-ocr/verifier-ablation-summary.json). Reproduce against the corresponding production preview build from `benchmarks/card-ocr`:
+
+```sh
+PROFILE_ORIGIN=http://127.0.0.1:4174 PROFILE_RUNS=1 PROFILE_VERIFIER=none PROFILE_ID=ablation-no-glm node profile-client-memory.mjs
+PROFILE_ORIGIN=http://127.0.0.1:4174 PROFILE_RUNS=1 PROFILE_VERIFIER=paddle-medium PROFILE_ID=ablation-paddle-medium node profile-client-memory.mjs
+PROFILE_ORIGIN=http://127.0.0.1:4174 PROFILE_RUNS=1 PROFILE_VERIFIER=glm PROFILE_ID=ablation-glm-control node profile-client-memory.mjs
+node summarize-verifier-ablation.mjs
+```
+
 ### Where the time goes
 
 All times below come from the same successful fresh run; stages are sequential and their costs can be added.
@@ -213,6 +256,8 @@ Sizes below are measured from the installed files in [deploy/ocr-assets.json](..
 | --- | ---: | ---: | --- |
 | Paddle v5 mobile detector, ONNX archive | 4,843,520 | 4.62 MiB | GitHub |
 | Paddle v6 small recognizer, ONNX archive | 21,319,680 | 20.33 MiB | GitHub |
+| Optional Paddle v6 medium verifier, ONNX | 76,554,979 | 73.01 MiB | GitHub |
+| Medium verifier character dictionary/configuration | 150,580 | 0.14 MiB | GitHub |
 | GLM FP16 decoder external weights | 1,164,318,720 | 1,110.38 MiB | NAS |
 | GLM FP16 token embeddings external weights | 182,452,224 | 174.00 MiB | NAS |
 | GLM FP16 vision encoder external weights | 868,340,736 | 828.11 MiB | NAS |
@@ -220,21 +265,21 @@ Sizes below are measured from the installed files in [deploy/ocr-assets.json](..
 | Full card-name catalog | 658,950 | 0.63 MiB | GitHub |
 | Printing/reference identifier catalog | 5,838,595 | 5.57 MiB | GitHub |
 | Beleren title font | 58,180 | 0.06 MiB | GitHub |
-| **All 19 declared runtime assets** | **2,254,006,369** | **2,149.59 MiB / 2.10 GiB** | **37.09 MiB GitHub + 2,112.49 MiB NAS** |
+| **All 21 assets, including both verifier alternatives** | **2,330,711,928** | **2,222.74 MiB / 2.17 GiB** | **110.24 MiB GitHub + 2,112.49 MiB NAS** |
 
-The total is **2.254 GB in decimal units**. GLM's complete model/configuration directory alone is 2,221,287,444 bytes (2,118.38 MiB). The three NAS files are 2,215,111,680 bytes combined. Each exceeds GitHub's normal 100 MiB per-file limit. Small ONNX graph files refer to those external weights; checking in a graph does not make its large weight file optional. The installer verifies both size and SHA-256 before accepting an asset.
+The installed superset is **2.331 GB in decimal units**. A GLM-only configuration uses 2.254 GB; the compact-verifier configuration uses 109.42 MB, as detailed in the ablation above. GLM's complete model/configuration directory alone is 2,221,287,444 bytes (2,118.38 MiB). The three NAS files are 2,215,111,680 bytes combined. Each exceeds GitHub's normal 100 MiB per-file limit. Small ONNX graph files refer to those external weights; checking in a graph does not make its large weight file optional. The installer verifies both size and SHA-256 before accepting an asset.
 
 These figures exclude the application JavaScript, runtime libraries, reference card images, browser caches, and experimental models that are not deployed. The build contains approximately 27.00 MiB and 25.62 MiB ONNX Runtime Web WASM binaries for different execution paths; presence in `dist` does not mean every path downloads both. OpenCV and other library code also contribute to the scanner JavaScript chunk. Paddle's SDK can load its own runtime assets separately. Needed reference printings are downloaded on demand—the successful scan used 110—but the app does not download the entire printing catalog's images.
 
 The first installation from the NAS copies the large files onto the application host. A fresh browser must then fetch whichever deployed model/runtime assets it needs from that host. Initial NAS installation time, browser download time, model initialization time and recognition time must be budgeted separately. Model weights being cached does not mean the in-memory model session is reused: the current scanner reconstructs its GLM session and disposes it on every scan, and Transformers' application-level browser model cache is disabled in this implementation. HTTP caching is a separate mechanism.
 
-For comparison, the prepared model files from the unsuccessful experiments have these sizes. This table measures model/graph payloads, excluding tokenizer/configuration files and diagnostic tensors; it is **not** a RAM benchmark or a proposal to download all of these in the client.
+For comparison, the other prepared model exports have these sizes. Most were not selected; the medium Paddle model later succeeded in the verifier role described above. This table measures model/graph payloads, excluding tokenizer/configuration files and diagnostic tensors; it is **not** a RAM benchmark or a proposal to download all of these in the client.
 
 | Experimental model/export | Prepared model payload | Used in deployed pipeline? |
 | --- | ---: | --- |
 | Paddle v5 English recognizer, ONNX | 7.48 MiB | No |
 | Paddle v5 server recognizer, ONNX | 80.59 MiB | No |
-| Paddle v6 medium recognizer, ONNX | 73.01 MiB | No |
+| Paddle v6 medium recognizer, ONNX | 73.01 MiB | Optional compact verifier |
 | Tesseract English best trained data | 14.69 MiB | No |
 | Florence-2 base FT, FP16 vision/embeddings + Q4 encoder/decoder | 340.62 MiB | No |
 | TrOCR small printed, Q8 encoder/decoder | 60.66 MiB | No |

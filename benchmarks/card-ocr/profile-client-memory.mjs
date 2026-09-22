@@ -6,7 +6,13 @@ import { setTimeout as delay } from "node:timers/promises";
 import { evaluatePhoto } from "./evaluate-photo.js";
 const exec = promisify(execFile),
   origin = process.env.PROFILE_ORIGIN || "http://127.0.0.1:3000",
-  runs = Number(process.env.PROFILE_RUNS || 2);
+  runs = Number(process.env.PROFILE_RUNS || 2),
+  verifier =
+    process.env.PROFILE_VERIFIER ||
+    (process.env.PROFILE_GLM === "false" ? "none" : "glm"),
+  useGLM = verifier === "glm",
+  profileId = process.env.PROFILE_ID || "client-memory";
+if (!/^[a-z0-9-]+$/.test(profileId)) throw Error("Invalid PROFILE_ID");
 const assets = new URL("../../projects/clientv2/dist/assets/", import.meta.url),
   entry = (await readdir(assets)).find((f) =>
     /^experimental-scanner-.*\.js$/.test(f),
@@ -37,6 +43,9 @@ rootPid = info.processInfo.find((p) => p.type === "browser").id;
 const sourceCommit = (await exec("git", ["rev-parse", "HEAD"])).stdout.trim();
 const environment = {
   headless: true,
+  useGLM,
+  verifier,
+  webGPUHidden: !useGLM,
   bundle: entry,
   browser: browser.version(),
   platform: process.platform,
@@ -125,13 +134,25 @@ await page.addInitScript(() => {
     }).observe({ type: "longtask", buffered: true });
   } catch {}
 });
+if (!useGLM)
+  await page.addInitScript(() =>
+    Object.defineProperty(navigator, "gpu", {
+      value: undefined,
+      configurable: true,
+    }),
+  );
 await cdp.send("Network.setBlockedURLs", {
-  urls: ["*/photo-results/*", "*/photo-ground-truth.json"],
+  urls: [
+    "*/photo-results/*",
+    "*/photo-ground-truth.json",
+    ...(!useGLM ? ["*/ocr/models/glm/*"] : []),
+  ],
 });
 cdp.on("Network.requestWillBeSent", (e) => {
   if (
     e.request.url.includes("/photo-results/") ||
-    e.request.url.includes("/photo-ground-truth.json")
+    e.request.url.includes("/photo-ground-truth.json") ||
+    (!useGLM && e.request.url.includes("/ocr/models/glm/"))
   )
     forbidden.push(e.request.url);
 });
@@ -174,39 +195,51 @@ try {
   for (run = 1; run <= runs; run++) {
     phase = "module-loading";
     console.log("RUN", run);
-    const result = await page.evaluate(async (entry) => {
-      globalThis.__profileTasks = [];
-      const { scanExperimental } = await import("/assets/" + entry),
-        names = await (await fetch("/ocr/card-names.json")).json(),
-        start = performance.now();
-      const result = await scanExperimental({
-        url: globalThis.__profilePhotoUrl,
-        names,
-        onProgress: (event) => {
-          void window.profilePhase({ phase: event.phase });
-        },
-      });
-      const tasks = globalThis.__profileTasks.filter((t) => t.start >= start),
-        longTasks = {
-          count: tasks.length,
-          totalMs: tasks.reduce((s, t) => s + t.duration, 0),
-          blockingMs: tasks.reduce(
-            (s, t) => s + Math.max(0, t.duration - 50),
-            0,
-          ),
-          maxMs: Math.max(0, ...tasks.map((t) => t.duration)),
+    const result = await page.evaluate(
+      async ({ entry, useGLM, verifier }) => {
+        const stages = [];
+        globalThis.__profileTasks = [];
+        const { scanExperimental } = await import("/assets/" + entry),
+          names = await (await fetch("/ocr/card-names.json")).json(),
+          start = performance.now();
+        const result = await scanExperimental({
+          url: globalThis.__profilePhotoUrl,
+          names,
+          useGLM,
+          verifier,
+          onStage: async (stage, data) => {
+            if (data.candidates)
+              stages.push({ stage, candidates: data.candidates });
+          },
+          onProgress: (event) => {
+            void window.profilePhase({ phase: event.phase });
+          },
+        });
+        const tasks = globalThis.__profileTasks.filter((t) => t.start >= start),
+          longTasks = {
+            count: tasks.length,
+            totalMs: tasks.reduce((s, t) => s + t.duration, 0),
+            blockingMs: tasks.reduce(
+              (s, t) => s + Math.max(0, t.duration - 50),
+              0,
+            ),
+            maxMs: Math.max(0, ...tasks.map((t) => t.duration)),
+          };
+        return {
+          useGLM,
+          stages,
+          names: result.names,
+          candidates: result.candidates,
+          totalMs: result.totalMs,
+          timings: result.passes.map((p) => ({
+            engine: p.engine,
+            totalMs: p.totalMs,
+          })),
+          longTasks,
         };
-      return {
-        names: result.names,
-        candidates: result.candidates,
-        totalMs: result.totalMs,
-        timings: result.passes.map((p) => ({
-          engine: p.engine,
-          totalMs: p.totalMs,
-        })),
-        longTasks,
-      };
-    }, entry);
+      },
+      { entry, useGLM, verifier },
+    );
     const truth = JSON.parse(
       await readFile(
         new URL("./photo-ground-truth.json", import.meta.url),
@@ -234,7 +267,7 @@ try {
     const latest = await browserCDP.send("SystemInfo.getProcessInfo");
     for (const p of latest.processInfo) processTypes.set(p.id, p.type);
     await writeFile(
-      new URL("./photo-results/client-memory-progress.json", import.meta.url),
+      new URL(`./photo-results/${profileId}-progress.json`, import.meta.url),
       JSON.stringify({
         environment,
         results,
@@ -277,7 +310,7 @@ try {
     forbidden,
   };
   await writeFile(
-    new URL("./photo-results/client-memory-profile.json", import.meta.url),
+    new URL(`./photo-results/${profileId}-profile.json`, import.meta.url),
     JSON.stringify(report, null, 2),
   );
   console.log(

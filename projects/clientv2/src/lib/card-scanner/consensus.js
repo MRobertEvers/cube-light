@@ -2,7 +2,12 @@ import { bounds, sameLine } from './photo-match.js';
 
 // Development-fixture heuristic, not calibrated confidence. Both sources must
 // independently rank the same catalog name first at the same image location.
-export function addTextConsensus(existing, glmRows, opticalRows) {
+export function addTextConsensus(
+	existing,
+	glmRows,
+	opticalRows,
+	verifier = 'GLM'
+) {
 	const candidates = [...existing];
 	for (const row of glmRows) {
 		const best = row.result?.ranked?.[0];
@@ -25,12 +30,12 @@ export function addTextConsensus(existing, glmRows, opticalRows) {
 		candidates.push({
 			name: best.name,
 			status: 'accepted',
-			text: 'GLM / printed-name agreement',
+			text: `${verifier} / printed-name agreement`,
 			poly: row.poly,
 			box,
 			evidence: {
-				glmRawTokenSupport: best.rawTokenSupport,
-				glmSearchGap: row.result.searchGap,
+				verifierRawSupport: best.rawTokenSupport,
+				verifierSearchGap: row.result.searchGap,
 				opticalScore: optical.candidates[0].score
 			}
 		});

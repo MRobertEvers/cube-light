@@ -1,0 +1,443 @@
+{
+  "date": "2026-09-22T00:35:20.424Z",
+  "scope": "Same photo and pre-verification stages; fresh Chrome per run. RSS is the sampled sum of Chrome process RSS, not unique physical memory.",
+  "runs": [
+    {
+      "verifier": "none",
+      "id": "ablation-no-glm",
+      "environment": {
+        "headless": true,
+        "useGLM": false,
+        "webGPUHidden": true,
+        "bundle": "experimental-scanner-CMLHgvGM.js",
+        "browser": "153.0.8010.52",
+        "platform": "darwin",
+        "arch": "arm64",
+        "cpu": "Apple M4 Max",
+        "ramBytes": 51539607552,
+        "swapBefore": "vm.swapusage: total = 1024.00M  used = 229.44M  free = 794.56M  (encrypted)",
+        "origin": "http://127.0.0.1:4174",
+        "swapAfter": "vm.swapusage: total = 1024.00M  used = 229.44M  free = 794.56M  (encrypted)"
+      },
+      "totalMs": 139741.69999998808,
+      "names": [
+        "Aether Chaser",
+        "Aether Swooper",
+        "Cloudsculpt Technician",
+        "Cryogen Relic",
+        "Galvanic Blast",
+        "Gearseeker Serpent",
+        "Inventor's Axe",
+        "Kenku Artificer",
+        "Melded Moxite",
+        "Metallic Rebuke",
+        "Selfcraft Mechan"
+      ],
+      "correctNames": 11,
+      "correctTitles": 15,
+      "falsePositives": [],
+      "peakRssBytes": 4546592768,
+      "idleRssBytes": 3833610240,
+      "requiredAssetBytes": 32718925,
+      "largestModelBytes": 21319680,
+      "timings": [
+        {
+          "engine": "paddle",
+          "totalMs": 36488
+        },
+        {
+          "engine": "font-proposals",
+          "totalMs": 84877
+        },
+        {
+          "engine": "font-refinement",
+          "totalMs": 10424.699999988079
+        },
+        {
+          "engine": "printed-reference-title-matching",
+          "totalMs": 7451.800000011921
+        }
+      ],
+      "stages": [
+        {
+          "stage": "baseline",
+          "names": [
+            "Aether Chaser",
+            "Aether Swooper",
+            "Cloudsculpt Technician",
+            "Cryogen Relic",
+            "Galvanic Blast",
+            "Gearseeker Serpent",
+            "Inventor's Axe",
+            "Kenku Artificer",
+            "Melded Moxite",
+            "Metallic Rebuke",
+            "Selfcraft Mechan"
+          ],
+          "titleInstances": 15
+        },
+        {
+          "stage": "font",
+          "names": [
+            "Aether Chaser",
+            "Aether Swooper",
+            "Cloudsculpt Technician",
+            "Cryogen Relic",
+            "Galvanic Blast",
+            "Gearseeker Serpent",
+            "Inventor's Axe",
+            "Kenku Artificer",
+            "Melded Moxite",
+            "Metallic Rebuke",
+            "Selfcraft Mechan"
+          ],
+          "titleInstances": 15
+        },
+        {
+          "stage": "references",
+          "names": [
+            "Aether Chaser",
+            "Aether Swooper",
+            "Cloudsculpt Technician",
+            "Cryogen Relic",
+            "Galvanic Blast",
+            "Gearseeker Serpent",
+            "Inventor's Axe",
+            "Kenku Artificer",
+            "Melded Moxite",
+            "Metallic Rebuke",
+            "Selfcraft Mechan"
+          ],
+          "titleInstances": 15
+        }
+      ],
+      "errors": [],
+      "forbiddenRequests": [],
+      "observedTransferBytes": 24639326,
+      "glmRequests": 0,
+      "longTasks": {
+        "count": 338,
+        "totalMs": 90687,
+        "blockingMs": 73787,
+        "maxMs": 10622
+      }
+    },
+    {
+      "verifier": "paddle-medium",
+      "id": "ablation-paddle-medium",
+      "environment": {
+        "headless": true,
+        "useGLM": false,
+        "verifier": "paddle-medium",
+        "webGPUHidden": true,
+        "bundle": "experimental-scanner-iBkEenoz.js",
+        "browser": "153.0.8010.52",
+        "platform": "darwin",
+        "arch": "arm64",
+        "cpu": "Apple M4 Max",
+        "ramBytes": 51539607552,
+        "swapBefore": "vm.swapusage: total = 1024.00M  used = 229.44M  free = 794.56M  (encrypted)",
+        "origin": "http://127.0.0.1:4174",
+        "swapAfter": "vm.swapusage: total = 1024.00M  used = 229.44M  free = 794.56M  (encrypted)"
+      },
+      "totalMs": 148068.90000003576,
+      "names": [
+        "Aether Chaser",
+        "Aether Swooper",
+        "Cloudsculpt Technician",
+        "Cryogen Relic",
+        "Galvanic Blast",
+        "Gearseeker Serpent",
+        "Inventor's Axe",
+        "Inventor's Goggles",
+        "Kenku Artificer",
+        "Melded Moxite",
+        "Metallic Rebuke",
+        "Selfcraft Mechan"
+      ],
+      "correctNames": 12,
+      "correctTitles": 17,
+      "falsePositives": [],
+      "peakRssBytes": 4150149120,
+      "idleRssBytes": 3300016128,
+      "requiredAssetBytes": 109424484,
+      "largestModelBytes": 76554979,
+      "timings": [
+        {
+          "engine": "paddle",
+          "totalMs": 36268.299999952316
+        },
+        {
+          "engine": "font-proposals",
+          "totalMs": 85175
+        },
+        {
+          "engine": "font-refinement",
+          "totalMs": 11083.100000023842
+        },
+        {
+          "engine": "printed-reference-title-matching",
+          "totalMs": 8030.600000023842
+        },
+        {
+          "engine": "paddle-medium-catalog-verifier",
+          "totalMs": 6964.699999988079
+        }
+      ],
+      "stages": [
+        {
+          "stage": "baseline",
+          "names": [
+            "Aether Chaser",
+            "Aether Swooper",
+            "Cloudsculpt Technician",
+            "Cryogen Relic",
+            "Galvanic Blast",
+            "Gearseeker Serpent",
+            "Inventor's Axe",
+            "Kenku Artificer",
+            "Melded Moxite",
+            "Metallic Rebuke",
+            "Selfcraft Mechan"
+          ],
+          "titleInstances": 15
+        },
+        {
+          "stage": "font",
+          "names": [
+            "Aether Chaser",
+            "Aether Swooper",
+            "Cloudsculpt Technician",
+            "Cryogen Relic",
+            "Galvanic Blast",
+            "Gearseeker Serpent",
+            "Inventor's Axe",
+            "Kenku Artificer",
+            "Melded Moxite",
+            "Metallic Rebuke",
+            "Selfcraft Mechan"
+          ],
+          "titleInstances": 15
+        },
+        {
+          "stage": "references",
+          "names": [
+            "Aether Chaser",
+            "Aether Swooper",
+            "Cloudsculpt Technician",
+            "Cryogen Relic",
+            "Galvanic Blast",
+            "Gearseeker Serpent",
+            "Inventor's Axe",
+            "Kenku Artificer",
+            "Melded Moxite",
+            "Metallic Rebuke",
+            "Selfcraft Mechan"
+          ],
+          "titleInstances": 15
+        },
+        {
+          "stage": "verification",
+          "names": [
+            "Aether Chaser",
+            "Aether Swooper",
+            "Cloudsculpt Technician",
+            "Cryogen Relic",
+            "Galvanic Blast",
+            "Gearseeker Serpent",
+            "Inventor's Axe",
+            "Inventor's Goggles",
+            "Kenku Artificer",
+            "Melded Moxite",
+            "Metallic Rebuke",
+            "Selfcraft Mechan"
+          ],
+          "titleInstances": 17
+        }
+      ],
+      "errors": [],
+      "forbiddenRequests": [],
+      "observedTransferBytes": 24641138,
+      "glmRequests": 0,
+      "longTasks": {
+        "count": 340,
+        "totalMs": 91871,
+        "blockingMs": 74871,
+        "maxMs": 11306
+      }
+    },
+    {
+      "verifier": "glm",
+      "id": "ablation-glm-control",
+      "environment": {
+        "headless": true,
+        "useGLM": true,
+        "verifier": "glm",
+        "webGPUHidden": false,
+        "bundle": "experimental-scanner-iBkEenoz.js",
+        "browser": "153.0.8010.52",
+        "platform": "darwin",
+        "arch": "arm64",
+        "cpu": "Apple M4 Max",
+        "ramBytes": 51539607552,
+        "swapBefore": "vm.swapusage: total = 1024.00M  used = 229.44M  free = 794.56M  (encrypted)",
+        "origin": "http://127.0.0.1:4174",
+        "swapAfter": "vm.swapusage: total = 1024.00M  used = 229.44M  free = 794.56M  (encrypted)"
+      },
+      "totalMs": 222560.89999997616,
+      "names": [
+        "Aether Chaser",
+        "Aether Swooper",
+        "Cloudsculpt Technician",
+        "Cryogen Relic",
+        "Galvanic Blast",
+        "Gearseeker Serpent",
+        "Inventor's Axe",
+        "Inventor's Goggles",
+        "Kenku Artificer",
+        "Melded Moxite",
+        "Metallic Rebuke",
+        "Selfcraft Mechan"
+      ],
+      "correctNames": 12,
+      "correctTitles": 17,
+      "falsePositives": [],
+      "peakRssBytes": 7280820224,
+      "idleRssBytes": 6512967680,
+      "requiredAssetBytes": 2254006369,
+      "largestModelBytes": 1164318720,
+      "timings": [
+        {
+          "engine": "paddle",
+          "totalMs": 54864.10000002384
+        },
+        {
+          "engine": "font-proposals",
+          "totalMs": 94101
+        },
+        {
+          "engine": "font-refinement",
+          "totalMs": 10854.399999976158
+        },
+        {
+          "engine": "printed-reference-title-matching",
+          "totalMs": 8848.699999988079
+        },
+        {
+          "engine": "glm-finite-catalog",
+          "totalMs": 53202.700000047684
+        }
+      ],
+      "stages": [
+        {
+          "stage": "baseline",
+          "names": [
+            "Aether Chaser",
+            "Aether Swooper",
+            "Cloudsculpt Technician",
+            "Cryogen Relic",
+            "Galvanic Blast",
+            "Gearseeker Serpent",
+            "Inventor's Axe",
+            "Kenku Artificer",
+            "Melded Moxite",
+            "Metallic Rebuke",
+            "Selfcraft Mechan"
+          ],
+          "titleInstances": 15
+        },
+        {
+          "stage": "font",
+          "names": [
+            "Aether Chaser",
+            "Aether Swooper",
+            "Cloudsculpt Technician",
+            "Cryogen Relic",
+            "Galvanic Blast",
+            "Gearseeker Serpent",
+            "Inventor's Axe",
+            "Kenku Artificer",
+            "Melded Moxite",
+            "Metallic Rebuke",
+            "Selfcraft Mechan"
+          ],
+          "titleInstances": 15
+        },
+        {
+          "stage": "references",
+          "names": [
+            "Aether Chaser",
+            "Aether Swooper",
+            "Cloudsculpt Technician",
+            "Cryogen Relic",
+            "Galvanic Blast",
+            "Gearseeker Serpent",
+            "Inventor's Axe",
+            "Kenku Artificer",
+            "Melded Moxite",
+            "Metallic Rebuke",
+            "Selfcraft Mechan"
+          ],
+          "titleInstances": 15
+        },
+        {
+          "stage": "verification",
+          "names": [
+            "Aether Chaser",
+            "Aether Swooper",
+            "Cloudsculpt Technician",
+            "Cryogen Relic",
+            "Galvanic Blast",
+            "Gearseeker Serpent",
+            "Inventor's Axe",
+            "Inventor's Goggles",
+            "Kenku Artificer",
+            "Melded Moxite",
+            "Metallic Rebuke",
+            "Selfcraft Mechan"
+          ],
+          "titleInstances": 17
+        }
+      ],
+      "errors": [],
+      "forbiddenRequests": [],
+      "observedTransferBytes": 1731057738,
+      "glmRequests": 13,
+      "longTasks": {
+        "count": 374,
+        "totalMs": 103551,
+        "blockingMs": 84851,
+        "maxMs": 11060
+      }
+    }
+  ],
+  "modelManifestVersion": "968c65749c0525d2",
+  "preliminaryVerifierOnly": [
+    {
+      "model": "small",
+      "milliseconds": 1819.5,
+      "correctNames": 11,
+      "correctTitles": 16,
+      "falsePositives": [],
+      "addedNames": []
+    },
+    {
+      "model": "medium",
+      "milliseconds": 5803.199999988079,
+      "correctNames": 12,
+      "correctTitles": 17,
+      "falsePositives": [],
+      "addedNames": [
+        "Inventor's Goggles"
+      ]
+    },
+    {
+      "model": "server",
+      "milliseconds": 5842.900000035763,
+      "correctNames": 11,
+      "correctTitles": 16,
+      "falsePositives": [],
+      "addedNames": []
+    }
+  ]
+}

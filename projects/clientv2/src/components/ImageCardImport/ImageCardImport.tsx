@@ -30,7 +30,7 @@ export function ImageCardImport(props: Props) {
 	const [createdDeckId, setCreatedDeckId] = useState<string | null>(null);
 	// State, not a ref, so the back button portals in once the slot mounts.
 	const [backSlot, setBackSlot] = useState<HTMLElement | null>(null);
-	// OCR on a phone is slow and drains the battery, so phones hand the photo to a desktop.
+	// Mobile scans require an explicit opt-in because of data and energy use.
 	const [isMobile] = useState(isMobileDevice);
 	const [scanHere, setScanHere] = useState(false);
 	const deferToDesktop = isMobile && !scanHere;
@@ -217,11 +217,15 @@ export function ImageCardImport(props: Props) {
 										setScanHere(event.target.checked)
 									}
 									disabled={isStarting}
+									aria-describedby="image-import-mobile-warning"
 								/>
 								<span>
-									Scan on this phone instead
-									<small>
-										Slower, and uses a lot of battery
+									Scan on this device instead
+									<small id="image-import-mobile-warning">
+										Scanning is data and energy intensive: it
+										downloads large recognition models and can
+										drain your battery. Wi-Fi and a charger are
+										recommended.
 									</small>
 								</span>
 							</label>

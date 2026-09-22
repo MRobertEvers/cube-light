@@ -134,6 +134,37 @@
 	gap: 8px;
 }
 
+.mobileOptIn {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	flex-basis: 100%;
+	max-width: 360px;
+	padding: 12px;
+	box-sizing: border-box;
+	border: 1px solid #cac4c1;
+	border-radius: 6px;
+	background: #faf8f7;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+.mobileOptIn input {
+	flex: none;
+	width: 18px;
+	height: 18px;
+	margin: 1px 0 0;
+	accent-color: #a65350;
+}
+
+.mobileOptIn small {
+	display: block;
+	margin-top: 4px;
+	color: #5c626a;
+	font-size: 13px;
+	line-height: 1.45;
+}
+
 .button,
 .primary,
 .quiet {
@@ -228,5 +259,10 @@
 		flex: 1 1 auto;
 		justify-content: center;
 		min-height: 44px;
+	}
+	.actions > .mobileOptIn {
+		flex-basis: 100%;
+		max-width: none;
+		justify-content: flex-start;
 	}
 }

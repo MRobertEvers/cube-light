@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { WorkItem } from 'src/api/fetch-api-work';
 import { Page } from 'src/components/Page/Page';
@@ -82,6 +82,8 @@ function WorkRow(props: {
 	const { item, local, isMobile } = props;
 	const navigate = useNavigate();
 	const [busy, setBusy] = useState(false);
+	const [allowMobileScan, setAllowMobileScan] = useState(false);
+	const mobileWarningId = useId();
 	const [actionError, setActionError] = useState<string | null>(null);
 	const deck = item.deck;
 
@@ -99,6 +101,7 @@ function WorkRow(props: {
 
 	const scanHere = () =>
 		act(async () => {
+			if (isMobile && !allowMobileScan) return;
 			const taskId = await runWorkItemHere(item);
 			if (!taskId || !deck)
 				throw new Error('Another device already started this scan');
@@ -137,19 +140,39 @@ function WorkRow(props: {
 				</Link>
 			)}
 			{item.status === 'pending' && deck && (
-				<button
-					type="button"
-					className={styles.button}
-					disabled={busy}
-					onClick={() => void scanHere()}
-					title={
-						isMobile
-							? 'Slower, and uses a lot of battery'
-							: undefined
-					}
-				>
-					{isMobile ? 'Scan on this phone' : 'Scan here now'}
-				</button>
+				<>
+					{isMobile && (
+						<label className={styles.mobileOptIn}>
+							<input
+								type="checkbox"
+								checked={allowMobileScan}
+								disabled={busy}
+								onChange={(event) =>
+									setAllowMobileScan(event.target.checked)
+								}
+								aria-describedby={mobileWarningId}
+							/>
+							<span>
+								Allow this scan on this device
+								<small id={mobileWarningId}>
+									Scanning is data and energy intensive: it
+									downloads large recognition models and can
+									drain your battery. Wi-Fi and a charger are
+									recommended.
+								</small>
+							</span>
+						</label>
+					)}
+					<button
+						type="button"
+						className={styles.button}
+						disabled={busy || (isMobile && !allowMobileScan)}
+						onClick={() => void scanHere()}
+						aria-describedby={isMobile ? mobileWarningId : undefined}
+					>
+						{isMobile ? 'Scan on this device' : 'Scan here now'}
+					</button>
+				</>
 			)}
 			{item.status === 'failed' && (
 				<button
@@ -257,7 +280,7 @@ export function QueuePage() {
 						<h1>Queued work</h1>
 						<p>
 							{isMobile
-								? 'Card photos you add on a phone wait here. The next time you open Cube Light on a computer, it scans them and adds the cards to their deck.'
+								? 'Card photos you add on a phone wait here for a computer to scan them and add the cards to their deck. You can also opt in to scan individual photos on this device.'
 								: 'Card photos added on a phone wait here. This computer scans them automatically while Cube Light is open, then adds the cards to their deck.'}
 						</p>
 					</header>
@@ -273,7 +296,8 @@ export function QueuePage() {
 							<strong>Nothing queued</strong>
 							<p>
 								When you add cards from a photo on your phone,
-								the photo waits here until a computer scans it.
+								the photo waits here for a computer, or you can
+								choose to scan it on your device.
 							</p>
 						</div>
 					) : (

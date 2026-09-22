@@ -15,7 +15,7 @@
     "prepare:photo": "node prepare-photo.mjs",
     "bench:tabletop": "node run-tabletop.mjs",
     "bench:tabletop:gate": "node run-tabletop.mjs --require-target",
-    "test:photo": "node --test photo-match.test.mjs catalog-logits.test.mjs consensus.test.mjs",
+    "test:photo": "node --test photo-match.test.mjs catalog-logits.test.mjs consensus.test.mjs ctc-candidate-score.test.mjs",
     "bench:edges": "node run-edge-scan.mjs",
     "score:photo": "node score-photo.mjs",
     "report:experiments": "node report-experiments.mjs",
