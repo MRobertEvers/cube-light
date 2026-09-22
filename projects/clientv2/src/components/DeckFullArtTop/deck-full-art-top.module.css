@@ -1,6 +1,6 @@
 .top {
 	position: relative;
-	height: clamp(290px, 34vw, 440px);
+	height: clamp(145px, 17vw, 220px);
 	overflow: hidden;
 	background: var(--deck-wash, #f5f2f0);
 }
@@ -26,9 +26,13 @@
 .content {
 	position: relative;
 	box-sizing: border-box;
+	display: flex;
+	height: 100%;
+	flex-direction: column;
+	justify-content: flex-end;
 	max-width: var(--max-width);
 	margin: 0 auto;
-	padding: 46px 20px;
+	padding: 46px 20px 82px;
 	color: white;
 	text-shadow: 0 2px 7px rgba(0, 0, 0, 0.65);
 	pointer-events: none;
@@ -77,7 +81,7 @@
 	font-size: 1rem;
 }
 .mobile {
-	height: 300px;
+	height: 150px;
 }
 .mobile .desktopArt {
 	display: none;
@@ -86,7 +90,7 @@
 	display: block;
 }
 .mobile .content {
-	padding: 28px 18px;
+	padding: 28px 18px 70px;
 }
 .mobile .title,
 .mobile .titleButton {
@@ -95,7 +99,7 @@
 
 @media (max-width: 680px) {
 	.responsive {
-		height: 300px;
+		height: 150px;
 	}
 	.responsive .desktopArt {
 		display: none;
@@ -104,7 +108,7 @@
 		display: block;
 	}
 	.responsive .content {
-		padding: 30px 16px;
+		padding: 30px 16px 70px;
 	}
 	.responsive .title,
 	.responsive .titleButton {

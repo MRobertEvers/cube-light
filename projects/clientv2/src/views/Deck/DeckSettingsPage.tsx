@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { BackLink } from '../../components/BackLink/BackLink';
 import { Page } from '../../components/Page/Page';
@@ -29,12 +29,28 @@ import {
 	TopStyleSection
 } from './DeckSettingsSections';
 import styles from './deck-settings.module.css';
+import { useHistoryModal } from '../../hooks/useHistoryModal';
+import {
+	openBannerPicker,
+	type OpenBannerPickerPayload,
+	selectBannerPicker
+} from '../../store/banner-picker/banner-picker.state';
 
 export type DeckSettingsPageProps = { deckId: string };
+
+type DeckSettingsModal = {
+	type: 'banner-picker';
+	payload: OpenBannerPickerPayload;
+};
 
 export function DeckSettingsPage(props: DeckSettingsPageProps) {
 	const { deckId } = props;
 	const dispatch = useAppDispatch();
+	const modalHistory = useHistoryModal<DeckSettingsModal>(
+		`deck-settings:${deckId}`
+	);
+	const modal = modalHistory.value;
+	const bannerPicker = useSelector(selectBannerPicker);
 	const data = useSelector((root: Parameters<typeof selectDeck>[0]) =>
 		selectDeck(root, deckId)
 	);
@@ -63,6 +79,14 @@ export function DeckSettingsPage(props: DeckSettingsPageProps) {
 		void dispatch(loadDeck(deckId));
 	}, [deckId, dispatch]);
 
+	useLayoutEffect(() => {
+		if (
+			modal?.type === 'banner-picker' &&
+			(!bannerPicker.open || bannerPicker.deckId !== deckId)
+		)
+			dispatch(openBannerPicker(modal.payload));
+	}, [bannerPicker.deckId, bannerPicker.open, deckId, dispatch, modal]);
+
 	if (!data || showInitialLoading) {
 		return (
 			<Page>
@@ -84,9 +108,12 @@ export function DeckSettingsPage(props: DeckSettingsPageProps) {
 				<BannerCardPickerModal
 					deckId={deckId}
 					deckName={data.name}
-					onSaved={() =>
-						dispatch(appearanceActions.bannerSaved(deckId))
-					}
+					open={modal?.type === 'banner-picker'}
+					onClose={modalHistory.close}
+					onSaved={() => {
+						dispatch(appearanceActions.bannerSaved(deckId));
+						modalHistory.close();
+					}}
 				/>
 				<div className={styles['container']}>
 					<BackLink to={`/deck/${deckId}`}>Back to deck</BackLink>
@@ -99,6 +126,12 @@ export function DeckSettingsPage(props: DeckSettingsPageProps) {
 							deckId={deckId}
 							data={data}
 							view={view}
+							onPickerOpened={(payload) =>
+								modalHistory.open({
+									type: 'banner-picker',
+									payload
+								})
+							}
 						/>
 						<TopStyleSection
 							deckId={deckId}

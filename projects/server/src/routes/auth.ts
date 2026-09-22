@@ -12,7 +12,13 @@ import {
 	verifyPassword
 } from '../auth/passwords';
 import { SessionStore } from '../auth/sessions';
-import { publicUser, USERNAME, UserStore } from '../auth/UserStore';
+import {
+	ProfileCrop,
+	publicUser,
+	USERNAME,
+	UserProfile,
+	UserStore
+} from '../auth/UserStore';
 
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_LIMIT_PER_USERNAME = 10;
@@ -57,7 +63,7 @@ export function createRoutesAuth(
 	app.use('/auth', json());
 
 	/** Replaces any current session so a sign-in never reuses an ID issued before it. */
-	function startSession(
+	async function startSession(
 		req: Request,
 		res: Response,
 		userId: number,
@@ -65,17 +71,53 @@ export function createRoutesAuth(
 	) {
 		if (res.locals.sessionId) sessions.destroy(res.locals.sessionId);
 		setSessionCookie(req, res, sessions.create({ userId, username }));
-		res.json({ user: publicUser({ UserId: userId, Username: username }) });
+		const user = await users.findById(userId);
+		res.json({ user: user ? publicUser(user) : null });
 	}
 
 	app.get('/auth/session', async (_req: Request, res: Response) => {
 		const session = currentSession(res);
+		const user = session ? await users.findById(session.userId) : undefined;
 		res.json({
-			user: session
-				? { id: session.userId, username: session.username }
-				: null,
+			user: user ? publicUser(user) : null,
 			setupRequired: !(await users.hasAccounts())
 		});
+	});
+
+	app.put('/auth/profile', async (req: Request, res: Response) => {
+		const session = currentSession(res);
+		if (!session) {
+			res.status(401).json({ error: 'Sign in required' });
+			return;
+		}
+		const { cardName, cardUuid, art, crop } = req.body || {};
+		if (
+			typeof cardName !== 'string' ||
+			!cardName.trim() ||
+			cardName.length > 256 ||
+			typeof cardUuid !== 'string' ||
+			!cardUuid.trim() ||
+			cardUuid.length > 128 ||
+			typeof art !== 'string' ||
+			art.length > 4096 ||
+			!validArtUrl(art) ||
+			!validCrop(crop)
+		) {
+			res.status(400).json({ error: 'Invalid profile artwork.' });
+			return;
+		}
+		const profile: UserProfile = {
+			cardName: cardName.trim(),
+			cardUuid,
+			art,
+			crop
+		};
+		const user = await users.setProfile(session.userId, profile);
+		if (!user) {
+			res.status(404).json({ error: 'Account not found.' });
+			return;
+		}
+		res.json({ user: publicUser(user) });
 	});
 
 	app.post('/auth/login', async (req: Request, res: Response) => {
@@ -102,7 +144,7 @@ export function createRoutesAuth(
 			return;
 		}
 		kv.del(usernameKey);
-		startSession(req, res, user.UserId, user.Username);
+		await startSession(req, res, user.UserId, user.Username);
 	});
 
 	/** Creates the first account on a new server; closed once any account exists. */
@@ -136,7 +178,7 @@ export function createRoutesAuth(
 			});
 			return;
 		}
-		startSession(req, res, userId, given.username);
+		await startSession(req, res, userId, given.username);
 	});
 
 	app.post('/auth/logout', (req: Request, res: Response) => {
@@ -146,4 +188,32 @@ export function createRoutesAuth(
 	});
 
 	return app;
+}
+
+function validArtUrl(value: string): boolean {
+	try {
+		const url = new URL(value);
+		return url.protocol === 'http:' || url.protocol === 'https:';
+	} catch {
+		return false;
+	}
+}
+
+function validCrop(value: unknown): value is ProfileCrop {
+	if (!value || typeof value !== 'object') return false;
+	const crop = value as Partial<ProfileCrop>;
+	return (
+		typeof crop.x === 'number' &&
+		Number.isFinite(crop.x) &&
+		crop.x >= 0 &&
+		crop.x <= 1 &&
+		typeof crop.y === 'number' &&
+		Number.isFinite(crop.y) &&
+		crop.y >= 0 &&
+		crop.y <= 1 &&
+		typeof crop.zoom === 'number' &&
+		Number.isFinite(crop.zoom) &&
+		crop.zoom >= 1 &&
+		crop.zoom <= 3
+	);
 }

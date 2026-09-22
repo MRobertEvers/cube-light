@@ -38,7 +38,8 @@ type Issue = {
 	stale?: boolean;
 };
 
-export function AddCards() {
+export function AddCards(props: { onClose?: () => void }) {
+	const { onClose: onHistoryClose } = props;
 	const dispatch = useAppDispatch();
 	const {
 		deckId,
@@ -138,7 +139,8 @@ export function AddCards() {
 	}, []);
 
 	function onClose() {
-		return dispatch(closeAddCards());
+		dispatch(closeAddCards());
+		onHistoryClose?.();
 	}
 	function submit() {
 		if (!canSubmit) {
@@ -157,7 +159,10 @@ export function AddCards() {
 					};
 				})
 			})
-		);
+		)
+			.unwrap()
+			.then(() => onHistoryClose?.())
+			.catch(() => undefined);
 	}
 
 	/** Writes out what a note says will happen, so the list reads the way it's added. */

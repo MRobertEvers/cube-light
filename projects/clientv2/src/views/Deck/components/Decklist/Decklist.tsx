@@ -25,8 +25,6 @@ type DecklistProps = {
 	bannerCrop: BannerCrop;
 	bannerBlend?: BannerBlend | null;
 	topStyle: DeckTopStyle;
-	/** Edit mode, where rows with several printings offer to manage them. */
-	editable: boolean;
 	onCardClick?: (card: DecklistCardInfo, group: DeckCardGroup) => void;
 	onManagePrintings?: (group: DeckCardGroup) => void;
 };
@@ -38,7 +36,6 @@ export function Decklist(props: DecklistProps) {
 		bannerCrop,
 		bannerBlend,
 		topStyle,
-		editable,
 		onCardClick,
 		onManagePrintings
 	} = props;
@@ -189,7 +186,6 @@ export function Decklist(props: DecklistProps) {
 								name: groupName,
 								groupData: deck.cardCategories[groupName]
 							}))}
-						editable={editable}
 						isExpanded={isExpanded}
 						onToggle={onToggle}
 						onCardEvent={onCardEvent}
@@ -201,7 +197,6 @@ export function Decklist(props: DecklistProps) {
 								name: groupName,
 								groupData: deck.cardCategories[groupName]
 							}))}
-						editable={editable}
 						isExpanded={isExpanded}
 						onToggle={onToggle}
 						onCardEvent={onCardEvent}

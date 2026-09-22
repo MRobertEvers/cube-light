@@ -157,6 +157,37 @@ test('first-run setup, sign in, protected routes, and sign out', async () => {
 		});
 		assert.deepEqual(await privateRead.json(), { user: 'Owner' });
 
+		const profile = {
+			cardName: 'Lightning Bolt',
+			cardUuid: 'printing-uuid',
+			art: 'https://example.com/lightning-bolt.jpg',
+			crop: { x: 0.25, y: 0.7, zoom: 1.4 }
+		};
+		const profileUpdate = await fetch(`${base}/auth/profile`, {
+			method: 'PUT',
+			headers: {
+				Cookie: cookie,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(profile)
+		});
+		assert.equal(profileUpdate.status, 200);
+		assert.deepEqual((await profileUpdate.json()).user.profile, profile);
+		assert.equal(
+			(
+				await fetch(`${base}/auth/profile`, {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(profile)
+				})
+			).status,
+			401
+		);
+		const refreshedSession = await (
+			await fetch(`${base}/auth/session`, { headers: { Cookie: cookie } })
+		).json();
+		assert.deepEqual(refreshedSession.user.profile, profile);
+
 		const logout = await post(
 			`${base}/auth/logout`,
 			{},

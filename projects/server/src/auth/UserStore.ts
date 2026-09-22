@@ -4,14 +4,79 @@ export type User = {
 	UserId: number;
 	Username: string;
 	PasswordHash: string;
+	ProfileCardName: string | null;
+	ProfileCardUuid: string | null;
+	ProfileArt: string | null;
+	ProfileCropJson: string | null;
 };
 
-export type PublicUser = { id: number; username: string };
+export type ProfileCrop = { x: number; y: number; zoom: number };
+export type UserProfile = {
+	cardName: string;
+	cardUuid: string;
+	art: string;
+	crop: ProfileCrop;
+};
+export type PublicUser = {
+	id: number;
+	username: string;
+	profile: UserProfile | null;
+};
 
 export const USERNAME = /^[A-Za-z0-9_.@-]{3,64}$/;
 
-export function publicUser(user: Pick<User, 'UserId' | 'Username'>): PublicUser {
-	return { id: user.UserId, username: user.Username };
+function isProfileCrop(value: unknown): value is ProfileCrop {
+	if (!value || typeof value !== 'object') return false;
+	const crop = value as Partial<ProfileCrop>;
+	return (
+		typeof crop.x === 'number' &&
+		Number.isFinite(crop.x) &&
+		crop.x >= 0 &&
+		crop.x <= 1 &&
+		typeof crop.y === 'number' &&
+		Number.isFinite(crop.y) &&
+		crop.y >= 0 &&
+		crop.y <= 1 &&
+		typeof crop.zoom === 'number' &&
+		Number.isFinite(crop.zoom) &&
+		crop.zoom >= 1 &&
+		crop.zoom <= 3
+	);
+}
+
+export function publicUser(
+	user: Pick<
+		User,
+		| 'UserId'
+		| 'Username'
+		| 'ProfileCardName'
+		| 'ProfileCardUuid'
+		| 'ProfileArt'
+		| 'ProfileCropJson'
+	>
+): PublicUser {
+	let profile: UserProfile | null = null;
+	try {
+		const storedCrop: unknown = user.ProfileCropJson
+			? JSON.parse(user.ProfileCropJson)
+			: null;
+		const crop = isProfileCrop(storedCrop) ? storedCrop : null;
+		if (
+			user.ProfileCardName &&
+			user.ProfileCardUuid &&
+			user.ProfileArt &&
+			crop
+		)
+			profile = {
+				cardName: user.ProfileCardName,
+				cardUuid: user.ProfileCardUuid,
+				art: user.ProfileArt,
+				crop
+			};
+	} catch {
+		/* Treat an old or malformed saved profile as unset. */
+	}
+	return { id: user.UserId, username: user.Username, profile };
 }
 
 function timestamp(): string {
@@ -49,6 +114,15 @@ export class UserStore {
 		if (!columns.some((column) => column.name === 'PasswordHash')) {
 			await this.db.exec('ALTER TABLE Users ADD COLUMN PasswordHash TEXT');
 		}
+		for (const column of [
+			'ProfileCardName',
+			'ProfileCardUuid',
+			'ProfileArt',
+			'ProfileCropJson'
+		]) {
+			if (!columns.some((item) => item.name === column))
+				await this.db.exec(`ALTER TABLE Users ADD COLUMN ${column} TEXT`);
+		}
 		await this.db.exec(
 			'CREATE UNIQUE INDEX IF NOT EXISTS Users_Username ON Users (Username COLLATE NOCASE)'
 		);
@@ -60,9 +134,36 @@ export class UserStore {
 
 	findByUsername(username: string): Promise<User | undefined> {
 		return this.db.get<User>(
-			'SELECT UserId, Username, PasswordHash FROM Users WHERE Username = ? COLLATE NOCASE AND PasswordHash IS NOT NULL',
+			`SELECT UserId, Username, PasswordHash, ProfileCardName, ProfileCardUuid,
+				ProfileArt, ProfileCropJson
+			FROM Users WHERE Username = ? COLLATE NOCASE AND PasswordHash IS NOT NULL`,
 			[username]
 		);
+	}
+
+	findById(userId: number): Promise<User | undefined> {
+		return this.db.get<User>(
+			`SELECT UserId, Username, PasswordHash, ProfileCardName, ProfileCardUuid,
+				ProfileArt, ProfileCropJson
+			FROM Users WHERE UserId = ? AND PasswordHash IS NOT NULL`,
+			[userId]
+		);
+	}
+
+	async setProfile(userId: number, profile: UserProfile): Promise<User | undefined> {
+		await this.db.run(
+			`UPDATE Users SET ProfileCardName = ?, ProfileCardUuid = ?, ProfileArt = ?,
+				ProfileCropJson = ?, UpdatedAt = ? WHERE UserId = ?`,
+			[
+				profile.cardName,
+				profile.cardUuid,
+				profile.art,
+				JSON.stringify(profile.crop),
+				timestamp(),
+				userId
+			]
+		);
+		return this.findById(userId);
 	}
 
 	async hasAccounts(): Promise<boolean> {

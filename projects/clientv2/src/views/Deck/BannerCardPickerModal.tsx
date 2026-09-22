@@ -19,13 +19,15 @@ import styles from './deck-settings.module.css';
 export function BannerCardPickerModal(props: {
 	deckId: string;
 	deckName: string;
+	open: boolean;
+	onClose: () => void;
 	onSaved: () => void;
 }) {
-	const { deckId, deckName, onSaved } = props;
+	const { deckId, deckName, open, onClose, onSaved } = props;
 	const dispatch = useAppDispatch();
 	const picker = useSelector(selectBannerPicker);
 	const dialogRef = useRef<HTMLDivElement>(null);
-	const visible = picker.open && picker.deckId === deckId;
+	const visible = open && picker.open && picker.deckId === deckId;
 
 	useEffect(() => {
 		if (!visible) return;
@@ -112,6 +114,7 @@ export function BannerCardPickerModal(props: {
 					if (event.key === 'Escape' && !picker.saving) {
 						event.preventDefault();
 						dispatch(closeBannerPicker());
+						onClose();
 					}
 					if (event.key !== 'Tab') return;
 					const focusable = Array.from(
@@ -160,7 +163,10 @@ export function BannerCardPickerModal(props: {
 							<button
 								type="button"
 								className={styles['modal-close']}
-								onClick={() => dispatch(closeBannerPicker())}
+								onClick={() => {
+									dispatch(closeBannerPicker());
+									onClose();
+								}}
 								disabled={picker.saving}
 								aria-label="Close banner picker"
 							>
@@ -209,11 +215,7 @@ export function BannerCardPickerModal(props: {
 					</h3>
 					<div className={styles['printing-layout']}>
 						<PrintingPicker
-							key={
-								showPrintings
-									? picker.chosenName
-									: 'no-card'
-							}
+							key={showPrintings ? picker.chosenName : 'no-card'}
 							printings={showPrintings ? picker.printings : []}
 							selectedUuid={picker.selectedUuid}
 							onSelect={(uuid) =>

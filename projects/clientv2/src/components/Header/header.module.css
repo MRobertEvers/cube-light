@@ -7,6 +7,14 @@
 	box-shadow: 0 2px 12px rgba(38, 38, 38, 0.04);
 }
 
+@media (min-width: 681px) {
+	.header {
+		position: sticky;
+		top: 0;
+		z-index: 50;
+	}
+}
+
 .header-content {
 	max-width: var(--max-width);
 	min-height: var(--app-header-height);

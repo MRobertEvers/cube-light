@@ -1,0 +1,68 @@
+.root {
+	display: flex;
+	align-items: stretch;
+	flex: none;
+}
+
+.trigger {
+	display: grid;
+	place-items: center;
+	width: 46px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: #5f5956;
+	cursor: pointer;
+}
+
+.trigger svg {
+	fill: currentColor;
+}
+
+.trigger:disabled {
+	opacity: 0.45;
+}
+
+.trigger:focus-visible,
+.panel :where(button, a):focus-visible {
+	outline: 2px solid var(--deck-accent, #7a3431);
+	outline-offset: -2px;
+}
+
+.panel {
+	position: fixed;
+	z-index: 100;
+	visibility: hidden;
+	box-sizing: border-box;
+	min-width: 148px;
+	padding: 5px;
+	display: grid;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	background: white;
+	border: 1px solid #e5e1df;
+	border-radius: 10px;
+	box-shadow: 0 12px 28px rgba(38, 38, 38, 0.18);
+	color: var(--theme-text);
+}
+
+.panel :where(button, a) {
+	box-sizing: border-box;
+	min-height: 40px;
+	margin: 0;
+	padding: 8px 11px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-weight: 600;
+	text-align: left;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.panel :where(button, a):where(:hover, :focus-visible) {
+	background: #f4f1ef;
+}

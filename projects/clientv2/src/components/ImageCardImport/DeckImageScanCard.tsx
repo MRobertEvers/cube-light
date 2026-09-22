@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useHistoryModal } from 'src/hooks/useHistoryModal';
 import { Link } from 'react-router-dom';
 import { fetchAPICardNames } from 'src/api/fetch-api-card-names';
 import {
@@ -540,6 +541,9 @@ function ImageScanDetails(props: { task: ImageScanTask; onClose: () => void }) {
 
 export function DeckImageScanCard(props: { deckId: string }) {
 	const { deckId } = props;
+	const modalHistory = useHistoryModal<{ taskId: string }>(
+		`deck-scan:${deckId}`
+	);
 	const tasks = useImageImportQueue().filter(
 		(task) => task.deckId === deckId
 	);
@@ -550,8 +554,9 @@ export function DeckImageScanCard(props: { deckId: string }) {
 			item.status !== 'completed' &&
 			!tasks.some((task) => task.workId === item.workId)
 	);
-	const [openId, setOpenId] = useState<string | null>(null);
-	const openTask = tasks.find((task) => task.id === openId);
+	const openTask = tasks.find(
+		(task) => task.id === modalHistory.value?.taskId
+	);
 	if (tasks.length === 0 && queued.length === 0) return null;
 	return (
 		<div className={styles.list}>
@@ -587,7 +592,7 @@ export function DeckImageScanCard(props: { deckId: string }) {
 					className={styles.card}
 					type="button"
 					key={task.id}
-					onClick={() => setOpenId(task.id)}
+					onClick={() => modalHistory.open({ taskId: task.id })}
 				>
 					<span className={styles.cardTitle}>
 						<LogoInkwellPulse
@@ -626,7 +631,7 @@ export function DeckImageScanCard(props: { deckId: string }) {
 			{openTask && (
 				<ImageScanDetails
 					task={openTask}
-					onClose={() => setOpenId(null)}
+					onClose={modalHistory.close}
 				/>
 			)}
 		</div>

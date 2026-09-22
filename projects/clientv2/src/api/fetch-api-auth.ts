@@ -1,7 +1,18 @@
 import { API_URI } from '../config/api-url';
 import { apiFetch } from './utils';
 
-export type AuthUser = { id: number; username: string };
+export type ProfileCrop = { x: number; y: number; zoom: number };
+export type UserProfile = {
+	cardName: string;
+	cardUuid: string;
+	art: string;
+	crop: ProfileCrop;
+};
+export type AuthUser = {
+	id: number;
+	username: string;
+	profile: UserProfile | null;
+};
 
 export type FetchAPISessionResponse = {
 	user: AuthUser | null;
@@ -45,4 +56,21 @@ export async function fetchAPISignIn(
 
 export async function fetchAPISignOut(): Promise<void> {
 	await apiFetch(`${API_URI}/auth/logout`, { method: 'POST' });
+}
+
+export async function fetchAPISetProfile(
+	profile: UserProfile
+): Promise<AuthUser> {
+	const response = await apiFetch(`${API_URI}/auth/profile`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(profile)
+	});
+	const body = (await response.json().catch(() => ({}))) as {
+		user?: AuthUser;
+		error?: string;
+	};
+	if (!response.ok || !body.user)
+		throw new Error(body.error || 'Could not save your profile.');
+	return body.user;
 }

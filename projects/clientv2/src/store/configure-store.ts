@@ -8,6 +8,7 @@ import { decksSlice } from './decks/decks.state';
 import { bannerPickerSlice } from './banner-picker/banner-picker.state';
 import { addCardsSlice } from './add-cards/add-cards.state';
 import { appearanceSettingsSlice } from './appearance-settings/appearance-settings.state';
+import { historyModalSlice } from './history-modal/history-modal.state';
 import { createReducerManager, ReducerManager } from './create-reducer-manager';
 
 import type { RootState } from './root-state.types';
@@ -17,7 +18,8 @@ const rootReducer: ReducersMapObject<RootState> = {
 	[decksSlice.name]: decksSlice.reducer,
 	[bannerPickerSlice.name]: bannerPickerSlice.reducer,
 	[addCardsSlice.name]: addCardsSlice.reducer,
-	[appearanceSettingsSlice.name]: appearanceSettingsSlice.reducer
+	[appearanceSettingsSlice.name]: appearanceSettingsSlice.reducer,
+	[historyModalSlice.name]: historyModalSlice.reducer
 };
 
 export type StoreType = EnhancedStore<RootState, any> & {

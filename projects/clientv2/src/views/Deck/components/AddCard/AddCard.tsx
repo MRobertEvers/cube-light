@@ -48,8 +48,8 @@ export function AddCard(props: AddCardProps) {
 	const addItemInputRef = useRef<HTMLInputElement>(null);
 	const requestIdRef = useRef(0);
 	const queryRef = useRef('');
-	const searchStartedAt = useRef(0);
 	const submitStartedAt = useRef(0);
+	const warmedSuggestions = useRef(false);
 	const hintId = useId();
 	const errorId = useId();
 	useEffect(() => {
@@ -78,9 +78,6 @@ export function AddCard(props: AddCardProps) {
 							query !== queryRef.current
 						)
 							return;
-						await waitForMinimumStatusDuration(
-							searchStartedAt.current
-						);
 						if (
 							requestId !== requestIdRef.current ||
 							query !== queryRef.current
@@ -127,6 +124,13 @@ export function AddCard(props: AddCardProps) {
 	);
 
 	const postToWorker = useDeckWorker(workerResponseHandler);
+	useEffect(() => {
+		if (warmedSuggestions.current) return;
+		warmedSuggestions.current = true;
+		postToWorker(
+			DeckWorkerMessages.getSuggestions({ query: '', requestId: -1 })
+		);
+	}, [postToWorker]);
 	const exactMatch = suggestions.sorted.find(
 		(suggestion) =>
 			suggestion.toLowerCase() === viewAddItemText.trim().toLowerCase()
@@ -241,24 +245,32 @@ export function AddCard(props: AddCardProps) {
 							queryRef.current = query;
 							requestIdRef.current += 1;
 							dispatch(Actions.setViewAddItemText(query));
-							dispatch(
-								Actions.setSuggestionsData({
-									sorted: [],
-									set: new Set()
-								})
-							);
-							dispatch(Actions.setViewIsDropDownVisible(false));
 							setError(null);
-							setIsSearching(Boolean(query.trim()));
-							if (query.trim()) {
-								searchStartedAt.current = performance.now();
-								postToWorker(
-									DeckWorkerMessages.getSuggestions({
-										query,
-										requestId: requestIdRef.current
+							if (!query.trim()) {
+								setIsSearching(false);
+								dispatch(
+									Actions.setSuggestionsData({
+										sorted: [],
+										set: new Set()
 									})
 								);
+								dispatch(
+									Actions.setViewIsDropDownVisible(false)
+								);
+								return;
 							}
+							setIsSearching(true);
+							dispatch(
+								Actions.setViewIsDropDownVisible(
+									suggestions.sorted.length > 0
+								)
+							);
+							postToWorker(
+								DeckWorkerMessages.getSuggestions({
+									query,
+									requestId: requestIdRef.current
+								})
+							);
 						}}
 						onSelect={selectSuggestion}
 						enterSelects={

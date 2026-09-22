@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useWorkCounts } from 'src/utils/work-status';
-import { useAuth } from '../Auth/AuthGate';
 
 import styles from './site-nav-links.module.css';
 
@@ -9,7 +8,6 @@ import styles from './site-nav-links.module.css';
 export function SiteNavLinks(props: { onNavigate?: () => void }) {
 	const { onNavigate } = props;
 	const work = useWorkCounts();
-	const { user, signOut } = useAuth();
 
 	return (
 		<>
@@ -39,17 +37,6 @@ export function SiteNavLinks(props: { onNavigate?: () => void }) {
 					)}
 				</Link>
 			)}
-			<button
-				type="button"
-				className={styles.signOut}
-				title={`Signed in as ${user.username}`}
-				onClick={() => {
-					onNavigate?.();
-					signOut();
-				}}
-			>
-				Sign out
-			</button>
 		</>
 	);
 }

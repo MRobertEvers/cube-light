@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Page } from '../../components/Page/Page';
 import { PageFrame } from '../../components/Page/PageFrame';
@@ -20,11 +20,9 @@ import { Button } from '../../components/Button/Button';
 import { LoadingIndicator } from '../../components/LoadingIndicator';
 import { Spinner } from '../../components/Spinner/Spinner';
 import { DeckStatsSummary } from './components/DeckStatsSummary/DeckStatsSummary';
-import { useQueryState } from 'src/hooks/useQueryState';
-import { reducer, initialState, Actions } from './deck-state';
 import { AddCard } from './components/AddCard';
+import { AddCardSingleMobile } from './components/AddCardSingleMobile';
 import { AddCards } from './components/AddCards';
-import { useAsyncReducer } from 'src/hooks/useAsyncReducer';
 import { AddCardEventType } from './components/AddCard/AddCard';
 import { fetchAPIDeleteDeck } from 'src/api/fetch-api-delete-deck';
 import { Link, useNavigate } from 'react-router-dom';
@@ -59,15 +57,23 @@ import { ImageCardImport } from 'src/components/ImageCardImport/ImageCardImport'
 import { DeckImageScanCard } from 'src/components/ImageCardImport/DeckImageScanCard';
 import { useImageImportQueue } from 'src/utils/use-image-import-queue';
 import { useWorkQueue } from 'src/utils/work-queue';
+import { useIsPhoneLayout } from '../../hooks/useIsPhoneLayout';
+import { MobileDeckView } from './MobileDeckView';
+import { useHistoryModal } from '../../hooks/useHistoryModal';
+
+type DeckModal =
+	| { type: 'manage-printings'; group: DeckCardGroup }
+	| { type: 'card-preview'; card: FetchAPIDeckCardResponse }
+	| { type: 'add-card' }
+	| { type: 'add-cards' }
+	| { type: 'image-import' }
+	| { type: 'deck-details' };
 
 export type DeckControlButtonsProps = {
 	view: 'list' | 'tabletop';
-	dispatch: any;
 	deckId: string;
-	isEditMode: boolean;
-	onEdit: () => void;
 	onEditName: () => void;
-	onDone: () => void;
+	onAddCard: () => void;
 	onImportImage: () => void;
 	onAddCards: () => void;
 	isSaving: boolean;
@@ -88,11 +94,8 @@ function SavingLabel() {
 export function DeckControlButtons(props: DeckControlButtonsProps) {
 	const {
 		view,
-		dispatch,
-		isEditMode,
-		onEdit,
 		onEditName,
-		onDone,
+		onAddCard,
 		onImportImage,
 		onAddCards,
 		isSaving,
@@ -101,8 +104,6 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 
 	const navigate = useNavigate();
 
-	// The toggle expands the edit actions in place; edits save as they are made, so collapsing
-	// the panel is all "done" needs to do.
 	return (
 		<div className={styles['deck-controls']}>
 			<nav className={styles['deck-view-switch']} aria-label="Deck view">
@@ -119,37 +120,60 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 					Tabletop
 				</Link>
 			</nav>
-			<Button
-				className={styles['edit-deck-button']}
-				onClick={isEditMode ? onDone : onEdit}
-				disabled={isSaving}
-				ariaExpanded={isEditMode}
-				ariaControls="deck-edit-panel"
-			>
-				Edit deck
-				<DeckControlIcon
-					name="chevron"
-					size={16}
-					className={styles['edit-deck-chevron']}
-				/>
-			</Button>
-			<div
-				className={concatClassNames(
-					styles['deck-collapse'],
-					!isEditMode ? styles['open'] : undefined
-				)}
-				inert={isEditMode}
-			>
-				<div className={styles['deck-collapse-inner']}>
-					<nav
-						className={styles['deck-control-pair']}
-						aria-label="Deck links"
-					>
+			<div className={styles['deck-edit-panel-body']}>
+				<section className={styles['deck-control-group']}>
+					<h2 className={styles['deck-control-label']}>Add cards</h2>
+					<div className={styles['deck-add-tiles']}>
+						<Button
+							className={styles['deck-add-tile']}
+							onClick={onAddCard}
+							disabled={isSaving}
+						>
+							<DeckControlIcon name="search" />
+							<span>Search</span>
+							<span className={styles['deck-add-tile-hint']}>
+								one card
+							</span>
+						</Button>
+						<Button
+							className={styles['deck-add-tile']}
+							onClick={onAddCards}
+							disabled={isSaving}
+						>
+							<DeckControlIcon name="list" />
+							<span>Paste list</span>
+							<span className={styles['deck-add-tile-hint']}>
+								many cards
+							</span>
+						</Button>
+						<Button
+							className={styles['deck-add-tile']}
+							onClick={onImportImage}
+							disabled={isSaving}
+						>
+							<DeckControlIcon name="camera" />
+							<span>Scan image</span>
+							<span className={styles['deck-add-tile-hint']}>
+								from a photo
+							</span>
+						</Button>
+					</div>
+				</section>
+				<section className={styles['deck-control-group']}>
+					<h2 className={styles['deck-control-label']}>Deck</h2>
+					<div className={styles['deck-control-row']}>
+						<Button
+							className={styles['deck-control-button']}
+							onClick={onEditName}
+							disabled={isSaving}
+						>
+							Rename
+						</Button>
 						<Button
 							className={styles['deck-control-button']}
 							onClick={() => navigate(`/deck/${deckId}/history`)}
 						>
-							Edit history
+							History
 						</Button>
 						<Button
 							className={styles['deck-control-button']}
@@ -157,104 +181,21 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 						>
 							Appearance
 						</Button>
-					</nav>
-				</div>
-			</div>
-			<div
-				id="deck-edit-panel"
-				className={concatClassNames(
-					styles['deck-collapse'],
-					isEditMode ? styles['open'] : undefined
-				)}
-				inert={!isEditMode}
-			>
-				<div className={styles['deck-collapse-inner']}>
-					<div className={styles['deck-edit-panel-body']}>
-						<section className={styles['deck-control-group']}>
-							<h2 className={styles['deck-control-label']}>
-								Add cards
-							</h2>
-							<div className={styles['deck-add-tiles']}>
-								<Button
-									className={styles['deck-add-tile']}
-									onClick={() =>
-										dispatch(Actions.setViewAddCard(true))
-									}
-									disabled={isSaving}
-								>
-									<DeckControlIcon name="search" />
-									<span>Search</span>
-									<span
-										className={styles['deck-add-tile-hint']}
-									>
-										one card
-									</span>
-								</Button>
-								<Button
-									className={styles['deck-add-tile']}
-									onClick={onAddCards}
-									disabled={isSaving}
-								>
-									<DeckControlIcon name="list" />
-									<span>Paste list</span>
-									<span
-										className={styles['deck-add-tile-hint']}
-									>
-										many cards
-									</span>
-								</Button>
-								<Button
-									className={styles['deck-add-tile']}
-									onClick={onImportImage}
-									disabled={isSaving}
-								>
-									<DeckControlIcon name="camera" />
-									<span>Scan image</span>
-									<span
-										className={styles['deck-add-tile-hint']}
-									>
-										from a photo
-									</span>
-								</Button>
-							</div>
-						</section>
-						<section className={styles['deck-control-group']}>
-							<h2 className={styles['deck-control-label']}>
-								Deck
-							</h2>
-							<div className={styles['deck-control-row']}>
-								<Button
-									className={styles['deck-control-button']}
-									onClick={onEditName}
-									disabled={isSaving}
-								>
-									Rename
-								</Button>
-								<Button
-									className={styles['deck-control-button']}
-									onClick={() =>
-										navigate(`/deck/${deckId}/settings`)
-									}
-								>
-									Appearance
-								</Button>
-								<Button
-									className={concatClassNames(
-										styles['deck-control-button'],
-										styles['delete-deck-button']
-									)}
-									disabled={isSaving}
-									onClick={async () => {
-										await fetchAPIDeleteDeck(deckId);
-										navigate('/');
-									}}
-								>
-									Delete
-								</Button>
-							</div>
-						</section>
+						<Button
+							className={concatClassNames(
+								styles['deck-control-button'],
+								styles['delete-deck-button']
+							)}
+							disabled={isSaving}
+							onClick={async () => {
+								await fetchAPIDeleteDeck(deckId);
+								navigate('/');
+							}}
+						>
+							Delete
+						</Button>
 					</div>
-				</div>
+				</section>
 			</div>
 		</div>
 	);
@@ -267,9 +208,10 @@ export type DeckProps = {
 
 export function Deck(props: DeckProps) {
 	const { initialDeckData, deckId, view = 'list' } = props;
-	const [state, dispatch] = useAsyncReducer(reducer, initialState);
+	const isPhoneLayout = useIsPhoneLayout();
+	const navigate = useNavigate();
+	const modalHistory = useHistoryModal<DeckModal>(`deck:${deckId}`);
 	const storeDispatch = useAppDispatch();
-	const { viewEditCard, viewAddCard } = state;
 	const data = useSelector((root: Parameters<typeof selectDeck>[0]) =>
 		selectDeck(root, deckId)
 	);
@@ -283,15 +225,24 @@ export function Deck(props: DeckProps) {
 	} | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
-	const [showDetailsModal, setShowDetailsModal] = useState(false);
-	// A snapshot of the card's printings when the dialog opened, so a refresh can't reset it.
-	const [managing, setManaging] = useState<DeckCardGroup | null>(null);
-	const [showImageImport, setShowImageImport] = useState(false);
+	const [deletingCardName, setDeletingCardName] = useState<string | null>(
+		null
+	);
+	const [cardActionError, setCardActionError] = useState<string | null>(null);
 	const [bannerElement, setBannerElement] = useState<HTMLElement | null>(
 		null
 	);
 	const addCards = useSelector(selectAddCards);
-	const showAddCards = addCards.open && addCards.deckId === deckId;
+	const modal = modalHistory.value;
+	// Printings are serialized as a snapshot so Back/Forward cannot replace the
+	// dialog's working set during a background deck refresh.
+	const managingModal =
+		modal?.type === 'manage-printings' ? modal.group : null;
+	const cardPreviewModal = modal?.type === 'card-preview' ? modal.card : null;
+	const showAddCardModal = modal?.type === 'add-card';
+	const showAddCardsModal = modal?.type === 'add-cards';
+	const showImageImportModal = modal?.type === 'image-import';
+	const showDeckDetailsModal = modal?.type === 'deck-details';
 	const scanTasks = useImageImportQueue();
 	const addedFromScans = scanTasks
 		.filter((task) => task.deckId === deckId)
@@ -319,14 +270,6 @@ export function Deck(props: DeckProps) {
 		bannerCards.find((card) => card.uuid === data?.bannerCardUuid);
 	const topBannerCard = selectedBanner ?? bannerCards[0];
 
-	const [isEditMode, setIsEditMode] = useQueryState('edit', {
-		parse: function (value: string) {
-			return value === 'true';
-		},
-		serialize: function (value: boolean) {
-			return value.toString();
-		}
-	});
 	const previewIcon = data?.icon;
 	const bannerCrop = data?.bannerCrop ?? DEFAULT_BANNER_CROP;
 	const topStyle = data?.topStyle === 'full-art' ? 'full-art' : 'card';
@@ -353,12 +296,6 @@ export function Deck(props: DeckProps) {
 			} as React.CSSProperties)
 		: undefined;
 
-	function setEditing(editing: boolean) {
-		setDetailsDraft(null);
-		setSaveError(null);
-		setIsEditMode(editing);
-	}
-
 	const refreshDeck = useCallback(
 		() => storeDispatch(loadDeck(deckId)),
 		[deckId, storeDispatch]
@@ -369,6 +306,14 @@ export function Deck(props: DeckProps) {
 			storeDispatch(setInitialDeck({ deckId, data: initialDeckData }));
 		void refreshDeck();
 	}, [deckId, initialDeckData, refreshDeck, storeDispatch]);
+
+	useLayoutEffect(() => {
+		if (
+			modal?.type === 'add-cards' &&
+			(!addCards.open || addCards.deckId !== deckId)
+		)
+			storeDispatch(openAddCards({ deckId }));
+	}, [addCards.deckId, addCards.open, deckId, modal?.type, storeDispatch]);
 
 	// The add-cards modal belongs to this page; don't let it reappear on the next visit.
 	useEffect(
@@ -398,11 +343,14 @@ export function Deck(props: DeckProps) {
 		async (edit: DeckCardsEdit) => {
 			await fetchAPIEditDeckCards(deckId, edit);
 			await refreshDeck();
-			setManaging(null);
+			modalHistory.close();
 		},
-		[deckId, refreshDeck]
+		[deckId, modalHistory.close, refreshDeck]
 	);
-	const closeManaging = useCallback(() => setManaging(null), []);
+	const closeManaging = useCallback(
+		() => modalHistory.close(),
+		[modalHistory.close]
+	);
 
 	async function saveName() {
 		if (!data || !name.trim() || isSaving) return;
@@ -410,7 +358,7 @@ export function Deck(props: DeckProps) {
 		setSaveError(null);
 		if (nextName === data.name) {
 			setDetailsDraft(null);
-			setShowDetailsModal(false);
+			modalHistory.close();
 			return;
 		}
 		setIsSaving(true);
@@ -422,7 +370,7 @@ export function Deck(props: DeckProps) {
 				await refreshDeck().unwrap();
 			});
 			setDetailsDraft(null);
-			setShowDetailsModal(false);
+			modalHistory.close();
 		} catch {
 			setSaveError(
 				saved
@@ -434,9 +382,36 @@ export function Deck(props: DeckProps) {
 		}
 	}
 
-	function openCard(card: FetchAPIDeckCardResponse, group: DeckCardGroup) {
-		if (isEditMode) setManaging(group);
-		else dispatch(Actions.setEditCard(card));
+	function openCard(card: FetchAPIDeckCardResponse) {
+		modalHistory.open({ type: 'card-preview', card });
+	}
+
+	function onAddCardEvent(event: { type: AddCardEventType }) {
+		switch (event.type) {
+			case AddCardEventType.CLOSE:
+			case AddCardEventType.SUBMIT:
+				modalHistory.close();
+				break;
+		}
+	}
+
+	async function deleteMobileCard(group: DeckCardGroup) {
+		if (deletingCardName) return;
+		setCardActionError(null);
+		setDeletingCardName(group.name);
+		try {
+			await fetchAPIEditDeckCards(deckId, {
+				remove: group.printings.map((card) => card.uuid),
+				upsert: []
+			});
+			await refreshDeck().unwrap();
+		} catch {
+			setCardActionError(
+				`Unable to delete ${group.name}. Please try again.`
+			);
+		} finally {
+			setDeletingCardName(null);
+		}
 	}
 
 	if (!data || showInitialLoading) {
@@ -464,69 +439,55 @@ export function Deck(props: DeckProps) {
 					}
 					artFrame={bannerCrop.mobile}
 					banner={bannerElement}
-					isEditMode={!!isEditMode}
-					onToggleEdit={() => setEditing(!isEditMode)}
-					isSaving={isSaving}
 					style={paletteStyle}
 				/>
 			)}
 		>
 			{error && <p role="alert">Unable to refresh deck.</p>}
-			{showImageImport && (
+			{showImageImportModal && (
 				<ImageCardImport
 					mode="add"
 					deckId={deckId}
-					onClose={() => setShowImageImport(false)}
+					onClose={modalHistory.close}
 					onComplete={() => {
-						setShowImageImport(false);
+						modalHistory.close();
 						void refreshDeck();
 					}}
 				/>
 			)}
-			{managing ? (
-				<Modal
-					key={managing.name}
-					extraWide
-					fullScreenOnMobile
-				>
+			{managingModal ? (
+				<Modal key={managingModal.name} extraWide fullScreenOnMobile>
 					<ManagePrintings
-						group={managing}
+						group={managingModal}
 						onSave={savePrintings}
 						onCancel={closeManaging}
 					/>
 				</Modal>
-			) : viewEditCard ? (
-				<Modal
-					key={viewEditCard.uuid}
-					extraWide
-					fullScreenOnMobile
-				>
+			) : cardPreviewModal ? (
+				<Modal key={cardPreviewModal.uuid} extraWide fullScreenOnMobile>
 					<CardPreviewModal
-						onClose={() => dispatch(Actions.setEditCard(null))}
-						card={viewEditCard}
+						onClose={modalHistory.close}
+						card={cardPreviewModal}
 					/>
 				</Modal>
-			) : viewAddCard ? (
+			) : showAddCardModal ? (
+				isPhoneLayout ? (
+					<Modal>
+						<AddCardSingleMobile
+							deckId={deckId}
+							onEvent={onAddCardEvent}
+						/>
+					</Modal>
+				) : (
+					<Modal>
+						<AddCard deckId={deckId} onEvent={onAddCardEvent} />
+					</Modal>
+				)
+			) : showAddCardsModal ? (
 				<Modal fullScreenOnMobile>
-					<AddCard
-						deckId={deckId}
-						onEvent={(e) => {
-							switch (e.type) {
-								case AddCardEventType.CLOSE:
-									dispatch(Actions.setViewAddCard(false));
-									break;
-								case AddCardEventType.SUBMIT:
-									dispatch(Actions.setViewAddCard(false));
-									break;
-							}
-						}}
-					/>
+					<AddCards onClose={modalHistory.close} />
 				</Modal>
-			) : showAddCards ? (
-				<Modal fullScreenOnMobile>
-					<AddCards />
-				</Modal>
-			) : showDetailsModal ? (
+			) : showDeckDetailsModal ? (
 				<Modal>
 					<section
 						className={styles['deck-details-modal']}
@@ -563,7 +524,7 @@ export function Deck(props: DeckProps) {
 							<Button
 								onClick={() => {
 									setDetailsDraft(null);
-									setShowDetailsModal(false);
+									modalHistory.close();
 								}}
 								disabled={isSaving}
 							>
@@ -581,95 +542,162 @@ export function Deck(props: DeckProps) {
 					</section>
 				</Modal>
 			) : undefined}
-			<div className={styles['deck-theme']} style={paletteStyle}>
-				{topStyle === 'full-art' && topBannerCard && (
-					<DeckFullArtTop
-						ref={setBannerElement}
-						src={topBannerCard.art}
-						crop={bannerCrop}
-						name={topBannerCard.name}
-						cardCount={data.deck.count}
-					/>
-				)}
+			{isPhoneLayout ? (
+				<MobileDeckView
+					data={data}
+					deckId={deckId}
+					view={view}
+					bannerCrop={bannerCrop}
+					topStyle={topStyle}
+					topBannerCard={topBannerCard}
+					previewIcon={previewIcon}
+					paletteStyle={paletteStyle}
+					isSaving={isSaving}
+					deletingCardName={deletingCardName}
+					cardActionError={cardActionError}
+					onBannerElement={setBannerElement}
+					onAddCard={() => modalHistory.open({ type: 'add-card' })}
+					onAddCards={() => {
+						storeDispatch(openAddCards({ deckId }));
+						modalHistory.open({ type: 'add-cards' });
+					}}
+					onImportImage={() =>
+						modalHistory.open({ type: 'image-import' })
+					}
+					onEditName={() => {
+						setDetailsDraft({ deckId, name: data.name });
+						setSaveError(null);
+						modalHistory.open({ type: 'deck-details' });
+					}}
+					onDeleteDeck={async () => {
+						await fetchAPIDeleteDeck(deckId);
+						navigate('/');
+					}}
+					onEditCard={(group) =>
+						modalHistory.open({
+							type: 'manage-printings',
+							group
+						})
+					}
+					onViewCard={(card) =>
+						modalHistory.open({ type: 'card-preview', card })
+					}
+					onDeleteCard={deleteMobileCard}
+				/>
+			) : (
 				<div
 					className={concatClassNames(
-						styles['index-container'],
-						view === 'tabletop'
-							? styles['tabletop-index']
-							: undefined,
+						styles['deck-theme'],
 						topStyle === 'full-art'
-							? styles['full-index']
+							? styles['full-art-theme']
 							: undefined
 					)}
+					style={paletteStyle}
 				>
-					<div className={styles['banner-container']}>
-						{topStyle === 'card' && (
-							<DeckBannerCard
-								ref={setBannerElement}
-								src={previewIcon}
-								crop={bannerCrop}
-								name={data.name}
-								cardCount={data.deck.count}
-								updatedAt={data.lastEdit}
-								variant={
-									view === 'tabletop' ? 'mobile' : 'responsive'
+					{topStyle === 'full-art' && topBannerCard && (
+						<DeckFullArtTop
+							ref={setBannerElement}
+							src={topBannerCard.art}
+							crop={bannerCrop}
+							name={data.name}
+							cardCount={data.deck.count}
+						/>
+					)}
+					<div
+						className={concatClassNames(
+							styles['index-container'],
+							view === 'tabletop'
+								? styles['tabletop-index']
+								: undefined,
+							topStyle === 'full-art'
+								? styles['full-index']
+								: undefined
+						)}
+					>
+						<div className={styles['banner-container']}>
+							{topStyle === 'card' && (
+								<DeckBannerCard
+									ref={setBannerElement}
+									src={previewIcon}
+									crop={bannerCrop}
+									name={data.name}
+									cardCount={data.deck.count}
+									updatedAt={data.lastEdit}
+									variant={
+										view === 'tabletop'
+											? 'mobile'
+											: 'responsive'
+									}
+								/>
+							)}
+							<DeckControlButtons
+								view={view}
+								deckId={deckId}
+								onEditName={() => {
+									setDetailsDraft({
+										deckId,
+										name: data.name
+									});
+									setSaveError(null);
+									modalHistory.open({
+										type: 'deck-details'
+									});
+								}}
+								onAddCard={() =>
+									modalHistory.open({ type: 'add-card' })
+								}
+								onImportImage={() =>
+									modalHistory.open({ type: 'image-import' })
+								}
+								onAddCards={() => {
+									storeDispatch(openAddCards({ deckId }));
+									modalHistory.open({ type: 'add-cards' });
+								}}
+								isSaving={isSaving}
+							/>
+							<DeckImageScanCard deckId={deckId} />
+							{saveError && !showDeckDetailsModal && (
+								<p
+									className={styles['save-error']}
+									role="alert"
+								>
+									{saveError}
+								</p>
+							)}
+							<DeckStatsSummary deck={data} />
+						</div>
+						{view === 'tabletop' ? (
+							<Tabletop
+								cards={data.cards}
+								onCardClick={openCard}
+							/>
+						) : (
+							<Decklist
+								name={name}
+								deck={data.deck}
+								banner={
+									topBannerCard
+										? {
+												art: topBannerCard.art,
+												name: topBannerCard.name
+											}
+										: null
+								}
+								bannerCrop={bannerCrop}
+								bannerBlend={data.bannerBlend}
+								topStyle={topStyle}
+								onCardClick={openCard}
+								onManagePrintings={(group) =>
+									modalHistory.open({
+										type: 'manage-printings',
+										group
+									})
 								}
 							/>
 						)}
-						<DeckControlButtons
-							view={view}
-							deckId={deckId}
-							dispatch={dispatch}
-							isEditMode={!!isEditMode}
-							onEdit={() => setEditing(true)}
-							onEditName={() => {
-								setDetailsDraft({ deckId, name: data.name });
-								setSaveError(null);
-								setShowDetailsModal(true);
-							}}
-							onDone={() => setEditing(false)}
-							onImportImage={() => setShowImageImport(true)}
-							onAddCards={() =>
-								storeDispatch(openAddCards({ deckId }))
-							}
-							isSaving={isSaving}
-						/>
-						<DeckImageScanCard deckId={deckId} />
-						{saveError && !showDetailsModal && (
-							<p className={styles['save-error']} role="alert">
-								{saveError}
-							</p>
-						)}
-						<DeckStatsSummary deck={data} />
 					</div>
-					{view === 'tabletop' ? (
-						<Tabletop
-							cards={data.cards}
-							editable={!!isEditMode}
-							onCardClick={openCard}
-						/>
-					) : (
-						<Decklist
-							name={name}
-							deck={data.deck}
-							banner={
-								topBannerCard
-									? {
-											art: topBannerCard.art,
-											name: topBannerCard.name
-										}
-									: null
-							}
-							bannerCrop={bannerCrop}
-							bannerBlend={data.bannerBlend}
-							topStyle={topStyle}
-							editable={!!isEditMode}
-							onCardClick={openCard}
-							onManagePrintings={setManaging}
-						/>
-					)}
 				</div>
-			</div>
+			)}
 		</PageFrame>
 	);
 }

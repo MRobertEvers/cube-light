@@ -6,16 +6,14 @@ import styles from './tabletop.module.css';
 
 type Props = {
 	cards: FetchAPIDeckCardResponse[];
-	editable: boolean;
 	onCardClick: (card: FetchAPIDeckCardResponse, group: DeckCardGroup) => void;
 };
 
 function TabletopCard(props: {
 	group: DeckCardGroup;
-	editable: boolean;
 	onCardClick: Props['onCardClick'];
 }) {
-	const { group, editable, onCardClick } = props;
+	const { group, onCardClick } = props;
 	const card = group.printings[0];
 	const source = card.images?.normal || card.image;
 	const [failedSource, setFailedSource] = useState<string | null>(null);
@@ -23,7 +21,7 @@ function TabletopCard(props: {
 		<button
 			type="button"
 			className={styles.card}
-			aria-label={`${editable ? 'Manage' : 'Open'} ${group.name}, ${group.count} ${group.count === 1 ? 'copy' : 'copies'}`}
+			aria-label={`Open ${group.name}, ${group.count} ${group.count === 1 ? 'copy' : 'copies'}`}
 			onClick={() => onCardClick(card, group)}
 		>
 			{source && source !== failedSource ? (
@@ -47,7 +45,7 @@ function TabletopCard(props: {
 }
 
 export function Tabletop(props: Props) {
-	const { cards, editable, onCardClick } = props;
+	const { cards, onCardClick } = props;
 	const columns = useMemo(() => groupTabletopCards(cards), [cards]);
 	const [cardSize, setCardSize] = useState(200);
 	return (
@@ -55,11 +53,7 @@ export function Tabletop(props: Props) {
 			<header className={styles.toolbar}>
 				<div>
 					<h1 id="tabletop-title">Tabletop</h1>
-					<p>
-						{editable
-							? 'Select a card to manage its copies.'
-							: 'Hover to reveal a card. Select it for details.'}
-					</p>
+					<p>Hover to reveal a card. Select it for details.</p>
 				</div>
 				<label className={styles.size}>
 					Card size
@@ -75,7 +69,7 @@ export function Tabletop(props: Props) {
 			</header>
 			{columns.length === 0 ? (
 				<p className={styles.empty}>
-					This deck is empty. Use Edit deck to add cards to your tabletop.
+					This deck is empty. Add cards to start your tabletop.
 				</p>
 			) : (
 				<div
@@ -102,7 +96,6 @@ export function Tabletop(props: Props) {
 										<li key={group.name} className={styles.slot}>
 											<TabletopCard
 												group={group}
-												editable={editable}
 												onCardClick={onCardClick}
 											/>
 										</li>

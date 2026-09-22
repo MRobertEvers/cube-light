@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { LogoIcon } from '../LogoIcon/LogoIcon';
 import { HeaderBackSlot } from './HeaderBackSlot';
 import { SiteNavLinks } from './SiteNavLinks';
+import { AccountMenu } from './AccountMenu';
 
 import styles from './header.module.css';
 
@@ -26,6 +27,7 @@ export function Header(props: HeaderProps) {
 					<SiteNavLinks />
 				</div>
 				<div className={styles['actions']}>{children}</div>
+				<AccountMenu />
 			</section>
 		</nav>
 	);

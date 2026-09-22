@@ -1,0 +1,61 @@
+.manaCost {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	gap: 2px;
+	white-space: nowrap;
+}
+
+.manaSymbol {
+	display: block;
+	width: var(--mana-symbol-size, 15px);
+	height: var(--mana-symbol-size, 15px);
+	filter: drop-shadow(-0.5px 1px 0 rgba(0, 0, 0, 0.4));
+}
+
+.unknownSymbol {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	min-width: 15px;
+	height: 15px;
+	padding: 0 2px;
+	border-radius: 999px;
+	background: #d6d2cf;
+	box-shadow: -0.5px 1px 0 rgba(0, 0, 0, 0.4);
+	color: #1a1614;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1;
+	text-decoration: none;
+}
+
+.inlineSymbol {
+	display: inline-block;
+	width: 1.2em;
+	height: 1.2em;
+	margin: 0 1px;
+	filter: drop-shadow(-0.5px 1px 0 rgba(0, 0, 0, 0.4));
+	vertical-align: -0.2em;
+}
+
+.inlineUnknownSymbol {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	min-width: 1.2em;
+	height: 1.2em;
+	margin: 0 1px;
+	padding: 0 0.15em;
+	border-radius: 999px;
+	background: #d6d2cf;
+	box-shadow: -0.5px 1px 0 rgba(0, 0, 0, 0.4);
+	color: #1a1614;
+	font-size: 0.8em;
+	font-weight: 700;
+	line-height: 1;
+	text-decoration: none;
+	vertical-align: 0.1em;
+}

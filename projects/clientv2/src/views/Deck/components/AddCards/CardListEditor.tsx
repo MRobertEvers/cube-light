@@ -8,6 +8,7 @@ import React, {
 	useState
 } from 'react';
 import type { CardListCompletions } from 'src/hooks/useCardListLint';
+import { useHistoryModal } from 'src/hooks/useHistoryModal';
 import { CardNameSpan, locateCardName } from 'src/utils/parse-card-list';
 import type { CardListProblem } from 'src/workers/card-list-lint.worker';
 import styles from './card-list-editor.module.css';
@@ -198,6 +199,9 @@ export function CardListEditor(props: CardListEditorProps) {
 		onCompletionQuery,
 		onTypingLineChange
 	} = props;
+	const printingModal = useHistoryModal<{ line: number; name: string }>(
+		'add-cards-printing'
+	);
 	const [scroll, setScroll] = useState({ top: 0, left: 0, height: 0 });
 	const [metrics, setMetrics] = useState<Metrics | null>(null);
 	const [target, setTargetState] = useState<CompletionTarget | null>(null);
@@ -216,10 +220,7 @@ export function CardListEditor(props: CardListEditorProps) {
 		atName: boolean;
 		name: string;
 	} | null>(null);
-	const [printingTarget, setPrintingTarget] = useState<{
-		line: number;
-		name: string;
-	} | null>(null);
+	const printingTarget = printingModal.value;
 	// Where a collapsed caret sits while the editor has focus, for the Tab hint.
 	const [caret, setCaret] = useState<{ line: number; column: number } | null>(
 		null
@@ -277,8 +278,7 @@ export function CardListEditor(props: CardListEditorProps) {
 		target && completions?.query === target.query ? completions.names : [];
 	const optionsKey = options.join('\n');
 	const activeIndex =
-		activeOption.key === optionsKey &&
-		activeOption.index < options.length
+		activeOption.key === optionsKey && activeOption.index < options.length
 			? activeOption.index
 			: 0;
 	// Nothing to offer when the name is already complete.
@@ -420,7 +420,7 @@ export function CardListEditor(props: CardListEditorProps) {
 
 	function setPrinting(line: number, setCode: string | null) {
 		const textarea = textareaRef.current;
-		setPrintingTarget(null);
+		printingModal.close();
 		if (!textarea) return;
 		const span = locateCardName(textarea.value.split('\n')[line - 1] ?? '');
 		if (!span) return;
@@ -907,7 +907,7 @@ export function CardListEditor(props: CardListEditorProps) {
 							disabled={menuUnknown}
 							onClick={() => {
 								setMenu(null);
-								setPrintingTarget({
+								printingModal.open({
 									line: menu.line,
 									name: menuSpan.name
 								});
@@ -954,7 +954,7 @@ export function CardListEditor(props: CardListEditorProps) {
 					setCode={printingSpan.printing?.setCode ?? null}
 					onPick={(setCode) => setPrinting(printingLine, setCode)}
 					onClose={() => {
-						setPrintingTarget(null);
+						printingModal.close();
 						textareaRef.current?.focus();
 					}}
 				/>

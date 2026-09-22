@@ -4,14 +4,18 @@ import { fetchAPIAddCard } from '../api/fetch-api-add-card';
 import { fetchAPIDeck } from '../api/fetch-api-deck';
 import { fetchAPISetCard, SetCardAction } from '../api/fetch-api-set-card';
 import { GetDeckResponse } from './deck.worker.messages';
+import type { NameIndexSearchCursor } from '../utils/lookup-tables/name-index-wasm';
+
+let suggestionCursor: NameIndexSearchCursor | undefined;
 
 export async function fetchSortedSuggestions(
 	search: string
 ): Promise<{ sorted: string[]; set: Set<string> }> {
 	// TODO: Better way to do this?
 	const index = await fetchAPINameLookup();
+	suggestionCursor ??= index.createSearchCursor(10);
 
-	const suggestions = index.getFirstNMatches(10, search);
+	const suggestions = suggestionCursor.getFirstNMatches(search);
 
 	const result = {
 		sorted: suggestions,

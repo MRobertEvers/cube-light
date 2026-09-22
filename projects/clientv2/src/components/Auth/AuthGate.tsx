@@ -30,7 +30,11 @@ type AuthState =
 			epoch: number;
 	  };
 
-type AuthContextValue = { user: AuthUser; signOut: () => Promise<void> };
+type AuthContextValue = {
+	user: AuthUser;
+	signOut: () => Promise<void>;
+	updateUser: (user: AuthUser) => void;
+};
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -89,6 +93,12 @@ export function AuthGate(props: React.PropsWithChildren) {
 		setState({ status: 'signed-out', setupRequired: false });
 	}, []);
 
+	const updateUser = useCallback((user: AuthUser) => {
+		setState((current) =>
+			current.status === 'signed-in' ? { ...current, user } : current
+		);
+	}, []);
+
 	function signedIn(user: AuthUser) {
 		return setState((current) => ({
 			status: 'signed-in',
@@ -127,7 +137,7 @@ export function AuthGate(props: React.PropsWithChildren) {
 		);
 
 	return (
-		<AuthContext.Provider value={{ user: state.user, signOut }}>
+		<AuthContext.Provider value={{ user: state.user, signOut, updateUser }}>
 			<PageErrorBoundary
 				resetKey={state.epoch}
 				sessionEnded={state.expired}

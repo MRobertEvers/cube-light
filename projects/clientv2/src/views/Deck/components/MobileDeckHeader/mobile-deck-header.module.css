@@ -109,14 +109,6 @@
 	color: var(--deck-banner-ink, inherit);
 }
 
-.mode {
-	font-size: 12px;
-	font-weight: 700;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
-	color: var(--deck-accent-text, #8e2524);
-}
-
 .menu {
 	position: relative;
 	flex: none;
@@ -124,38 +116,6 @@
 	align-items: center;
 	gap: 4px;
 	opacity: clamp(0, var(--collapse) * 2 - 1, 1);
-}
-
-.editToggle {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	height: 34px;
-	padding: 0 12px;
-	border: 1px solid var(--deck-border, #e5e1df);
-	border-radius: 17px;
-	background: #fff;
-	color: var(--deck-accent-text, #47413f);
-	font: inherit;
-	font-size: 14px;
-	font-weight: 700;
-	cursor: pointer;
-}
-
-.editToggle.editing {
-	border-color: var(--deck-accent, #8e2524);
-	background: var(--deck-accent, #8e2524);
-	color: var(--deck-on-accent, #fff);
-}
-
-.editToggle:disabled {
-	opacity: 0.6;
-	cursor: default;
-}
-
-.editToggle:focus-visible {
-	outline: 2px solid var(--deck-accent, #8e2524);
-	outline-offset: 2px;
 }
 
 .menuButton {

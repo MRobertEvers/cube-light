@@ -13,6 +13,10 @@
 	color: var(--deck-on-wash, var(--theme-text));
 }
 
+.full-art-theme {
+	background: var(--deck-wash, #fafafa);
+}
+
 .index-container {
 	margin: 0 auto;
 	padding: 30px 20px;
@@ -81,6 +85,7 @@
 
 .full-index {
 	position: relative;
+	z-index: 1;
 	padding-top: 0;
 	margin-top: -56px;
 }
@@ -162,53 +167,6 @@
 	margin: 16px 0;
 }
 
-.edit-deck-button {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 6px;
-	border-color: var(--deck-border, #e5e1df);
-	color: var(--deck-accent-text, inherit);
-	width: 100%;
-	min-width: unset !important;
-	margin: 0 !important;
-}
-
-.edit-deck-chevron {
-	transition: transform 220ms ease;
-}
-
-.edit-deck-button[aria-expanded='true'] .edit-deck-chevron {
-	transform: rotate(180deg);
-}
-
-/* Animating the row track from 0fr to 1fr lets a section expand to its natural height. */
-.deck-collapse {
-	display: grid;
-	grid-template-rows: 0fr;
-	opacity: 0;
-	transition:
-		grid-template-rows 220ms ease,
-		opacity 220ms ease;
-}
-
-.deck-collapse.open {
-	grid-template-rows: 1fr;
-	opacity: 1;
-}
-
-.deck-collapse-inner {
-	min-height: 0;
-	overflow: hidden;
-}
-
-.deck-control-pair {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 8px;
-	padding-top: 10px;
-}
-
 .deck-edit-panel-body {
 	display: grid;
 	gap: 14px;
@@ -260,26 +218,18 @@
 }
 
 .deck-control-row {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 6px;
 }
 
 .deck-control-button {
+	width: 100%;
 	padding: 0 10px;
 }
 
 .delete-deck-button {
-	margin-left: auto !important;
 	color: #b42323 !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.edit-deck-chevron,
-	.deck-collapse {
-		transition: none;
-	}
 }
 
 @media (max-width: 680px) {

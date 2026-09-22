@@ -80,19 +80,21 @@ export const saveBannerSelection = createAsyncThunk(
 	}
 );
 
+export type OpenBannerPickerPayload = {
+	deckId: string;
+	names: string[];
+	deckCardUuids: string[];
+	currentName: string;
+	currentUuid: string | null;
+};
+
 export const bannerPickerSlice = createSlice({
 	name: 'bannerPicker',
 	initialState,
 	reducers: {
 		openBannerPicker: function (
 			state,
-			action: PayloadAction<{
-				deckId: string;
-				names: string[];
-				deckCardUuids: string[];
-				currentName: string;
-				currentUuid: string | null;
-			}>
+			action: PayloadAction<OpenBannerPickerPayload>
 		) {
 			const { deckId, names, deckCardUuids, currentName, currentUuid } =
 				action.payload;

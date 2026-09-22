@@ -48,9 +48,35 @@
 	cursor: pointer;
 }
 
+.row-with-action {
+	display: flex;
+	align-items: center;
+}
+
+.row-with-action .row {
+	min-width: 0;
+}
+
+.manage-row {
+	flex: none;
+	margin: 0 8px 0 0;
+	padding: 4px 7px;
+	border: 0;
+	background: transparent;
+	color: var(--deck-accent-text, #6f2525);
+	font: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.manage-row:hover {
+	text-decoration: underline;
+}
+
 .row:focus-visible,
 .printing:focus-visible,
-.manage:focus-visible {
+.manage-row:focus-visible {
 	border-radius: 4px;
 	outline: 2px solid var(--deck-accent, #7a3431);
 	outline-offset: -2px;
@@ -74,31 +100,6 @@
 
 .row:hover .name {
 	text-decoration: underline;
-}
-
-.mana-cost {
-	display: inline-flex;
-	flex: none;
-	align-items: center;
-	gap: 2px;
-	white-space: nowrap;
-}
-
-.mana-symbol {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 1.3em;
-	height: 1.3em;
-	padding: 0 0.15em;
-	box-sizing: border-box;
-	border-radius: 1em;
-	box-shadow: -0.5px 1px 0 rgba(0, 0, 0, 0.4);
-	color: #1a1614;
-	font-size: 11px;
-	font-weight: 700;
-	line-height: 1;
-	text-decoration: none;
 }
 
 .set-code {
@@ -196,22 +197,6 @@
 	font-variant-numeric: tabular-nums;
 }
 
-.manage {
-	margin: 2px 0 0;
-	padding: 5px 0;
-	border: 0;
-	background: none;
-	color: var(--deck-accent-text, #6f2525);
-	font: inherit;
-	font-size: 13px;
-	font-weight: 600;
-	cursor: pointer;
-}
-
-.manage:hover {
-	text-decoration: underline;
-}
-
 @media (max-width: 680px) {
 	.row {
 		min-height: 48px;
@@ -237,8 +222,7 @@
 		flex: none;
 	}
 
-	.printing,
-	.manage {
+	.printing {
 		width: auto;
 		min-height: 40px;
 		padding: 0 12px 0 6px;
@@ -255,12 +239,5 @@
 	.printing-count {
 		margin-right: 0;
 		color: #6d6764;
-	}
-
-	.manage {
-		margin: 0;
-		padding: 0 14px;
-		border-color: #e8cfc9;
-		background: #f6ece9;
 	}
 }

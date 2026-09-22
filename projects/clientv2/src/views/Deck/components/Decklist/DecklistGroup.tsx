@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
+import { ManaCost } from '../../../../components/ManaCost/ManaCost';
 import { DeckGroupData } from '../../../../workers/deck.worker.messages';
 import {
 	DeckCardGroup,
@@ -46,42 +47,6 @@ type OnCardEvent = (event: CardInteractionEvent) => void;
 /** Thumbnails shown in a collapsed row; more printings than this are summed in the pill. */
 const MAX_ROW_THUMBNAILS = 3;
 
-const MANA_COLORS: Record<string, string> = {
-	W: '#f8f3d6',
-	U: '#aad4ee',
-	B: '#c9c1bd',
-	R: '#f2a98e',
-	G: '#9fd3b0'
-};
-
-function ManaCost(props: { cost: string }) {
-	const { cost } = props;
-	if (!cost) return null;
-	return (
-		<span className={styles['mana-cost']} aria-label={`Mana cost: ${cost}`}>
-			{cost.split(/(\{[^}]+\})/).map((part, index) => {
-				const symbol = /^\{([^}]+)\}$/.exec(part)?.[1];
-				if (!symbol) return part;
-				const colors = symbol.split('/').map((value) => MANA_COLORS[value] ?? '#d6d2cf');
-				return (
-					<abbr
-						key={index}
-						className={styles['mana-symbol']}
-						title={part}
-						style={{
-							background: colors.length > 1
-								? `linear-gradient(135deg, ${colors[0]} 50%, ${colors[1]} 50%)`
-								: colors[0]
-						}}
-					>
-						{symbol}
-					</abbr>
-				);
-			})}
-		</span>
-	);
-}
-
 function thumbnailOf(card: FetchAPIDeckCardResponse) {
 	return card.images?.small ?? card.image;
 }
@@ -119,86 +84,120 @@ function previewHandlers(
 type CardRowProps = {
 	group: DeckCardGroup;
 	expanded: boolean;
-	editable: boolean;
 	onToggle: (name: string) => void;
 	onCardEvent?: OnCardEvent;
 };
 
 function CardRow(props: CardRowProps) {
-	const { group, expanded, editable, onToggle, onCardEvent } = props;
+	const { group, expanded, onToggle, onCardEvent } = props;
 	const [top] = group.printings;
 	const printingsId = `printings-${group.name.replace(/\W+/g, '-')}`;
 
 	if (group.printings.length === 1) {
 		return (
-			<button
-				type="button"
-				className={styles['row']}
-				aria-label={`Open ${group.name}, ${top.setCode} printing${top.manaCost ? `, mana cost ${top.manaCost}` : ''}`}
-				onClick={() =>
-					onCardEvent?.({
-						type: CardInteractionEventType.CLICK,
-						payload: { card: top, group }
-					})
-				}
-				{...previewHandlers(top, onCardEvent)}
-			>
-				<span className={styles['count']}>{group.count}</span>
-				<span className={styles['name']}>
-					{group.name}{' '}
-					<span className={styles['set-code']}>({top.setCode})</span>
-				</span>
-				<ManaCost cost={top.manaCost} />
-			</button>
+			<div className={styles['row-with-action']}>
+				<button
+					type="button"
+					className={styles['row']}
+					aria-label={`Open ${group.name}, ${top.setCode} printing${top.manaCost ? `, mana cost ${top.manaCost}` : ''}`}
+					onClick={() =>
+						onCardEvent?.({
+							type: CardInteractionEventType.CLICK,
+							payload: { card: top, group }
+						})
+					}
+					{...previewHandlers(top, onCardEvent)}
+				>
+					<span className={styles['count']}>{group.count}</span>
+					<span className={styles['name']}>
+						{group.name}{' '}
+						<span className={styles['set-code']}>
+							({top.setCode})
+						</span>
+					</span>
+					<ManaCost cost={top.manaCost} />
+				</button>
+				<button
+					type="button"
+					className={styles['manage-row']}
+					aria-label={`Edit ${group.name} copies`}
+					onClick={() =>
+						onCardEvent?.({
+							type: CardInteractionEventType.MANAGE,
+							payload: group
+						})
+					}
+				>
+					Edit
+				</button>
+			</div>
 		);
 	}
 
 	return (
 		<>
-			<button
-				type="button"
-				className={styles['row']}
-				aria-expanded={expanded}
-				aria-controls={expanded ? printingsId : undefined}
-				onClick={() => onToggle(group.name)}
-				{...previewHandlers(top, onCardEvent)}
-			>
-				<span className={styles['count']}>{group.count}</span>
-				<span className={styles['name']}>{group.name}</span>
-				<ManaCost cost={top.manaCost} />
-				<span className={styles['thumbnails']} aria-hidden="true">
-					{group.printings
-						.slice(0, MAX_ROW_THUMBNAILS)
-						.map((card) => (
-							<img
-								key={card.uuid}
-								src={thumbnailOf(card)}
-								alt=""
-								loading="lazy"
-							/>
-						))}
-				</span>
-				<span className={styles['print-count']}>
-					{group.printings.length}
-					<span className={styles['print-count-label']}> prints</span>
-				</span>
-				<svg
-					className={styles['caret']}
-					viewBox="0 0 16 16"
-					width="16"
-					height="16"
-					aria-hidden="true"
+			<div className={styles['row-with-action']}>
+				<button
+					type="button"
+					className={styles['row']}
+					aria-expanded={expanded}
+					aria-controls={expanded ? printingsId : undefined}
+					onClick={() => onToggle(group.name)}
+					{...previewHandlers(top, onCardEvent)}
 				>
-					<path
-						d="M4 6l4 4 4-4"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="1.8"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					/>
-				</svg>
-			</button>
+					<span className={styles['count']}>{group.count}</span>
+					<span className={styles['name']}>{group.name}</span>
+					<ManaCost cost={top.manaCost} />
+					<span className={styles['thumbnails']} aria-hidden="true">
+						{group.printings
+							.slice(0, MAX_ROW_THUMBNAILS)
+							.map((card) => (
+								<img
+									key={card.uuid}
+									src={thumbnailOf(card)}
+									alt=""
+									loading="lazy"
+								/>
+							))}
+					</span>
+					<span className={styles['print-count']}>
+						{group.printings.length}
+						<span className={styles['print-count-label']}>
+							{' '}
+							prints
+						</span>
+					</span>
+					<svg
+						className={styles['caret']}
+						viewBox="0 0 16 16"
+						width="16"
+						height="16"
+						aria-hidden="true"
+					>
+						<path
+							d="M4 6l4 4 4-4"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="1.8"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						/>
+					</svg>
+				</button>
+				<button
+					type="button"
+					className={styles['manage-row']}
+					aria-label={`Edit ${group.name} copies and printings`}
+					onClick={() =>
+						onCardEvent?.({
+							type: CardInteractionEventType.MANAGE,
+							payload: group
+						})
+					}
+				>
+					Edit
+				</button>
+			</div>
 			{expanded && (
 				<ul
 					id={printingsId}
@@ -234,22 +233,6 @@ function CardRow(props: CardRowProps) {
 							</button>
 						</li>
 					))}
-					{editable && (
-						<li>
-							<button
-								type="button"
-								className={styles['manage']}
-								onClick={() =>
-									onCardEvent?.({
-										type: CardInteractionEventType.MANAGE,
-										payload: group
-									})
-								}
-							>
-								Manage printings
-							</button>
-						</li>
-					)}
 				</ul>
 			)}
 		</>
@@ -259,15 +242,17 @@ function CardRow(props: CardRowProps) {
 export type DecklistCategoryProps = {
 	group: DeckGroupData;
 	name: string;
-	editable: boolean;
 	isExpanded: (name: string) => boolean;
 	onToggle: (name: string) => void;
 	onCardEvent?: OnCardEvent;
 };
 export function DecklistCategory(props: DecklistCategoryProps) {
-	const { group, name, editable, isExpanded, onToggle, onCardEvent } = props;
+	const { group, name, isExpanded, onToggle, onCardEvent } = props;
 	const cards = useMemo(
-		() => groupDeckCardsByName(group.cards).sort(compareDeckCardGroupsByManaCost),
+		() =>
+			groupDeckCardsByName(group.cards).sort(
+				compareDeckCardGroupsByManaCost
+			),
 		[group.cards]
 	);
 	return (
@@ -288,7 +273,6 @@ export function DecklistCategory(props: DecklistCategoryProps) {
 						<CardRow
 							group={card}
 							expanded={isExpanded(card.name)}
-							editable={editable}
 							onToggle={onToggle}
 							onCardEvent={onCardEvent}
 						/>
@@ -304,7 +288,6 @@ export type DecklistGroupProps = {
 		name: string;
 		groupData: DeckGroupData;
 	}>;
-	editable: boolean;
 	isExpanded: (name: string) => boolean;
 	onToggle: (name: string) => void;
 	onCardEvent?: OnCardEvent;

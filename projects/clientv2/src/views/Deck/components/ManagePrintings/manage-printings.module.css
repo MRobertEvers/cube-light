@@ -88,6 +88,7 @@
 .save:focus-visible,
 .done:focus-visible,
 .add-printing:focus-visible,
+.change-printing:focus-visible,
 .stepper button:focus-visible,
 .tile:focus-visible,
 .tile-remove:focus-visible,
@@ -156,6 +157,11 @@
 	background: white;
 }
 
+.deck-row.replacing {
+	border-color: var(--deck-accent, #7a3431);
+	box-shadow: 0 0 0 1px var(--deck-accent, #7a3431);
+}
+
 .deck-row img {
 	flex: none;
 	width: 44px;
@@ -186,6 +192,32 @@
 	font-size: 12px;
 	font-weight: 600;
 	letter-spacing: 0.04em;
+}
+
+.change-printing {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	background: white;
+	color: var(--deck-accent, #7a3431);
+	cursor: pointer;
+}
+
+.change-printing:hover:not(:disabled),
+.deck-row.replacing .change-printing {
+	background: #f6ece9;
+}
+
+.change-printing:disabled {
+	color: #b8b0ad;
+	cursor: default;
 }
 
 .stepper {
@@ -506,6 +538,12 @@
 	}
 
 	.stepper button {
+		width: 44px;
+		height: 44px;
+		border-radius: 9px;
+	}
+
+	.change-printing {
 		width: 44px;
 		height: 44px;
 		border-radius: 9px;

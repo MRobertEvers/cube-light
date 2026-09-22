@@ -9,7 +9,10 @@ import {
 import type { CardPalette } from '../../utils/card-palette';
 import { DeckFullArtTop } from '../../components/DeckFullArtTop/DeckFullArtTop';
 import { SpotlightCard } from '../../widgets/SpotlightCard/SpotlightCard';
-import { openBannerPicker } from '../../store/banner-picker/banner-picker.state';
+import {
+	openBannerPicker,
+	type OpenBannerPickerPayload
+} from '../../store/banner-picker/banner-picker.state';
 import {
 	appearanceActions,
 	appearanceView,
@@ -87,8 +90,12 @@ function EditorHeader(
 	);
 }
 
-export function BannerCardSection(props: SectionProps) {
-	const { deckId, data, view } = props;
+export function BannerCardSection(
+	props: SectionProps & {
+		onPickerOpened?: (payload: OpenBannerPickerPayload) => void;
+	}
+) {
+	const { deckId, data, view, onPickerOpened } = props;
 	const dispatch = useAppDispatch();
 	const card = bannerCard(data);
 	const names = [...new Set(data.cards.map((item) => item.name))].sort(
@@ -108,21 +115,21 @@ export function BannerCardSection(props: SectionProps) {
 						className={styles['primary']}
 						disabled={names.length === 0}
 						onClick={() => {
+							const payload: OpenBannerPickerPayload = {
+								deckId,
+								names,
+								deckCardUuids: data.cards.map(
+									(item) => item.uuid
+								),
+								currentName:
+									card && names.includes(card.name)
+										? card.name
+										: '',
+								currentUuid: data.bannerCardUuid
+							};
 							dispatch(appearanceActions.bannerPickerOpened());
-							dispatch(
-								openBannerPicker({
-									deckId,
-									names,
-									deckCardUuids: data.cards.map(
-										(item) => item.uuid
-									),
-									currentName:
-										card && names.includes(card.name)
-											? card.name
-											: '',
-									currentUuid: data.bannerCardUuid
-								})
-							);
+							dispatch(openBannerPicker(payload));
+							onPickerOpened?.(payload);
 						}}
 					>
 						Choose banner artwork

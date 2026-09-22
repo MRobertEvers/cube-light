@@ -13,6 +13,11 @@ type NameIndexExports = {
 	nm_wasm_name_ptr(index: number): number;
 };
 
+export type NameIndexSearchCursor = {
+	/** Updates the current query, reusing its longest unchanged prefix. */
+	getFirstNMatches(base: string): string[];
+};
+
 /** Search the compact C name index through its WebAssembly exports. */
 export class NameIndexWasm {
 	private readonly wasm: NameIndexExports;
@@ -91,36 +96,77 @@ export class NameIndexWasm {
 		return names;
 	}
 
-	getFirstNMatches(limit: number, base: string): string[] {
-		if (limit <= 0) return [];
-		let level = [''];
-		for (const char of base) {
-			const keys = Array.from(
-				new Set([char.toUpperCase(), char.toLowerCase()])
-			);
-			const next: string[] = [];
-			for (const prefix of level) {
+	private extendLevel(level: string[], char: string): string[] {
+		const keys = Array.from(
+			new Set([char.toUpperCase(), char.toLowerCase()])
+		);
+		const next: string[] = [];
+		for (const prefix of level) {
+			for (const key of keys) {
+				const candidate = prefix + key;
+				if (this.hasPrefix(candidate)) next.push(candidate);
+			}
+			for (const ignored of [',', "'"]) {
+				if (ignored === char || !this.hasPrefix(prefix + ignored))
+					continue;
 				for (const key of keys) {
-					const candidate = prefix + key;
+					const candidate = prefix + ignored + key;
 					if (this.hasPrefix(candidate)) next.push(candidate);
 				}
-				for (const ignored of [',', "'"]) {
-					if (ignored === char || !this.hasPrefix(prefix + ignored))
-						continue;
-					for (const key of keys) {
-						const candidate = prefix + ignored + key;
-						if (this.hasPrefix(candidate)) next.push(candidate);
-					}
-				}
 			}
-			level = next;
-			if (!level.length) return [];
 		}
+		return next;
+	}
+
+	private completeLevel(level: string[], limit: number): string[] {
 		const results: string[] = [];
 		for (const prefix of level) {
 			results.push(...this.completions(prefix, limit - results.length));
 			if (results.length >= limit) break;
 		}
 		return results;
+	}
+
+	/**
+	 * A stateful prefix cursor for live inputs. Appending one character advances one
+	 * level; backspacing restores the already-computed parent level.
+	 */
+	createSearchCursor(limit: number): NameIndexSearchCursor {
+		const index = this;
+		let characters: string[] = [];
+		let levels: string[][] = [['']];
+
+		return {
+			getFirstNMatches: function (base: string) {
+				if (limit <= 0) return [];
+				const nextCharacters = Array.from(base);
+				let common = 0;
+				while (
+					common < characters.length &&
+					common < nextCharacters.length &&
+					characters[common] === nextCharacters[common]
+				)
+					common++;
+				levels.length = common + 1;
+				for (
+					let position = common;
+					position < nextCharacters.length;
+					position++
+				) {
+					levels.push(
+						index.extendLevel(
+							levels[position],
+							nextCharacters[position]
+						)
+					);
+				}
+				characters = nextCharacters;
+				return index.completeLevel(levels[levels.length - 1], limit);
+			}
+		};
+	}
+
+	getFirstNMatches(limit: number, base: string): string[] {
+		return this.createSearchCursor(limit).getFirstNMatches(base);
 	}
 }

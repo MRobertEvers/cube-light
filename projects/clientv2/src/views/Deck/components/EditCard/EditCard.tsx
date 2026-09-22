@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { CardPreviewDetails } from '../../../../api/fetch-api-card-details';
 import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
+import { ManaCost, ManaText } from '../../../../components/ManaCost/ManaCost';
 
 import { HeaderBackButton } from 'src/components/BackLink/BackLink';
 import { HeaderBackSlot } from 'src/components/Header/HeaderBackSlot';
@@ -35,44 +36,6 @@ const FORMAT_NAMES: Record<string, string> = {
 	future: 'Future'
 };
 const MAIN_FORMATS = ['standard', 'commander', 'modern'];
-
-const MANA_COLORS: Record<string, string> = {
-	W: '#f8f3d6',
-	U: '#aad4ee',
-	B: '#c9c1bd',
-	R: '#f2a98e',
-	G: '#9fd3b0'
-};
-
-/** Renders rules text, drawing {X} costs as small mana pips. */
-function ManaText(props: { text: string }) {
-	return (
-		<>
-			{props.text.split(/(\{[^}]+\})/).map((part, i) => {
-				const symbol = /^\{([^}]+)\}$/.exec(part)?.[1];
-				if (!symbol) return part;
-				const colors = symbol
-					.split('/')
-					.map((c) => MANA_COLORS[c])
-					.filter(Boolean);
-				const background =
-					colors.length > 1
-						? `linear-gradient(135deg, ${colors[0]} 50%, ${colors[1]} 50%)`
-						: (colors[0] ?? '#d6d2cf');
-				return (
-					<abbr
-						key={i}
-						className={styles['mana']}
-						style={{ background }}
-						title={part}
-					>
-						{symbol === 'T' ? '⟳' : symbol.replace('/', '')}
-					</abbr>
-				);
-			})}
-		</>
-	);
-}
 
 function capitalize(value: string) {
 	return value.charAt(0).toUpperCase() + value.slice(1);
@@ -183,7 +146,7 @@ export function CardPreviewModal(props: CardPreviewModalProps) {
 						{card.name}
 						{card.manaCost && (
 							<span className={styles['cost']}>
-								<ManaText text={card.manaCost} />
+								<ManaCost cost={card.manaCost} />
 							</span>
 						)}
 					</h2>

@@ -4,9 +4,8 @@ import { LogoIcon } from '../../../../components/LogoIcon/LogoIcon';
 import { BannerArtwork } from '../../../../components/BannerArtwork/BannerArtwork';
 import { HeaderBackSlot } from '../../../../components/Header/HeaderBackSlot';
 import { SiteNavLinks } from '../../../../components/Header/SiteNavLinks';
+import { AccountMenu } from '../../../../components/Header/AccountMenu';
 import type { BannerFrame } from '../../../../utils/banner-crop';
-import { concatClassNames } from '../../../../utils/concat-class-names';
-import { DeckControlIcon } from '../../DeckControlIcons';
 import styles from './mobile-deck-header.module.css';
 
 type Props = {
@@ -16,29 +15,16 @@ type Props = {
 	artFrame: BannerFrame;
 	/** The deck's banner on the page; the bar becomes the deck's as it scrolls under. */
 	banner: HTMLElement | null;
-	isEditMode: boolean;
-	onToggleEdit: () => void;
-	isSaving: boolean;
 	style?: React.CSSProperties;
 };
 
 /**
  * The phone deck page's sticky top bar. It starts as the site bar and, as the deck's
  * banner scrolls beneath it, turns into a compact banner for the deck with the site
- * links tucked into a menu and the deck's edit toggle within reach.
+ * links tucked into a menu.
  */
 export function MobileDeckHeader(props: Props) {
-	const {
-		backSlotRef,
-		name,
-		art,
-		artFrame,
-		banner,
-		isEditMode,
-		onToggleEdit,
-		isSaving,
-		style
-	} = props;
+	const { backSlotRef, name, art, artFrame, banner, style } = props;
 	const bar = useRef<HTMLElement>(null);
 	const collapsed = useBannerCollapse(bar, banner);
 
@@ -61,29 +47,20 @@ export function MobileDeckHeader(props: Props) {
 					</div>
 					<div className={styles.titles}>
 						<span className={styles.name}>{name}</span>
-						{isEditMode && (
-							<span className={styles.mode}>Editing</span>
-						)}
 					</div>
 				</div>
 			</div>
 			<MobileDeckMenu
 				key={collapsed ? 'collapsed' : 'expanded'}
 				collapsed={collapsed}
-				isEditMode={isEditMode}
-				onToggleEdit={onToggleEdit}
-				isSaving={isSaving}
 			/>
+			<AccountMenu />
 		</nav>
 	);
 }
 
-function MobileDeckMenu(
-	props: Pick<Props, 'isEditMode' | 'onToggleEdit' | 'isSaving'> & {
-		collapsed: boolean;
-	}
-) {
-	const { collapsed, isEditMode, onToggleEdit, isSaving } = props;
+function MobileDeckMenu(props: { collapsed: boolean }) {
+	const { collapsed } = props;
 	const [menuOpen, setMenuOpen] = useState(false);
 	const menu = useRef<HTMLDivElement>(null);
 
@@ -108,23 +85,6 @@ function MobileDeckMenu(
 		<div ref={menu} className={styles.menu} inert={!collapsed}>
 			<button
 				type="button"
-				className={concatClassNames(
-					styles.editToggle,
-					isEditMode ? styles.editing : undefined
-				)}
-				aria-pressed={isEditMode}
-				aria-controls="deck-edit-panel"
-				onClick={onToggleEdit}
-				disabled={isSaving}
-			>
-				<DeckControlIcon
-					name={isEditMode ? 'check' : 'pencil'}
-					size={16}
-				/>
-				{isEditMode ? 'Done' : 'Edit'}
-			</button>
-			<button
-				type="button"
 				className={styles.menuButton}
 				aria-label="Site menu"
 				aria-expanded={menuOpen}
@@ -134,10 +94,7 @@ function MobileDeckMenu(
 				<span className={styles.menuIcon} aria-hidden="true" />
 			</button>
 			{menuOpen && (
-				<div
-					id="mobile-deck-header-menu"
-					className={styles.menuPanel}
-				>
+				<div id="mobile-deck-header-menu" className={styles.menuPanel}>
 					<SiteNavLinks onNavigate={() => setMenuOpen(false)} />
 				</div>
 			)}

@@ -187,6 +187,10 @@ export class Database {
 			CREATE TABLE IF NOT EXISTS Users (
 				UserId INTEGER PRIMARY KEY AUTOINCREMENT,
 				Name VARCHAR(1024),
+				ProfileCardName TEXT,
+				ProfileCardUuid TEXT,
+				ProfileArt TEXT,
+				ProfileCropJson TEXT,
 				CreatedAt DATETIME NOT NULL,
 				UpdatedAt DATETIME NOT NULL
 			);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchAPICreateDeck } from 'src/api/fetch-api-create-deck';
@@ -20,6 +20,7 @@ import {
 	NewDeckModalEventType
 } from './components/NewDeck';
 import { ImageCardImport } from 'src/components/ImageCardImport/ImageCardImport';
+import { useHistoryModal } from 'src/hooks/useHistoryModal';
 
 import styles from './home.module.css';
 
@@ -27,12 +28,14 @@ export type HomeProps = {
 	initialData?: FetchDecksResponse;
 };
 
+type HomeModal = { type: 'new-deck' } | { type: 'image-import' };
+
 export function Home(props: HomeProps) {
 	const { initialData } = props;
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
-	const [isShowModal, setIsShowModal] = useState(false);
-	const [showImageImport, setShowImageImport] = useState(false);
+	const modalHistory = useHistoryModal<HomeModal>('home');
+	const modal = modalHistory.value;
 	const data = useSelector(selectDecks);
 	const error = useSelector(selectDecksError);
 
@@ -47,45 +50,49 @@ export function Home(props: HomeProps) {
 				<div className={styles['header-actions']}>
 					<Button
 						className={styles['header-button']}
-						onClick={() => setIsShowModal(true)}
+						onClick={() => modalHistory.open({ type: 'new-deck' })}
 					>
 						New Deck
 					</Button>
 					<Button
 						className={styles['header-button']}
-						onClick={() => setShowImageImport(true)}
+						onClick={() =>
+							modalHistory.open({ type: 'image-import' })
+						}
 					>
 						Create a deck from image
 					</Button>
 				</div>
 			}
 		>
-			{showImageImport && (
+			{modal?.type === 'image-import' && (
 				<ImageCardImport
 					mode="create"
-					onClose={() => setShowImageImport(false)}
+					onClose={modalHistory.close}
 					onComplete={(deckId, taskId) => {
-						setShowImageImport(false);
 						navigate(
 							taskId
 								? `/deck/${deckId}/scan/${taskId}`
-								: `/deck/${deckId}`
+								: `/deck/${deckId}`,
+							{ replace: true }
 						);
 					}}
 				/>
 			)}
-			{isShowModal && (
+			{modal?.type === 'new-deck' && (
 				<Modal>
 					<NewDeckModal
 						onEvent={async (e: NewDeckModalEvent) => {
 							if (e.type === NewDeckModalEventType.CLOSE) {
-								setIsShowModal(false);
+								modalHistory.close();
 							} else {
 								const deckData = await fetchAPICreateDeck(
 									e.payload
 								);
 
-								navigate(`/deck/${deckData.deckId}`);
+								navigate(`/deck/${deckData.deckId}`, {
+									replace: true
+								});
 							}
 						}}
 					/>

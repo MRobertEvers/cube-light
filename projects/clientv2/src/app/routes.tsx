@@ -12,6 +12,7 @@ import { CollectionPage } from '../views/Collection';
 import { DeckPage } from '../views/Deck';
 import { HomePage } from '../views/Home';
 import { QueuePage } from '../views/Queue/QueuePage';
+import { ProfilePage } from '../views/Profile';
 
 const CollectionEditMapper: ParamMapper<CollectionEditPageProps> = {
 	collectionId: 'id'
@@ -39,6 +40,7 @@ export function Routes() {
 				<Route path="/" element={<HomePage />} />
 				<Route path="/collection" element={<CollectionPage />} />
 				<Route path="/queue" element={<QueuePage />} />
+				<Route path="/profile" element={<ProfilePage />} />
 				<Route
 					path="/collection/:id"
 					element={

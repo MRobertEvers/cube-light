@@ -1,0 +1,79 @@
+.menu {
+	position: relative;
+	flex: none;
+}
+
+.trigger {
+	display: grid;
+	place-items: center;
+	box-sizing: border-box;
+	width: 44px;
+	height: 44px;
+	/* 44px - 4px border - 2px padding = the avatar's exact 38px box. */
+	padding: 1px;
+	border: 2px solid transparent;
+	border-radius: 50%;
+	background: none;
+	cursor: pointer;
+}
+
+.trigger:hover {
+	border-color: #d9ceca;
+}
+
+.trigger:focus-visible {
+	border-color: #8e2524;
+	outline: 3px solid rgba(142, 37, 36, 0.18);
+}
+
+.panel {
+	position: absolute;
+	z-index: 80;
+	top: calc(100% + 8px);
+	right: 0;
+	display: grid;
+	min-width: 176px;
+	box-sizing: border-box;
+	padding: 6px;
+	border: 1px solid #ddd6d2;
+	border-radius: 10px;
+	background: #fff;
+	box-shadow: 0 14px 34px rgba(38, 27, 24, 0.18);
+}
+
+.panel p {
+	margin: 4px 8px 6px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid #eee9e7;
+	color: #736a66;
+	font-size: 13px;
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.panel a,
+.panel button {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 9px 10px;
+	border: 0;
+	border-radius: 6px;
+	background: none;
+	color: #393331;
+	font: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	text-align: left;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.panel a:hover,
+.panel a:focus-visible,
+.panel button:hover,
+.panel button:focus-visible {
+	background: #f6efed;
+	color: #8e2524;
+	outline: none;
+}

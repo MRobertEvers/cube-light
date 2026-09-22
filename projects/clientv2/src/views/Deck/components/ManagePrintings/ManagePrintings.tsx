@@ -28,8 +28,9 @@ export type ManagePrintingsProps = {
 
 /**
  * Edits how many copies of each printing of one card a deck holds: steppers for the
- * printings in the deck beside every printing of the card, where a click adds a copy.
- * Phones show one side at a time.
+ * printings in the deck, a way to move a whole row to another printing, and every
+ * printing of the card beside them, where a click adds a copy. Phones show one side
+ * at a time.
  */
 export function ManagePrintings(props: ManagePrintingsProps) {
 	const { group, onSave, onCancel } = props;
@@ -47,6 +48,7 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [query, setQuery] = useState('');
 	const [view, setView] = useState<'deck' | 'all'>('deck');
+	const [replacingUuid, setReplacingUuid] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	useEffect(() => {
@@ -154,6 +156,42 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 			);
 	}
 
+	function startReplacing(uuid: string) {
+		setReplacingUuid(uuid);
+		setView('all');
+	}
+
+	function stopChoosingPrinting() {
+		setReplacingUuid(null);
+		setView('deck');
+	}
+
+	function replaceAllCopies(sourceUuid: string, targetUuid: string) {
+		const sourceCount = countOf(sourceUuid);
+		const targetCount = countOf(targetUuid);
+		if (
+			sourceUuid === targetUuid ||
+			sourceCount === 0 ||
+			targetCount + sourceCount > MAX_COPIES
+		)
+			return;
+
+		setCounts((previous) => {
+			const next = new Map(previous);
+			next.set(sourceUuid, 0);
+			next.set(targetUuid, targetCount + sourceCount);
+			return next;
+		});
+		setOrder((previous) => {
+			if (previous.includes(targetUuid))
+				return previous.filter((uuid) => uuid !== sourceUuid);
+			return previous.map((uuid) =>
+				uuid === sourceUuid ? targetUuid : uuid
+			);
+		});
+		stopChoosingPrinting();
+	}
+
 	async function save() {
 		if (!dirty || saving) return;
 		setSaving(true);
@@ -167,6 +205,11 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 	}
 
 	const summary = `${total} ${total === 1 ? 'copy' : 'copies'} across ${rows.length} ${rows.length === 1 ? 'printing' : 'printings'}`;
+	const replacing = replacingUuid ? info.get(replacingUuid) : undefined;
+	const replacingCount = replacingUuid ? countOf(replacingUuid) : 0;
+	const visibleChoices = replacingUuid
+		? choices.filter((choice) => choice.uuid !== replacingUuid)
+		: choices;
 	function setNameOf(printing: PrintingInfo) {
 		return printing.setName ?? printing.setCode;
 	}
@@ -190,7 +233,7 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 						}
 						onClick={
 							view === 'all'
-								? () => setView('deck')
+								? stopChoosingPrinting
 								: onCancel
 						}
 					/>
@@ -244,7 +287,11 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 							return (
 								<li
 									key={uuid}
-									className={styles['deck-row']}
+									className={`${styles['deck-row']} ${
+										replacingUuid === uuid
+											? styles['replacing']
+											: ''
+									}`}
 								>
 									<img
 										src={printing.image}
@@ -267,6 +314,18 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 											{setName}
 										</span>
 									</div>
+									<button
+										type="button"
+										className={styles['change-printing']}
+										aria-label={`Change all ${count} ${label} ${count === 1 ? 'copy' : 'copies'} to another printing`}
+										title="Change all copies to another printing"
+										disabled={
+											saving || loading || !!loadError
+										}
+										onClick={() => startReplacing(uuid)}
+									>
+										<ReplaceIcon />
+									</button>
 									<div className={styles['stepper']}>
 										{count > 1 ? (
 											<button
@@ -329,7 +388,10 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 					<button
 						type="button"
 						className={styles['add-printing']}
-						onClick={() => setView('all')}
+						onClick={() => {
+							setReplacingUuid(null);
+							setView('all');
+						}}
 					>
 						<span
 							className={styles['add-printing-icon']}
@@ -357,9 +419,15 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 								id="manage-printings-all"
 								className={styles['pane-label']}
 							>
-								All printings
+								{replacing
+									? 'Change printing'
+									: 'All printings'}
 							</h3>
-							<p>Choose a printing to add a copy.</p>
+							<p>
+								{replacing
+									? `Choose a new printing for all ${replacingCount} ${replacingCount === 1 ? 'copy' : 'copies'} from ${setNameOf(replacing)}.`
+									: 'Choose a printing to add a copy.'}
+							</p>
 						</div>
 						<input
 							className={styles['search']}
@@ -383,15 +451,19 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 								{loadError}
 							</p>
 						)}
-						{!loading && !loadError && choices.length === 0 && (
-							<p className={styles['message']}>
-								{query.trim()
-									? `No sets match “${query.trim()}”.`
-									: 'No other printings found.'}
-							</p>
-						)}
+						{!loading &&
+							!loadError &&
+							visibleChoices.length === 0 && (
+								<p className={styles['message']}>
+									{query.trim()
+										? `No sets match “${query.trim()}”.`
+										: replacing
+											? 'No replacement printings found.'
+											: 'No other printings found.'}
+								</p>
+							)}
 						<ul className={styles['grid']}>
-							{choices.map((choice) => {
+							{visibleChoices.map((choice) => {
 								const printing = info.get(choice.uuid)!;
 								const count = countOf(choice.uuid);
 								const setName = setNameOf(printing);
@@ -409,17 +481,31 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 											type="button"
 											className={styles['tile']}
 											title={label}
-											aria-label={`Add a ${label} copy${count > 0 ? `, ${count} in deck` : ''}`}
+											aria-label={
+												replacing
+													? `Change all ${replacingCount} ${replacingCount === 1 ? 'copy' : 'copies'} to ${label}${count > 0 ? `, ${count} already in deck` : ''}`
+													: `Add a ${label} copy${count > 0 ? `, ${count} in deck` : ''}`
+											}
 											disabled={
 												saving ||
-												count >= MAX_COPIES
-											}
-											onClick={() =>
-												setCount(
-													choice.uuid,
-													count + 1
+												(replacing
+													? count + replacingCount >
+														MAX_COPIES
+													: count >= MAX_COPIES
 												)
 											}
+											onClick={() => {
+												if (replacingUuid)
+													replaceAllCopies(
+														replacingUuid,
+														choice.uuid
+													);
+												else
+													setCount(
+														choice.uuid,
+														count + 1
+													);
+											}}
 										>
 											<span
 												className={
@@ -457,7 +543,7 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 												{printing.setName ?? ' '}
 											</span>
 										</button>
-										{count > 0 && (
+										{count > 0 && !replacing && (
 											<button
 												type="button"
 												className={
@@ -487,13 +573,13 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 						<button
 							type="button"
 							className={styles['done']}
-							onClick={() => setView('deck')}
+							onClick={stopChoosingPrinting}
 						>
 							Done
 						</button>
 					</div>
 				</section>
-		</div>
+			</div>
 		</section>
 	);
 }
@@ -534,6 +620,21 @@ function TrashIcon() {
 				fill="none"
 				stroke="currentColor"
 				strokeWidth="1.6"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+			/>
+		</svg>
+	);
+}
+
+function ReplaceIcon() {
+	return (
+		<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+			<path
+				d="M2.5 5.5h9M9.5 3.5l2 2-2 2M13.5 10.5h-9M6.5 8.5l-2 2 2 2"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="1.5"
 				strokeLinecap="round"
 				strokeLinejoin="round"
 			/>

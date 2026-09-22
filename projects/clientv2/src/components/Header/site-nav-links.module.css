@@ -17,19 +17,3 @@
 	line-height: 18px;
 	text-align: center;
 }
-
-/* A link-styled button, so it sits in either the header bar or the phone menu. */
-.signOut {
-	padding: 0;
-	border: 0;
-	background: none;
-	color: #47413f;
-	font: inherit;
-	text-align: left;
-	cursor: pointer;
-}
-
-.signOut:hover,
-.signOut:focus-visible {
-	color: #8e2524;
-}

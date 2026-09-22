@@ -1,0 +1,10 @@
+.name {
+	display: block;
+	max-width: min(32vw, 320px);
+	overflow: hidden;
+	color: var(--deck-accent-text, #47413f);
+	font-size: 14px;
+	font-weight: 700;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
