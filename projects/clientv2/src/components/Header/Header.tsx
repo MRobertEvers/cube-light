@@ -19,7 +19,11 @@ export function Header(props: HeaderProps) {
 		<nav className={styles['header']}>
 			<section className={styles['header-content']}>
 				<HeaderBackSlot ref={backSlotRef} />
-				<Link className={styles['brand']} to="/">
+				<Link
+					className={styles['brand']}
+					to="/"
+					aria-label="Cube Light home"
+				>
 					<LogoIcon className={styles['brand-icon']} />
 					<span>Cube Light</span>
 				</Link>
@@ -27,7 +31,9 @@ export function Header(props: HeaderProps) {
 					<SiteNavLinks />
 				</div>
 				<div className={styles['actions']}>{children}</div>
-				<AccountMenu />
+				<div className={styles['account']}>
+					<AccountMenu />
+				</div>
 			</section>
 		</nav>
 	);

@@ -60,7 +60,12 @@ export function Home(props: HomeProps) {
 							modalHistory.open({ type: 'image-import' })
 						}
 					>
-						Create a deck from image
+						<span className={styles['desktop-action-label']}>
+							Create a deck from image
+						</span>
+						<span className={styles['mobile-action-label']}>
+							Import image
+						</span>
 					</Button>
 				</div>
 			}

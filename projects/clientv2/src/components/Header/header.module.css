@@ -65,6 +65,10 @@
 	margin-left: auto;
 }
 
+.account {
+	flex: none;
+}
+
 /* A back button takes the brand name's room on phones; the icon still links home. */
 @media (max-width: 680px) {
 	.header-content:has([data-back-slot]:not(:empty)) .brand span {
@@ -72,24 +76,51 @@
 	}
 }
 
-@media (max-width: 560px) {
+@media (max-width: 680px) {
 	.header-content {
-		gap: 12px;
-		padding: 0 14px;
-		flex-wrap: wrap;
+		min-height: var(--app-header-height);
+		padding: 7px 12px;
+		display: grid;
+		grid-template-columns: auto auto minmax(0, 1fr) auto;
+		grid-template-areas: 'back brand navigation account';
+		gap: 0 8px;
+	}
+	.header-content:has(.actions:not(:empty)) {
+		grid-template-areas:
+			'back brand navigation account'
+			'actions actions actions actions';
+		row-gap: 7px;
+		padding-bottom: 9px;
+	}
+	.header-content > [data-back-slot] {
+		grid-area: back;
 	}
 	.brand {
-		font-size: 16px;
+		grid-area: brand;
 	}
 	.brand-icon {
 		width: 34px;
 		height: 34px;
 	}
+	.brand span {
+		display: none;
+	}
 	.navigation {
-		gap: 12px;
-		font-size: 13px;
+		grid-area: navigation;
+		justify-self: center;
+		gap: clamp(14px, 5vw, 24px);
+		font-size: 14px;
 	}
 	.actions {
-		margin-left: auto;
+		grid-area: actions;
+		width: 100%;
+		min-width: 0;
+		margin-left: 0;
+	}
+	.actions:empty {
+		display: none;
+	}
+	.account {
+		grid-area: account;
 	}
 }
