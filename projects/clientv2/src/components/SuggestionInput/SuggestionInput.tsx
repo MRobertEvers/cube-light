@@ -20,7 +20,7 @@ export type SuggestionInputProps = {
 	onSelect: (suggestion: string, keepFocus: boolean) => void;
 	/** Suggestion chosen by Enter when none is highlighted. */
 	enterSelects?: string;
-	/** Suggestion chosen by Tab (focus moves on as usual). */
+	/** Suggestion chosen by Tab; onSelect gets keepFocus=false and moves focus on itself. */
 	tabSelects?: string;
 	/** Tab and Shift+Tab step through the open list; past either end, focus moves on as usual. */
 	tabBrowses?: boolean;
@@ -166,6 +166,7 @@ export function SuggestionInput(props: SuggestionInputProps) {
 						showSuggestions &&
 						tabSelects !== undefined
 					) {
+						event.preventDefault();
 						select(tabSelects, false);
 					} else if (
 						event.key === 'Tab' &&

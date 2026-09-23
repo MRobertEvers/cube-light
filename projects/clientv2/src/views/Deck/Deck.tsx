@@ -64,6 +64,7 @@ import { useWorkQueue } from 'src/utils/work-queue';
 import { useIsPhoneLayout } from '../../hooks/useIsPhoneLayout';
 import { MobileDeckView } from './MobileDeckView';
 import { useHistoryModal } from '../../hooks/useHistoryModal';
+import { useCloseOnEscape } from '../../hooks/useCloseOnEscape';
 import { DeleteDeckDialog } from './DeleteDeckDialog';
 
 type DeckModal =
@@ -323,6 +324,11 @@ export function Deck(props: DeckProps) {
 		() => modalHistory.close(),
 		[modalHistory.close]
 	);
+	const closeDeckDetails = useCallback(() => {
+		setDetailsDraft(null);
+		modalHistory.close();
+	}, [modalHistory.close]);
+	useCloseOnEscape(closeDeckDetails, showDeckDetailsModal && !isSaving);
 
 	/** Opens the card editor on every board's printings of the group's card. */
 	function editCard(group: DeckCardGroup) {
@@ -487,10 +493,7 @@ export function Deck(props: DeckProps) {
 						)}
 						<div className={styles['deck-details-actions']}>
 							<Button
-								onClick={() => {
-									setDetailsDraft(null);
-									modalHistory.close();
-								}}
+								onClick={closeDeckDetails}
 								disabled={isSaving}
 							>
 								Cancel

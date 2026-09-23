@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '../../components/Button/Button';
 import { Spinner } from '../../components/Spinner/Spinner';
+import { useCloseOnEscape } from '../../hooks/useCloseOnEscape';
 
 import styles from './deck.module.css';
 
@@ -17,6 +18,7 @@ export function DeleteDeckDialog(props: DeleteDeckDialogProps) {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const nameMatches = typedName.trim() === deckName.trim();
+	useCloseOnEscape(onCancel, !isDeleting);
 
 	async function confirmDelete() {
 		if (!nameMatches || isDeleting) return;

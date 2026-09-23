@@ -49,6 +49,7 @@ export function AddCard(props: AddCardProps) {
 	const totalCount = viewAddItemCounts.main + viewAddItemCounts.side;
 	const dialogRef = useRef<HTMLFormElement>(null);
 	const addItemInputRef = useRef<HTMLInputElement>(null);
+	const focusSubmitAfterSelect = useRef(false);
 	const requestIdRef = useRef(0);
 	const queryRef = useRef('');
 	const warmedSuggestions = useRef(false);
@@ -137,6 +138,16 @@ export function AddCard(props: AddCardProps) {
 	const canSubmit =
 		Boolean(resolvedCardName) && totalCount > 0 && !isSubmitting;
 
+	// Tab-choosing a card jumps straight to the submit button once it re-renders enabled.
+	useEffect(() => {
+		if (!focusSubmitAfterSelect.current) return;
+		focusSubmitAfterSelect.current = false;
+		const submit = dialogRef.current?.querySelector<HTMLButtonElement>(
+			'button[type="submit"]'
+		);
+		if (submit && !submit.disabled) submit.focus();
+	});
+
 	function selectSuggestion(suggestion: string, keepFocusArg?: boolean) {
 		const keepFocus = keepFocusArg === undefined ? true : keepFocusArg;
 
@@ -153,6 +164,7 @@ export function AddCard(props: AddCardProps) {
 		setIsSearching(false);
 		setError(null);
 		if (keepFocus) addItemInputRef.current?.focus();
+		else focusSubmitAfterSelect.current = true;
 	}
 
 	function submitCard() {

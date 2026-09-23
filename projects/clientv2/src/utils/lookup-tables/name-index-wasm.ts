@@ -10,6 +10,12 @@ type NameIndexExports = {
 		output: number,
 		capacity: number
 	): number;
+	nm_wasm_find_word_prefix(
+		pointer: number,
+		size: number,
+		output: number,
+		capacity: number
+	): number;
 	nm_wasm_name_ptr(index: number): number;
 };
 
@@ -66,6 +72,30 @@ export class NameIndexWasm {
 	}
 
 	private completions(prefix: string, limit: number): string[] {
+		return this.findNames(prefix, limit, this.wasm.nm_wasm_find_prefix);
+	}
+
+	/** Names with a later word (e.g. "Swooper" in "Aether Swooper") starting with query. */
+	private wordCompletions(query: string, limit: number): string[] {
+		// Matches the C side's folding: ASCII-only lowercase, ',' and "'" ignored.
+		const folded = query
+			.replace(/[A-Z]/g, (char) => char.toLowerCase())
+			.replace(/[,']/g, '');
+		// An offline-cached module from before word search won't have the export.
+		if (!folded.trim() || !this.wasm.nm_wasm_find_word_prefix) return [];
+		return this.findNames(
+			folded,
+			limit,
+			this.wasm.nm_wasm_find_word_prefix
+		);
+	}
+
+	private findNames(
+		query: string,
+		limit: number,
+		find: NameIndexExports['nm_wasm_find_prefix']
+	): string[] {
+		if (limit <= 0) return [];
 		if (limit > this.resultCapacity) {
 			if (this.resultPointer) this.wasm.free(this.resultPointer);
 			this.resultCapacity = Math.max(limit, this.resultCapacity * 2, 16);
@@ -73,8 +103,8 @@ export class NameIndexWasm {
 			if (!this.resultPointer)
 				throw new Error('Could not allocate result memory');
 		}
-		const length = this.setQuery(prefix);
-		const count = this.wasm.nm_wasm_find_prefix(
+		const length = this.setQuery(query);
+		const count = find(
 			this.queryPointer,
 			length,
 			this.resultPointer,
@@ -128,7 +158,8 @@ export class NameIndexWasm {
 	}
 
 	/**
-	 * A stateful prefix cursor for live inputs. Appending one character advances one
+	 * A stateful prefix cursor for live inputs. Prefix matches come first; remaining slots
+	 * are filled with names that have a later word matching the query. Appending one character advances one
 	 * level; backspacing restores the already-computed parent level.
 	 */
 	createSearchCursor(limit: number): NameIndexSearchCursor {
@@ -161,7 +192,18 @@ export class NameIndexWasm {
 					);
 				}
 				characters = nextCharacters;
-				return index.completeLevel(levels[levels.length - 1], limit);
+				const matches = index.completeLevel(
+					levels[levels.length - 1],
+					limit
+				);
+				if (matches.length >= limit) return matches;
+				const seen = new Set(matches);
+				for (const name of index.wordCompletions(base, limit)) {
+					if (seen.has(name)) continue;
+					matches.push(name);
+					if (matches.length >= limit) break;
+				}
+				return matches;
 			}
 		};
 	}

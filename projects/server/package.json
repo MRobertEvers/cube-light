@@ -6,7 +6,7 @@
 	"scripts": {
 		"build": "npm run build:core && npm run build:addon && tsc && npm run copy-static && npm run build:wasm && npm run build:name-index",
 		"build:addon": "node-gyp rebuild && node tools/scripts/write-compile-commands.js",
-		"build:wasm": "emcc native/name_index.c native/wasm.c -O3 -sSTANDALONE_WASM=1 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=2097152 -sEXPORTED_FUNCTIONS='[\"_malloc\",\"_free\",\"_nm_wasm_load\",\"_nm_wasm_has_prefix\",\"_nm_wasm_find_prefix\",\"_nm_wasm_name_ptr\"]' --no-entry -o build/src/public/name-index.wasm",
+		"build:wasm": "emcc native/name_index.c native/wasm.c -O3 -sSTANDALONE_WASM=1 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=2097152 -sEXPORTED_FUNCTIONS='[\"_malloc\",\"_free\",\"_nm_wasm_load\",\"_nm_wasm_has_prefix\",\"_nm_wasm_find_prefix\",\"_nm_wasm_find_word_prefix\",\"_nm_wasm_name_ptr\"]' --no-entry -o build/src/public/name-index.wasm",
 		"build:name-index": "node tools/scripts/build-name-index.js",
 		"benchmark:name-index": "npm run build:name-index && node tools/scripts/benchmark-name-index.js --write-report",
 		"test:images": "tsc && node --test test/images.test.js",

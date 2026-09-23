@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from 'src/components/Button/Button';
+import { useCloseOnEscape } from 'src/hooks/useCloseOnEscape';
 
 import styles from './new-deck.module.css';
 
@@ -23,6 +24,7 @@ export type NewDeckModalProps = {
 export function NewDeckModal(props: NewDeckModalProps) {
 	const { onEvent } = props;
 	const [name, setName] = useState('');
+	useCloseOnEscape(() => onEvent({ type: NewDeckModalEventType.CLOSE }));
 
 	return (
 		<div

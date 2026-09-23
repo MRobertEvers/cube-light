@@ -37,6 +37,7 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 	const [status, setStatus] = useState<string | null>(null);
 	const form = useRef<HTMLFormElement>(null);
 	const input = useRef<HTMLInputElement>(null);
+	const focusSubmitAfterSelect = useRef(false);
 	const requestId = useRef(0);
 	const query = useRef('');
 	const submittedName = useRef('');
@@ -162,6 +163,16 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 		if (!isSubmitting) onEvent({ type: AddCardEventType.CLOSE });
 	}
 
+	// Tab-choosing a card jumps straight to the submit button once it re-renders enabled.
+	useEffect(() => {
+		if (!focusSubmitAfterSelect.current) return;
+		focusSubmitAfterSelect.current = false;
+		const submit = form.current?.querySelector<HTMLButtonElement>(
+			'button[type="submit"]'
+		);
+		if (submit && !submit.disabled) submit.focus();
+	});
+
 	function selectSuggestion(suggestion: string, keepFocusArg?: boolean) {
 		const keepFocus = keepFocusArg === undefined ? true : keepFocusArg;
 
@@ -179,6 +190,7 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 		setError(null);
 		setStatus(null);
 		if (keepFocus) input.current?.focus();
+		else focusSubmitAfterSelect.current = true;
 	}
 
 	function changeQuery(nextQuery: string) {
