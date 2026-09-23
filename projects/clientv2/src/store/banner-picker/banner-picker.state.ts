@@ -76,7 +76,6 @@ export const saveBannerSelection = createAsyncThunk(
 				)
 			: undefined;
 		await generateAndSaveBannerBlend(deckId, deck, config);
-		await dispatch(loadDeck(deckId)).unwrap();
 	}
 );
 

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BackLink } from '../../components/BackLink/BackLink';
 import {
-	fetchAPIDeckHistory,
 	DeckHistoryCard,
 	DeckHistoryDetail,
 	DeckHistoryResponse
@@ -9,7 +8,6 @@ import {
 import { Page } from '../../components/Page/Page';
 import { NextPage } from '../../components/Page/NextPage';
 import styles from './deck-history.module.css';
-import { useMinimumVisible } from '../../hooks/useMinimumVisible';
 import { observeLocalQuery } from '../../torimtg/observe';
 
 function CardChanges(props: {
@@ -25,13 +23,19 @@ function CardChanges(props: {
 			) : (
 				<ul>
 					{cards.map((card) => (
-						<li key={card.uuid}>
+						<li key={`${card.board ?? 'main'}:${card.uuid}`}>
 							<span className={styles.count}>
 								{direction === 'in' ? '+' : '−'}
 								{card.count}
 							</span>
 							<span>
 								<strong>{card.name || 'Unknown card'}</strong>
+								{card.board === 'side' && (
+									<span className={styles.board}>
+										{' '}
+										· Sideboard
+									</span>
+								)}
 								<code className={styles.uuid}>{card.uuid}</code>
 							</span>
 						</li>
@@ -49,7 +53,9 @@ const detailLabels: Record<DeckHistoryDetail['field'], string> = {
 	palette: 'Color palette',
 	bannerCrop: 'Banner crop',
 	topStyle: 'Deck top style',
-	bannerBlend: 'Banner blend'
+	boardVisualization: 'Card view',
+	bannerBlend: 'Banner blend',
+	note: 'Note'
 };
 
 export function DeckHistoryPage(props: { deckId: string }) {
@@ -61,25 +67,13 @@ export function DeckHistoryPage(props: { deckId: string }) {
 	} | null>(null);
 	const history = result?.deckId === deckId ? result.history : null;
 	const error = result?.deckId === deckId && result.error;
-	const showLoading = useMinimumVisible(!history && !error);
 
 	useEffect(() => {
-		let active = true;
-		const unsubscribe = observeLocalQuery<DeckHistoryResponse>({ type: 'history', id: deckId }, (history) => { if (active) setResult({ deckId, history, error: false }); });
-		fetchAPIDeckHistory(deckId).then(
-			(result) => {
-				if (active)
-					setResult({ deckId, history: result, error: false });
-			},
-			() => {
-				if (active)
-					setResult({ deckId, history: null, error: true });
-			}
+		return observeLocalQuery<DeckHistoryResponse>(
+			{ type: 'history', id: deckId },
+			(history) => setResult({ deckId, history, error: false }),
+			() => setResult({ deckId, history: null, error: true })
 		);
-		return function () {
-			active = false;
-			unsubscribe();
-		};
 	}, [deckId]);
 
 	return (
@@ -92,9 +86,9 @@ export function DeckHistoryPage(props: { deckId: string }) {
 							? `${history.deckName} edit history`
 							: 'Deck edit history'}
 					</h1>
-					{!showLoading && error ? (
+					{error ? (
 						<p role="alert">Unable to load deck edit history.</p>
-					) : showLoading || !history ? (
+					) : !history ? (
 						<p>Loading history…</p>
 					) : history.edits.length === 0 ? (
 						<p>

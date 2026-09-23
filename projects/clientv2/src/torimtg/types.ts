@@ -13,6 +13,7 @@ export type Intent = {
 export type JournalEntry = {
     partition: string; sequence: number; operationId: string; at: string;
     fact: { type: 'IntentRecorded'; intent: Intent; events: DomainEvent[] }
+        | { type: 'IntentAmended'; command: DomainCommand; events: DomainEvent[] }
         | { type: 'RequestPrepared'; request: CommandRequest }
         | { type: 'IntentSettled'; outcome: CommandOutcome }
         | { type: 'IntentDiscarded'; reason: string };

@@ -5,6 +5,9 @@ import type { BannerCrop } from '../utils/banner-crop';
 import type { DeckTopStyle } from '../utils/deck-top-style';
 import type { BannerBlend } from '../utils/banner-blend';
 import type { CardPreviewDetails } from './fetch-api-card-details';
+import type { DeckBoard } from '@torimtg/core';
+
+export type { DeckBoard };
 
 export type FetchAPIDeckCardResponse = CardPreviewDetails & {
 	name: string;
@@ -20,7 +23,18 @@ export type FetchAPIDeckCardResponse = CardPreviewDetails & {
 	art: string;
 	setCode: string;
 	types: string;
+	/** Comma separated, e.g. "Human, Soldier". Missing for cards not yet described on this device. */
+	subtypes?: string;
 	manaCost: string;
+	/** The board this entry is counted in. The same printing can sit in both boards. */
+	board: DeckBoard;
+};
+
+export type DeckNote = {
+	noteId: string;
+	text: string;
+	createdAt: string;
+	updatedAt: string;
 };
 
 export type FetchAPIDeckResponse = {
@@ -37,7 +51,14 @@ export type FetchAPIDeckResponse = {
 	bannerCrop: BannerCrop | null;
 	bannerBlend?: BannerBlend | null;
 	topStyle: DeckTopStyle;
+	/** A BoardVisualization id. Absent until the deck chooses one. */
+	boardVisualization?: string | null;
+	/** Main-board entries, one per printing. */
 	cards: FetchAPIDeckCardResponse[];
+	/** Side-board entries, one per printing. Missing from decks saved before boards existed. */
+	sideboard?: FetchAPIDeckCardResponse[];
+	/** Most recently edited first. */
+	notes?: DeckNote[];
 	lastEdit: string;
 };
 

@@ -5,6 +5,7 @@ import { CollectionEditPage } from 'src/views/CollectionEdit';
 import { CollectionEditPageProps } from 'src/views/CollectionEdit/CollectionEditPage';
 import { DeckPageProps } from 'src/views/Deck/DeckPage';
 import { TabletopPage } from 'src/views/Deck/TabletopPage';
+import { DeckNotesPage, DeckStatsPage } from 'src/views/Deck/DeckTabPages';
 import { DeckSettingsPage } from 'src/views/Deck/DeckSettingsPage';
 import { DeckHistoryPage } from 'src/views/Deck/DeckHistoryPage';
 import { DeckImageScanPage } from 'src/views/Deck/DeckImageScanPage';
@@ -60,6 +61,18 @@ export function Routes() {
 					path="/deck/:id/tabletop"
 					element={
 						<PassParams Component={TabletopPage} params={DeckMapper} />
+					}
+				/>
+				<Route
+					path="/deck/:id/stats"
+					element={
+						<PassParams Component={DeckStatsPage} params={DeckMapper} />
+					}
+				/>
+				<Route
+					path="/deck/:id/notes"
+					element={
+						<PassParams Component={DeckNotesPage} params={DeckMapper} />
 					}
 				/>
 				<Route

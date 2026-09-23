@@ -1,5 +1,6 @@
-import type { CardEdit, DomainCommand, Query, ResourceQuery, StoredResource } from '@torimtg/core';
+import type { CardEdit, DeckBoard, DomainCommand, LocalSnapshot, Query, ResourceQuery, StoredResource } from '@torimtg/core';
 import type { ToriMTG } from './types';
+import { randomUUID } from './adapters/web-crypto';
 
 /** Existing UI helpers retain their return shapes; every operation is a Redux thunk. */
 export type DataRunner = <T>(work: (core: ToriMTG) => Promise<T>) => Promise<T>;
@@ -16,22 +17,27 @@ export function newId(kind: string): string {
 }
 
 export async function readAvailable<T>(core: ToriMTG, query: Query): Promise<T> {
+    return (await readAvailableSnapshot<T>(core, query)).data as T;
+}
+
+/** Answers from local data when it has any; otherwise waits for the server to supply it. */
+export async function readAvailableSnapshot<T>(core: ToriMTG, query: Query): Promise<LocalSnapshot<T>> {
     const snapshot = await core.queries.read<T>(query);
     await core.queries.requestRefresh(query);
-    if (snapshot.presence !== 'missing') return snapshot.data as T;
-    return new Promise<T>((resolve, reject) => {
+    if (snapshot.presence !== 'missing') return snapshot;
+    return new Promise<LocalSnapshot<T>>((resolve, reject) => {
         let done = false;
         const timeout = setTimeout(() => finish(new Error('Not available on this device yet. Connect to download it.')), 18000);
         const unsubscribe = core.subscribe(check);
-        function finish(error?: Error, value?: T) {
+        function finish(error?: Error, value?: LocalSnapshot<T>) {
             if (done) return;
             done = true; clearTimeout(timeout); unsubscribe();
-            if (error) reject(error); else resolve(value as T);
+            if (error) reject(error); else resolve(value as LocalSnapshot<T>);
         }
         async function check() {
             try {
                 const result = await core.queries.read<T>(query);
-                if (result.presence !== 'missing') finish(undefined, result.data as T);
+                if (result.presence !== 'missing') finish(undefined, result);
                 else if (result.lastError) finish(new Error(result.lastError));
             } catch (error) { finish(error instanceof Error ? error : new Error('Local read failed.')); }
         }
@@ -53,13 +59,18 @@ async function resolveCard(core: ToriMTG, name: string, setCode?: string): Promi
     return result.json();
 }
 
-async function importedEdits(core: ToriMTG, cards: { name: string; count: number; setCode?: string }[]): Promise<CardEdit[]> {
+async function importedEdits(core: ToriMTG, cards: { name: string; count: number; setCode?: string; board?: DeckBoard }[]): Promise<CardEdit[]> {
     const edits: CardEdit[] = [];
     for (const card of cards) {
         const resolved = await resolveCard(core, card.name, card.setCode);
-        edits.push({ uuid: resolved.uuid, action: 'add', count: card.count });
+        edits.push({ uuid: resolved.uuid, action: 'add', count: card.count, ...boardOf(card) });
     }
     return edits;
+}
+
+/** The main board is left implicit so its edits match those saved before boards existed. */
+function boardOf(body: { board?: unknown }): { board?: 'side' } {
+    return body.board === 'side' ? { board: 'side' } : {};
 }
 
 async function saveCommand(core: ToriMTG, command: DomainCommand): Promise<Response> {
@@ -108,15 +119,45 @@ export async function localApiRequest(input: RequestInfo | URL, options?: Reques
             if (endpoint === 'history') return json(await readAvailable(core, { type: 'history', id }));
             if (endpoint === 'palette') return saveCommand(core, { type: 'deck.palette', id, palette: body.palette });
             if (endpoint === 'banner-crop') return saveCommand(core, { type: 'deck.crop', id, crop: body.bannerCrop });
+            const noteRoute = /^notes(?:\/([^/]+))?$/.exec(endpoint);
+            if (noteRoute && method === 'POST') {
+                const noteId = newId('note'); await core.commands.execute({ type: 'deck.note', id, noteId, text: body.text }); return json({ noteId });
+            }
+            if (noteRoute?.[1] && method === 'PUT') return saveCommand(core, { type: 'deck.note', id, noteId: noteRoute[1], text: body.text });
+            if (noteRoute?.[1] && method === 'DELETE') return saveCommand(core, { type: 'deck.noteDelete', id, noteId: noteRoute[1] });
             if (endpoint === 'top-style') return saveCommand(core, { type: 'deck.style', id, topStyle: body.topStyle });
+            if (endpoint === 'board-visualization') return saveCommand(core, { type: 'deck.visualization', id, boardVisualization: body.boardVisualization });
             if (endpoint === 'cards' && method === 'POST') {
                 const card = await resolveCard(core, body.cardName);
-                return saveCommand(core, { type: 'deck.cards', id, edits: [{ uuid: card.uuid, action: body.action || 'add', count: body.count ?? 1 }] });
+                // `counts` adds to several boards at once; a bare `count` is one board's edit.
+                const edits: CardEdit[] = body.counts && typeof body.counts === 'object'
+                    ? Object.entries(body.counts as Record<string, number>).filter((entry) => entry[1] > 0).map((entry) => ({ uuid: card.uuid, action: 'add' as const, count: entry[1], ...boardOf({ board: entry[0] }) }))
+                    : [{ uuid: card.uuid, action: body.action || 'add', count: body.count ?? 1, ...boardOf(body) }];
+                return saveCommand(core, { type: 'deck.cards', id, edits });
             }
             if (endpoint === 'cards/edit') {
                 // Download missing printings before saving; their UUIDs remain the durable identity.
                 for (const card of body.upsert) await resource(core, { type: 'card.details', uuid: card.uuid });
-                return saveCommand(core, { type: 'deck.cards', id, edits: [...body.remove.map((uuid: string) => ({ uuid, action: 'set' as const, count: 0 })), ...body.upsert.map((card: { uuid: string; count: number }) => ({ ...card, action: 'set' as const }))] });
+                const board = boardOf(body);
+                return saveCommand(core, { type: 'deck.cards', id, edits: [...body.remove.map((uuid: string) => ({ uuid, action: 'set' as const, count: 0, ...board })), ...body.upsert.map((card: { uuid: string; count: number }) => ({ uuid: card.uuid, count: card.count, action: 'set' as const, ...board }))] });
+            }
+            if (endpoint === 'cards/set') {
+                const counts = body.counts as { uuid: string; board?: string; count: number }[];
+                for (const card of counts) if (card.count > 0) await resource(core, { type: 'card.details', uuid: card.uuid });
+                return saveCommand(core, { type: 'deck.cards', id, edits: counts.map((card) => ({ uuid: card.uuid, action: 'set' as const, count: card.count, ...boardOf(card) })) });
+            }
+            if (endpoint === 'cards/move') {
+                // One command, so the copies leave one board exactly when they reach the other.
+                const from = boardOf({ board: body.from }), to = boardOf({ board: body.to });
+                if ((from.board || 'main') === (to.board || 'main')) return json({ success: true });
+                // Never move more copies than the source board holds, or the move would create cards.
+                const deck = await readAvailable<{ cards: { uuid: string; count: number }[]; sideboard?: { uuid: string; count: number }[] }>(core, { type: 'deck', id });
+                const held = new Map(((from.board === 'side' ? deck?.sideboard : deck?.cards) || []).map((card) => [card.uuid, card.count]));
+                const edits = body.cards.flatMap((card: { uuid: string; count: number }) => {
+                    const count = Math.min(card.count, held.get(card.uuid) || 0);
+                    return count > 0 ? [{ uuid: card.uuid, action: 'remove' as const, count, ...from }, { uuid: card.uuid, action: 'add' as const, count, ...to }] : [];
+                });
+                return saveCommand(core, { type: 'deck.cards', id, edits });
             }
             if (endpoint === 'cards/import') return saveCommand(core, { type: 'deck.cards', id, edits: await importedEdits(core, body.cards) });
             if (endpoint === 'banner-blend' && method === 'PUT') {
@@ -155,7 +196,7 @@ export async function localApiRequest(input: RequestInfo | URL, options?: Reques
                 try { return new Response(await core.blob(blobId)); } catch { return resource(core, { type: 'blob', id: blobId }); }
             }
             if (endpoint === 'claim') {
-                const token = crypto.randomUUID();
+                const token = randomUUID();
                 const commit = await core.commands.execute({ type: 'work.start', id, token });
                 // A distributed lease cannot be granted offline. Wait for this recorded intent's receipt.
                 await waitAccepted(core, commit.operationId); return json({ token });

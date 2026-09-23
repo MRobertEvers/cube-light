@@ -3,12 +3,14 @@ import {
 	createAction,
 	createReducer
 } from '@reduxjs/toolkit';
+import type { DeckBoard } from '../../../../api/fetch-api-deck';
 
 // Based on "Ariel - Beta Test Questionaire.docx"
 export type AddCardState = {
 	viewIsDropDownVisible: boolean;
 	viewAddItemText: string;
-	viewAddItemCount: number;
+	/** Copies to add to each board; one add can fill both. */
+	viewAddItemCounts: Record<DeckBoard, number>;
 
 	suggestionsData: { sorted: string[]; set: Set<string> };
 };
@@ -16,7 +18,7 @@ export type AddCardState = {
 export const initialState: AddCardState = {
 	viewIsDropDownVisible: false,
 	viewAddItemText: '',
-	viewAddItemCount: 1,
+	viewAddItemCounts: { main: 1, side: 0 },
 
 	suggestionsData: { sorted: [], set: new Set() }
 };
@@ -27,7 +29,9 @@ export const Actions = {
 	),
 	setViewIsDropDownVisible: createAction<boolean>('setViewIsDropDownVisible'),
 	setViewAddItemText: createAction<string>('setViewAddItemText'),
-	setViewAddItemCount: createAction<number>('setViewAddItemCount')
+	setViewAddItemCount: createAction<{ board: DeckBoard; count: number }>(
+		'setViewAddItemCount'
+	)
 };
 
 function buildReducer(builder: ActionReducerMapBuilder<AddCardState>) {
@@ -39,11 +43,10 @@ function buildReducer(builder: ActionReducerMapBuilder<AddCardState>) {
 			slice.suggestionsData = action.payload;
 		})
 		.addCase(Actions.setViewAddItemCount, (slice, action) => {
-			if (action.payload > 0) {
-				slice.viewAddItemCount = action.payload;
-			} else {
-				slice.viewAddItemCount = 1;
-			}
+			const { board, count } = action.payload;
+			slice.viewAddItemCounts[board] = Number.isSafeInteger(count)
+				? Math.max(0, Math.min(999, count))
+				: 0;
 		})
 		.addCase(Actions.setViewAddItemText, (slice, action) => {
 			slice.viewAddItemText = action.payload;

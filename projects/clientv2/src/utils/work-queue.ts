@@ -1,5 +1,6 @@
 import type { CardImagePipeline } from './image-scan-pipelines';
 import { observeLocalQuery } from '../torimtg/observe';
+import { withCore } from '../torimtg/ui-api';
 import { useSyncExternalStore } from 'react';
 import {
 	fetchAPIDeleteWork,
@@ -47,14 +48,25 @@ class WorkQueue {
 	}
 
 	private onVisible() {
-		if (document.visibilityState === 'visible') void this.refresh();
+		if (document.visibilityState === 'visible') this.sync();
+	}
+
+	/** Asks the server for new progress; the local observer publishes whatever arrives. */
+	private sync() {
+		void withCore((core) => core.queries.requestRefresh({ type: 'work' })).catch(() => undefined);
 	}
 
 	private start() {
-		this.stopObserving = observeLocalQuery<{ items: WorkItem[] }>({ type: 'work' }, (data) => this.publish({ items: data.items, error: false }));
+		this.stopObserving = observeLocalQuery<{ items: WorkItem[] }>(
+			{ type: 'work' },
+			(data) => {
+				this.publish({ items: data.items, error: false });
+				this.schedulePoll();
+			},
+			() => this.publish({ ...this.snapshot, error: true })
+		);
 		document.addEventListener('visibilitychange', this.onVisible);
 		window.addEventListener('online', this.onVisible);
-		void this.refresh();
 	}
 
 	private stop() {
@@ -70,7 +82,7 @@ class WorkQueue {
 		for (const listener of this.listeners) listener();
 	}
 
-	/** Concurrent callers share one request. */
+	/** Rereads the queue now. Concurrent callers share one read. */
 	refresh(): Promise<void> {
 		this.inFlight ??= fetchAPIWorkItems()
 			.then(
@@ -95,8 +107,8 @@ class WorkQueue {
 		);
 		if (!active || this.listeners.size === 0) return;
 		this.pollTimer = window.setTimeout(() => {
-			if (document.visibilityState === 'visible') void this.refresh();
-			else this.schedulePoll();
+			if (document.visibilityState === 'visible') this.sync();
+			this.schedulePoll();
 		}, ACTIVE_POLL_MS);
 	}
 
@@ -107,14 +119,11 @@ class WorkQueue {
 	): Promise<WorkItem> {
 		const pipeline = pipelineArg === undefined ? 'card-aware' : pipelineArg;
 
-		const item = await fetchAPIQueueCardImage(deckId, file, pipeline);
-		void this.refresh();
-		return item;
+		return fetchAPIQueueCardImage(deckId, file, pipeline);
 	}
 
 	async retry(workId: string): Promise<void> {
 		await fetchAPIRetryWork(workId);
-		await this.refresh();
 	}
 
 	async remove(workId: string): Promise<void> {
@@ -127,7 +136,6 @@ class WorkQueue {
 				)
 			});
 		}
-		await this.refresh();
 	}
 }
 

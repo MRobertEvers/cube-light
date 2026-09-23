@@ -134,4 +134,133 @@ function lookup(c, index, shearArg) {
 		.slice(0, 5);
 }
 
-export { makeFontIndex, lookup };
+/**
+ * @param {Array<Array<import('../../workers/title-index.worker').ShardMatch>>} shards
+ * @param {string[]} names
+ */
+function mergeShards(shards, names) {
+	return shards
+		.flat()
+		.sort((a, b) => b.projection - a.projection)
+		.slice(0, 100)
+		.sort((a, b) => b.score - a.score)
+		.slice(0, 5)
+		.map((m) => ({ name: names[m.i], score: m.score }));
+}
+
+/**
+ * Builds the index across a pool of workers, each holding a slice of the catalog,
+ * so building and searching run in parallel and off the page's thread. Falls back
+ * to building it here when workers cannot render the font.
+ *
+ * @param {string[]} names
+ * @param {number} [blurArg]
+ * @param {string} [fontFileArg]
+ * @param {import('./types.js').ProgressCallback} [onProgressArg]
+ * @returns {Promise<{lookup: (c: import('./types.js').ScanImage) => Promise<import('./types.js').NameMatch[]>, dispose: () => void}>}
+ */
+async function createTitleIndex(names, blurArg, fontFileArg, onProgressArg) {
+	const blur = blurArg === undefined ? 0 : blurArg;
+	const fontFile = fontFileArg === undefined ? 'beleren.woff' : fontFileArg;
+	const onProgress =
+		onProgressArg === undefined ? function () {} : onProgressArg;
+	const size = Math.max(
+			1,
+			Math.min(4, (navigator.hardwareConcurrency || 2) - 1)
+		),
+		shard = Math.ceil(names.length / size),
+		workers = [],
+		/** @type {Map<number, {results: object[], remaining: number, resolve: (v: object[]) => void, reject: (e: Error) => void}>} */
+		pending = new Map(),
+		completed = new Array(size).fill(0);
+	let next = 0;
+	function fail(/** @type {Error} */ error) {
+		for (const call of pending.values()) call.reject(error);
+		pending.clear();
+	}
+	function dispose() {
+		for (const worker of workers) worker.terminate();
+		fail(new Error('Title index closed'));
+	}
+	try {
+		await Promise.all(
+			Array.from({ length: size }, function (_, k) {
+				const worker = new Worker(
+					new URL(
+						'../../workers/title-index.worker.ts',
+						import.meta.url
+					),
+					{ type: 'module' }
+				);
+				workers.push(worker);
+				return new Promise(function (resolve, reject) {
+					worker.onerror = (e) =>
+						reject(
+							new Error(e.message || 'Title index worker failed')
+						);
+					worker.onmessage = function (event) {
+						const message = event.data;
+						if (message.kind === 'progress') {
+							completed[k] = message.completed;
+							onProgress({
+								completed: completed.reduce((a, b) => a + b, 0),
+								total: names.length
+							});
+						} else if (message.kind === 'failed')
+							reject(new Error(message.error));
+						else if (message.kind === 'built') resolve(undefined);
+						else {
+							const call = pending.get(message.id);
+							if (!call) return;
+							call.results[k] = message.matches;
+							if (--call.remaining === 0) {
+								pending.delete(message.id);
+								call.resolve(call.results);
+							}
+						}
+					};
+					worker.postMessage({
+						kind: 'build',
+						names: names.slice(k * shard, (k + 1) * shard),
+						offset: k * shard,
+						blur,
+						fontUrl: new URL(
+							`/ocr/models/fonts/${fontFile}`,
+							location.origin
+						).href
+					});
+				});
+			})
+		);
+	} catch (error) {
+		dispose();
+		console.warn('Title index workers unavailable; building here', error);
+		const index = await makeFontIndex(names, blur, fontFile, onProgress);
+		return {
+			lookup: async (c) => lookup(c, index),
+			dispose: function () {}
+		};
+	}
+	for (const worker of workers)
+		worker.onerror = (e) =>
+			fail(new Error(e.message || 'Title index worker failed'));
+	return {
+		lookup: function (c) {
+			const { v, proj } = descriptor(c),
+				id = next++;
+			return new Promise(function (resolve, reject) {
+				pending.set(id, {
+					results: [],
+					remaining: workers.length,
+					resolve: (shards) => resolve(mergeShards(shards, names)),
+					reject
+				});
+				for (const worker of workers)
+					worker.postMessage({ kind: 'lookup', id, v, proj });
+			});
+		},
+		dispose
+	};
+}
+
+export { makeFontIndex, lookup, createTitleIndex };

@@ -53,8 +53,6 @@
 	gap: 8px;
 }
 
-.cancel,
-.save,
 .done {
 	min-height: 36px;
 	margin: 0;
@@ -66,26 +64,12 @@
 	cursor: pointer;
 }
 
-.cancel {
-	border: 1px solid var(--deck-border, #e5e1df);
-	background: white;
-	color: #383331;
-}
-
-.save,
 .done {
 	border: 1px solid var(--deck-accent, #7a3431);
 	background: var(--deck-accent, #7a3431);
 	color: var(--deck-on-accent, white);
 }
 
-.save:disabled {
-	opacity: 0.45;
-	cursor: default;
-}
-
-.cancel:focus-visible,
-.save:focus-visible,
 .done:focus-visible,
 .add-printing:focus-visible,
 .change-printing:focus-visible,
@@ -148,9 +132,13 @@
 }
 
 .deck-row {
-	display: flex;
+	display: grid;
+	grid-template-areas:
+		'image text change'
+		'image counts counts';
+	grid-template-columns: 44px minmax(0, 1fr) auto;
 	align-items: center;
-	gap: 12px;
+	gap: 8px 12px;
 	padding: 10px;
 	border: 1px solid var(--deck-border, #e5e1df);
 	border-radius: 8px;
@@ -163,7 +151,8 @@
 }
 
 .deck-row img {
-	flex: none;
+	grid-area: image;
+	align-self: start;
 	width: 44px;
 	aspect-ratio: 0.716;
 	border-radius: 3px;
@@ -172,6 +161,7 @@
 }
 
 .deck-row-text {
+	grid-area: text;
 	display: flex;
 	flex: 1;
 	flex-direction: column;
@@ -195,6 +185,7 @@
 }
 
 .change-printing {
+	grid-area: change;
 	display: flex;
 	flex: none;
 	align-items: center;
@@ -318,32 +309,48 @@
 
 .total {
 	display: flex;
-	align-items: baseline;
-	justify-content: space-between;
-	margin-top: auto;
+	gap: 24px;
+	margin: auto 0 0;
 	padding: 14px 24px;
 	border-top: 1px solid #eee7e4;
 	color: #6d6764;
 	font-size: 13px;
 }
 
-.total strong {
+.total div {
+	display: flex;
+	flex: 1;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.total dd {
+	margin: 0;
 	color: var(--theme-text);
 	font-size: 20px;
+	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 }
 
 .all-header {
 	display: flex;
 	flex: none;
+	flex-wrap: wrap;
 	align-items: center;
-	gap: 12px;
+	gap: 10px 12px;
 	padding: 14px 24px 12px;
 }
 
 .all-heading {
-	flex: 1;
+	flex: 1 0 100%;
 	min-width: 0;
+}
+
+.all-header .search {
+	flex: 1;
+	width: auto;
+	min-width: 160px;
 }
 
 .all-heading p {
@@ -435,10 +442,20 @@
 		0 0 0 5px var(--deck-accent, #7a3431);
 }
 
-.badge {
+.badges {
 	position: absolute;
 	top: -8px;
 	right: -8px;
+	display: flex;
+	gap: 3px;
+}
+
+.badge[data-board='side'] {
+	background: #4b4341;
+	color: white;
+}
+
+.badge {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -513,10 +530,13 @@
 		padding: 6px 12px 6px 16px;
 	}
 
-	.cancel,
-	.save,
 	.done {
 		min-height: 44px;
+	}
+
+	/* The top bar's back button closes the editor on phones. */
+	.header-actions {
+		display: none;
 	}
 
 	.body {
@@ -601,5 +621,187 @@
 
 	.all-footer span {
 		flex: 1;
+	}
+}
+
+.board-counts {
+	grid-area: counts;
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 6px;
+}
+
+.board-stepper {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.board-stepper-label {
+	color: #6d6764;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.board-stepper[data-empty] .stepper-count {
+	color: #b8b0ad;
+}
+
+.move-copy {
+	display: flex;
+	gap: 2px;
+	padding-bottom: 1px;
+}
+
+.move-copy button,
+.move-all button,
+.add-board button {
+	margin: 0;
+	border: 0;
+	font: inherit;
+	cursor: pointer;
+}
+
+.move-copy button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 32px;
+	padding: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: var(--deck-accent, #7a3431);
+}
+
+.move-copy button:hover:not(:disabled) {
+	background: #f6ece9;
+}
+
+.move-copy button:disabled {
+	color: #d4ccc9;
+	cursor: default;
+}
+
+.move-all {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 12px 16px 0;
+}
+
+.move-all button {
+	flex: 1;
+	min-height: 34px;
+	padding: 0 10px;
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 7px;
+	background: white;
+	color: #383331;
+	font-size: 13px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.move-all button:hover:not(:disabled) {
+	background: #f6ece9;
+}
+
+.move-all button:disabled {
+	color: #b8b0ad;
+	cursor: default;
+}
+
+.add-board {
+	display: inline-flex;
+	flex: none;
+	padding: 3px;
+	border-radius: 7px;
+	background: #f1efee;
+}
+
+.add-board button {
+	padding: 6px 12px;
+	border-radius: 5px;
+	background: transparent;
+	color: #6d6764;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.add-board button[aria-checked='true'] {
+	background: white;
+	color: #383331;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.move-copy button:focus-visible,
+.move-all button:focus-visible,
+.add-board button:focus-visible {
+	outline: 2px solid var(--deck-accent, #7a3431);
+	outline-offset: 1px;
+}
+
+@media (max-width: 680px) {
+	.deck-row {
+		grid-template-areas:
+			'image text change'
+			'counts counts counts';
+	}
+
+	.move-copy button {
+		width: 40px;
+		height: 44px;
+	}
+
+	.move-all button {
+		min-height: 44px;
+	}
+
+	.add-board {
+		display: flex;
+		flex-basis: 100%;
+	}
+
+	.add-board button {
+		flex: 1;
+		min-height: 40px;
+	}
+}
+
+/* The desktop deck pane is too narrow for both boards side by side, so they
+   stack: each label beside its stepper, the move arrows pointing down and up. */
+@media (min-width: 681px) {
+	.board-counts {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 2px;
+	}
+
+	.board-stepper {
+		flex-direction: row;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.board-stepper-label {
+		width: 36px;
+	}
+
+	.move-copy {
+		margin-left: 60px;
+		padding-bottom: 0;
+	}
+
+	.move-copy button {
+		width: 32px;
+		height: 26px;
+	}
+
+	.move-copy svg {
+		transform: rotate(90deg);
 	}
 }

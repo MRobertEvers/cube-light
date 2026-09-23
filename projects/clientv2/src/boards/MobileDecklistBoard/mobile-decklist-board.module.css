@@ -205,3 +205,35 @@
 		transition: none;
 	}
 }
+
+.board + .board {
+	margin-top: 24px;
+}
+
+.boardHeader {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	margin: 0 0 10px;
+	padding-bottom: 6px;
+	border-bottom: 2px solid var(--deck-accent, var(--theme-dark));
+	color: var(--deck-page-accent, var(--theme-text));
+	font-size: 15px;
+	font-weight: 800;
+	letter-spacing: 0.02em;
+}
+
+.boardCount {
+	color: #6d6764;
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.boardEmpty {
+	margin: 0 0 12px;
+	padding: 14px 12px;
+	border: 1px dashed var(--deck-border, #e5e1df);
+	border-radius: 8px;
+	color: #6d6764;
+	font-size: 13px;
+}

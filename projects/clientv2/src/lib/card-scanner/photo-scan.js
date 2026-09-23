@@ -83,8 +83,9 @@ export async function scanPhoto(options) {
 								location.origin
 							).href
 						},
+						// WebGPU when the device has it, otherwise WASM.
 						ortOptions: {
-							backend: 'wasm',
+							backend: 'auto',
 							numThreads: 1,
 							simd: true
 						}

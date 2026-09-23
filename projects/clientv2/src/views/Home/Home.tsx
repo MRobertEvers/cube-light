@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchAPICreateDeck } from 'src/api/fetch-api-create-deck';
-import { Button } from 'src/components/Button/Button';
+import { OverflowMenu } from 'src/components/OverflowMenu/OverflowMenu';
 import { SpotlightCard } from 'src/widgets/SpotlightCard/SpotlightCard';
 import { FetchDecksResponse } from '../../api/fetch-api-decks';
 import {
@@ -28,6 +28,25 @@ export type HomeProps = {
 	initialData?: FetchDecksResponse;
 };
 
+function NewDeckIcon() {
+	return (
+		<>
+			<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+				<path
+					d="M12 5v14M5 12h14"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="1.8"
+					strokeLinecap="round"
+				/>
+			</svg>
+			<svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true">
+				<path d="M1 3h8L5 7.5z" fill="currentColor" />
+			</svg>
+		</>
+	);
+}
+
 type HomeModal = { type: 'new-deck' } | { type: 'image-import' };
 
 export function Home(props: HomeProps) {
@@ -47,27 +66,26 @@ export function Home(props: HomeProps) {
 	return (
 		<Page
 			header={
-				<div className={styles['header-actions']}>
-					<Button
-						className={styles['header-button']}
+				<OverflowMenu
+					label="Create a deck"
+					icon={<NewDeckIcon />}
+					triggerClassName={styles['new-deck-trigger']}
+				>
+					<button
+						type="button"
 						onClick={() => modalHistory.open({ type: 'new-deck' })}
 					>
-						New Deck
-					</Button>
-					<Button
-						className={styles['header-button']}
+						New deck
+					</button>
+					<button
+						type="button"
 						onClick={() =>
 							modalHistory.open({ type: 'image-import' })
 						}
 					>
-						<span className={styles['desktop-action-label']}>
-							Create a deck from image
-						</span>
-						<span className={styles['mobile-action-label']}>
-							Import image
-						</span>
-					</Button>
-				</div>
+						New deck from image
+					</button>
+				</OverflowMenu>
 			}
 		>
 			{modal?.type === 'image-import' && (

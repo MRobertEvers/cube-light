@@ -9,8 +9,10 @@ import {
 	closeAddCards,
 	importDeckCards,
 	selectAddCards,
+	setAddCardsBoard,
 	setAddCardsText
 } from 'src/store/add-cards/add-cards.state';
+import { DECK_BOARD_LABELS, DECK_BOARD_ORDER } from 'src/utils/deck-boards';
 import { useAppDispatch } from 'src/store/use-app-dispatch';
 import {
 	CardListNote,
@@ -44,6 +46,7 @@ export function AddCards(props: { onClose?: () => void }) {
 	const {
 		deckId,
 		text,
+		board,
 		submitting: isSubmitting,
 		error,
 		unknownCards
@@ -54,8 +57,18 @@ export function AddCards(props: { onClose?: () => void }) {
 	const lint = useCardListLint(text);
 	const [typingLine, setTypingLine] = useState<number | null>(null);
 
-	const parsed = useMemo(() => parseCardList(text), [text]);
+	const parsed = useMemo(() => parseCardList(text, board), [text, board]);
+	const boardHintId = useId();
 	const total = parsed.cards.reduce((sum, card) => sum + card.count, 0);
+	const sideTotal = parsed.cards
+		.filter((card) => card.board === 'side')
+		.reduce((sum, card) => sum + card.count, 0);
+	// A card in both boards is still one printing.
+	const printingCount = new Set(
+		parsed.cards.map(
+			(card) => `${card.name.toLowerCase()}|${card.setCode ?? ''}`
+		)
+	).size;
 	const uniqueNames = new Set(
 		parsed.cards.map((card) => card.name.toLowerCase())
 	).size;
@@ -151,11 +164,12 @@ export function AddCards(props: { onClose?: () => void }) {
 			importDeckCards({
 				deckId,
 				cards: parsed.cards.map((options) => {
-					const { name, count, setCode } = options;
+					const { name, count, setCode, board } = options;
 					return {
 						name,
 						count,
-						setCode
+						setCode,
+						board
 					};
 				})
 			})
@@ -238,6 +252,31 @@ export function AddCards(props: { onClose?: () => void }) {
 					Paste a list with one card per line, like an Arena or MTGO
 					export. Counts and set codes are optional.
 				</p>
+				<fieldset className={styles['board-picker']}>
+					<legend>Add to</legend>
+					<div className={styles['board-options']}>
+						{DECK_BOARD_ORDER.map((option) => (
+							<label key={option}>
+								<input
+									type="radio"
+									name="add-cards-board"
+									value={option}
+									checked={board === option}
+									disabled={isSubmitting}
+									aria-describedby={boardHintId}
+									onChange={() =>
+										dispatch(setAddCardsBoard(option))
+									}
+								/>
+								<span>{DECK_BOARD_LABELS[option]}</span>
+							</label>
+						))}
+					</div>
+					<p id={boardHintId} className={styles['board-hint']}>
+						Lines under a “Deck” or “Sideboard” heading go to that
+						board instead.
+					</p>
+				</fieldset>
 				<div className={`${adderStyles['field']} ${styles['field']}`}>
 					<label htmlFor="add-cards-list">Card list</label>
 					<CardListEditor
@@ -262,7 +301,7 @@ export function AddCards(props: { onClose?: () => void }) {
 					>
 						{parsed.cards.length === 0
 							? 'Press Ctrl+Enter or ⌘+Enter to add.'
-							: `${total} ${total === 1 ? 'card' : 'cards'} (${uniqueNames} unique${parsed.cards.length > uniqueNames ? `, ${parsed.cards.length} printings` : ''}) ready to add.`}
+							: `${total} ${total === 1 ? 'card' : 'cards'} (${uniqueNames} unique${printingCount > uniqueNames ? `, ${printingCount} printings` : ''}${sideTotal > 0 ? `, ${sideTotal} in sideboard` : ''}) ready to add.`}
 					</p>
 					{/* Always rendered at a fixed height, so issues coming and going don't move the dialog. */}
 					<ul
@@ -345,7 +384,7 @@ export function AddCards(props: { onClose?: () => void }) {
 							<Spinner /> Adding…
 						</>
 					) : total > 0 ? (
-						`Add ${total} ${total === 1 ? 'card' : 'cards'}`
+						`Add ${total} ${total === 1 ? 'card' : 'cards'}${sideTotal === total ? ' to sideboard' : ''}`
 					) : (
 						'Add cards'
 					)}

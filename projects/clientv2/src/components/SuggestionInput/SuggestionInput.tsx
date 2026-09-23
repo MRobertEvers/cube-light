@@ -22,6 +22,8 @@ export type SuggestionInputProps = {
 	enterSelects?: string;
 	/** Suggestion chosen by Tab (focus moves on as usual). */
 	tabSelects?: string;
+	/** Tab and Shift+Tab step through the open list; past either end, focus moves on as usual. */
+	tabBrowses?: boolean;
 	inputRef?: Ref<HTMLInputElement>;
 	placeholder?: string;
 	disabled?: boolean;
@@ -43,6 +45,7 @@ export function SuggestionInput(props: SuggestionInputProps) {
 		onSelect,
 		enterSelects,
 		tabSelects,
+		tabBrowses,
 		inputRef,
 		placeholder,
 		disabled,
@@ -164,6 +167,18 @@ export function SuggestionInput(props: SuggestionInputProps) {
 						tabSelects !== undefined
 					) {
 						select(tabSelects, false);
+					} else if (
+						event.key === 'Tab' &&
+						tabBrowses &&
+						showSuggestions
+					) {
+						const nextIndex = event.shiftKey
+							? activeIndex - 1
+							: activeIndex + 1;
+						if (nextIndex < 0 || nextIndex >= suggestions.length)
+							return;
+						event.preventDefault();
+						setActive({ key: suggestionsKey, index: nextIndex });
 					}
 				}}
 			/>

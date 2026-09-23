@@ -241,3 +241,39 @@
 		color: #6d6764;
 	}
 }
+
+.move-row {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	margin: 0 6px 0 -4px;
+	padding: 0;
+	border: 0;
+	border-radius: 5px;
+	background: transparent;
+	color: var(--deck-accent-text, #6f2525);
+	cursor: pointer;
+	opacity: 0.55;
+}
+
+.row-with-action:hover .move-row,
+.move-row:focus-visible {
+	opacity: 1;
+}
+
+.move-row:hover:not(:disabled) {
+	background: #f6ece9;
+}
+
+.move-row:disabled {
+	cursor: default;
+	opacity: 0.3;
+}
+
+.move-row:focus-visible {
+	outline: 2px solid var(--deck-accent, #7a3431);
+	outline-offset: -2px;
+}

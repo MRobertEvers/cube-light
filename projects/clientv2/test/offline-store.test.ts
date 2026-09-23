@@ -121,3 +121,32 @@ test('refresh attempt identity survives restart and stale rotation cannot undo s
     assert.equal((await store.credentials())?.tokens.refreshToken, 'refresh');
     store.close();
 });
+
+test('card edits join the deck edit still waiting to be sent, and survive a rebuild', async () => {
+    const { store, scope } = await fixture();
+    const id = 'deck_abcdefghijklmnop';
+    const create = await store.commit(scope, { type: 'deck.create', id, name: 'Steps' });
+    const lease = (await store.acquire(scope, 'worker-one'))!;
+    await store.prepare(lease);
+    await store.settle(lease, { operationId: create.operationId, status: 'accepted', replicas: [await replica(id, create.operationId, { type: 'DeckCreated', name: 'Steps' })], events: [], revisions: { [id]: 1 } });
+    const first = await store.commit(scope, { type: 'deck.cards', id, edits: [{ uuid: 'card-a', count: 1, action: 'add' }] });
+    const second = await store.commit(scope, { type: 'deck.cards', id, edits: [{ uuid: 'card-a', count: 3, action: 'set', board: 'side' }, { uuid: 'card-a', count: 1, action: 'add' }] });
+    assert.equal(second.operationId, first.operationId);
+    const pending = (await store.dataset(scope)).intents.filter((intent) => intent.status === 'queued');
+    assert.equal(pending.length, 1);
+    assert.equal((pending[0].command as any).edits.length, 3);
+    let deck = (await store.dataset(scope)).states[0] as any;
+    assert.equal(deck.cards['card-a'], 2);
+    assert.equal(deck.sideboard['card-a'], 3);
+    // Once the joined edit is being sent, a later step starts a new request behind it.
+    assert.equal((await store.prepare(lease))!.operationId, first.operationId);
+    const third = await store.commit(scope, { type: 'deck.cards', id, edits: [{ uuid: 'card-a', count: 1, action: 'remove' }] });
+    assert.notEqual(third.operationId, first.operationId);
+    await store.rebuild(scope);
+    const rebuilt = await store.dataset(scope);
+    assert.equal((rebuilt.intents.find((intent) => intent.operationId === first.operationId)!.command as any).edits.length, 3);
+    deck = rebuilt.states[0] as any;
+    assert.equal(deck.cards['card-a'], 1);
+    assert.equal(deck.sideboard['card-a'], 3);
+    store.close();
+});

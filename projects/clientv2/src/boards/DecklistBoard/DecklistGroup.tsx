@@ -1,18 +1,60 @@
 import React, { useMemo } from 'react';
-import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
-import { ManaCost } from '../../../../components/ManaCost/ManaCost';
-import { DeckGroupData } from '../../../../workers/deck.worker.messages';
+import { FetchAPIDeckCardResponse } from '../../api/fetch-api-deck';
+import { ManaCost } from '../../components/ManaCost/ManaCost';
+import { DeckGroupData } from '../../workers/deck.worker.messages';
 import {
 	DeckCardGroup,
 	compareDeckCardGroupsByManaCost,
 	groupDeckCardsByName
-} from '../../../../utils/group-deck-cards';
+} from '../../utils/group-deck-cards';
 
+import { otherBoard } from '../../utils/deck-boards';
 import styles from './decklist-group.module.css';
+
+/** Moves the whole row to the other board; the editor moves single copies. */
+function MoveRowButton(props: {
+	group: DeckCardGroup;
+	busy: boolean;
+	onCardEvent?: OnCardEvent;
+}) {
+	const { group, busy, onCardEvent } = props;
+	const to = otherBoard(group.board) === 'side' ? 'sideboard' : 'main board';
+	return (
+		<button
+			type="button"
+			className={styles['move-row']}
+			aria-label={`Move ${group.count === 1 ? '' : `all ${group.count} `}${group.name} to the ${to}`}
+			title={`Move to the ${to}`}
+			disabled={busy}
+			onClick={() =>
+				onCardEvent?.({
+					type: CardInteractionEventType.MOVE,
+					payload: group
+				})
+			}
+		>
+			<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+				<path
+					d={
+						group.board === 'main'
+							? 'M8 3v9.5M4.5 9 8 12.5 11.5 9'
+							: 'M8 13V3.5M4.5 7 8 3.5 11.5 7'
+					}
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="1.8"
+					strokeLinecap="round"
+					strokeLinejoin="round"
+				/>
+			</svg>
+		</button>
+	);
+}
 
 export enum CardInteractionEventType {
 	CLICK = 'CardInteractionEvent/CLICK',
 	MANAGE = 'CardInteractionEvent/MANAGE',
+	MOVE = 'CardInteractionEvent/MOVE',
 	HOVER = 'CardInteractionEvent/HOVER',
 	LEAVE = 'CardInteractionEvent/LEAVE'
 }
@@ -25,6 +67,11 @@ export type CardInteractionEvent =
 	  }
 	| {
 			type: CardInteractionEventType.MANAGE;
+			payload: DeckCardGroup;
+	  }
+	| {
+			/** Every copy of the group goes to the other board. */
+			type: CardInteractionEventType.MOVE;
 			payload: DeckCardGroup;
 	  }
 	| {
@@ -83,15 +130,17 @@ function previewHandlers(
 
 type CardRowProps = {
 	group: DeckCardGroup;
+	/** True while this row's move or delete is saving. */
+	busy: boolean;
 	expanded: boolean;
 	onToggle: (name: string) => void;
 	onCardEvent?: OnCardEvent;
 };
 
 function CardRow(props: CardRowProps) {
-	const { group, expanded, onToggle, onCardEvent } = props;
+	const { group, busy, expanded, onToggle, onCardEvent } = props;
 	const [top] = group.printings;
-	const printingsId = `printings-${group.name.replace(/\W+/g, '-')}`;
+	const printingsId = `printings-${group.board}-${group.name.replace(/\W+/g, '-')}`;
 
 	if (group.printings.length === 1) {
 		return (
@@ -130,6 +179,11 @@ function CardRow(props: CardRowProps) {
 				>
 					Edit
 				</button>
+				<MoveRowButton
+					group={group}
+					busy={busy}
+					onCardEvent={onCardEvent}
+				/>
 			</div>
 		);
 	}
@@ -197,6 +251,11 @@ function CardRow(props: CardRowProps) {
 				>
 					Edit
 				</button>
+				<MoveRowButton
+					group={group}
+					busy={busy}
+					onCardEvent={onCardEvent}
+				/>
 			</div>
 			{expanded && (
 				<ul
@@ -242,12 +301,14 @@ function CardRow(props: CardRowProps) {
 export type DecklistCategoryProps = {
 	group: DeckGroupData;
 	name: string;
+	/** The row with a move in flight, by card name. */
+	busyName?: string | null;
 	isExpanded: (name: string) => boolean;
 	onToggle: (name: string) => void;
 	onCardEvent?: OnCardEvent;
 };
 export function DecklistCategory(props: DecklistCategoryProps) {
-	const { group, name, isExpanded, onToggle, onCardEvent } = props;
+	const { group, name, busyName, isExpanded, onToggle, onCardEvent } = props;
 	const cards = useMemo(
 		() =>
 			groupDeckCardsByName(group.cards).sort(
@@ -272,6 +333,7 @@ export function DecklistCategory(props: DecklistCategoryProps) {
 					>
 						<CardRow
 							group={card}
+							busy={busyName === card.name}
 							expanded={isExpanded(card.name)}
 							onToggle={onToggle}
 							onCardEvent={onCardEvent}
@@ -288,6 +350,7 @@ export type DecklistGroupProps = {
 		name: string;
 		groupData: DeckGroupData;
 	}>;
+	busyName?: string | null;
 	isExpanded: (name: string) => boolean;
 	onToggle: (name: string) => void;
 	onCardEvent?: OnCardEvent;

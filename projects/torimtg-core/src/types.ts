@@ -15,12 +15,27 @@ export type BlendConfig = {
     protection: null | { source: string; rect: null | { x: number; y: number; width: number; height: number }; strokes: { label: 'foreground' | 'background'; radius: number; points: number[] }[] };
 };
 export type Blend = { config: BlendConfig; source: string; crop: BannerCrop; images: { desktop: string; mobile: string; tile: string } };
-export type CardEdit = { uuid: string; action: 'add' | 'remove' | 'set'; count: number };
+/** Which list of a deck a card belongs to. The main board is the deck itself; the side board holds swap-ins. */
+export type DeckBoard = 'main' | 'side';
+export const DECK_BOARDS: readonly DeckBoard[] = ['main', 'side'];
+/** `board` defaults to the main board, so edits written before boards existed keep their meaning. */
+export type CardEdit = { uuid: string; action: 'add' | 'remove' | 'set'; count: number; board?: DeckBoard };
+/** Only side-board changes name their board, so main-board events keep the shape they always had. */
+export type CardQuantityChange = { uuid: string; previous: number; delta: number; resulting: number; board?: 'side' };
+/** A free-text note kept with a deck. */
+export type DeckNote = { text: string; createdAt: string; updatedAt: string };
 export type CommonState = { id: string; kind: AggregateKind; deleted: boolean; createdAt: string; updatedAt: string };
 export type DeckState = CommonState & {
+    /** Main-board quantities by printing UUID. */
     kind: 'deck'; name: string; cards: Record<string, number>; art: string | null;
+    /** Side-board quantities by printing UUID. Absent while the side board is empty, so older states hash the same. */
+    sideboard?: Record<string, number>;
     bannerCardUuid: string | null; palette: Palette | null; bannerCrop: BannerCrop | null;
     topStyle: 'card' | 'full-art'; bannerBlend: Blend | null;
+    /** The client's id for how the deck's cards are drawn. Absent until one is chosen, so older states hash the same. */
+    boardVisualization?: string;
+    /** Notes by note ID. Absent while the deck has none, so older states hash the same. */
+    notes?: Record<string, DeckNote>;
 };
 export type NamedState = CommonState & { kind: 'collection' | 'location'; name: string };
 export type ProfileState = CommonState & { kind: 'profile'; userId: number; profile: Profile | null; printingView: 'compact' | 'grid' };
@@ -38,7 +53,10 @@ export type DomainCommand =
     | { type: 'deck.palette'; id: string; palette: Palette | null }
     | { type: 'deck.crop'; id: string; crop: BannerCrop }
     | { type: 'deck.style'; id: string; topStyle: 'card' | 'full-art' }
+    | { type: 'deck.visualization'; id: string; boardVisualization: string }
     | { type: 'deck.blend'; id: string; blend: Blend }
+    | { type: 'deck.note'; id: string; noteId: string; text: string }
+    | { type: 'deck.noteDelete'; id: string; noteId: string }
     | { type: 'deck.delete'; id: string }
     | { type: 'collection.create' | 'location.create'; id: string; name: string }
     | { type: 'collection.rename' | 'location.rename'; id: string; name: string }
@@ -55,11 +73,14 @@ export type DomainCommand =
 export type DomainEvent =
     | { type: 'DeckCreated'; name: string }
     | { type: 'DeckDetailsChanged'; name: string; bannerCardUuid?: string; art?: string }
-    | { type: 'CardQuantitiesAdjusted'; changes: { uuid: string; previous: number; delta: number; resulting: number }[] }
+    | { type: 'CardQuantitiesAdjusted'; changes: CardQuantityChange[] }
     | { type: 'DeckPaletteSelected'; palette: Palette | null }
     | { type: 'DeckCropSelected'; crop: BannerCrop }
     | { type: 'DeckStyleSelected'; topStyle: 'card' | 'full-art' }
+    | { type: 'DeckVisualizationSelected'; boardVisualization: string }
     | { type: 'DeckBlendGenerated'; blend: Blend }
+    | { type: 'DeckNoteSaved'; noteId: string; text: string }
+    | { type: 'DeckNoteDeleted'; noteId: string }
     | { type: 'DeckDeleted' }
     | { type: 'CollectionCreated' | 'StorageLocationCreated'; name: string }
     | { type: 'CollectionRenamed' | 'StorageLocationRenamed'; name: string }

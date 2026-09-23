@@ -38,8 +38,15 @@ These are architectural invariants:
 2. The UI reports an edit as saved only after the IndexedDB transaction completes.
    A reducer may show a saving indicator immediately, but cannot publish the new
    domain value before that commit.
-3. Only the service-worker side of ToriMTG performs application API requests.
-   There is no online fast path or window-based fallback transport.
+3. Exactly one sync host performs application API requests, and it always runs
+   the same `SyncCoordinator` against the same IndexedDB store. There is no
+   online fast path: the UI never talks to the API directly. That host is the
+   service worker wherever one can run. An origin that is not a secure context
+   cannot register one -- a LAN development origin such as
+   `http://host.local:3000` is the usual case -- and there the window hosts the
+   coordinator instead (`WindowSyncApi`). The window host trades away offline
+   page loads and background wake-ups; the transport, retry, lease, and
+   conflict behaviour are unchanged.
 4. Server results, receipts, errors, and sync progress are persisted before the
    UI is notified. Notifications tell the UI to reread; they do not carry data.
 5. Work survives closing a tab, restarting a worker, and retrying a request.

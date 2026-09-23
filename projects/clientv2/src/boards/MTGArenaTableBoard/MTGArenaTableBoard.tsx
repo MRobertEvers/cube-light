@@ -1,19 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import type { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
-import type { DeckCardGroup } from '../../../../utils/group-deck-cards';
-import { groupTabletopCards } from '../../../../utils/group-tabletop-cards';
-import styles from './tabletop.module.css';
+import type { DeckCardGroup } from '../../utils/group-deck-cards';
+import { groupTabletopCards } from '../../utils/group-tabletop-cards';
+import type { BoardProps } from '../board.types';
+import styles from './mtg-arena-table-board.module.css';
 
-type Props = {
-	cards: FetchAPIDeckCardResponse[];
-	onCardClick: (card: FetchAPIDeckCardResponse, group: DeckCardGroup) => void;
-};
+export type MTGArenaTableBoardProps = BoardProps;
 
 function TabletopCard(props: {
 	group: DeckCardGroup;
-	onCardClick: Props['onCardClick'];
+	onCardEvent: BoardProps['onCardEvent'];
 }) {
-	const { group, onCardClick } = props;
+	const { group, onCardEvent } = props;
 	const card = group.printings[0];
 	const source = card.images?.normal || card.image;
 	const [failedSource, setFailedSource] = useState<string | null>(null);
@@ -22,7 +19,7 @@ function TabletopCard(props: {
 			type="button"
 			className={styles.card}
 			aria-label={`Open ${group.name}, ${group.count} ${group.count === 1 ? 'copy' : 'copies'}`}
-			onClick={() => onCardClick(card, group)}
+			onClick={() => onCardEvent({ type: 'view', card, group })}
 		>
 			{source && source !== failedSource ? (
 				<img
@@ -44,9 +41,18 @@ function TabletopCard(props: {
 	);
 }
 
-export function Tabletop(props: Props) {
-	const { cards, onCardClick } = props;
-	const columns = useMemo(() => groupTabletopCards(cards), [cards]);
+/** The tabletop view: main-board cards stacked in columns by mana value, like MTG Arena. */
+export function MTGArenaTableBoard(props: MTGArenaTableBoardProps) {
+	const { cards, onCardEvent } = props;
+	const columns = useMemo(
+		() =>
+			groupTabletopCards(
+				Object.values(cards.main.cardCategories).flatMap(
+					(category) => category.cards
+				)
+			),
+		[cards.main]
+	);
 	const [cardSize, setCardSize] = useState(200);
 	return (
 		<section className={styles.tabletop} aria-labelledby="tabletop-title">
@@ -96,7 +102,7 @@ export function Tabletop(props: Props) {
 										<li key={group.name} className={styles.slot}>
 											<TabletopCard
 												group={group}
-												onCardClick={onCardClick}
+												onCardEvent={onCardEvent}
 											/>
 										</li>
 									))}

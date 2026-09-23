@@ -60,6 +60,21 @@
 	color: #a12323;
 }
 
+.quantities {
+	margin: 24px 0;
+	border-top: 1px solid #eee8e5;
+	border-bottom: 1px solid #eee8e5;
+}
+
+.quantities .quantity-row {
+	margin: 0;
+	border: 0;
+}
+
+.quantities .quantity-row + .quantity-row {
+	border-top: 1px solid #eee8e5;
+}
+
 .quantity-row {
 	display: flex;
 	align-items: center;

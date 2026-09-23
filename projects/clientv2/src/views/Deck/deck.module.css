@@ -257,3 +257,9 @@
 .modal-container-contents {
 	margin: auto;
 }
+
+.delete-deck-warning {
+	margin: 12px 0 0;
+	font-size: 14px;
+	line-height: 1.4;
+}

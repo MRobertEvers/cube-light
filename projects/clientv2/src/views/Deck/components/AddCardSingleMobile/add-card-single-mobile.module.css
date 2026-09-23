@@ -77,6 +77,11 @@
 	padding-top: 12px;
 }
 
+.countRow + .countRow {
+	margin-top: 0;
+	padding-top: 0;
+}
+
 .keepAdding {
 	position: relative;
 	cursor: pointer;

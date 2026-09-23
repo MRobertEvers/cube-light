@@ -92,3 +92,9 @@
 		gap: 0;
 	}
 }
+
+.board {
+	color: #6d6764;
+	font-size: 0.8125rem;
+	font-weight: 600;
+}

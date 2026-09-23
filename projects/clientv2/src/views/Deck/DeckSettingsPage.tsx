@@ -14,7 +14,6 @@ import {
 	readableAccent,
 	useCardPalette
 } from '../../utils/card-palette';
-import { useMinimumVisible } from '../../hooks/useMinimumVisible';
 import {
 	appearanceActions,
 	appearanceView,
@@ -26,7 +25,8 @@ import {
 	BlendSection,
 	CropSection,
 	PaletteSection,
-	TopStyleSection
+	TopStyleSection,
+	VisualizationSection
 } from './DeckSettingsSections';
 import styles from './deck-settings.module.css';
 import { useHistoryModal } from '../../hooks/useHistoryModal';
@@ -59,7 +59,7 @@ export function DeckSettingsPage(props: DeckSettingsPageProps) {
 			selectDeckError(root, deckId)
 	);
 	const appearance = useSelector(selectAppearanceSettings);
-	const showInitialLoading = useMinimumVisible(!data && !loadError);
+	const showInitialLoading = !data && !loadError;
 	const generatedPalette = useCardPalette(data?.icon);
 	const view = appearanceView(appearance, deckId, data, generatedPalette);
 	const { palette } = view;
@@ -134,6 +134,11 @@ export function DeckSettingsPage(props: DeckSettingsPageProps) {
 							}
 						/>
 						<TopStyleSection
+							deckId={deckId}
+							data={data}
+							view={view}
+						/>
+						<VisualizationSection
 							deckId={deckId}
 							data={data}
 							view={view}

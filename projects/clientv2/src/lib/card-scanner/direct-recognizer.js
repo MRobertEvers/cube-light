@@ -19,7 +19,7 @@ export async function createRecognizer(
 	const lexical = lexicalArg === undefined ? false : lexicalArg;
 
 	const worker = new Worker(
-			new URL('./recognizer.worker.js', import.meta.url),
+			new URL('../../workers/ocr-recognizer.worker.ts', import.meta.url),
 			{ type: 'module' }
 		),
 		pending = new Map();

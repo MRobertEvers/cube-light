@@ -2,8 +2,12 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { fetchAPISetDeckPalette } from '../../api/fetch-api-set-deck-palette';
 import { fetchAPISetBannerCrop } from '../../api/fetch-api-set-banner-crop';
 import { fetchAPISetTopStyle } from '../../api/fetch-api-set-top-style';
+import { fetchAPISetBoardVisualization } from '../../api/fetch-api-set-board-visualization';
+import {
+	type BoardVisualizationId,
+	boardVisualizationOf
+} from '../../boards/board-visualizations';
 import type { GetDeckResponse } from '../../workers/deck.worker.messages';
-import { withMinimumStatusDuration } from '../../utils/minimum-status-duration';
 import { CardPalette, DEFAULT_CARD_PALETTE } from '../../utils/card-palette';
 import { BannerCrop, DEFAULT_BANNER_CROP } from '../../utils/banner-crop';
 import type { DeckTopStyle } from '../../utils/deck-top-style';
@@ -14,7 +18,13 @@ import {
 } from '../../utils/banner-blend';
 import { generateAndSaveBannerBlend } from '../../utils/generate-banner-blend';
 
-type Section = 'palette' | 'crop' | 'style' | 'banner' | 'blend';
+type Section =
+	| 'palette'
+	| 'crop'
+	| 'style'
+	| 'visualization'
+	| 'banner'
+	| 'blend';
 type Status = {
 	saving: boolean;
 	message: string | null;
@@ -28,6 +38,7 @@ export type AppearanceSettingsState = {
 	paletteDraft: PaletteDraft;
 	cropDraft: BannerCrop | null;
 	styleDraft: DeckTopStyle | null;
+	visualizationDraft: BoardVisualizationId | null;
 	blendDraft: BannerBlendConfig | null;
 	status: Record<Section, Status>;
 };
@@ -45,11 +56,13 @@ function initialState(): AppearanceSettingsState {
 		paletteDraft: null,
 		cropDraft: null,
 		styleDraft: null,
+		visualizationDraft: null,
 		blendDraft: null,
 		status: {
 			palette: emptyStatus(),
 			crop: emptyStatus(),
 			style: emptyStatus(),
+			visualization: emptyStatus(),
 			banner: emptyStatus(),
 			blend: emptyStatus()
 		}
@@ -61,10 +74,7 @@ export const savePalette = createAsyncThunk(
 	async (args: { deckId: string; palette: CardPalette | null }, context) => {
 		const { deckId, palette } = args;
 		const { dispatch } = context;
-		await withMinimumStatusDuration(async () => {
-			await fetchAPISetDeckPalette(deckId, palette);
-			await dispatch(loadDeck(deckId)).unwrap();
-		});
+		await fetchAPISetDeckPalette(deckId, palette);
 	}
 );
 
@@ -76,27 +86,24 @@ export const saveCrop = createAsyncThunk(
 	) => {
 		const { deckId, crop, config } = args;
 		const { dispatch } = context;
-		await withMinimumStatusDuration(async () => {
-			await fetchAPISetBannerCrop(deckId, crop);
-			const { data: deck } = await dispatch(loadDeck(deckId)).unwrap();
-			// Re-render the moved art with the blend and subject settings already in place.
-			if (deck.icon)
-				await generateAndSaveBannerBlend(
-					deckId,
-					deck,
-					config,
-					(message, progress) =>
-						dispatch(
-							appearanceActions.renderProgress({
-								deckId,
-								section: 'crop',
-								message,
-								progress
-							})
-						)
-				);
-			await dispatch(loadDeck(deckId)).unwrap();
-		});
+		await fetchAPISetBannerCrop(deckId, crop);
+		const { data: deck } = await dispatch(loadDeck(deckId)).unwrap();
+		// Re-render the moved art with the blend and subject settings already in place.
+		if (deck.icon)
+			await generateAndSaveBannerBlend(
+				deckId,
+				deck,
+				config,
+				(message, progress) =>
+					dispatch(
+						appearanceActions.renderProgress({
+							deckId,
+							section: 'crop',
+							message,
+							progress
+						})
+					)
+			);
 	}
 );
 
@@ -120,7 +127,6 @@ export const saveBlend = createAsyncThunk(
 					})
 				)
 		);
-		await dispatch(loadDeck(deckId)).unwrap();
 	}
 );
 
@@ -129,10 +135,15 @@ export const saveStyle = createAsyncThunk(
 	async (args: { deckId: string; style: DeckTopStyle }, context) => {
 		const { deckId, style } = args;
 		const { dispatch } = context;
-		await withMinimumStatusDuration(async () => {
-			await fetchAPISetTopStyle(deckId, style);
-			await dispatch(loadDeck(deckId)).unwrap();
-		});
+		await fetchAPISetTopStyle(deckId, style);
+	}
+);
+
+export const saveVisualization = createAsyncThunk(
+	'appearanceSettings/saveVisualization',
+	async (args: { deckId: string; visualization: BoardVisualizationId }) => {
+		const { deckId, visualization } = args;
+		await fetchAPISetBoardVisualization(deckId, visualization);
 	}
 );
 
@@ -173,6 +184,13 @@ export const appearanceSettingsSlice = createSlice({
 		changeStyle: function (state, action: PayloadAction<DeckTopStyle>) {
 			state.styleDraft = action.payload;
 			state.status.style = emptyStatus();
+		},
+		changeVisualization: function (
+			state,
+			action: PayloadAction<BoardVisualizationId>
+		) {
+			state.visualizationDraft = action.payload;
+			state.status.visualization = emptyStatus();
 		},
 		changeBlend: function (
 			state,
@@ -332,6 +350,31 @@ export const appearanceSettingsSlice = createSlice({
 					message: null,
 					error: 'Unable to save the top style. Your selection is still here; please try again.'
 				};
+			})
+			.addCase(saveVisualization.pending, (state, action) => {
+				if (state.deckId === action.meta.arg.deckId)
+					state.status.visualization = {
+						saving: true,
+						message: null,
+						error: null
+					};
+			})
+			.addCase(saveVisualization.fulfilled, (state, action) => {
+				if (state.deckId !== action.meta.arg.deckId) return;
+				state.visualizationDraft = null;
+				state.status.visualization = {
+					saving: false,
+					message: 'Card view saved.',
+					error: null
+				};
+			})
+			.addCase(saveVisualization.rejected, (state, action) => {
+				if (state.deckId !== action.meta.arg.deckId) return;
+				state.status.visualization = {
+					saving: false,
+					message: null,
+					error: 'Unable to save the card view. Your selection is still here; please try again.'
+				};
 			});
 	}
 });
@@ -375,6 +418,8 @@ export function appearanceView(
 	const palette = selectedPalette ?? generatedPalette ?? DEFAULT_CARD_PALETTE;
 	const crop = active.cropDraft ?? deck?.bannerCrop ?? DEFAULT_BANNER_CROP;
 	const style = active.styleDraft ?? deck?.topStyle ?? 'card';
+	const savedVisualization = boardVisualizationOf(deck?.boardVisualization).id;
+	const visualization = active.visualizationDraft ?? savedVisualization;
 	const savedBlend = normalizeBannerBlendConfig(deck?.bannerBlend?.config);
 	const blend = active.blendDraft ?? savedBlend;
 	return {
@@ -397,6 +442,8 @@ export function appearanceView(
 			!sameCrop(crop, deck.bannerCrop ?? DEFAULT_BANNER_CROP),
 		style,
 		styleChanged: !!deck && style !== (deck.topStyle ?? 'card'),
+		visualization,
+		visualizationChanged: !!deck && visualization !== savedVisualization,
 		status: active.status
 	};
 }

@@ -4,6 +4,7 @@ import type { AuthSession } from '@torimtg/core';
 import type { AuthCredentials } from '../types';
 import type { AuthControl, Dataset, Intent, JournalEntry, Lease, LocalBlob, LocalCommit, LocalNotice, LocalStore, ReplicaMeta, ResourceJob } from '../types';
 import { IndexedDbDriver, TABLES } from './indexeddb-driver';
+import { randomUUID, sha256Hex } from './web-crypto';
 import type { Tables } from './indexeddb-driver';
 
 type StoredReplica = Replica & { partition: string };
@@ -18,15 +19,14 @@ export async function hash(value: unknown): Promise<string> {
 }
 
 async function bytesHash(bytes: BufferSource): Promise<string> {
-    const result = await crypto.subtle.digest('SHA-256', bytes);
-    return Array.from(new Uint8Array(result), (byte) => byte.toString(16).padStart(2, '0')).join('');
+    return sha256Hex(bytes);
 }
 
 export function queryKey(query: ResourceQuery): string { return canonicalJson(query); }
 export function outstanding(intent: Intent): boolean { return !['accepted', 'discarded'].includes(intent.status); }
 
 function newMeta(partition: string): ReplicaMeta {
-    return { partition, revision: 0, sequence: 0, clientId: crypto.randomUUID(), cursor: 0, bootstrap: { complete: false, after: '', watermark: 0 }, validatedAt: null, refresh: 'idle', error: null, nextAttemptAt: 0, lease: null, syncRequested: true };
+    return { partition, revision: 0, sequence: 0, clientId: randomUUID(), cursor: 0, bootstrap: { complete: false, after: '', watermark: 0 }, validatedAt: null, refresh: 'idle', error: null, nextAttemptAt: 0, lease: null, syncRequested: true };
 }
 
 async function authValue(tables: Tables): Promise<AuthControl> {
@@ -69,6 +69,20 @@ async function project(tables: Tables, partition: string): Promise<void> {
     }
     for (const old of await tables.all<StoredView>('views', partition)) if (!states.has(old.id)) await tables.remove('views', [partition, old.id]);
     for (const state of states.values()) await tables.put('views', { partition, id: state.id, state });
+}
+
+/** One aggregate's local state just before `intent`: its base plus the earlier outstanding edits. */
+async function projectedBefore(tables: Tables, partition: string, intent: Intent): Promise<AggregateState | null> {
+    const id = intent.command.id;
+    let state = (await tables.get<StoredReplica>('base', [partition, id]))?.state || null;
+    const earlier = (await tables.all<Intent>('outbox', partition)).filter((item) => outstanding(item) && item.sequence < intent.sequence).sort((a, b) => a.sequence - b.sequence);
+    for (const item of earlier) {
+        try {
+            if (item.command.id === id) state = preview(state, item.command, item.createdAt);
+            else if (item.command.type === 'work.complete' && item.command.deckId === id && state) state = preview(state, { type: 'deck.cards', id, edits: item.command.edits }, item.createdAt);
+        } catch { /* Skipped the same way project() skips it. */ }
+    }
+    return state;
 }
 
 /** Retention follows verified event coverage and dependencies, never a blind clear(). */
@@ -122,7 +136,7 @@ export class IndexedDbLocalStore implements LocalStore {
     async startAuth(type: 'session' | 'login' | 'setup' | 'logout'): Promise<string> {
         return this.driver.transaction(['control'], 'readwrite', async (tables) => {
             const auth = await authValue(tables);
-            const id = crypto.randomUUID();
+            const id = randomUUID();
             if (type === 'logout') { auth.locked = true; auth.pendingLogout = true; auth.generation++; }
             if (type === 'login' || type === 'setup') { auth.locked = true; auth.generation++; }
             auth.job = { id, type, status: 'queued' }; auth.error = null;
@@ -162,7 +176,7 @@ export class IndexedDbLocalStore implements LocalStore {
             const auth = await authValue(tables);
             const credentials = (await tables.get<{ value: AuthCredentials }>('control', 'credentials'))?.value;
             if (!credentials || auth.locked || credentials.generation !== auth.generation) throw new Error('Sign in to renew your session.');
-            credentials.refreshRequestId ||= crypto.randomUUID();
+            credentials.refreshRequestId ||= randomUUID();
             await tables.put('control', { key: 'credentials', value: credentials });
             return credentials;
         });
@@ -215,7 +229,19 @@ export class IndexedDbLocalStore implements LocalStore {
         if (command.type.startsWith('profile.') && command.id !== `profile_${scope.accountId}`) throw new Error('Cannot edit another account.');
         const base = await tables.get<StoredReplica>('base', [scope.partition, command.id]);
         const previous = (await tables.all<Intent>('outbox', scope.partition)).filter((intent) => outstanding(intent) && intent.command.id === command.id).sort((a, b) => b.sequence - a.sequence)[0];
-        const intent: Intent = { partition: scope.partition, operationId: crypto.randomUUID(), sequence: meta.sequence + 1, command, originalBaseRevision: base?.sequence || 0, dependsOn: previous?.operationId || null, createdAt: new Date().toISOString(), status: 'queued', prepared: null, outcome: null, attempts: 0, nextAttemptAt: 0, error: null };
+        // Card edits made while the deck's last edit still waits to be sent join it, so a burst
+        // of steps travels as one request. Edits apply in order, so joining them keeps the result.
+        // A scan completed into the deck since then keeps the edits apart, so they stay in order.
+        const overtaken = previous && allIntents.some((intent) => outstanding(intent) && intent.sequence > previous.sequence && intent.command.type === 'work.complete' && intent.command.deckId === command.id);
+        if (command.type === 'deck.cards' && previous?.command.type === 'deck.cards' && previous.status === 'queued' && !previous.prepared && !overtaken && previous.command.edits.length + command.edits.length <= 2000) {
+            const joined: DomainCommand = { ...previous.command, edits: [...previous.command.edits, ...command.edits] };
+            const state = await projectedBefore(tables, scope.partition, previous);
+            previous.command = joined;
+            await journal(tables, meta, previous.operationId, { type: 'IntentAmended', command: joined, events: decide(state, joined) });
+            await tables.put('outbox', previous);
+            return previous;
+        }
+        const intent: Intent = { partition: scope.partition, operationId: randomUUID(), sequence: meta.sequence + 1, command, originalBaseRevision: base?.sequence || 0, dependsOn: previous?.operationId || null, createdAt: new Date().toISOString(), status: 'queued', prepared: null, outcome: null, attempts: 0, nextAttemptAt: 0, error: null };
         if (deckDependsOn) intent.deckDependsOn = deckDependsOn;
         await journal(tables, meta, intent.operationId, { type: 'IntentRecorded', intent: structuredClone(intent), events });
         await tables.put('outbox', intent);
@@ -445,6 +471,7 @@ export class IndexedDbLocalStore implements LocalStore {
                 if (fact.type === 'IntentRecorded') intents.set(entry.operationId, structuredClone(fact.intent));
                 const intent = intents.get(entry.operationId);
                 if (!intent) continue;
+                if (fact.type === 'IntentAmended') intent.command = fact.command;
                 if (fact.type === 'RequestPrepared') intent.prepared = fact.request;
                 if (fact.type === 'IntentSettled') { intent.status = fact.outcome.status; intent.outcome = fact.outcome; intent.error = fact.outcome.message || null; }
                 if (fact.type === 'IntentDiscarded') intent.status = 'discarded';

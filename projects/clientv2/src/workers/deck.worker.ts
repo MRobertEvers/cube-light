@@ -32,9 +32,9 @@ export const handleDeckMessage = createHandler((builder) => {
 		return result;
 	});
 	builder.addCase(DeckWorkerMessages.addCard, async (message) => {
-		const { deckId, cardName, count } = message.payload;
+		const { deckId, cardName, counts } = message.payload;
 		try {
-			return await fetchAddCardCommand(deckId, cardName, count);
+			return await fetchAddCardCommand(deckId, cardName, counts);
 		} catch {
 			return false;
 		}

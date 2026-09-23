@@ -99,6 +99,61 @@ HOST=127.0.0.1 PORT=3000 node deploy/serve-client.mjs
 
 Use a reverse proxy for HTTPS when serving other devices. This server supports SPA routes, binary model files, MIME types and byte ranges, and returns a genuine 404 for missing model assets.
 
+### Serving the LAN over HTTPS with a publicly trusted certificate
+
+A phone cannot register a service worker, and therefore cannot start the app
+offline, unless the origin is a secure context. `http://host.local` is not one.
+A privately signed certificate would work only on devices where that CA has been
+installed by hand. A certificate from a public CA avoids per-device setup
+entirely: every phone and laptop already trusts it.
+
+The name does not have to be reachable from the internet. The DNS-01 challenge
+proves control through a TXT record, so the A record may point at a private
+address and the traffic never leaves the network:
+
+```
+dev.<domain>  A  192.168.1.148   # the machine running the dev server
+```
+
+`tools/acme.mjs` is a small RFC 8555 client written against Node's standard
+library; key and CSR generation use the system `openssl`. Nothing is installed.
+Configure `projects/clientv2/certs/acme.config.json`:
+
+```json
+{ "email": "you@example.com", "domain": "dev.example.com", "dns": "manual" }
+```
+
+Then:
+
+```sh
+npm --prefix projects/clientv2 run dev:cert:le               # staging, safe to repeat
+npm --prefix projects/clientv2 run dev:cert:le -- --production
+```
+
+It prints the TXT record to add, waits for that record to appear on the zone's
+own nameservers, completes the challenge, and writes `certs/dev.pem` and
+`certs/dev-key.pem`. `npm run dev` picks those up and serves HTTPS. Set
+`CLIENT_ORIGINS` on the API to the resulting origin. For the production static
+server, pass the same files:
+
+```sh
+HOST=0.0.0.0 PORT=443 REDIRECT_HTTP_PORT=80 \
+  TLS_CERT=certs/dev.pem TLS_KEY=certs/dev-key.pem \
+  node deploy/serve-client.mjs
+```
+
+Certificates last 90 days. With `"dns": "manual"` a renewal means running the
+command again and updating one TXT record. Set `"dns": "godaddy"` with
+`GODADDY_KEY` and `GODADDY_SECRET` to have it write the record itself, which
+makes renewal unattended; GoDaddy restricts its API to qualifying accounts and
+the tool falls back to the manual prompt when it is refused. Delegating only
+`_acme-challenge.<domain>` by CNAME to a zone with a usable API is the other way
+to automate renewal without moving a zone that carries live mail.
+
+Staging certificates are not trusted by browsers; they exist to prove the flow
+works before spending a production rate limit.
+
+
 On macOS, `node scripts/deploy-local.mjs` verifies the models, snapshots the built client into `~/Library/Application Support/CubeLight/releases/`, and installs the `local.cube-light.client` user LaunchAgent on port 3000. It replaces only a listener belonging to this checkout and refuses to stop unrelated processes. Set `CUBE_NODE_EXECUTABLE` to a stable Node 24+ executable when the invoking Node is temporary. Logs are in `~/Library/Logs/CubeLight/`. The deployed artifact is separate from the working checkout. Before switching releases, deployment copies each retained release's `dist/assets` into the shared `~/Library/Application Support/CubeLight/client-assets/` directory. The static server uses `CLIENT_ASSET_ROOT` as a fallback only for `/assets/` requests. This preserves content-hashed lazy modules, workers and WASM for already-open tabs; never delete these shared assets merely because a new release is deployed. Identical files are deduplicated and conflicting contents at an existing immutable URL abort deployment. HTML and `/ocr/` model files are not retained by this mechanism, so removed models stay unavailable. On this workstation, the service uses an official, checksum-verified Node 24.5.0 installation under the application-support directory.
 
 The pre-cleanup snapshot was retained after removing standalone retired model files. Historical Git history and measured comparison reports remain. Current full snapshots archive symlinks as symlinks; machine-local external cache/database targets are not silently dereferenced. The pre-cleanup archive preserves the original MTGJSON database and experiment data. Provision those separately when restoring onto another machine.

@@ -1,9 +1,14 @@
 import { fetchAPINameLookup } from '../api/fetch-api-get-card-names-lookup';
 
 import { fetchAPIAddCard } from '../api/fetch-api-add-card';
-import { fetchAPIDeck, FetchAPIDeckResponse } from '../api/fetch-api-deck';
+import {
+	DeckBoard,
+	fetchAPIDeck,
+	FetchAPIDeckCardResponse,
+	FetchAPIDeckResponse
+} from '../api/fetch-api-deck';
 import { fetchAPISetCard, SetCardAction } from '../api/fetch-api-set-card';
-import { GetDeckResponse } from './deck.worker.messages';
+import { DeckMappedData, GetDeckResponse } from './deck.worker.messages';
 import type { NameIndexSearchCursor } from '../utils/lookup-tables/name-index-wasm';
 
 let suggestionCursor: NameIndexSearchCursor | undefined;
@@ -28,11 +33,11 @@ export async function fetchSortedSuggestions(
 export async function fetchAddCardCommand(
 	deckId: string,
 	cardName: string,
-	countArg?: number
+	countsArg?: Partial<Record<DeckBoard, number>>
 ): Promise<boolean> {
-	const count = countArg === undefined ? 1 : countArg;
+	const counts = countsArg === undefined ? { main: 1 } : countsArg;
 
-	return fetchAPIAddCard(deckId, cardName, count);
+	return fetchAPIAddCard(deckId, cardName, counts);
 }
 
 export async function fetchSetCardCommand(
@@ -52,9 +57,22 @@ export async function fetchSortedDeck(
 }
 
 export function groupDeck(data: FetchAPIDeckResponse): GetDeckResponse {
-	const { cards } = data;
+	const { cards, sideboard = [] } = data;
+	const main = groupBoardCards(cards);
 
-	const deck: GetDeckResponse['deck'] = {
+	return {
+		...data,
+		sideboard,
+		deck: main,
+		boards: { main, side: groupBoardCards(sideboard) }
+	};
+}
+
+/** Groups one board's entries by card type, counting every copy. */
+export function groupBoardCards(
+	cards: readonly FetchAPIDeckCardResponse[]
+): DeckMappedData {
+	const deck: DeckMappedData = {
 		count: 0,
 		cardCategories: {}
 	};
@@ -77,8 +95,5 @@ export function groupDeck(data: FetchAPIDeckResponse): GetDeckResponse {
 		deck.count += count;
 	}
 
-	return {
-		...data,
-		deck: deck
-	};
+	return deck;
 }

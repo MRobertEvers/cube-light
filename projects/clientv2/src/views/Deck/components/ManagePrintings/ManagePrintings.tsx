@@ -3,14 +3,33 @@ import {
 	CardPrinting,
 	fetchAPICardPrintings
 } from '../../../../api/fetch-api-card-printings';
-import type { DeckCardsEdit } from '../../../../api/fetch-api-edit-deck-card';
-import type { DeckCardGroup } from '../../../../utils/group-deck-cards';
+import type {
+	DeckBoard,
+	FetchAPIDeckCardResponse
+} from '../../../../api/fetch-api-deck';
+import type { DeckCardEditTarget } from '../../../../utils/group-deck-cards';
+import {
+	applySteps,
+	countsIn,
+	MAX_COPIES,
+	printingCounts,
+	type BoardCounts,
+	type DeckCardStep
+} from '../../../../utils/deck-card-steps';
+import {
+	DECK_BOARD_LABELS,
+	DECK_BOARD_ORDER,
+	otherBoard
+} from '../../../../utils/deck-boards';
 
 import { HeaderBackButton } from 'src/components/BackLink/BackLink';
 import { HeaderBackSlot } from 'src/components/Header/HeaderBackSlot';
 import styles from './manage-printings.module.css';
 
-const MAX_COPIES = 999;
+const SHORT_BOARD_LABELS: Record<DeckBoard, string> = {
+	main: 'Main',
+	side: 'Side'
+};
 
 type PrintingInfo = {
 	name: string;
@@ -20,40 +39,80 @@ type PrintingInfo = {
 	image: string | undefined;
 };
 
+function totalOf(counts: BoardCounts) {
+	return counts.main + counts.side;
+}
+
+function deckCardInfo(card: FetchAPIDeckCardResponse): PrintingInfo {
+	return {
+		name: card.name,
+		uuid: card.uuid,
+		setCode: card.setCode,
+		setName: null,
+		image: card.images?.normal ?? card.image
+	};
+}
+
+function copies(count: number) {
+	return `${count} ${count === 1 ? 'copy' : 'copies'}`;
+}
+
 export type ManagePrintingsProps = {
-	group: DeckCardGroup;
-	onSave: (edit: DeckCardsEdit) => Promise<void>;
-	onCancel: () => void;
+	/** The card as the editor opened on it, which fixes its rows' order and labels. */
+	target: DeckCardEditTarget;
+	/** The deck's printings of the card now, in any board. */
+	cards: readonly FetchAPIDeckCardResponse[];
+	/** Saves steps at once; settles when the deck in the store includes them. */
+	onSteps: (steps: DeckCardStep[]) => Promise<void>;
+	onClose: () => void;
 };
 
+/** Steps taken whose save hasn't settled, shown on top of the deck until it has. */
+type PendingSteps = { id: number; steps: DeckCardStep[] };
+
+let nextPendingId = 0;
+
 /**
- * Edits how many copies of each printing of one card a deck holds: steppers for the
- * printings in the deck, a way to move a whole row to another printing, and every
- * printing of the card beside them, where a click adds a copy. Phones show one side
- * at a time.
+ * Edits how many copies of each printing of one card the deck holds in each board:
+ * main and side steppers per printing, arrows that move a copy between the boards,
+ * a way to move a whole row to another printing, and every printing of the card
+ * beside them, where a click adds a copy to the chosen board. Every step saves as
+ * it is taken. Phones show one side at a time.
  */
 export function ManagePrintings(props: ManagePrintingsProps) {
-	const { group, onSave, onCancel } = props;
-	const initial = useMemo(
-		() => new Map(group.printings.map((card) => [card.uuid, card.count])),
-		[group]
+	const { target, cards, onSteps, onClose } = props;
+	const initial = useMemo(() => printingCounts(target.printings), [target]);
+	const saved = useMemo(() => printingCounts(cards), [cards]);
+	const [pending, setPending] = useState<PendingSteps[]>([]);
+	const counts = useMemo(
+		() =>
+			applySteps(
+				saved,
+				pending.flatMap((entry) => entry.steps)
+			),
+		[saved, pending]
 	);
-	const [counts, setCounts] = useState<ReadonlyMap<string, number>>(initial);
-	// Printings listed on the deck side, in the order they joined it.
+	// Printings listed on the deck side, the opened board's first, in the order they joined.
 	const [order, setOrder] = useState(() =>
-		group.printings.map((card) => card.uuid)
+		[...initial.keys()].sort(
+			(a, b) =>
+				Number(initial.get(b)![target.board] > 0) -
+				Number(initial.get(a)![target.board] > 0)
+		)
 	);
+	// The board a click in the printings grid adds to.
+	const [addBoard, setAddBoard] = useState<DeckBoard>(target.board);
 	const [printings, setPrintings] = useState<CardPrinting[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [query, setQuery] = useState('');
 	const [view, setView] = useState<'deck' | 'all'>('deck');
 	const [replacingUuid, setReplacingUuid] = useState<string | null>(null);
-	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
+	const saving = pending.length > 0;
 	useEffect(() => {
 		const controller = new AbortController();
-		void fetchAPICardPrintings(group.name, controller.signal)
+		void fetchAPICardPrintings(target.name, controller.signal)
 			.then(setPrintings)
 			.catch((error: unknown) => {
 				if (!(
@@ -69,36 +128,28 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 		return function () {
 			return controller.abort();
 		};
-	}, [group.name]);
+	}, [target.name]);
 
 	useEffect(() => {
 		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === 'Escape' && !saving) onCancel();
+			if (event.key === 'Escape') onClose();
 		}
 		window.addEventListener('keydown', closeOnEscape);
 		return function () {
 			return window.removeEventListener('keydown', closeOnEscape);
 		};
-	}, [onCancel, saving]);
+	}, [onClose]);
 
 	// Keep rows already in the deck on their opening snapshot. The printings request
 	// returns richer labels and images, but must not rewrite text that is already shown.
 	const deckInfo = useMemo(
 		() =>
 			new Map(
-				group.printings.map((card) => [
-					card.uuid,
-					{
-						name: card.name,
-						uuid: card.uuid,
-						setCode: card.setCode,
-						setName: null,
-						image: card.images?.normal ?? card.image
-					} satisfies PrintingInfo
-				])
+				target.printings.map((card) => [card.uuid, deckCardInfo(card)])
 			),
-		[group.printings]
+		[target.printings]
 	);
+	// Printings that join the deck after it opens keep the label the printings grid gave them.
 	const info = useMemo(() => {
 		const byUuid = new Map<string, PrintingInfo>();
 		for (const printing of printings)
@@ -111,8 +162,11 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 			});
 		for (const [uuid, printing] of deckInfo)
 			if (!byUuid.has(uuid)) byUuid.set(uuid, printing);
+		for (const card of cards)
+			if (!byUuid.has(card.uuid))
+				byUuid.set(card.uuid, deckCardInfo(card));
 		return byUuid;
-	}, [printings, deckInfo]);
+	}, [printings, deckInfo, cards]);
 
 	// Printings without an image can't be told apart, unless the deck already has them.
 	// The deck's own printings come first, since a set can have several of the card.
@@ -134,26 +188,76 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 			);
 	}, [printings, query, initial]);
 
-	function countOf(uuid: string) {
-		return counts.get(uuid) ?? 0;
+	function countsOf(uuid: string): BoardCounts {
+		return countsIn(counts, uuid);
 	}
-	const rows = order.filter((uuid) => countOf(uuid) > 0);
-	const total = rows.reduce((sum, uuid) => sum + countOf(uuid), 0);
-	const edit: DeckCardsEdit = {
-		remove: [...initial.keys()].filter((uuid) => countOf(uuid) === 0),
-		upsert: rows
-			.filter((uuid) => countOf(uuid) !== initial.get(uuid))
-			.map((uuid) => ({ uuid, count: countOf(uuid) }))
+	// Printings that joined elsewhere, such as on another device, follow the opening ones.
+	const rows = [
+		...order,
+		...[...counts.keys()].filter((uuid) => !order.includes(uuid))
+	].filter((uuid) => totalOf(countsOf(uuid)) > 0);
+	const boardTotals: BoardCounts = {
+		main: rows.reduce((sum, uuid) => sum + countsOf(uuid).main, 0),
+		side: rows.reduce((sum, uuid) => sum + countsOf(uuid).side, 0)
 	};
-	const dirty = edit.remove.length > 0 || edit.upsert.length > 0;
 
-	function setCount(uuid: string, count: number) {
-		const next = Math.max(0, Math.min(MAX_COPIES, count));
-		setCounts((previous) => new Map(previous).set(uuid, next));
-		if (next > 0)
-			setOrder((previous) =>
-				previous.includes(uuid) ? previous : [...previous, uuid]
+	/** Shows `steps` at once and saves them; they stay shown until the store has them. */
+	function take(steps: DeckCardStep[]) {
+		if (steps.length === 0) return;
+		const entry = { id: nextPendingId++, steps };
+		setPending((previous) => [...previous, entry]);
+		setSaveError(null);
+		for (const step of steps) {
+			const joined =
+				step.type === 'adjust' && step.delta > 0
+					? step.uuid
+					: step.type === 'replace'
+						? step.to
+						: null;
+			if (joined)
+				setOrder((previous) => {
+					if (previous.includes(joined)) return previous;
+					if (step.type === 'replace')
+						return previous.map((uuid) =>
+							uuid === step.from ? joined : uuid
+						);
+					return [...previous, joined];
+				});
+		}
+		onSteps(steps)
+			.catch(() =>
+				setSaveError(
+					'That change could not be saved. Please try again.'
+				)
+			)
+			.finally(() =>
+				setPending((previous) =>
+					previous.filter((item) => item !== entry)
+				)
 			);
+	}
+
+	function setCount(uuid: string, board: DeckBoard, count: number) {
+		const delta = count - countsOf(uuid)[board];
+		if (delta !== 0) take([{ type: 'adjust', uuid, board, delta }]);
+	}
+
+	/** Moves `count` copies of a printing out of `from` into the other board. */
+	function moveCopies(uuid: string, from: DeckBoard, count: number) {
+		take([{ type: 'move', uuid, from, count }]);
+	}
+
+	function moveAll(from: DeckBoard) {
+		take(
+			rows
+				.filter((uuid) => countsOf(uuid)[from] > 0)
+				.map((uuid) => ({
+					type: 'move' as const,
+					uuid,
+					from,
+					count: MAX_COPIES
+				}))
+		);
 	}
 
 	function startReplacing(uuid: string) {
@@ -166,47 +270,28 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 		setView('deck');
 	}
 
-	function replaceAllCopies(sourceUuid: string, targetUuid: string) {
-		const sourceCount = countOf(sourceUuid);
-		const targetCount = countOf(targetUuid);
-		if (
-			sourceUuid === targetUuid ||
-			sourceCount === 0 ||
-			targetCount + sourceCount > MAX_COPIES
-		)
-			return;
+	function canReplace(sourceUuid: string, targetUuid: string) {
+		const source = countsOf(sourceUuid);
+		const destination = countsOf(targetUuid);
+		return (
+			sourceUuid !== targetUuid &&
+			totalOf(source) > 0 &&
+			DECK_BOARD_ORDER.every(
+				(board) => source[board] + destination[board] <= MAX_COPIES
+			)
+		);
+	}
 
-		setCounts((previous) => {
-			const next = new Map(previous);
-			next.set(sourceUuid, 0);
-			next.set(targetUuid, targetCount + sourceCount);
-			return next;
-		});
-		setOrder((previous) => {
-			if (previous.includes(targetUuid))
-				return previous.filter((uuid) => uuid !== sourceUuid);
-			return previous.map((uuid) =>
-				uuid === sourceUuid ? targetUuid : uuid
-			);
-		});
+	/** Moves every copy of one printing, in both boards, to another printing. */
+	function replaceAllCopies(sourceUuid: string, targetUuid: string) {
+		if (!canReplace(sourceUuid, targetUuid)) return;
+		take([{ type: 'replace', from: sourceUuid, to: targetUuid }]);
 		stopChoosingPrinting();
 	}
 
-	async function save() {
-		if (!dirty || saving) return;
-		setSaving(true);
-		setSaveError(null);
-		try {
-			await onSave(edit);
-		} catch {
-			setSaveError('Unable to save these printings. Please try again.');
-			setSaving(false);
-		}
-	}
-
-	const summary = `${total} ${total === 1 ? 'copy' : 'copies'} across ${rows.length} ${rows.length === 1 ? 'printing' : 'printings'}`;
+	const summary = `${boardTotals.main} main · ${boardTotals.side} side`;
 	const replacing = replacingUuid ? info.get(replacingUuid) : undefined;
-	const replacingCount = replacingUuid ? countOf(replacingUuid) : 0;
+	const replacingCount = replacingUuid ? totalOf(countsOf(replacingUuid)) : 0;
 	const visibleChoices = replacingUuid
 		? choices.filter((choice) => choice.uuid !== replacingUuid)
 		: choices;
@@ -229,35 +314,27 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 						label={
 							view === 'all'
 								? 'Back to the printings in this deck'
-								: 'Close printing editor'
+								: 'Close card editor'
 						}
 						onClick={
-							view === 'all'
-								? stopChoosingPrinting
-								: onCancel
+							view === 'all' ? stopChoosingPrinting : onClose
 						}
 					/>
 				</HeaderBackSlot>
 				<div className={styles['title']}>
-					<h2 id="manage-printings-title">{group.name}</h2>
-					<p aria-live="polite">{summary}</p>
+					<h2 id="manage-printings-title">{target.name}</h2>
+					<p aria-live="polite">
+						{summary}
+						{saving ? ' · Saving…' : ''}
+					</p>
 				</div>
 				<div className={styles['header-actions']}>
 					<button
 						type="button"
-						className={styles['cancel']}
-						onClick={onCancel}
-						disabled={saving}
+						className={styles['done']}
+						onClick={onClose}
 					>
-						Cancel
-					</button>
-					<button
-						type="button"
-						className={styles['save']}
-						onClick={() => void save()}
-						disabled={!dirty || saving}
-					>
-						{saving ? 'Saving…' : 'Save'}
+						Done
 					</button>
 				</div>
 			</header>
@@ -281,7 +358,7 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 						{rows.map((uuid) => {
 							const printing =
 								deckInfo.get(uuid) ?? info.get(uuid)!;
-							const count = countOf(uuid);
+							const rowCounts = countsOf(uuid);
 							const setName = setNameOf(printing);
 							const label = `${printing.name}, ${setName}`;
 							return (
@@ -298,82 +375,79 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 										alt=""
 										loading="lazy"
 									/>
-									<div
-										className={styles['deck-row-text']}
-									>
+									<div className={styles['deck-row-text']}>
 										<span
-											className={
-												styles['deck-row-name']
-											}
+											className={styles['deck-row-name']}
 										>
 											{printing.name}
 										</span>
-										<span
-											className={styles['set-code']}
-										>
+										<span className={styles['set-code']}>
 											{setName}
 										</span>
 									</div>
 									<button
 										type="button"
 										className={styles['change-printing']}
-										aria-label={`Change all ${count} ${label} ${count === 1 ? 'copy' : 'copies'} to another printing`}
+										aria-label={`Change all ${copies(totalOf(rowCounts))} of ${label} to another printing`}
 										title="Change all copies to another printing"
 										disabled={
-											saving || loading || !!loadError
+											loading || !!loadError
 										}
 										onClick={() => startReplacing(uuid)}
 									>
 										<ReplaceIcon />
 									</button>
-									<div className={styles['stepper']}>
-										{count > 1 ? (
+									<div className={styles['board-counts']}>
+										<BoardStepper
+											board="main"
+											label={label}
+											count={rowCounts.main}
+											onChange={(count) =>
+												setCount(uuid, 'main', count)
+											}
+										/>
+										<div
+											className={styles['move-copy']}
+											role="group"
+											aria-label={`Move ${label} copies between boards`}
+										>
 											<button
 												type="button"
-												aria-label={`Remove a ${label} copy`}
-												disabled={saving}
+												aria-label={`Move a ${label} copy to the sideboard`}
+												title="Move a copy to the sideboard"
+												disabled={
+													rowCounts.main === 0 ||
+													rowCounts.side >= MAX_COPIES
+												}
 												onClick={() =>
-													setCount(
-														uuid,
-														count - 1
-													)
+													moveCopies(uuid, 'main', 1)
 												}
 											>
-												<MinusIcon />
+												<ArrowIcon direction="right" />
 											</button>
-										) : (
 											<button
 												type="button"
-												className={styles['remove']}
-												aria-label={`Remove the ${label} printing`}
-												disabled={saving}
+												aria-label={`Move a ${label} copy to the main board`}
+												title="Move a copy to the main board"
+												disabled={
+													rowCounts.side === 0 ||
+													rowCounts.main >= MAX_COPIES
+												}
 												onClick={() =>
-													setCount(uuid, 0)
+													moveCopies(uuid, 'side', 1)
 												}
 											>
-												<TrashIcon />
+												<ArrowIcon direction="left" />
 											</button>
-										)}
-										<span
-											className={
-												styles['stepper-count']
+										</div>
+										<BoardStepper
+											board="side"
+											label={label}
+											count={rowCounts.side}
+											onChange={(count) =>
+												setCount(uuid, 'side', count)
 											}
-										>
-											{count}
-										</span>
-										<button
-											type="button"
-											aria-label={`Add a ${label} copy`}
-											disabled={
-												saving ||
-												count >= MAX_COPIES
-											}
-											onClick={() =>
-												setCount(uuid, count + 1)
-											}
-										>
-											<PlusIcon />
-										</button>
+										/>
 									</div>
 								</li>
 							);
@@ -381,9 +455,24 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 					</ul>
 					{rows.length === 0 && (
 						<p className={styles['empty']}>
-							No copies left. Saving removes {group.name} from
-							the deck.
+							No copies left, so {target.name} is out of the deck.
+							Add a printing to put it back.
 						</p>
+					)}
+					{rows.length > 0 && (
+						<div className={styles['move-all']}>
+							{DECK_BOARD_ORDER.map((from) => (
+								<button
+									key={from}
+									type="button"
+									disabled={boardTotals[from] === 0}
+									aria-label={`Move every copy to the ${otherBoard(from) === 'side' ? 'sideboard' : 'main board'}`}
+									onClick={() => moveAll(from)}
+								>
+									{`All to ${otherBoard(from) === 'side' ? 'sideboard' : 'main board'}`}
+								</button>
+							))}
+						</div>
 					)}
 					<button
 						type="button"
@@ -404,10 +493,14 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 							<span>Browse available sets</span>
 						</span>
 					</button>
-					<div className={styles['total']}>
-						<span>Total in deck</span>
-						<strong>{total}</strong>
-					</div>
+					<dl className={styles['total']}>
+						{DECK_BOARD_ORDER.map((board) => (
+							<div key={board}>
+								<dt>{DECK_BOARD_LABELS[board]}</dt>
+								<dd>{boardTotals[board]}</dd>
+							</div>
+						))}
+					</dl>
 				</section>
 				<section
 					className={`${styles['pane']} ${styles['all-pane']}`}
@@ -425,19 +518,36 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 							</h3>
 							<p>
 								{replacing
-									? `Choose a new printing for all ${replacingCount} ${replacingCount === 1 ? 'copy' : 'copies'} from ${setNameOf(replacing)}.`
-									: 'Choose a printing to add a copy.'}
+									? `Choose a new printing for all ${copies(replacingCount)} from ${setNameOf(replacing)}. Each board keeps its count.`
+									: `Choose a printing to add a copy to the ${addBoard === 'side' ? 'sideboard' : 'main board'}.`}
 							</p>
 						</div>
+						{!replacing && (
+							<div
+								className={styles['add-board']}
+								role="radiogroup"
+								aria-label="Add copies to"
+							>
+								{DECK_BOARD_ORDER.map((board) => (
+									<button
+										key={board}
+										type="button"
+										role="radio"
+										aria-checked={addBoard === board}
+										onClick={() => setAddBoard(board)}
+									>
+										{DECK_BOARD_LABELS[board]}
+									</button>
+								))}
+							</div>
+						)}
 						<input
 							className={styles['search']}
 							type="search"
 							placeholder="Search sets"
 							aria-label="Search printings by set name or code"
 							value={query}
-							onChange={(event) =>
-								setQuery(event.target.value)
-							}
+							onChange={(event) => setQuery(event.target.value)}
 						/>
 					</div>
 					<div className={styles['grid-scroll']}>
@@ -465,14 +575,27 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 						<ul className={styles['grid']}>
 							{visibleChoices.map((choice) => {
 								const printing = info.get(choice.uuid)!;
-								const count = countOf(choice.uuid);
+								const tileCounts = countsOf(choice.uuid);
+								const count = tileCounts[addBoard];
 								const setName = setNameOf(printing);
 								const label = `${printing.name}, ${setName}`;
+								const boardName =
+									addBoard === 'side'
+										? 'sideboard'
+										: 'main board';
+								const inDeck = DECK_BOARD_ORDER.filter(
+									(board) => tileCounts[board] > 0
+								)
+									.map(
+										(board) =>
+											`${tileCounts[board]} in ${board === 'side' ? 'sideboard' : 'main board'}`
+									)
+									.join(', ');
 								return (
 									<li
 										key={choice.uuid}
 										className={
-											count > 0
+											totalOf(tileCounts) > 0
 												? styles['in-deck']
 												: undefined
 										}
@@ -483,16 +606,16 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 											title={label}
 											aria-label={
 												replacing
-													? `Change all ${replacingCount} ${replacingCount === 1 ? 'copy' : 'copies'} to ${label}${count > 0 ? `, ${count} already in deck` : ''}`
-													: `Add a ${label} copy${count > 0 ? `, ${count} in deck` : ''}`
+													? `Change all ${copies(replacingCount)} to ${label}${inDeck ? `, ${inDeck} already` : ''}`
+													: `Add a ${label} copy to the ${boardName}${inDeck ? `, ${inDeck}` : ''}`
 											}
 											disabled={
-												saving ||
-												(replacing
-													? count + replacingCount >
-														MAX_COPIES
+												replacingUuid
+													? !canReplace(
+															replacingUuid,
+															choice.uuid
+														)
 													: count >= MAX_COPIES
-												)
 											}
 											onClick={() => {
 												if (replacingUuid)
@@ -503,44 +626,61 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 												else
 													setCount(
 														choice.uuid,
+														addBoard,
 														count + 1
 													);
 											}}
 										>
 											<span
-												className={
-													styles['tile-image']
-												}
+												className={styles['tile-image']}
 											>
 												<img
 													src={printing.image}
 													alt=""
 													loading="lazy"
 												/>
-												{count > 0 && (
+												{totalOf(tileCounts) > 0 && (
 													<span
 														className={
-															styles['badge']
+															styles['badges']
 														}
 														aria-hidden="true"
 													>
-														×{count}
+														{DECK_BOARD_ORDER.filter(
+															(board) =>
+																tileCounts[
+																	board
+																] > 0
+														).map((board) => (
+															<span
+																key={board}
+																className={
+																	styles[
+																		'badge'
+																	]
+																}
+																data-board={
+																	board
+																}
+															>
+																{board ===
+																'side'
+																	? `SB ×${tileCounts[board]}`
+																	: `×${tileCounts[board]}`}
+															</span>
+														))}
 													</span>
 												)}
 											</span>
 											<span
-												className={
-													styles['tile-code']
-												}
+												className={styles['tile-code']}
 											>
 												{printing.setCode}
 											</span>
 											<span
-												className={
-													styles['tile-name']
-												}
+												className={styles['tile-name']}
 											>
-												{printing.setName ?? ' '}
+												{printing.setName ?? ' '}
 											</span>
 										</button>
 										{count > 0 && !replacing && (
@@ -549,11 +689,11 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 												className={
 													styles['tile-remove']
 												}
-												aria-label={`Remove a ${label} copy`}
-												disabled={saving}
+												aria-label={`Remove a ${label} copy from the ${boardName}`}
 												onClick={() =>
 													setCount(
 														choice.uuid,
+														addBoard,
 														count - 1
 													)
 												}
@@ -584,6 +724,75 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 	);
 }
 
+type BoardStepperProps = {
+	board: DeckBoard;
+	/** The printing, for button labels. */
+	label: string;
+	count: number;
+	onChange: (count: number) => void;
+};
+
+/** One board's copies of a printing. Zero is allowed while the other board has copies. */
+function BoardStepper(props: BoardStepperProps) {
+	const { board, label, count, onChange } = props;
+	const boardName = board === 'side' ? 'sideboard' : 'main board';
+	return (
+		<div
+			className={styles['board-stepper']}
+			data-board={board}
+			data-empty={count === 0 || undefined}
+		>
+			<span className={styles['board-stepper-label']} aria-hidden="true">
+				{SHORT_BOARD_LABELS[board]}
+			</span>
+			<div className={styles['stepper']}>
+				<button
+					type="button"
+					aria-label={`Remove a ${label} copy from the ${boardName}`}
+					disabled={count === 0}
+					onClick={() => onChange(count - 1)}
+				>
+					<MinusIcon />
+				</button>
+				<span
+					className={styles['stepper-count']}
+					aria-label={`${copies(count)} in the ${boardName}`}
+				>
+					{count}
+				</span>
+				<button
+					type="button"
+					aria-label={`Add a ${label} copy to the ${boardName}`}
+					disabled={count >= MAX_COPIES}
+					onClick={() => onChange(count + 1)}
+				>
+					<PlusIcon />
+				</button>
+			</div>
+		</div>
+	);
+}
+
+function ArrowIcon(props: { direction: 'left' | 'right' }) {
+	const { direction } = props;
+	return (
+		<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+			<path
+				d={
+					direction === 'right'
+						? 'M3 8h9.5M9 4.5 12.5 8 9 11.5'
+						: 'M13 8H3.5M7 4.5 3.5 8 7 11.5'
+				}
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="1.8"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+			/>
+		</svg>
+	);
+}
+
 function MinusIcon() {
 	return (
 		<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
@@ -607,21 +816,6 @@ function PlusIcon() {
 				stroke="currentColor"
 				strokeWidth="1.8"
 				strokeLinecap="round"
-			/>
-		</svg>
-	);
-}
-
-function TrashIcon() {
-	return (
-		<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-			<path
-				d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"
-				fill="none"
-				stroke="currentColor"
-				strokeWidth="1.6"
-				strokeLinecap="round"
-				strokeLinejoin="round"
 			/>
 		</svg>
 	);

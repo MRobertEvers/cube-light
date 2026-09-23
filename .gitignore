@@ -14,6 +14,9 @@
 **/dist
 **/.next
 
+# Local development certificates (mkcert); never commit private keys
+**/certs
+
 # Deployment Artifacts
 **/.serverless
 **/screenshots/*.png

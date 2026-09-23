@@ -3,7 +3,7 @@
 // proxy for LAN access. Retained hashed assets keep in-flight tabs compatible.
 import http from "node:http";
 import https from "node:https";
-import { createReadStream } from "node:fs";
+import { createReadStream, readFileSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,7 +29,7 @@ const types = {
   ".jpg": "image/jpeg",
   ".svg": "image/svg+xml",
 };
-const server = http.createServer(async (req, res) => {
+const handler = async function (req, res) {
   try {
     if (req.url === '/api' || req.url.startsWith('/api/')) {
       const upstream = new URL(process.env.API_ORIGIN || 'http://127.0.0.1:4040');
@@ -126,7 +126,35 @@ const server = http.createServer(async (req, res) => {
     if (!res.headersSent) res.writeHead(500);
     res.end("Server error");
   }
-});
+};
+
+// Serving other devices needs HTTPS. A phone cannot register a service worker,
+// and so cannot start up offline, on a plain HTTP origin that is not localhost.
+// Set TLS_CERT and TLS_KEY to a publicly trusted certificate so that every
+// device trusts the origin without installing anything. Falls back to HTTP.
+const credentials =
+  process.env.TLS_CERT && process.env.TLS_KEY
+    ? {
+        cert: readFileSync(process.env.TLS_CERT),
+        key: readFileSync(process.env.TLS_KEY),
+      }
+    : null;
+const server = credentials
+  ? https.createServer(credentials, handler)
+  : http.createServer(handler);
+const scheme = credentials ? "https" : "http";
 server.listen(port, host, () =>
-  console.log(`Client v2 production server: http://${host}:${server.address().port}`),
+  console.log(`Client v2 production server: ${scheme}://${host}:${server.address().port}`),
 );
+
+// A convenience for devices that will be typed a bare hostname.
+if (credentials && process.env.REDIRECT_HTTP_PORT) {
+  http
+    .createServer((req, res) => {
+      const name = (req.headers.host || host).split(":")[0];
+      const suffix = port === 443 ? "" : `:${port}`;
+      res.writeHead(308, { Location: `https://${name}${suffix}${req.url}` });
+      res.end();
+    })
+    .listen(Number(process.env.REDIRECT_HTTP_PORT), host);
+}

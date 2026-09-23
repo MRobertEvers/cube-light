@@ -79,7 +79,7 @@ function verdict(checker: CardListLintWasm, name: string): string[] | null {
 function analyze(checker: CardListLintWasm, text: string): CardListProblem[] {
 	const lines = text.split(/\r?\n/);
 	const problems: CardListProblem[] = [];
-	// parseCardList decides which lines are cards (sideboards, comments and headers are not).
+	// parseCardList decides which lines are cards (maybeboards, comments and headers are not).
 	for (const card of parseCardList(text).cards) {
 		const suggestions = verdict(checker, card.name);
 		if (!suggestions) continue;

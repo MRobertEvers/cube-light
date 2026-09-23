@@ -25,7 +25,8 @@ export type FetchAPICardDetailsResponse = CardPreviewDetails & {
 	manaCost: string; // {X}{W}
 	setCode: string;
 
-	sets: Array<[string, string]>;
+	/** Absent when answered offline from a synced deck overview, which does not list sets. */
+	sets?: Array<[string, string]>;
 
 	// From Scryfall;
 	image: string | null;

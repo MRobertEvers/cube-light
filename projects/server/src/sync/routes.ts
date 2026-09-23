@@ -38,7 +38,7 @@ export function createSyncRoutes(repository: SyncRepository, cards: CardDatabase
             const result = repository.readPage(body.accountId, body.cursor, body.operationIds, bootstrap ? { after: body.after, watermark: body.watermark } : undefined);
             const uuids = new Set<string>();
             for (const replica of [...result.replicas, ...result.outcomes.flatMap((outcome) => outcome.replicas)]) if (replica.state.kind === 'deck') {
-                for (const uuid of Object.keys(replica.state.cards)) uuids.add(uuid);
+                for (const uuid of [...Object.keys(replica.state.cards), ...Object.keys(replica.state.sideboard || {})]) uuids.add(uuid);
                 if (replica.state.bannerCardUuid) uuids.add(replica.state.bannerCardUuid);
             }
             const catalog: Record<string, Json> = {};

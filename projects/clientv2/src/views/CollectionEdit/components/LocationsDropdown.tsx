@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	FetchStorageLocationsLocationResponse,
-	FetchStorageLocationsResponse,
-	fetchAPIStorageLocations
+	FetchStorageLocationsResponse
 } from 'src/api/fetch-api-storage-locations';
 import { ComboBox, ComboBoxEvent } from 'src/components/ComboBox/ComboBox';
 import { observeLocalQuery } from '../../../torimtg/observe';
@@ -20,7 +19,6 @@ export function LocationsDropdown(props: LocationsDropdownProps) {
 	);
 
 	useEffect(() => {
-		fetchAPIStorageLocations().then(setLocations);
 		return observeLocalQuery<FetchStorageLocationsResponse>({ type: 'locations' }, setLocations);
 	}, []);
 

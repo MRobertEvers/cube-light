@@ -15,7 +15,9 @@ import { Actions, initialState, reducerAddCard } from './add-card-state';
 import { loadDeck } from 'src/store/decks/decks.state';
 import { useAppDispatch } from 'src/store/use-app-dispatch';
 import styles from './card-adder.module.css';
-import { waitForMinimumStatusDuration } from 'src/utils/minimum-status-duration';
+import { DECK_BOARD_ORDER } from 'src/utils/deck-boards';
+
+const QUANTITY_LABELS = { main: 'Main deck', side: 'Sideboard' } as const;
 
 export enum AddCardEventType {
 	SUBMIT = 'AddCardEvent/SUBMIT',
@@ -42,13 +44,13 @@ export function AddCard(props: AddCardProps) {
 		suggestionsData: suggestions,
 		viewIsDropDownVisible,
 		viewAddItemText,
-		viewAddItemCount
+		viewAddItemCounts
 	} = state;
+	const totalCount = viewAddItemCounts.main + viewAddItemCounts.side;
 	const dialogRef = useRef<HTMLFormElement>(null);
 	const addItemInputRef = useRef<HTMLInputElement>(null);
 	const requestIdRef = useRef(0);
 	const queryRef = useRef('');
-	const submitStartedAt = useRef(0);
 	const warmedSuggestions = useRef(false);
 	const hintId = useId();
 	const errorId = useId();
@@ -102,19 +104,12 @@ export function AddCard(props: AddCardProps) {
 					DeckWorkerMessages.addCard,
 					async (response) => {
 						if (!response.payload) {
-							await waitForMinimumStatusDuration(
-								submitStartedAt.current
-							);
 							setIsSubmitting(false);
 							setError(
 								'Unable to add this card. Please try again.'
 							);
 							return;
 						}
-						await storeDispatch(loadDeck(deckId));
-						await waitForMinimumStatusDuration(
-							submitStartedAt.current
-						);
 						onEvent({ type: AddCardEventType.SUBMIT });
 					}
 				);
@@ -139,7 +134,8 @@ export function AddCard(props: AddCardProps) {
 		!isSearching && (exactMatch || suggestions.sorted.length === 1)
 			? (exactMatch ?? suggestions.sorted[0])
 			: null;
-	const canSubmit = Boolean(resolvedCardName) && !isSubmitting;
+	const canSubmit =
+		Boolean(resolvedCardName) && totalCount > 0 && !isSubmitting;
 
 	function selectSuggestion(suggestion: string, keepFocusArg?: boolean) {
 		const keepFocus = keepFocusArg === undefined ? true : keepFocusArg;
@@ -164,15 +160,15 @@ export function AddCard(props: AddCardProps) {
 			addItemInputRef.current?.focus();
 			return;
 		}
+		if (totalCount === 0) return;
 		setIsSubmitting(true);
-		submitStartedAt.current = performance.now();
 		setError(null);
 		dispatch(Actions.setViewIsDropDownVisible(false));
 		postToWorker(
 			DeckWorkerMessages.addCard({
 				deckId,
 				cardName: resolvedCardName,
-				count: viewAddItemCount
+				counts: viewAddItemCounts
 			})
 		);
 	}
@@ -194,7 +190,7 @@ export function AddCard(props: AddCardProps) {
 					event.preventDefault();
 					onEvent({ type: AddCardEventType.CLOSE });
 				}
-				if (event.key !== 'Tab') return;
+				if (event.key !== 'Tab' || event.defaultPrevented) return;
 				const focusable = Array.from(
 					dialogRef.current?.querySelectorAll<HTMLElement>(
 						'input:not(:disabled), button:not(:disabled)'
@@ -283,6 +279,7 @@ export function AddCard(props: AddCardProps) {
 								? suggestions.sorted[0]
 								: undefined
 						}
+						tabBrowses
 						placeholder="Start typing a card name"
 						indicator={
 							isSearching ? (
@@ -304,7 +301,7 @@ export function AddCard(props: AddCardProps) {
 							? 'Searching cards…'
 							: viewAddItemText && !resolvedCardName
 								? 'Choose a suggestion or enter an exact card name.'
-								: 'Use arrow keys to browse suggestions; press Enter to choose.'}
+								: 'Use Tab or arrow keys to browse suggestions; press Enter to choose.'}
 					</p>
 					{error && (
 						<p
@@ -316,21 +313,32 @@ export function AddCard(props: AddCardProps) {
 						</p>
 					)}
 				</div>
-				<div className={styles['quantity-row']}>
-					<div>
-						<span className={styles['quantity-title']}>
-							Main deck
-						</span>
-						<span className={styles['quantity-subtitle']}>
-							Number of copies
-						</span>
-					</div>
-					<Counter
-						count={viewAddItemCount}
-						setCount={(count) =>
-							dispatch(Actions.setViewAddItemCount(count))
-						}
-					/>
+				<div className={styles['quantities']}>
+					{DECK_BOARD_ORDER.map((board) => (
+						<div key={board} className={styles['quantity-row']}>
+							<div>
+								<span className={styles['quantity-title']}>
+									{QUANTITY_LABELS[board]}
+								</span>
+								<span className={styles['quantity-subtitle']}>
+									Number of copies
+								</span>
+							</div>
+							<Counter
+								count={viewAddItemCounts[board]}
+								min={0}
+								label={`${QUANTITY_LABELS[board]} copies`}
+								setCount={(count) =>
+									dispatch(
+										Actions.setViewAddItemCount({
+											board,
+											count
+										})
+									)
+								}
+							/>
+						</div>
+					))}
 				</div>
 			</div>
 			<div className={styles['modal-buttons']}>

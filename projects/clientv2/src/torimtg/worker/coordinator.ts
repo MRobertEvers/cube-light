@@ -2,6 +2,7 @@ import type { DomainCommand } from '@torimtg/core';
 import type { LocalNotice, LocalStore, ServerApi } from '../types';
 import { outstanding } from '../adapters/local-store';
 import { TransportError } from '../adapters/server-api';
+import { randomUUID } from '../adapters/web-crypto';
 
 function blobIds(command: DomainCommand): string[] {
     if (command.type === 'work.queue') return [command.blobId];
@@ -24,7 +25,7 @@ export class SyncCoordinator {
     async run(): Promise<boolean> {
         const scope = await this.store.scope();
         if (!scope) return false;
-        const lease = await this.store.acquire(scope, crypto.randomUUID());
+        const lease = await this.store.acquire(scope, randomUUID());
         if (!lease) return false;
         const deadline = Date.now() + 20000;
         let workRemains = false;

@@ -10,7 +10,7 @@ export async function buildWorker(options) {
     if (production) {
         for (const name of await readdir(path.join(outDir, 'assets'))) {
             // Lazy application chunks and small WASM runtimes are needed on an offline route.
-            const optionalOcr = /^(ort|worker-entry|experimental-scanner|recognizer|paddle-region-reader)/.test(name);
+            const optionalOcr = /^(ort|worker-entry|experimental-scanner|ocr-recognizer|title-index|paddle-region-reader)/.test(name);
             if (!optionalOcr && /\.(js|css|wasm|woff2?|svg|png)$/.test(name)) files.push(`/assets/${name}`);
         }
     }

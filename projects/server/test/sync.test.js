@@ -70,6 +70,22 @@ test('invalid batch is rejected atomically and foreign account envelopes are ref
     });
 });
 
+test('side-board edits and moves commit, replay, and keep the main board apart', async () => {
+    await fixture(async (db) => {
+        const id = 'deck_abcdefghijklmnop';
+        db.sync.commit(envelope(db.sync, { type: 'deck.create', id, name: 'Boards' }, 0), 1);
+        db.sync.commit(envelope(db.sync, { type: 'deck.cards', id, edits: [{ uuid: 'card-a', action: 'add', count: 4 }, { uuid: 'card-b', action: 'add', count: 2, board: 'side' }] }, 1), 1);
+        const move = db.sync.commit(envelope(db.sync, { type: 'deck.cards', id, edits: [{ uuid: 'card-a', action: 'remove', count: 1 }, { uuid: 'card-a', action: 'add', count: 1, board: 'side' }] }, 2), 1);
+        assert.equal(move.status, 'accepted');
+        const state = db.sync.readState(id);
+        assert.deepEqual(state.cards, { 'card-a': 3 });
+        assert.deepEqual(state.sideboard, { 'card-a': 1, 'card-b': 2 });
+        assert.deepEqual(db.sync.readPage(1, 0, []).replicas[0].state, state);
+        const unknown = db.sync.commit(envelope(db.sync, { type: 'deck.cards', id, edits: [{ uuid: 'card-a', action: 'add', count: 1, board: 'maybe' }] }, 3), 1);
+        assert.equal(unknown.status, 'rejected');
+    });
+});
+
 test('persistent bearer tokens rotate, survive restart, and detect refresh reuse', async () => {
     await fixture(async (db, filename) => {
         const now = Date.now();

@@ -5,6 +5,7 @@
 	"main": "index.js",
 	"scripts": {
 		"dev": "node tools/vite.mjs dev",
+		"dev:cert:le": "node tools/letsencrypt.mjs",
 		"start": "npm run dev",
 		"build": "node tools/vite.mjs build",
 		"preview": "node tools/vite.mjs preview",
@@ -20,7 +21,7 @@
 		"predev": "npm run build:core",
 		"pretypecheck": "npm run build:core",
 		"pretest": "npm run build:core",
-		"test:offline": "npm run build && npm --prefix ../server run compile && node --test test/offline-browser.mjs"
+		"test:offline": "npm run build && npm --prefix ../server run compile && node --test test/offline-browser.mjs test/lan-dev-browser.mjs test/https-lan-browser.mjs"
 	},
 	"author": "",
 	"license": "ISC",

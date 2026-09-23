@@ -4,13 +4,15 @@ import {
 	ImportCardsError,
 	ImportedCard
 } from '../../api/fetch-api-import-cards';
-import { withMinimumStatusDuration } from '../../utils/minimum-status-duration';
 import { loadDeck } from '../decks/decks.state';
+import type { DeckBoard } from '../../api/fetch-api-deck';
 
 export type AddCardsState = {
 	open: boolean;
 	deckId: string | null;
 	text: string;
+	/** Where lines before any Deck or Sideboard heading go. */
+	board: DeckBoard;
 	submitting: boolean;
 	error: string | null;
 	// Lowercased names the server couldn't resolve on the last submit.
@@ -21,6 +23,7 @@ const initialState: AddCardsState = {
 	open: false,
 	deckId: null,
 	text: '',
+	board: 'main',
 	submitting: false,
 	error: null,
 	unknownCards: []
@@ -36,13 +39,7 @@ export const importDeckCards = createAsyncThunk<
 	const { deckId, cards } = args;
 	const { dispatch, rejectWithValue } = context;
 	try {
-		await withMinimumStatusDuration(async () => {
-			await fetchAPIImportCards(deckId, cards);
-			// The cards are saved at this point; a failed refresh shouldn't read as a failed add.
-			await dispatch(loadDeck(deckId))
-				.unwrap()
-				.catch(() => undefined);
-		});
+		await fetchAPIImportCards(deckId, cards);
 	} catch (cause) {
 		if (
 			cause instanceof ImportCardsError &&
@@ -66,12 +63,16 @@ export const addCardsSlice = createSlice({
 	reducers: {
 		openAddCards: function (
 			state,
-			action: PayloadAction<{ deckId: string }>
+			action: PayloadAction<{ deckId: string; board?: DeckBoard }>
 		) {
 			Object.assign(state, initialState, {
 				open: true,
-				deckId: action.payload.deckId
+				deckId: action.payload.deckId,
+				board: action.payload.board ?? 'main'
 			});
+		},
+		setAddCardsBoard: function (state, action: PayloadAction<DeckBoard>) {
+			state.board = action.payload;
 		},
 		closeAddCards: function (state) {
 			Object.assign(state, initialState);
@@ -108,8 +109,12 @@ export const addCardsSlice = createSlice({
 	}
 });
 
-export const { openAddCards, closeAddCards, setAddCardsText } =
-	addCardsSlice.actions;
+export const {
+	openAddCards,
+	closeAddCards,
+	setAddCardsText,
+	setAddCardsBoard
+} = addCardsSlice.actions;
 
 export function selectAddCards(state: { addCards: AddCardsState }) {
 	return state.addCards;

@@ -33,13 +33,13 @@ export const config = defineConfig({
 		port: 3000,
 		strictPort: true,
 		host: true,
-		allowedHosts: ['.local']
+		allowedHosts: ['.local', '.trycloudflare.com', '.ngrok-free.app', '.ngrok.io', '.ts.net', '.loca.lt']
 	},
 	preview: {
 		proxy: { '/api': { target: 'http://127.0.0.1:4040', changeOrigin: false, headers: { 'X-Forwarded-Prefix': '/api' }, rewrite: function (url) { return url.replace(/^\/api/, ''); } } },
 		port: 3000,
 		host: true,
-		allowedHosts: ['.local']
+		allowedHosts: ['.local', '.trycloudflare.com', '.ngrok-free.app', '.ngrok.io', '.ts.net', '.loca.lt']
 	},
 	build: {
 		outDir: 'dist',

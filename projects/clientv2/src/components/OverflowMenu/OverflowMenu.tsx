@@ -12,6 +12,8 @@ import styles from './overflow-menu.module.css';
 type OverflowMenuProps = React.PropsWithChildren<{
 	label: string;
 	disabled?: boolean;
+	icon?: React.ReactNode;
+	triggerClassName?: string;
 }>;
 
 const VIEWPORT_GUTTER = 8;
@@ -37,7 +39,13 @@ function clamp(value: number, minimum: number, maximum: number) {
  * it when there is more room there.
  */
 export function OverflowMenu(props: OverflowMenuProps) {
-	const { label, disabled = false, children } = props;
+	const {
+		label,
+		disabled = false,
+		icon = <MoreIcon />,
+		triggerClassName,
+		children
+	} = props;
 	const [open, setOpen] = useState(false);
 	const menuId = useId();
 	const root = useRef<HTMLDivElement>(null);
@@ -153,14 +161,14 @@ export function OverflowMenu(props: OverflowMenuProps) {
 			<button
 				ref={trigger}
 				type="button"
-				className={styles.trigger}
+				className={triggerClassName ?? styles.trigger}
 				aria-label={label}
 				aria-expanded={open}
 				aria-controls={open ? menuId : undefined}
 				disabled={disabled}
 				onClick={() => setOpen((current) => !current)}
 			>
-				<MoreIcon />
+				{icon}
 			</button>
 			{open &&
 				createPortal(

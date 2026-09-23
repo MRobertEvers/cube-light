@@ -7,7 +7,6 @@ import { SuggestionInput } from '../../../../components/SuggestionInput/Suggesti
 import { useAsyncReducer } from '../../../../hooks/useAsyncReducer';
 import { loadDeck } from '../../../../store/decks/decks.state';
 import { useAppDispatch } from '../../../../store/use-app-dispatch';
-import { waitForMinimumStatusDuration } from '../../../../utils/minimum-status-duration';
 import { useDeckWorker } from '../../../../workers/deck.hook';
 import { DeckWorkerMessages } from '../../../../workers/deck.worker.messages';
 import { createResponseHandler } from '../../../../workers/utils/messageToolkit';
@@ -16,6 +15,7 @@ import {
 	initialState,
 	reducerAddCard
 } from '../AddCard/add-card-state';
+import { DECK_BOARD_ORDER } from '../../../../utils/deck-boards';
 import { AddCardEventType, type AddCardEvent } from '../AddCard/AddCard';
 
 import styles from './add-card-single-mobile.module.css';
@@ -39,7 +39,6 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 	const input = useRef<HTMLInputElement>(null);
 	const requestId = useRef(0);
 	const query = useRef('');
-	const submitStartedAt = useRef(0);
 	const submittedName = useRef('');
 	const keepAddingRef = useRef(false);
 	const warmedSuggestions = useRef(false);
@@ -49,8 +48,9 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 		suggestionsData: suggestions,
 		viewIsDropDownVisible,
 		viewAddItemText,
-		viewAddItemCount
+		viewAddItemCounts
 	} = state;
+	const totalCount = viewAddItemCounts.main + viewAddItemCounts.side;
 
 	keepAddingRef.current = keepAdding;
 
@@ -103,19 +103,12 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 					DeckWorkerMessages.addCard,
 					async (response) => {
 						if (!response.payload) {
-							await waitForMinimumStatusDuration(
-								submitStartedAt.current
-							);
 							setIsSubmitting(false);
 							setError(
 								'Unable to add this card. Please try again.'
 							);
 							return;
 						}
-						await storeDispatch(loadDeck(deckId));
-						await waitForMinimumStatusDuration(
-							submitStartedAt.current
-						);
 						if (!keepAddingRef.current) {
 							onEvent({ type: AddCardEventType.SUBMIT });
 							return;
@@ -123,7 +116,13 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 						requestId.current += 1;
 						query.current = '';
 						dispatch(Actions.setViewAddItemText(''));
-						dispatch(Actions.setViewAddItemCount(1));
+						for (const board of DECK_BOARD_ORDER)
+							dispatch(
+								Actions.setViewAddItemCount({
+									board,
+									count: initialState.viewAddItemCounts[board]
+								})
+							);
 						dispatch(
 							Actions.setSuggestionsData({
 								sorted: [],
@@ -156,7 +155,8 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 		!isSearching && (exactMatch || suggestions.sorted.length === 1)
 			? (exactMatch ?? suggestions.sorted[0])
 			: null;
-	const canSubmit = Boolean(resolvedCardName) && !isSubmitting;
+	const canSubmit =
+		Boolean(resolvedCardName) && totalCount > 0 && !isSubmitting;
 
 	function close() {
 		if (!isSubmitting) onEvent({ type: AddCardEventType.CLOSE });
@@ -212,9 +212,9 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 			input.current?.focus();
 			return;
 		}
+		if (totalCount === 0) return;
 		submittedName.current = resolvedCardName;
 		setIsSubmitting(true);
-		submitStartedAt.current = performance.now();
 		setError(null);
 		setStatus(null);
 		dispatch(Actions.setViewIsDropDownVisible(false));
@@ -222,7 +222,7 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 			DeckWorkerMessages.addCard({
 				deckId,
 				cardName: resolvedCardName,
-				count: viewAddItemCount
+				counts: viewAddItemCounts
 			})
 		);
 	}
@@ -324,15 +324,21 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 					</p>
 				)}
 			</div>
-			<div className={styles.countRow}>
-				<span>Count</span>
-				<Counter
-					count={viewAddItemCount}
-					setCount={(count) =>
-						dispatch(Actions.setViewAddItemCount(count))
-					}
-				/>
-			</div>
+			{DECK_BOARD_ORDER.map((board) => (
+				<div key={board} className={styles.countRow}>
+					<span>{board === 'main' ? 'Main deck' : 'Sideboard'}</span>
+					<Counter
+						count={viewAddItemCounts[board]}
+						min={0}
+						label={`${board === 'main' ? 'Main deck' : 'Sideboard'} copies`}
+						setCount={(count) =>
+							dispatch(
+								Actions.setViewAddItemCount({ board, count })
+							)
+						}
+					/>
+				</div>
+			))}
 			<label className={styles.keepAdding}>
 				<span>Keep adding cards</span>
 				<input

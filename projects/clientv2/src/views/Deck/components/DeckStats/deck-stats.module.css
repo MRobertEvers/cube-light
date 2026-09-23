@@ -1,0 +1,203 @@
+.stats {
+	flex: 1 1 0;
+	min-width: 0;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	align-items: start;
+	gap: 16px;
+	font-size: 0.9rem;
+}
+
+.panel {
+	overflow: hidden;
+	background: white;
+	color: var(--theme-text);
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 8px;
+}
+
+/* Types run long; give them their own column beside the charts. */
+.panel:last-child {
+	grid-column: 2;
+	grid-row: 1 / span 2;
+}
+
+.header {
+	margin: 0;
+	padding: 9px 12px;
+	background: var(--deck-surface, #f2efed);
+	color: var(--deck-on-surface, var(--theme-text));
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.body {
+	margin: 0;
+	padding: 14px 16px;
+}
+
+.empty {
+	grid-column: 1 / -1;
+	padding: 24px;
+	text-align: center;
+	opacity: 0.7;
+}
+
+.legend {
+	display: grid;
+	gap: 4px;
+	margin: 0 0 16px;
+}
+
+.legend > div {
+	display: flex;
+	justify-content: space-between;
+	font-weight: 600;
+}
+
+.legend dt {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.legend dd {
+	margin: 0;
+	font-variant-numeric: tabular-nums;
+}
+
+.swatch {
+	width: 12px;
+	height: 12px;
+	border-radius: 3px;
+	background: #d6d2cf;
+}
+
+.creature {
+	background: #e0913a;
+}
+
+.nonCreature {
+	background: #3a86c8;
+}
+
+.curve {
+	display: grid;
+	grid-template-columns: repeat(6, minmax(0, 1fr));
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	text-align: center;
+}
+
+.curve li {
+	display: grid;
+	justify-items: center;
+	gap: 6px;
+}
+
+.track {
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	width: 100%;
+	max-width: 28px;
+	height: 120px;
+	overflow: hidden;
+	border-radius: 4px;
+	background: #f0ecea;
+}
+
+.track > div {
+	flex: none;
+}
+
+.bucket {
+	display: grid;
+	place-items: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: #e9e5e3;
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.count {
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.average {
+	display: flex;
+	justify-content: space-between;
+	margin: 16px 0 0;
+	padding-top: 12px;
+	border-top: 1px solid #f0ecea;
+}
+
+.pips {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+	gap: 12px 8px;
+	list-style: none;
+	text-align: center;
+}
+
+.pips li {
+	display: grid;
+	justify-items: center;
+	gap: 2px;
+}
+
+.symbol {
+	--mana-symbol-size: 32px;
+	margin-bottom: 4px;
+}
+
+.percent {
+	font-size: 12px;
+	opacity: 0.7;
+}
+
+.types {
+	display: grid;
+	gap: 10px;
+	list-style: none;
+}
+
+.typeRow,
+.subtypeRow {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	font-variant-numeric: tabular-nums;
+}
+
+.typeRow {
+	font-size: 15px;
+	font-weight: 700;
+}
+
+.subtypes {
+	margin: 4px 0 0;
+	padding: 0 0 0 12px;
+	list-style: none;
+}
+
+.subtypeRow {
+	padding: 2px 0;
+	opacity: 0.8;
+}
+
+@media (max-width: 800px) {
+	.stats {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.panel:last-child {
+		grid-column: auto;
+		grid-row: auto;
+	}
+}

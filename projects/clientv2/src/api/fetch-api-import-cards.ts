@@ -1,7 +1,14 @@
 import { API_URI } from '../config/api-url';
 import { apiFetch } from './utils';
+import type { DeckBoard } from '@torimtg/core';
 
-export type ImportedCard = { name: string; count: number; setCode?: string };
+/** A card to add by name. `board` defaults to the main board. */
+export type ImportedCard = {
+	name: string;
+	count: number;
+	setCode?: string;
+	board?: DeckBoard;
+};
 
 export class ImportCardsError extends Error {
 	readonly unknownCards: string[];

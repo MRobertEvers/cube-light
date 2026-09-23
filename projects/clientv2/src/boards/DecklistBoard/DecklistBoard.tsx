@@ -1,56 +1,48 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
 	CardInteractionEvent,
-	CardInteractionEventType,
-	DecklistGroup
+	CardInteractionEventType
 } from './DecklistGroup';
-import { DeckMappedData } from '../../../../workers/deck.worker.messages';
-import { FetchAPIDeckCardResponse } from '../../../../api/fetch-api-deck';
+import { DecklistSection, expandedRowKey } from './DecklistSection';
+import type { FetchAPIDeckCardResponse } from '../../api/fetch-api-deck';
+import { DECK_BOARD_ORDER } from '../../utils/deck-boards';
+import type { BoardProps } from '../board.types';
+import type { DecklistSpotlightProps } from '../decklist-spotlight';
 
-import styles from './decklist.module.css';
-import { SpotlightCard } from 'src/widgets/SpotlightCard/SpotlightCard';
-import type { BannerCrop } from '../../../../utils/banner-crop';
-import type { DeckTopStyle } from '../../../../utils/deck-top-style';
-import type { BannerBlend } from '../../../../utils/banner-blend';
-import {
-	DeckCardGroup,
-	groupDeckCardsByName
-} from '../../../../utils/group-deck-cards';
+import styles from './decklist-board.module.css';
+import { SpotlightCard } from '../../widgets/SpotlightCard/SpotlightCard';
+import { groupDeckCardsByName } from '../../utils/group-deck-cards';
 
 export type DecklistCardInfo = FetchAPIDeckCardResponse;
-type DecklistProps = {
-	name: string;
-	deck: DeckMappedData;
-	banner: { art: string | null; name: string } | null;
-	bannerCrop: BannerCrop;
-	bannerBlend?: BannerBlend | null;
-	topStyle: DeckTopStyle;
-	onCardClick?: (card: DecklistCardInfo, group: DeckCardGroup) => void;
-	onManagePrintings?: (group: DeckCardGroup) => void;
-};
+/** Each deck board is listed separately, in DECK_BOARD_ORDER. */
+export type DecklistBoardProps = BoardProps & DecklistSpotlightProps;
 
-export function Decklist(props: DecklistProps) {
+/** The default deck view: rows by card type, with a card preview on hover. */
+export function DecklistBoard(props: DecklistBoardProps) {
 	const {
-		deck,
+		cards,
 		banner,
 		bannerCrop,
 		bannerBlend,
 		topStyle,
-		onCardClick,
-		onManagePrintings
+		onCardEvent,
+		busyGroup
 	} = props;
 	const [expanded, setExpanded] = useState<ReadonlySet<string>>(
 		() => new Set()
 	);
-	// Names with more than one printing, the only rows that expand.
+	// Rows with more than one printing, the only ones that expand, in every board.
 	const multiPrintNames = useMemo(
 		() =>
-			Object.values(deck.cardCategories).flatMap((category) =>
-				groupDeckCardsByName(category.cards)
-					.filter((group) => group.printings.length > 1)
-					.map((group) => group.name)
+			DECK_BOARD_ORDER.flatMap((board) =>
+				Object.values(cards[board].cardCategories).flatMap(
+					(category) =>
+						groupDeckCardsByName(category.cards)
+							.filter((group) => group.printings.length > 1)
+							.map((group) => expandedRowKey(board, group.name))
+				)
 			),
-		[deck]
+		[cards]
 	);
 	const allExpanded =
 		multiPrintNames.length > 0 &&
@@ -75,14 +67,17 @@ export function Decklist(props: DecklistProps) {
 		} | null
 	);
 
-	const onCardEvent = useCallback(
+	const onRowEvent = useCallback(
 		(event: CardInteractionEvent) => {
 			switch (event.type) {
 				case CardInteractionEventType.CLICK:
-					onCardClick?.(event.payload.card, event.payload.group);
+					onCardEvent({ type: 'view', ...event.payload });
 					break;
 				case CardInteractionEventType.MANAGE:
-					onManagePrintings?.(event.payload);
+					onCardEvent({ type: 'edit', group: event.payload });
+					break;
+				case CardInteractionEventType.MOVE:
+					onCardEvent({ type: 'move', group: event.payload });
 					break;
 				case CardInteractionEventType.HOVER:
 					setImageSource(event.payload);
@@ -92,7 +87,7 @@ export function Decklist(props: DecklistProps) {
 					break;
 			}
 		},
-		[onCardClick, onManagePrintings, setImageSource]
+		[onCardEvent, setImageSource]
 	);
 	const hoverCardWidth = 300;
 	const hoverCardHeight = 420;
@@ -178,30 +173,19 @@ export function Decklist(props: DecklistProps) {
 						</div>
 					</div>
 				)}
-				<div className={styles['deck-list']}>
-					<DecklistGroup
-						groups={Object.keys(deck.cardCategories)
-							.filter((x) => x.indexOf('Land') === -1)
-							.map((groupName) => ({
-								name: groupName,
-								groupData: deck.cardCategories[groupName]
-							}))}
+				{DECK_BOARD_ORDER.map((board) => (
+					<DecklistSection
+						key={board}
+						board={board}
+						deck={cards[board]}
+						busyName={
+							busyGroup?.board === board ? busyGroup.name : null
+						}
 						isExpanded={isExpanded}
 						onToggle={onToggle}
-						onCardEvent={onCardEvent}
+						onCardEvent={onRowEvent}
 					/>
-					<DecklistGroup
-						groups={Object.keys(deck.cardCategories)
-							.filter((x) => x.indexOf('Land') !== -1)
-							.map((groupName) => ({
-								name: groupName,
-								groupData: deck.cardCategories[groupName]
-							}))}
-						isExpanded={isExpanded}
-						onToggle={onToggle}
-						onCardEvent={onCardEvent}
-					/>
-				</div>
+				))}
 			</div>
 		</div>
 	);

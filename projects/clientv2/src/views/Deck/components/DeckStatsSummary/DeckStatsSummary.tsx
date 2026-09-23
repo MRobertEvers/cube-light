@@ -15,6 +15,14 @@ export function DeckStatsSummary(props: DeckStatsSummaryProps) {
 				<span className={styles['focus-item']}>{deck.deck.count} </span>
 				{deck.deck.count === 1 ? 'card' : 'cards'}
 			</span>
+			{deck.boards.side.count > 0 && (
+				<span className={styles['item']}>
+					<span className={styles['focus-item']}>
+						{deck.boards.side.count}{' '}
+					</span>
+					in sideboard
+				</span>
+			)}
 		</div>
 	);
 }

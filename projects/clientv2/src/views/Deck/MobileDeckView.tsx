@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { FetchAPIDeckCardResponse } from '../../api/fetch-api-deck';
 import { Button } from '../../components/Button/Button';
 import { DeckBannerCard } from '../../components/DeckBannerCard/DeckBannerCard';
@@ -10,8 +10,10 @@ import type { DeckCardGroup } from '../../utils/group-deck-cards';
 import type { GetDeckResponse } from '../../workers/deck.worker.messages';
 import { DeckControlIcon } from './DeckControlIcons';
 import { DeckStatsSummary } from './components/DeckStatsSummary/DeckStatsSummary';
-import { MobileDecklist } from './components/MobileDecklist/MobileDecklist';
-import { Tabletop } from './components/Tabletop/Tabletop';
+import { BoardVisualizationReduxWidget } from '../../boards/BoardVisualizationReduxWidget';
+import { DeckStats } from './components/DeckStats/DeckStats';
+import { DeckNotes } from './components/DeckNotes/DeckNotes';
+import { DeckViewSwitch, type DeckView } from './DeckViewSwitch';
 
 import deckStyles from './deck.module.css';
 import styles from './mobile-deck-view.module.css';
@@ -19,7 +21,7 @@ import styles from './mobile-deck-view.module.css';
 type MobileDeckViewProps = {
 	data: GetDeckResponse;
 	deckId: string;
-	view: 'list' | 'tabletop';
+	view: DeckView;
 	bannerCrop: BannerCrop;
 	topStyle: 'card' | 'full-art';
 	topBannerCard:
@@ -31,17 +33,15 @@ type MobileDeckViewProps = {
 	previewIcon: string | null;
 	paletteStyle?: React.CSSProperties;
 	isSaving: boolean;
-	deletingCardName: string | null;
 	cardActionError: string | null;
 	onBannerElement: (element: HTMLElement | null) => void;
 	onAddCard: () => void;
 	onAddCards: () => void;
 	onImportImage: () => void;
 	onEditName: () => void;
-	onDeleteDeck: () => Promise<void>;
+	onDeleteDeck: () => void;
 	onEditCard: (group: DeckCardGroup) => void;
 	onViewCard: (card: FetchAPIDeckCardResponse) => void;
-	onDeleteCard: (group: DeckCardGroup) => Promise<void>;
 };
 
 type MobileDeckControlsProps = Pick<
@@ -71,23 +71,7 @@ function MobileDeckControls(props: MobileDeckControlsProps) {
 
 	return (
 		<div className={styles.controls}>
-			<nav
-				className={deckStyles['deck-view-switch']}
-				aria-label="Deck view"
-			>
-				<Link
-					to={`/deck/${deckId}`}
-					aria-current={view === 'list' ? 'page' : undefined}
-				>
-					Deck list
-				</Link>
-				<Link
-					to={`/deck/${deckId}/tabletop`}
-					aria-current={view === 'tabletop' ? 'page' : undefined}
-				>
-					Tabletop
-				</Link>
-			</nav>
+			<DeckViewSwitch deckId={deckId} view={view} />
 			<section
 				className={styles.group}
 				aria-labelledby="mobile-add-cards"
@@ -128,7 +112,7 @@ function MobileDeckControls(props: MobileDeckControlsProps) {
 					<Button
 						className={styles.deleteDeck}
 						disabled={isSaving}
-						onClick={() => void onDeleteDeck()}
+						onClick={onDeleteDeck}
 					>
 						Delete
 					</Button>
@@ -150,7 +134,6 @@ export function MobileDeckView(props: MobileDeckViewProps) {
 		previewIcon,
 		paletteStyle,
 		isSaving,
-		deletingCardName,
 		cardActionError,
 		onBannerElement,
 		onAddCard,
@@ -159,8 +142,7 @@ export function MobileDeckView(props: MobileDeckViewProps) {
 		onEditName,
 		onDeleteDeck,
 		onEditCard,
-		onViewCard,
-		onDeleteCard
+		onViewCard
 	} = props;
 
 	return (
@@ -211,28 +193,24 @@ export function MobileDeckView(props: MobileDeckViewProps) {
 					</p>
 				)}
 				{view === 'tabletop' ? (
-					<Tabletop
-						cards={data.cards}
-						onCardClick={(card) => onViewCard(card)}
+					<BoardVisualizationReduxWidget
+						visualization="mtg-arena-table"
+						deckId={deckId}
+						onViewCard={onViewCard}
+						onEditCard={onEditCard}
+					/>
+				) : view === 'stats' ? (
+					<DeckStats cards={data.cards} />
+				) : view === 'notes' ? (
+					<DeckNotes
+						deckId={deckId}
+						notes={data.notes ?? []}
 					/>
 				) : (
-					<MobileDecklist
-						deck={data.deck}
-						banner={
-							topBannerCard
-								? {
-										art: topBannerCard.art,
-										name: topBannerCard.name
-									}
-								: null
-						}
-						bannerCrop={bannerCrop}
-						bannerBlend={data.bannerBlend}
-						topStyle={topStyle}
-						deletingCardName={deletingCardName}
-						onEdit={onEditCard}
-						onView={onViewCard}
-						onDelete={onDeleteCard}
+					<BoardVisualizationReduxWidget
+						deckId={deckId}
+						onViewCard={onViewCard}
+						onEditCard={onEditCard}
 					/>
 				)}
 			</div>

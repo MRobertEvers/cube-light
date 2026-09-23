@@ -19,8 +19,10 @@ import {
 	saveCrop,
 	savePalette,
 	saveStyle,
-	saveBlend
+	saveBlend,
+	saveVisualization
 } from '../../store/appearance-settings/appearance-settings.state';
+import { BOARD_VISUALIZATIONS } from '../../boards/board-visualizations';
 import {
 	artworkKey,
 	BANNER_BLEND_ALGORITHM_VERSION,
@@ -234,6 +236,75 @@ export function TopStyleSection(props: SectionProps) {
 						</small>
 					</span>
 				</label>
+			</div>
+		</section>
+	);
+}
+
+export function VisualizationSection(props: SectionProps) {
+	const { deckId, view } = props;
+	const dispatch = useAppDispatch();
+	const { visualization, visualizationChanged, status } = view;
+	return (
+		<section
+			className={`${styles['editor']} ${styles['style-editor']}`}
+			aria-labelledby="visualization-heading"
+		>
+			<EditorHeader
+				id="visualization-heading"
+				title="Card view"
+				actions={
+					<button
+						type="button"
+						className={styles['primary']}
+						onClick={() =>
+							void dispatch(
+								saveVisualization({ deckId, visualization })
+							)
+						}
+						disabled={
+							!visualizationChanged || status.visualization.saving
+						}
+					>
+						{status.visualization.saving
+							? 'Saving…'
+							: 'Save card view'}
+					</button>
+				}
+			>
+				{status.visualization.message && (
+					<p className={styles['success']} role="status">
+						{status.visualization.message}
+					</p>
+				)}
+				{status.visualization.error && (
+					<p className={styles['error']} role="alert">
+						{status.visualization.error}
+					</p>
+				)}
+			</EditorHeader>
+			<div className={styles['style-options']}>
+				{BOARD_VISUALIZATIONS.map((option) => (
+					<label key={option.id} className={styles['style-option']}>
+						<input
+							type="radio"
+							name="deck-board-visualization"
+							value={option.id}
+							checked={visualization === option.id}
+							onChange={() =>
+								dispatch(
+									appearanceActions.changeVisualization(
+										option.id
+									)
+								)
+							}
+						/>
+						<span>
+							<strong>{option.label}</strong>
+							<small>{option.description}</small>
+						</span>
+					</label>
+				))}
 			</div>
 		</section>
 	);

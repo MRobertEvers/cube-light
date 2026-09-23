@@ -10,14 +10,19 @@
  *   card    := 'SB:'? (count 'x'?)? name ('(' set ')' collector?)? foil?
  *   foil    := '*F*' | '*E*'
  *
- * The count defaults to 1. Cards under a sideboard or maybeboard section (or prefixed with
- * `SB:`) are skipped because decks only have a main board.
+ * The count defaults to 1. Cards before any section go to `defaultBoard`, the main board
+ * unless the caller picks another. Cards under a main section go to the main board, and
+ * cards under a sideboard section (or prefixed with `SB:`) go to the side board. Cards under a maybeboard section are skipped because decks have no
+ * maybeboard.
  */
+
+import type { DeckBoard } from '@torimtg/core';
 
 export type ParsedCard = {
 	name: string;
 	count: number;
 	setCode?: string;
+	board: DeckBoard;
 	/** 1-based source lines, so errors can point back to the input. */
 	lines: number[];
 };
@@ -61,13 +66,8 @@ const MAIN_SECTIONS = new Set([
 	'commander',
 	'companion'
 ]);
-const SKIPPED_SECTIONS = new Set([
-	'sideboard',
-	'side',
-	'maybeboard',
-	'maybe',
-	'considering'
-]);
+const SIDE_SECTIONS = new Set(['sideboard', 'side']);
+const SKIPPED_SECTIONS = new Set(['maybeboard', 'maybe', 'considering']);
 const SECTION_PATTERN = /^([a-z ]+?)\s*:?\s*(?:\(\d+\))?$/i;
 const CARD_PATTERN =
 	/^(?:(\d+)\s*x?\s+)?(.+?)(?:\s+\(([a-z0-9]{2,6})\)(?:\s+\S+)?)?(?:\s+\*[a-z]\*)?$/i;
@@ -92,11 +92,7 @@ export function locateCardName(raw: string): CardNameSpan | null {
 	const body = raw.trim();
 	if (!body || body.startsWith('//') || body.startsWith('#')) return null;
 	const section = SECTION_PATTERN.exec(body)?.[1].toLowerCase();
-	if (
-		section &&
-		(MAIN_SECTIONS.has(section) || SKIPPED_SECTIONS.has(section))
-	)
-		return null;
+	if (section && isSectionName(section)) return null;
 	const prefix = /^(?:SB:\s*)?/i.exec(body)![0].length;
 	const card = body.slice(prefix);
 	const match = CARD_PATTERN.exec(card);
@@ -130,12 +126,26 @@ export function locateCardName(raw: string): CardNameSpan | null {
 	};
 }
 
-export function parseCardList(text: string): ParsedCardList {
+function isSectionName(section: string): boolean {
+	return (
+		MAIN_SECTIONS.has(section) ||
+		SIDE_SECTIONS.has(section) ||
+		SKIPPED_SECTIONS.has(section)
+	);
+}
+
+export function parseCardList(
+	text: string,
+	defaultBoardArg?: DeckBoard
+): ParsedCardList {
+	const defaultBoard =
+		defaultBoardArg === undefined ? 'main' : defaultBoardArg;
 	const merged = new Map<string, ParsedCard>();
 	const skipped: CardListIssue[] = [];
 	const errors: CardListIssue[] = [];
 	const notes: CardListNote[] = [];
 	let inSkippedSection = false;
+	let sectionBoard: DeckBoard = defaultBoard;
 
 	text.split(/\r?\n/).forEach((raw, index) => {
 		const line = index + 1;
@@ -143,24 +153,23 @@ export function parseCardList(text: string): ParsedCardList {
 		if (!body || body.startsWith('//') || body.startsWith('#')) return;
 
 		const section = SECTION_PATTERN.exec(body)?.[1].toLowerCase();
-		if (
-			section &&
-			(MAIN_SECTIONS.has(section) || SKIPPED_SECTIONS.has(section))
-		) {
+		if (section && isSectionName(section)) {
 			inSkippedSection = SKIPPED_SECTIONS.has(section);
+			sectionBoard = SIDE_SECTIONS.has(section) ? 'side' : 'main';
 			return;
 		}
 
 		const isSideboardLine = /^SB:\s*/i.test(body);
 		body = body.replace(/^SB:\s*/i, '');
-		if (inSkippedSection || isSideboardLine) {
+		if (inSkippedSection && !isSideboardLine) {
 			skipped.push({
 				line,
 				text: raw,
-				message: 'Sideboard cards are not added'
+				message: 'Maybeboard cards are not added'
 			});
 			return;
 		}
+		const board: DeckBoard = isSideboardLine ? 'side' : sectionBoard;
 
 		const match = CARD_PATTERN.exec(body);
 		const count = match?.[1] ? Number(match[1]) : 1;
@@ -183,7 +192,7 @@ export function parseCardList(text: string): ParsedCardList {
 		}
 
 		const setCode = match[3]?.toUpperCase();
-		const key = `${name.toLowerCase()}|${setCode ?? ''}`;
+		const key = `${board}|${name.toLowerCase()}|${setCode ?? ''}`;
 		const existing = merged.get(key);
 		if (existing) {
 			existing.count = Math.min(MAX_COUNT, existing.count + count);
@@ -200,20 +209,24 @@ export function parseCardList(text: string): ParsedCardList {
 				name,
 				count,
 				...(setCode ? { setCode } : {}),
+				board,
 				lines: [line]
 			});
 		}
 	});
 
 	// A line without a printing takes the one given for the same card elsewhere in the
-	// list, rather than whichever printing the server would pick.
+	// same board, rather than whichever printing the server would pick.
 	const lines = text.split(/\r?\n/);
 	for (const [key, card] of merged) {
 		if (card.setCode) continue;
 		const name = card.name.toLowerCase();
 		const printed = [...merged.values()]
 			.filter(
-				(other) => other.setCode && other.name.toLowerCase() === name
+				(other) =>
+					other.setCode &&
+					other.board === card.board &&
+					other.name.toLowerCase() === name
 			)
 			.sort((a, b) => a.lines[0] - b.lines[0])[0];
 		if (!printed) continue;

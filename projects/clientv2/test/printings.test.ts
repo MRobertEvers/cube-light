@@ -1,7 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { FetchAPIDeckCardResponse } from '../src/api/fetch-api-deck';
-import { groupDeckCardsByName } from '../src/utils/group-deck-cards';
+import {
+	deckCardEditTarget,
+	groupDeckCardsByName
+} from '../src/utils/group-deck-cards';
 import { parseCardList } from '../src/utils/parse-card-list';
 
 function card(
@@ -99,4 +102,85 @@ test('a line without a set uses the printing given for that name', () => {
 	assert.equal(note.line, 1);
 	assert.equal(note.kind === 'inferred-set' && note.fromLine, 3);
 	assert.equal(note.kind === 'inferred-set' && note.setCode, 'M10');
+});
+
+test('sideboard sections and SB: lines go to the side board, apart from the main board', () => {
+	const parsed = parseCardList(
+		[
+			'Deck',
+			'4 Lightning Bolt (M10)',
+			'SB: 1 Lightning Bolt (M10)',
+			'',
+			'Sideboard',
+			'2 Lightning Bolt (M10)',
+			'3 Negate',
+			'Maybeboard',
+			'1 Opt',
+			'SB: 1 Duress'
+		].join('\n')
+	);
+	assert.deepEqual(
+		parsed.cards.map((options) => {
+			const { name, count, board, lines } = options;
+			return [board, name, count, lines];
+		}),
+		[
+			['main', 'Lightning Bolt', 4, [2]],
+			['side', 'Lightning Bolt', 3, [3, 6]],
+			['side', 'Negate', 3, [7]],
+			['side', 'Duress', 1, [10]]
+		]
+	);
+	assert.deepEqual(
+		parsed.skipped.map((issue) => [issue.line, issue.message]),
+		[[9, 'Maybeboard cards are not added']]
+	);
+});
+
+test('a missing set is only inferred from the same board', () => {
+	const parsed = parseCardList(
+		['2 Negate (M20)', 'Sideboard', '1 Negate'].join('\n')
+	);
+	assert.deepEqual(
+		parsed.cards.map((options) => {
+			const { board, count, setCode } = options;
+			return [board, count, setCode];
+		}),
+		[
+			['main', 2, 'M20'],
+			['side', 1, undefined]
+		]
+	);
+	assert.deepEqual(parsed.notes, []);
+});
+
+test('lines before any heading go to the chosen board; headings still decide their own lines', () => {
+	const parsed = parseCardList(
+		['2 Negate', 'Deck', '4 Island', 'Sideboard', '1 Duress'].join('\n'),
+		'side'
+	);
+	assert.deepEqual(
+		parsed.cards.map((card) => [card.board, card.name]),
+		[
+			['side', 'Negate'],
+			['main', 'Island'],
+			['side', 'Duress']
+		]
+	);
+});
+
+test('the card editor opens on every board’s printings of a name', () => {
+	const main = { ...card('Negate', 'M20', 2), board: 'main' as const };
+	const side = { ...card('Negate', 'M20', 1), board: 'side' as const };
+	const other = { ...card('Duress', 'M20', 1), board: 'side' as const };
+	const [group] = groupDeckCardsByName([side]);
+	const target = deckCardEditTarget(group, [main, side, other]);
+	assert.equal(target.board, 'side');
+	assert.deepEqual(
+		target.printings.map((entry) => [entry.board, entry.count]),
+		[
+			['main', 2],
+			['side', 1]
+		]
+	);
 });

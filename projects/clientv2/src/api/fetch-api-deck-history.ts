@@ -1,10 +1,11 @@
-import { API_URI } from '../config/api-url';
-import { apiFetch } from './utils';
+import type { DeckBoard } from '@torimtg/core';
 
 export type DeckHistoryCard = {
 	uuid: string;
 	name: string | null;
 	count: number;
+	/** Missing from edits made before boards existed, which were all main-board edits. */
+	board?: DeckBoard;
 };
 export type DeckHistoryDetail = {
 	field:
@@ -14,7 +15,9 @@ export type DeckHistoryDetail = {
 		| 'palette'
 		| 'bannerCrop'
 		| 'topStyle'
-		| 'bannerBlend';
+		| 'boardVisualization'
+		| 'bannerBlend'
+		| 'note';
 	before: string | null;
 	after: string | null;
 };
@@ -30,12 +33,3 @@ export type DeckHistoryResponse = {
 	deckName: string;
 	edits: DeckHistoryEdit[];
 };
-
-export async function fetchAPIDeckHistory(
-	deckId: string
-): Promise<DeckHistoryResponse> {
-	const response = await apiFetch(`${API_URI}/decks/${deckId}/history`);
-	if (!response.ok)
-		throw new Error(`Could not load deck history (${response.status})`);
-	return response.json() as Promise<DeckHistoryResponse>;
-}

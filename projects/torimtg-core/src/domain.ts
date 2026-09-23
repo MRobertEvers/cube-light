@@ -1,5 +1,10 @@
 import { DomainError } from './types.js';
-import type { AggregateState, DomainCommand, DomainEvent, DeckState, WorkState, Crop } from './types.js';
+import type { AggregateState, CardQuantityChange, DomainCommand, DomainEvent, DeckBoard, DeckState, WorkState, Crop } from './types.js';
+
+/** The quantities one board of a deck holds, by printing UUID. */
+export function boardCards(deck: DeckState, board: DeckBoard): Record<string, number> {
+    return board === 'side' ? deck.sideboard || {} : deck.cards;
+}
 
 function requireValue(condition: unknown, message: string): asserts condition {
     if (!condition) throw new DomainError(message);
@@ -7,6 +12,10 @@ function requireValue(condition: unknown, message: string): asserts condition {
 
 function validName(value: unknown): asserts value is string {
     requireValue(typeof value === 'string' && value.trim().length > 0 && value.length <= 1024, 'Enter a name (1-1024 characters).');
+}
+
+function validNoteId(value: unknown): asserts value is string {
+    requireValue(typeof value === 'string' && isPublicId(value, 'note'), 'Invalid note ID.');
 }
 
 function validCrop(crop: Crop, maxXArg?: number): boolean {
@@ -40,17 +49,27 @@ export function decide(state: AggregateState | null, command: DomainCommand): Do
         }
         case 'deck.cards': {
             requireValue(Array.isArray(command.edits) && command.edits.length <= 2000, 'An edit may contain at most 2000 card changes.');
-            const before = (state as DeckState).cards;
-            const after = { ...before };
+            const deck = state as DeckState;
+            const after: Record<DeckBoard, Record<string, number>> = { main: { ...deck.cards }, side: { ...boardCards(deck, 'side') } };
             for (const edit of command.edits) {
                 requireValue(edit && typeof edit.uuid === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(edit.uuid) && !['__proto__', 'constructor', 'prototype'].includes(edit.uuid), 'Invalid card ID.');
                 requireValue(['add', 'remove', 'set'].includes(edit.action) && Number.isSafeInteger(edit.count) && edit.count >= 0 && edit.count <= 1000000, 'Invalid card quantity.');
-                const previous = after[edit.uuid] || 0;
+                requireValue(edit.board === undefined || edit.board === 'main' || edit.board === 'side', 'Invalid deck board.');
+                const cards = after[edit.board || 'main'];
+                const previous = cards[edit.uuid] || 0;
                 const resulting = edit.action === 'set' ? edit.count : edit.action === 'add' ? previous + edit.count : Math.max(0, previous - edit.count);
                 requireValue(Number.isSafeInteger(resulting) && resulting <= 1000000, 'Card quantity is too large.');
-                after[edit.uuid] = resulting;
+                cards[edit.uuid] = resulting;
             }
-            const changes = Object.keys(after).filter((uuid) => (before[uuid] || 0) !== after[uuid]).sort().map((uuid) => ({ uuid, previous: before[uuid] || 0, delta: after[uuid] - (before[uuid] || 0), resulting: after[uuid] }));
+            // Main-board changes come first and carry no board, matching events recorded before boards existed.
+            const changes: CardQuantityChange[] = [];
+            for (const board of ['main', 'side'] as const) {
+                const before = boardCards(deck, board);
+                for (const uuid of Object.keys(after[board]).filter((key) => (before[key] || 0) !== after[board][key]).sort()) {
+                    const previous = before[uuid] || 0;
+                    changes.push({ uuid, previous, delta: after[board][uuid] - previous, resulting: after[board][uuid], ...(board === 'side' ? { board } : {}) });
+                }
+            }
             return changes.length ? [{ type: 'CardQuantitiesAdjusted', changes }] : [];
         }
         case 'deck.palette': {
@@ -60,6 +79,8 @@ export function decide(state: AggregateState | null, command: DomainCommand): Do
         }
         case 'deck.crop': requireValue(command.crop && validCrop(command.crop.desktop, 1.12) && validCrop(command.crop.mobile, 1.12), 'Invalid banner crop.'); return [{ type: 'DeckCropSelected', crop: command.crop }];
         case 'deck.style': requireValue(['card', 'full-art'].includes(command.topStyle), 'Invalid deck style.'); return [{ type: 'DeckStyleSelected', topStyle: command.topStyle }];
+        // Clients own the list of visualizations and fall back on ids they don't know.
+        case 'deck.visualization': requireValue(typeof command.boardVisualization === 'string' && /^[a-z0-9-]{1,40}$/.test(command.boardVisualization), 'Invalid board visualization.'); return (state as DeckState).boardVisualization === command.boardVisualization ? [] : [{ type: 'DeckVisualizationSelected', boardVisualization: command.boardVisualization }];
         case 'deck.blend': {
             const blend = command.blend;
             requireValue(blend && typeof blend.source === 'string' && blend.source.length <= 2048 && blend.crop && validCrop(blend.crop.desktop, 1.12) && validCrop(blend.crop.mobile, 1.12), 'Invalid blend source.');
@@ -75,6 +96,15 @@ export function decide(state: AggregateState | null, command: DomainCommand): Do
             }
             return [{ type: 'DeckBlendGenerated', blend }];
         }
+        case 'deck.note': {
+            validNoteId(command.noteId);
+            requireValue(typeof command.text === 'string' && command.text.trim().length > 0 && command.text.length <= 20000, 'Enter a note (1-20000 characters).');
+            if ((state as DeckState).notes?.[command.noteId]?.text === command.text) return [];
+            return [{ type: 'DeckNoteSaved', noteId: command.noteId, text: command.text }];
+        }
+        case 'deck.noteDelete':
+            validNoteId(command.noteId);
+            return (state as DeckState).notes?.[command.noteId] ? [{ type: 'DeckNoteDeleted', noteId: command.noteId }] : [];
         case 'deck.delete': return [{ type: 'DeckDeleted' }];
         case 'collection.create': validName(command.name); return [{ type: 'CollectionCreated', name: command.name.trim() }];
         case 'location.create': validName(command.name); return [{ type: 'StorageLocationCreated', name: command.name.trim() }];
@@ -122,14 +152,29 @@ export function applyEvent(state: AggregateState | null, event: DomainEvent, id:
             case 'DeckDetailsChanged': next.name = event.name; if (event.art !== undefined) next.art = event.art; if (event.bannerCardUuid !== undefined) next.bannerCardUuid = event.bannerCardUuid; return next;
             case 'CardQuantitiesAdjusted':
                 for (const change of event.changes) {
-                    requireValue((next.cards[change.uuid] || 0) === change.previous && change.previous + change.delta === change.resulting && Number.isSafeInteger(change.resulting) && change.resulting >= 0, 'Card ledger does not balance.');
-                    if (change.resulting) next.cards[change.uuid] = change.resulting; else delete next.cards[change.uuid];
+                    requireValue(change.board === undefined || change.board === 'side', 'Invalid deck board.');
+                    const cards = change.board === 'side' ? (next.sideboard ||= {}) : next.cards;
+                    requireValue((cards[change.uuid] || 0) === change.previous && change.previous + change.delta === change.resulting && Number.isSafeInteger(change.resulting) && change.resulting >= 0, 'Card ledger does not balance.');
+                    if (change.resulting) cards[change.uuid] = change.resulting; else delete cards[change.uuid];
                 }
+                // An empty side board is stored as absent so it hashes like a deck that never had one.
+                if (next.sideboard && !Object.keys(next.sideboard).length) delete next.sideboard;
                 return next;
             case 'DeckPaletteSelected': next.palette = event.palette; return next;
             case 'DeckCropSelected': next.bannerCrop = event.crop; return next;
             case 'DeckStyleSelected': next.topStyle = event.topStyle; return next;
+            case 'DeckVisualizationSelected': next.boardVisualization = event.boardVisualization; return next;
             case 'DeckBlendGenerated': next.bannerBlend = event.blend; return next;
+            case 'DeckNoteSaved': {
+                const notes = (next.notes ||= {});
+                notes[event.noteId] = { text: event.text, createdAt: notes[event.noteId]?.createdAt || at, updatedAt: at };
+                return next;
+            }
+            case 'DeckNoteDeleted':
+                if (next.notes) delete next.notes[event.noteId];
+                // No notes are stored as absent so the deck hashes like one that never had any.
+                if (next.notes && !Object.keys(next.notes).length) delete next.notes;
+                return next;
             case 'DeckDeleted': next.deleted = true; return next;
         }
     }

@@ -1,15 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-	FetchCollectionsResponse,
-	fetchAPICollections
-} from 'src/api/fetch-api-collections';
+import { FetchCollectionsResponse } from 'src/api/fetch-api-collections';
 import { fetchAPICreateCollection } from 'src/api/fetch-api-create-collection';
 import { fetchAPICreateStorageLocation } from 'src/api/fetch-api-create-storage-location';
-import {
-	FetchStorageLocationsResponse,
-	fetchAPIStorageLocations
-} from 'src/api/fetch-api-storage-locations';
+import { FetchStorageLocationsResponse } from 'src/api/fetch-api-storage-locations';
 import { FetchDecksResponse } from '../../api/fetch-api-decks';
 import { Page } from '../../components/Page/Page';
 import { ControlledInput } from './components/ControlledInput';
@@ -31,38 +25,24 @@ export function Collection(props: HomeProps) {
 	const [locations, setStorageLocations] =
 		useState<FetchStorageLocationsResponse>([]);
 
-	const load = useCallback(() => {
-		async function fetchData() {
-			const [collections, locations] = await Promise.all([
-				fetchAPICollections(),
-				fetchAPIStorageLocations()
-			]);
-
-			setCollections(collections);
-			setStorageLocations(locations);
-		}
-		fetchData();
-	}, []);
-
 	const onCreateCollection = useCallback(
 		(name: string) => {
-			fetchAPICreateCollection(name).then(load);
+			void fetchAPICreateCollection(name);
 		},
-		[load]
+		[]
 	);
 	const onCreateLocation = useCallback(
 		(name: string) => {
-			fetchAPICreateStorageLocation(name).then(load);
+			void fetchAPICreateStorageLocation(name);
 		},
-		[load]
+		[]
 	);
 
 	useEffect(() => {
-		load();
 		const stopCollections = observeLocalQuery<FetchCollectionsResponse>({ type: 'collections' }, setCollections);
 		const stopLocations = observeLocalQuery<FetchStorageLocationsResponse>({ type: 'locations' }, setStorageLocations);
 		return function () { stopCollections(); stopLocations(); };
-	}, [load]);
+	}, []);
 
 	const listLen = useMemo(() => {
 		const arr = new Array(Math.max(collections.length, locations.length));

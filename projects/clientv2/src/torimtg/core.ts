@@ -1,7 +1,8 @@
 import type { AccountScope, DomainCommand, EventEnvelope, LocalSnapshot, PublicUser, Query, Session, StoredResource } from '@torimtg/core';
-import type { Intent, LocalCommit, LocalNotice, LocalStore, ServiceWorkerApi, ToriMTG } from './types';
+import type { Dataset, Intent, LocalCommit, LocalNotice, LocalStore, ServiceWorkerApi, ToriMTG } from './types';
 import { outstanding, queryKey } from './adapters/local-store';
 import { projectQuery } from './projections';
+import { detailsOf, isCardSource, overviewOf, recordCards, type CardCatalog } from './card-catalog';
 
 export function createToriMTG(store: LocalStore, worker: ServiceWorkerApi): ToriMTG {
     const listeners = new Set<(notice: LocalNotice) => void>();
@@ -27,18 +28,25 @@ export function createToriMTG(store: LocalStore, worker: ServiceWorkerApi): Tori
             void worker.connect().catch(() => undefined);
         }
     }
+    // Every catalog or resource write bumps the revision, so one parse serves all reads until then.
+    let catalog: { key: string; cards: Promise<CardCatalog> } | null = null;
+    function catalogOf(active: AccountScope, data: Dataset): Promise<CardCatalog> {
+        const key = `${active.partition}:${active.generation}:${data.meta.revision}`;
+        if (catalog?.key !== key) {
+            const cards = buildCatalog(data);
+            catalog = { key, cards };
+            cards.catch(() => { if (catalog?.cards === cards) catalog = null; });
+        }
+        return catalog.cards;
+    }
     async function read<T>(query: Query): Promise<LocalSnapshot<T>> {
         const active = await scope();
         const data = await store.dataset(active);
-        // Catalog responses are stored separately from domain events and checkpoints.
+        const cards = await catalogOf(active, data);
         for (const resource of data.resources) {
-            if (!resource.contentType.includes('json')) continue;
+            if (query.type !== 'history' || !resource.contentType.includes('json')) continue;
             const descriptor = JSON.parse(resource.key);
-            if (['card.details', 'card.resolve', 'card.printings'].includes(descriptor.type)) {
-                const value = await resource.body.text().then(JSON.parse).catch(() => null);
-                for (const card of Array.isArray(value) ? value : value ? [value] : []) if (card.uuid) data.catalog[card.uuid] = { ...(data.catalog[card.uuid] as object || {}), ...card };
-            }
-            if (query.type === 'history' && descriptor.type === 'history' && descriptor.id === query.id) {
+            if (descriptor.type === 'history' && descriptor.id === query.id) {
                 const archive: EventEnvelope[] | { events: EventEnvelope[]; legacy: unknown[] } = await resource.body.text().then(JSON.parse).catch(() => []);
                 const archived = Array.isArray(archive) ? archive : archive.events;
                 data.legacyHistory = Array.isArray(archive) ? [] : archive.legacy;
@@ -53,12 +61,13 @@ export function createToriMTG(store: LocalStore, worker: ServiceWorkerApi): Tori
             value = data.resources.find((resource) => resource.key === queryKey(query.resource)) || null;
             if (!value && (query.resource.type === 'card.details' || query.resource.type === 'card.resolve')) {
                 const descriptor = query.resource;
-                const card = descriptor.type === 'card.details' ? data.catalog[descriptor.uuid] : Object.values(data.catalog).find((item: any) => item.name?.toLowerCase() === descriptor.name.toLowerCase() && (!descriptor.setCode || item.setCode?.toLowerCase() === descriptor.setCode.toLowerCase()));
+                // Each request is answered only from a shape that holds what it asks for.
+                const card = descriptor.type === 'card.details' ? detailsOf(cards[descriptor.uuid]) : Object.values(cards).map(overviewOf).find((item) => item && item.name.toLowerCase() === descriptor.name.toLowerCase() && (!descriptor.setCode || item.setCode.toLowerCase() === descriptor.setCode.toLowerCase()));
                 if (card) value = { key: queryKey(descriptor), body: new Blob([JSON.stringify(card)], { type: 'application/json' }), status: 200, contentType: 'application/json', validatedAt: data.meta.validatedAt || '' };
             }
             presence = value ? 'complete' : 'missing';
         } else {
-            value = projectQuery(data, query);
+            value = projectQuery(data, cards, query);
             presence = value === null ? 'missing' : data.meta.bootstrap.complete ? 'complete' : data.states.length ? 'partial' : 'missing';
             if (query.type === 'deck' && data.states.some((state) => state.id === query.id && state.deleted)) presence = 'complete';
         }
@@ -136,4 +145,16 @@ export function createToriMTG(store: LocalStore, worker: ServiceWorkerApi): Tori
         listeners.add(listener); return function () { listeners.delete(listener); };
     }
     return { commands: { execute, resolve }, queries: { read, requestRefresh }, open, subscribe, session, signIn, signOut, saveBlob, blob, pending, exportPending };
+}
+
+/** Catalog responses are stored separately from domain events and checkpoints. */
+async function buildCatalog(data: Dataset): Promise<CardCatalog> {
+    const cards: CardCatalog = {};
+    for (const card of Object.values(data.catalog)) recordCards(cards, 'sync', card);
+    for (const resource of data.resources) {
+        if (!resource.contentType.includes('json')) continue;
+        const descriptor = JSON.parse(resource.key);
+        if (isCardSource(descriptor.type)) recordCards(cards, descriptor.type, await resource.body.text().then(JSON.parse).catch(() => null));
+    }
+    return cards;
 }

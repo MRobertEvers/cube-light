@@ -9,7 +9,6 @@ import {
 } from './card-detail-view';
 
 import styles from './card-detail-view.module.css';
-import { useMinimumVisible } from 'src/hooks/useMinimumVisible';
 
 interface CardDetailViewProps {
 	cardUuid: string;
@@ -29,7 +28,7 @@ export function CardDetailView(props: CardDetailViewProps) {
 	);
 	const ready =
 		isCardDetailViewReady(state) && state.cardUuid === cardUuid;
-	const showLoading = useMinimumVisible(!ready);
+	const showLoading = !ready;
 
 	useEffect(() => {
 		dispatch(CommandsCardDetailView.initialize({ cardUuid }));

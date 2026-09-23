@@ -1,0 +1,95 @@
+.notes {
+	flex: 1 1 0;
+	min-width: 0;
+	display: grid;
+	align-content: start;
+	gap: 12px;
+	font-size: 0.9rem;
+}
+
+.title {
+	margin: 0;
+	font-size: 20px;
+}
+
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+.composer,
+.note {
+	padding: 12px;
+	background: white;
+	color: var(--theme-text);
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 8px;
+}
+
+.composer textarea,
+.note textarea {
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	padding: 8px;
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 6px;
+	font: inherit;
+	resize: vertical;
+}
+
+.actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.list {
+	display: grid;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.text {
+	margin: 0;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	line-height: 1.45;
+}
+
+.meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 10px;
+	font-size: 12px;
+	opacity: 0.85;
+}
+
+.noteActions {
+	display: flex;
+	gap: 6px;
+}
+
+.delete {
+	color: #b3261e;
+}
+
+.empty {
+	margin: 8px 0;
+	opacity: 0.7;
+}
+
+.error {
+	margin: 0;
+	color: #b3261e;
+}
