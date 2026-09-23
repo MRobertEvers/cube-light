@@ -1,18 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import type { PendingEdit } from '../../../../domain/models/pending-edit';
-import { useAppDispatch } from '../../../../state/use-app-dispatch';
-import {
-    exportUnsyncedEdits,
-    readPendingEdits,
-    resolveEdit,
-    retrySync,
-    selectOffline
-} from '../../../../state/offline.state';
+import { useAppDispatch } from '../../../../redux/use-app-dispatch';
+import { useAppSelector } from '../../../../redux/use-app-selector';
+import { exportUnsyncedEdits, readPendingEdits, resolveEdit, retrySync } from '../../../../redux/offline/offline.thunks';
+import { selectOffline } from '../../../../redux/offline/offline.selectors';
 import styles from './offline-status.module.css';
 
 export function OfflineStatus() {
-    const state = useSelector(selectOffline);
+    const state = useAppSelector(selectOffline);
     const dispatch = useAppDispatch();
     const [online, setOnline] = useState(navigator.onLine);
     const [intents, setIntents] = useState<PendingEdit[]>([]);

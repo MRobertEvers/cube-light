@@ -3,10 +3,9 @@ import { test } from 'node:test';
 import {
 	deserializeHistoryModal,
 	findHistoryModal,
-	historyModalSlice,
-	restoreHistoryModal,
 	serializeHistoryModal
-} from '../src/state/history-modal/history-modal.state';
+} from '../src/redux/history-modal/history-modal.browser-state';
+import { historyModalSlice, restoreHistoryModal } from '../src/redux/history-modal/historyModalSlice';
 
 test('serializes a modal without discarding other router state', () => {
 	const entry = {

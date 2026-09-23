@@ -5,9 +5,9 @@ import { Spinner } from '../../../../kit/components/Spinner/Spinner';
 import { Counter } from '../../../../kit/components/Counter/Counter';
 import { SuggestionInput } from '../../../../kit/components/SuggestionInput/SuggestionInput';
 import { useAsyncReducer } from '../../../../kit/hooks/useAsyncReducer';
-import { addCardByName } from '../../../../../state/decks/decks.state';
-import { searchCardNames } from '../../../../../state/card-name-lookup/card-name-lookup.actions';
-import { useAppDispatch } from '../../../../../state/use-app-dispatch';
+import { addCardByName } from '../../../../../redux/decks/decks.thunks';
+import { searchCardNames } from '../../../../../redux/card-name-lookup/card-name-lookup.thunks';
+import { useAppDispatch } from '../../../../../redux/use-app-dispatch';
 import {
 	Actions,
 	initialState,

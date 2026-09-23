@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { selectDataRevision } from '../../../state/offline.state';
-import { useAppDispatch } from '../../../state/use-app-dispatch';
-import type { AppThunk } from '../../../state/thunk';
+import { selectDataRevision } from '../../../redux/offline/offline.selectors';
+import { useAppDispatch } from '../../../redux/use-app-dispatch';
+import { useAppSelector } from '../../../redux/use-app-selector';
+import type { AppThunk } from '../../../redux/thunk';
 
 type Result<T> = { key: string; value: T | null; failed: boolean };
 
@@ -12,7 +12,7 @@ type Result<T> = { key: string; value: T | null; failed: boolean };
  */
 export function useSavedData<T>(key: string, read: () => AppThunk<Promise<T>>): { value: T | null; failed: boolean } {
 	const dispatch = useAppDispatch();
-	const revision = useSelector(selectDataRevision);
+	const revision = useAppSelector(selectDataRevision);
 	const [result, setResult] = useState<Result<T> | null>(null);
 	useEffect(() => {
 		let active = true;

@@ -68,7 +68,7 @@ enforces this and fails on any violation or unresolved relative import.
  ui/pages/       routes and screens            ─┐
  ui/features/    boards, deck chrome, widgets   ├─ React; data only via Redux
  ui/kit/         shared components and hooks   ─┘
- state/          Redux slices and thunks; thunks receive the ToriMTGEngine as `extra`
+ redux/          Redux slices, selectors and thunks; thunks receive the ToriMTGEngine as `extra`
  ═══════════════ UI ↔ data boundary: the ToriMTGEngine's semantic API ═══════════════
  engine/         ToriMTGEngine; imports only domain/ and its own ports (engine/ports.ts)
  ─────────────── port boundary ───────────────────────────────────────────────────────
@@ -83,5 +83,9 @@ enforces this and fails on any violation or unresolved relative import.
   worker client, or a platform adapter.
 - A worker lives in `src/workers/<name>/` and is named `<Name>Worker`. Only its
   `.client.ts` starts it, and the engine reaches it through a port.
-- Engine changes reach Redux as `EngineEvents` (`state/projections.ts`); notices tell
+- A slice lives in `src/redux/<name>/`: `<name>.types.ts` (state and payload types),
+  `<camelName>Slice.ts` (the `createSlice` and its actions), `<name>.thunks.ts` and
+  `<name>.selectors.ts`. Selectors take `RootState`; components read them through
+  `useAppSelector`, never with a hand-written root type.
+- Engine changes reach Redux as `EngineEvents` (`redux/projections.ts`); notices tell
   the UI to reread, they do not carry data.

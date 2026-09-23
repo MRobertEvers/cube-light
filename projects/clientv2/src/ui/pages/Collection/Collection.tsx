@@ -4,14 +4,9 @@ import type {
 	CollectionSummaries,
 	StorageLocationSummaries
 } from 'src/domain/models/library';
-import { useAppDispatch } from 'src/state/use-app-dispatch';
+import { useAppDispatch } from 'src/redux/use-app-dispatch';
 import { useSavedData } from 'src/ui/kit/hooks/useSavedData';
-import {
-	createCollection,
-	createStorageLocation,
-	readCollections,
-	readStorageLocations
-} from 'src/state/library/library.thunks';
+import { createCollection, createStorageLocation, readCollections, readStorageLocations } from 'src/redux/library/library.thunks';
 import { DeckSummaries } from '../../../domain/models/deck';
 import { Page } from '../../kit/components/Page/Page';
 import { ControlledInput } from './components/ControlledInput';

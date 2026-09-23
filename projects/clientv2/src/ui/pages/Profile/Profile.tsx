@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { CardPrinting } from '../../../domain/models/card';
 import type { ProfileCrop, UserProfile } from '../../../domain/models/session';
-import { useAppDispatch } from '../../../state/use-app-dispatch';
-import { readAllCardNames, readCardPrintings } from '../../../state/cards/cards.thunks';
-import { saveProfileArt } from '../../../state/session/session.state';
-import { errorMessage } from '../../../state/thunk';
+import { useAppDispatch } from '../../../redux/use-app-dispatch';
+import { readAllCardNames, readCardPrintings } from '../../../redux/cards/cards.thunks';
+import { saveProfileArt } from '../../../redux/session/session.thunks';
+import { errorMessage } from '../../../redux/thunk';
 import { useAuth } from '../../kit/components/Auth/AuthGate';
 import { Page } from '../../kit/components/Page/Page';
 import { PrintingPicker } from '../../kit/components/PrintingPicker/PrintingPicker';

@@ -12,18 +12,18 @@ import path from 'node:path';
 const ROOT = path.resolve('src');
 
 type Layer =
-	| 'app' | 'ui:pages' | 'ui:features' | 'ui:kit' | 'state' | 'client' | 'protocol'
+	| 'app' | 'ui:pages' | 'ui:features' | 'ui:kit' | 'redux' | 'client' | 'protocol'
 	| 'worker' | 'engine' | 'platform' | 'domain' | 'asset';
 
 /** May import: each layer lists the layers it is allowed to depend on. */
 const ALLOWED: Record<Layer, Layer[]> = {
 	// The composition root builds the engine, its adapters and the worker clients.
-	'app': ['app', 'ui:pages', 'ui:features', 'ui:kit', 'state', 'engine', 'platform', 'client', 'protocol', 'domain', 'asset'],
-	'ui:pages': ['ui:pages', 'ui:features', 'ui:kit', 'state', 'domain', 'asset'],
-	'ui:features': ['ui:features', 'ui:kit', 'state', 'domain', 'asset'],
-	'ui:kit': ['ui:kit', 'state', 'domain', 'asset'],
+	'app': ['app', 'ui:pages', 'ui:features', 'ui:kit', 'redux', 'engine', 'platform', 'client', 'protocol', 'domain', 'asset'],
+	'ui:pages': ['ui:pages', 'ui:features', 'ui:kit', 'redux', 'domain', 'asset'],
+	'ui:features': ['ui:features', 'ui:kit', 'redux', 'domain', 'asset'],
+	'ui:kit': ['ui:kit', 'redux', 'domain', 'asset'],
 	// Thunks receive the ToriMTGEngine; they never see a worker or an adapter.
-	'state': ['state', 'engine', 'domain'],
+	'redux': ['redux', 'engine', 'domain'],
 	'engine': ['engine', 'domain'],
 	// Below the port boundary: adapters and worker clients implement engine ports.
 	'platform': ['platform', 'client', 'protocol', 'engine', 'domain', 'asset'],
@@ -45,7 +45,7 @@ export function layerOf(file: string): Layer {
 	if (f.startsWith('domain/')) return 'domain';
 	if (f.startsWith('engine/')) return 'engine';
 	if (f.startsWith('platform/')) return 'platform';
-	if (f.startsWith('state/')) return 'state';
+	if (f.startsWith('redux/')) return 'redux';
 	if (f.startsWith('ui/pages/')) return 'ui:pages';
 	if (f.startsWith('ui/features/')) return 'ui:features';
 	if (f.startsWith('ui/kit/')) return 'ui:kit';

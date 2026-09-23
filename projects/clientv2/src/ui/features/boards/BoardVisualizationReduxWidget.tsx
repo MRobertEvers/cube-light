@@ -1,10 +1,10 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
 import { useIsPhoneLayout } from '../../kit/hooks/useIsPhoneLayout';
-import { selectDeck } from '../../../state/decks/decks.state';
+import { selectDeck } from '../../../redux/decks/decks.selectors';
 import type { BoardReduxWidgetProps } from './board.types';
 import { boardVisualizationOf } from './board-visualizations';
 import type { BoardVisualizationId } from '../../../domain/appearance/board-visualization';
+import { useAppSelector } from '../../../redux/use-app-selector';
 
 type BoardVisualizationReduxWidgetProps = BoardReduxWidgetProps & {
 	/** Shows this visualization instead of the one the deck chose. */
@@ -17,8 +17,8 @@ export function BoardVisualizationReduxWidget(
 ) {
 	const { visualization, ...boardProps } = props;
 	const { deckId } = boardProps;
-	const saved = useSelector(
-		(root: Parameters<typeof selectDeck>[0]) =>
+	const saved = useAppSelector(
+		(root) =>
 			selectDeck(root, deckId)?.boardVisualization
 	);
 	const isPhoneLayout = useIsPhoneLayout();

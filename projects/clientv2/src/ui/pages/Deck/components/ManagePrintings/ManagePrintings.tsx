@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { CardPrinting } from '../../../../../domain/models/card';
-import { useAppDispatch } from 'src/state/use-app-dispatch';
-import { readCardPrintings } from 'src/state/cards/cards.thunks';
+import { useAppDispatch } from 'src/redux/use-app-dispatch';
+import { readCardPrintings } from 'src/redux/cards/cards.thunks';
 import type {
 	DeckBoard,
 	DeckCardEntry

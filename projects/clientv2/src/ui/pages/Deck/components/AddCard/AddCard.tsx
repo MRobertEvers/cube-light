@@ -9,9 +9,9 @@ import { Counter } from 'src/ui/kit/components/Counter/Counter';
 import { SuggestionInput } from 'src/ui/kit/components/SuggestionInput/SuggestionInput';
 import { useAsyncReducer } from 'src/ui/kit/hooks/useAsyncReducer';
 import { Actions, initialState, reducerAddCard } from './add-card-state';
-import { addCardByName } from 'src/state/decks/decks.state';
-import { searchCardNames } from 'src/state/card-name-lookup/card-name-lookup.actions';
-import { useAppDispatch } from 'src/state/use-app-dispatch';
+import { addCardByName } from 'src/redux/decks/decks.thunks';
+import { searchCardNames } from 'src/redux/card-name-lookup/card-name-lookup.thunks';
+import { useAppDispatch } from 'src/redux/use-app-dispatch';
 import styles from './card-adder.module.css';
 import { DECK_BOARD_ORDER } from 'src/domain/deck/boards';
 

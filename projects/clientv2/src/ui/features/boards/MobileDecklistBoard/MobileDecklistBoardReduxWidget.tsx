@@ -1,21 +1,16 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
-import {
-	selectDeck,
-	selectDeckCardAction
-} from '../../../../state/decks/decks.state';
+import { selectDeck, selectDeckCardAction } from '../../../../redux/decks/decks.selectors';
 import type { BoardReduxWidgetProps } from '../board.types';
 import { decklistSpotlight } from '../decklist-spotlight';
 import { useBoardCardEvents } from '../use-board-card-events';
 import { MobileDecklistBoard } from './MobileDecklistBoard';
-
-type DecksRoot = Parameters<typeof selectDeck>[0];
+import { useAppSelector } from '../../../../redux/use-app-selector';
 
 /** MobileDecklistBoard for a deck in the store. Renders nothing until the deck loads. */
 export function MobileDecklistBoardReduxWidget(props: BoardReduxWidgetProps) {
 	const { deckId } = props;
-	const data = useSelector((root: DecksRoot) => selectDeck(root, deckId));
-	const cardAction = useSelector((root: DecksRoot) =>
+	const data = useAppSelector((root) => selectDeck(root, deckId));
+	const cardAction = useAppSelector((root) =>
 		selectDeckCardAction(root, deckId)
 	);
 	const onCardEvent = useBoardCardEvents(props);

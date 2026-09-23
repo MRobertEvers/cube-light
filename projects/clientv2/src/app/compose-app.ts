@@ -12,8 +12,8 @@ import { WasmNameIndexBuilder } from '../platform/wasm/name-index-builder';
 import { API_URI } from '../platform/api-url';
 import { BannerBlendWorkerClient } from '../workers/banner-blend/banner-blend.client';
 import { CardListLintWorkerClient } from '../workers/card-list-lint/card-list-lint.client';
-import { configureStore, type StoreType } from '../state/configure-store';
-import { startProjections } from '../state/projections';
+import { configureStore, type StoreType } from '../redux/configure-store';
+import { startProjections } from '../redux/projections';
 
 /**
  * The one place the app's objects are built, so reading this function shows the whole

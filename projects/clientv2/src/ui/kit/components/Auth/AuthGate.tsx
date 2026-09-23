@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect } from 'react';
-import { useSelector } from 'react-redux';
 import type { AuthUser } from 'src/domain/models/session';
-import { useAppDispatch } from 'src/state/use-app-dispatch';
-import { loadSession, selectSession, signOut as signOutThunk } from 'src/state/session/session.state';
+import { useAppDispatch } from 'src/redux/use-app-dispatch';
+import { useAppSelector } from 'src/redux/use-app-selector';
+import { loadSession, signOut as signOutThunk } from 'src/redux/session/session.thunks';
+import { selectSession } from 'src/redux/session/session.selectors';
 import { LoadingIndicator } from '../LoadingIndicator';
 import { LogoIcon } from '../LogoIcon/LogoIcon';
 import { SignInForm } from './SignInForm';
@@ -16,7 +17,7 @@ type AuthValue = {
 
 /** The signed-in user. Only valid inside AuthGate's children. */
 export function useAuth(): AuthValue {
-	const session = useSelector(selectSession);
+	const session = useAppSelector(selectSession);
 	const dispatch = useAppDispatch();
 	const signOut = useCallback(async () => {
 		await dispatch(signOutThunk());
@@ -32,7 +33,7 @@ export function useAuth(): AuthValue {
  */
 export function AuthGate(props: React.PropsWithChildren) {
 	const { children } = props;
-	const state = useSelector(selectSession);
+	const state = useAppSelector(selectSession);
 	const dispatch = useAppDispatch();
 
 	const load = useCallback(() => {

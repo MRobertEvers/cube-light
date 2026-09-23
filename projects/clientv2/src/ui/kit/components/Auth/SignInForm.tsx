@@ -1,7 +1,7 @@
 import React, { useId, useState } from 'react';
-import { useAppDispatch } from 'src/state/use-app-dispatch';
-import { signIn } from 'src/state/session/session.state';
-import { errorMessage } from 'src/state/thunk';
+import { useAppDispatch } from 'src/redux/use-app-dispatch';
+import { signIn } from 'src/redux/session/session.thunks';
+import { errorMessage } from 'src/redux/thunk';
 
 import styles from './auth.module.css';
 

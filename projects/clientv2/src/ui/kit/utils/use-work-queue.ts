@@ -1,9 +1,9 @@
-import { useSelector } from 'react-redux';
-import { selectWorkError, selectWorkItems } from '../../../state/scans/scans.state';
+import { selectWorkError, selectWorkItems } from '../../../redux/scans/scans.selectors';
+import { useAppSelector } from '../../../redux/use-app-selector';
 
 /** Photos queued for a desktop. `items` is null until the first read. */
 export function useWorkQueue() {
-	const items = useSelector(selectWorkItems);
-	const error = useSelector(selectWorkError);
+	const items = useAppSelector(selectWorkItems);
+	const error = useAppSelector(selectWorkError);
 	return { items, error };
 }

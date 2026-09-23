@@ -1,6 +1,5 @@
 import React from 'react';
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Page } from '../../kit/components/Page/Page';
 import { PageFrame } from '../../kit/components/Page/PageFrame';
 import { DeckHeader } from './DeckHeader';
@@ -35,22 +34,13 @@ import type { DeckView } from '../../features/deck-chrome/DeckViewSwitch';
 import { DeckNotes } from './components/DeckNotes/DeckNotes';
 
 import styles from './deck.module.css';
-import {
-	deleteDeck,
-	editDeckCards,
-	loadDeck,
-	renameDeck,
-	selectDeck,
-	selectDeckCardAction,
-	selectDeckError,
-	setInitialDeck
-} from '../../../state/decks/decks.state';
-import { useAppDispatch } from '../../../state/use-app-dispatch';
-import {
-	closeAddCards,
-	openAddCards,
-	selectAddCards
-} from '../../../state/add-cards/add-cards.state';
+import { deleteDeck, editDeckCards, loadDeck, renameDeck } from '../../../redux/decks/decks.thunks';
+import { selectDeck, selectDeckCardAction, selectDeckError } from '../../../redux/decks/decks.selectors';
+import { setInitialDeck } from '../../../redux/decks/decksSlice';
+import { useAppDispatch } from '../../../redux/use-app-dispatch';
+import { useAppSelector } from '../../../redux/use-app-selector';
+import { closeAddCards, openAddCards } from '../../../redux/add-cards/addCardsSlice';
+import { selectAddCards } from '../../../redux/add-cards/add-cards.selectors';
 import { onAccent, readableAccent } from '../../../domain/appearance/card-palette';
 import { useCardPalette } from '../../kit/utils/use-card-palette';
 import { DeckFullArtTop } from '../../kit/components/DeckFullArtTop/DeckFullArtTop';
@@ -98,10 +88,10 @@ export function Deck(props: DeckProps) {
 	const navigate = useNavigate();
 	const modalHistory = useHistoryModal<DeckModal>(`deck:${deckId}`);
 	const storeDispatch = useAppDispatch();
-	const data = useSelector((root: Parameters<typeof selectDeck>[0]) =>
+	const data = useAppSelector((root) =>
 		selectDeck(root, deckId)
 	);
-	const error = useSelector((root: Parameters<typeof selectDeckError>[0]) =>
+	const error = useAppSelector((root) =>
 		selectDeckError(root, deckId)
 	);
 	const showInitialLoading = !data && !error;
@@ -111,14 +101,14 @@ export function Deck(props: DeckProps) {
 	} | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
-	const cardActionError = useSelector(
-		(root: Parameters<typeof selectDeckCardAction>[0]) =>
+	const cardActionError = useAppSelector(
+		(root) =>
 			selectDeckCardAction(root, deckId).error
 	);
 	const [bannerElement, setBannerElement] = useState<HTMLElement | null>(
 		null
 	);
-	const addCards = useSelector(selectAddCards);
+	const addCards = useAppSelector(selectAddCards);
 	const modal = modalHistory.value;
 	// Printings are serialized as a snapshot so Back/Forward cannot replace the
 	// dialog's working set during a background deck refresh.

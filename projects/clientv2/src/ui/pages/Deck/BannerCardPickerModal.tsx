@@ -1,19 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import { useSelector } from 'react-redux';
 import { Modal } from './components/Modal/Modal';
 import { PrintingPicker } from '../../kit/components/PrintingPicker/PrintingPicker';
 import { SuggestionInput } from '../../kit/components/SuggestionInput/SuggestionInput';
-import { useAppDispatch } from '../../../state/use-app-dispatch';
-import {
-	chooseBannerCard,
-	closeBannerPicker,
-	loadBannerPrintings,
-	saveBannerSelection,
-	selectBannerPicker,
-	selectBannerPrinting,
-	setBannerQuery,
-	setBannerSuggestionsOpen
-} from '../../../state/banner-picker/banner-picker.state';
+import { useAppDispatch } from '../../../redux/use-app-dispatch';
+import { useAppSelector } from '../../../redux/use-app-selector';
+import { chooseBannerCard, closeBannerPicker, selectBannerPrinting, setBannerQuery, setBannerSuggestionsOpen } from '../../../redux/banner-picker/bannerPickerSlice';
+import { loadBannerPrintings, saveBannerSelection } from '../../../redux/banner-picker/banner-picker.thunks';
+import { selectBannerPicker } from '../../../redux/banner-picker/banner-picker.selectors';
 import styles from './deck-settings.module.css';
 
 export function BannerCardPickerModal(props: {
@@ -25,7 +18,7 @@ export function BannerCardPickerModal(props: {
 }) {
 	const { deckId, deckName, open, onClose, onSaved } = props;
 	const dispatch = useAppDispatch();
-	const picker = useSelector(selectBannerPicker);
+	const picker = useAppSelector(selectBannerPicker);
 	const dialogRef = useRef<HTMLDivElement>(null);
 	const visible = open && picker.open && picker.deckId === deckId;
 

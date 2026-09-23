@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { DeckNote } from '../../../../../domain/models/deck';
-import { useAppDispatch } from '../../../../../state/use-app-dispatch';
-import { addDeckNote, editDeckNote, removeDeckNote } from '../../../../../state/decks/decks.state';
+import { useAppDispatch } from '../../../../../redux/use-app-dispatch';
+import { addDeckNote, editDeckNote, removeDeckNote } from '../../../../../redux/decks/decks.thunks';
 import { Button } from '../../../../kit/components/Button/Button';
 
 import styles from './deck-notes.module.css';

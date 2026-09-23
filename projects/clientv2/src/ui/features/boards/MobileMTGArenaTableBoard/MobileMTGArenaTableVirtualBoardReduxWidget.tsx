@@ -1,14 +1,11 @@
 import React, { useMemo } from 'react';
-import { useSelector } from 'react-redux';
-import { selectArenaSearch } from '../../../../state/arena-table/arena-table.state';
-import { selectDeck } from '../../../../state/decks/decks.state';
+import { selectArenaSearch } from '../../../../redux/arena-table/arena-table.selectors';
+import { selectDeck } from '../../../../redux/decks/decks.selectors';
 import type { BoardReduxWidgetProps } from '../board.types';
 import { useBoardCardEvents } from '../use-board-card-events';
 import { MobileMTGArenaTableVirtualBoard } from './MobileMTGArenaTableVirtualBoard';
 import { type ArenaTablePart, arenaTablePart } from '../MTGArenaTableBoard/split-arena-table';
-
-type Root = Parameters<typeof selectDeck>[0] &
-	Parameters<typeof selectArenaSearch>[0];
+import { useAppSelector } from '../../../../redux/use-app-selector';
 
 export type MobileMTGArenaTableVirtualBoardReduxWidgetProps = BoardReduxWidgetProps & {
 	/** Which half of the deck's table, by the deck's Arena search in the store. */
@@ -23,8 +20,8 @@ export function MobileMTGArenaTableVirtualBoardReduxWidget(
 	props: MobileMTGArenaTableVirtualBoardReduxWidgetProps
 ) {
 	const { deckId, part, label, showLabel, emptyText } = props;
-	const data = useSelector((root: Root) => selectDeck(root, deckId));
-	const search = useSelector((root: Root) => selectArenaSearch(root, deckId));
+	const data = useAppSelector((root) => selectDeck(root, deckId));
+	const search = useAppSelector((root) => selectArenaSearch(root, deckId));
 	const onCardEvent = useBoardCardEvents(props);
 	const groups = useMemo(
 		() => (data ? arenaTablePart(data.boards, search, part) : []),

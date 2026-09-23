@@ -1,8 +1,8 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { CardPrinting } from 'src/domain/models/card';
-import { useAppDispatch } from 'src/state/use-app-dispatch';
-import { readCardPrintings } from 'src/state/cards/cards.thunks';
+import { useAppDispatch } from 'src/redux/use-app-dispatch';
+import { readCardPrintings } from 'src/redux/cards/cards.thunks';
 import { PrintingPicker } from 'src/ui/kit/components/PrintingPicker/PrintingPicker';
 import { BackIcon } from 'src/ui/kit/components/BackLink/BackIcon';
 import styles from './printing-sheet.module.css';

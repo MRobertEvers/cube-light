@@ -1,17 +1,13 @@
 import React, { useEffect } from 'react';
-import { useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { OverflowMenu } from 'src/ui/kit/components/OverflowMenu/OverflowMenu';
 import { SpotlightCard } from 'src/ui/features/SpotlightCard/SpotlightCard';
 import { DeckSummaries } from '../../../domain/models/deck';
-import {
-	createDeck,
-	loadDecks,
-	selectDecks,
-	selectDecksError,
-	setInitialDecks
-} from '../../../state/decks/decks.state';
-import { useAppDispatch } from '../../../state/use-app-dispatch';
+import { createDeck, loadDecks } from '../../../redux/decks/decks.thunks';
+import { selectDecks, selectDecksError } from '../../../redux/decks/decks.selectors';
+import { setInitialDecks } from '../../../redux/decks/decksSlice';
+import { useAppDispatch } from '../../../redux/use-app-dispatch';
+import { useAppSelector } from '../../../redux/use-app-selector';
 import { Page } from '../../kit/components/Page/Page';
 import { Modal } from '../Deck/components/Modal';
 import {
@@ -55,8 +51,8 @@ export function Home(props: HomeProps) {
 	const dispatch = useAppDispatch();
 	const modalHistory = useHistoryModal<HomeModal>('home');
 	const modal = modalHistory.value;
-	const data = useSelector(selectDecks);
-	const error = useSelector(selectDecksError);
+	const data = useAppSelector(selectDecks);
+	const error = useAppSelector(selectDecksError);
 
 	useEffect(() => {
 		if (initialData) dispatch(setInitialDecks(initialData));

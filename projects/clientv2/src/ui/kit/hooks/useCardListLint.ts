@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CardListProblem } from '../../../domain/card-names/card-list-problem';
-import { useAppDispatch } from '../../../state/use-app-dispatch';
-import { checkCardList, completeCardName, prepareCardListChecks } from '../../../state/cards/cards.thunks';
+import { useAppDispatch } from '../../../redux/use-app-dispatch';
+import { checkCardList, completeCardName, prepareCardListChecks } from '../../../redux/cards/cards.thunks';
 
 export type CardListLintStatus = 'loading' | 'ready' | 'failed';
 export type CardListCompletions = { query: string; names: string[] };

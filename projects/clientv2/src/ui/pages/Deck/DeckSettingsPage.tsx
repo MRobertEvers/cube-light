@@ -1,21 +1,15 @@
 import React, { useEffect, useLayoutEffect } from 'react';
-import { useSelector } from 'react-redux';
 import { BackLink } from '../../kit/components/BackLink/BackLink';
 import { Page } from '../../kit/components/Page/Page';
 import { LoadingIndicator } from '../../kit/components/LoadingIndicator';
-import {
-	loadDeck,
-	selectDeck,
-	selectDeckError
-} from '../../../state/decks/decks.state';
-import { useAppDispatch } from '../../../state/use-app-dispatch';
+import { loadDeck } from '../../../redux/decks/decks.thunks';
+import { selectDeck, selectDeckError } from '../../../redux/decks/decks.selectors';
+import { useAppDispatch } from '../../../redux/use-app-dispatch';
+import { useAppSelector } from '../../../redux/use-app-selector';
 import { onAccent, readableAccent } from '../../../domain/appearance/card-palette';
 import { useCardPalette } from '../../kit/utils/use-card-palette';
-import {
-	appearanceActions,
-	appearanceView,
-	selectAppearanceSettings
-} from '../../../state/appearance-settings/appearance-settings.state';
+import { appearanceActions } from '../../../redux/appearance-settings/appearanceSettingsSlice';
+import { appearanceView, selectAppearanceSettings } from '../../../redux/appearance-settings/appearance-settings.selectors';
 import { BannerCardPickerModal } from './BannerCardPickerModal';
 import {
 	BannerCardSection,
@@ -27,11 +21,9 @@ import {
 } from './DeckSettingsSections';
 import styles from './deck-settings.module.css';
 import { useHistoryModal } from '../../kit/hooks/useHistoryModal';
-import {
-	openBannerPicker,
-	type OpenBannerPickerPayload,
-	selectBannerPicker
-} from '../../../state/banner-picker/banner-picker.state';
+import { openBannerPicker } from '../../../redux/banner-picker/bannerPickerSlice';
+import { type OpenBannerPickerPayload } from '../../../redux/banner-picker/banner-picker.types';
+import { selectBannerPicker } from '../../../redux/banner-picker/banner-picker.selectors';
 
 export type DeckSettingsPageProps = { deckId: string };
 
@@ -47,15 +39,15 @@ export function DeckSettingsPage(props: DeckSettingsPageProps) {
 		`deck-settings:${deckId}`
 	);
 	const modal = modalHistory.value;
-	const bannerPicker = useSelector(selectBannerPicker);
-	const data = useSelector((root: Parameters<typeof selectDeck>[0]) =>
+	const bannerPicker = useAppSelector(selectBannerPicker);
+	const data = useAppSelector((root) =>
 		selectDeck(root, deckId)
 	);
-	const loadError = useSelector(
-		(root: Parameters<typeof selectDeckError>[0]) =>
+	const loadError = useAppSelector(
+		(root) =>
 			selectDeckError(root, deckId)
 	);
-	const appearance = useSelector(selectAppearanceSettings);
+	const appearance = useAppSelector(selectAppearanceSettings);
 	const showInitialLoading = !data && !loadError;
 	const generatedPalette = useCardPalette(data?.icon);
 	const view = appearanceView(appearance, deckId, data, generatedPalette);

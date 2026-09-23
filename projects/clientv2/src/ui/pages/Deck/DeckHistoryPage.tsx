@@ -9,7 +9,7 @@ import { Page } from '../../kit/components/Page/Page';
 import { NextPage } from '../../kit/components/Page/NextPage';
 import styles from './deck-history.module.css';
 import { useSavedData } from '../../kit/hooks/useSavedData';
-import { readDeckHistory } from '../../../state/decks/decks.state';
+import { readDeckHistory } from '../../../redux/decks/decks.thunks';
 
 function CardChanges(props: {
 	cards: DeckHistoryCard[];

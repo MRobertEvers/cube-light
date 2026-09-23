@@ -1,9 +1,6 @@
 import { useCallback } from 'react';
-import {
-	deleteDeckCardGroup,
-	moveDeckCardGroup
-} from '../../../state/decks/decks.state';
-import { useAppDispatch } from '../../../state/use-app-dispatch';
+import { deleteDeckCardGroup, moveDeckCardGroup } from '../../../redux/decks/decks.thunks';
+import { useAppDispatch } from '../../../redux/use-app-dispatch';
 import type { BoardCardEvent, BoardReduxWidgetProps } from './board.types';
 
 /** Routes a board's card events: edits go to the store, dialogs to the page. */

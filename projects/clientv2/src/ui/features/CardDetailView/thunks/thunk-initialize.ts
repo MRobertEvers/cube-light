@@ -1,4 +1,4 @@
-import { createAppThunk } from '../../../../state/thunk';
+import { createAppThunk } from '../../../../redux/thunk';
 import type { CardDetails } from 'src/domain/models/card';
 
 export type ThunkInitializeArgs = {

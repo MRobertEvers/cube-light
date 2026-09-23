@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Dispatch, Reducer } from 'redux';
-import type { StoreState } from '../../../state/root-reducers';
-import { useStore } from '../../../state/use-store';
+import type { StoreState } from '../../../redux/root-reducers';
+import { useStore } from '../../../redux/use-store';
 
 export function useReducer<T>(
 	name: string,

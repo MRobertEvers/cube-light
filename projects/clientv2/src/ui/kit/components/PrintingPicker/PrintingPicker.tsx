@@ -1,15 +1,14 @@
 import React, { ReactNode, useMemo, useState, useEffect } from 'react';
 import type { CardPrinting } from '../../../../domain/models/card';
-import { useSelector } from 'react-redux';
 import type { PrintingView } from '../../../../domain/models/session';
-import { useAppDispatch } from '../../../../state/use-app-dispatch';
-import { readPrintingView, savePrintingView } from '../../../../state/profile/profile.thunks';
-import { selectDataRevision } from '../../../../state/offline.state';
+import { useAppDispatch } from '../../../../redux/use-app-dispatch';
+import { useAppSelector } from '../../../../redux/use-app-selector';
+import { readPrintingView, savePrintingView } from '../../../../redux/profile/profile.thunks';
+import { selectDataRevision } from '../../../../redux/offline/offline.selectors';
 
 import styles from './printing-picker.module.css';
 
 const PRINTING_VIEW_KEY = 'printing-picker-view';
-
 
 export type PrintingPickerProps = {
 	printings: CardPrinting[];
@@ -34,7 +33,7 @@ export function PrintingPicker(props: PrintingPickerProps) {
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const dispatch = useAppDispatch();
 	// Rereads whenever saved data changes, so a view chosen on another device shows here.
-	const revision = useSelector(selectDataRevision);
+	const revision = useAppSelector(selectDataRevision);
 	useEffect(() => {
 		async function read() {
 			const saved = await dispatch(readPrintingView());

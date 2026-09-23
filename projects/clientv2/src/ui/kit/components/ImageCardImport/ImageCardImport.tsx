@@ -5,9 +5,9 @@ import {
 } from 'src/domain/scans/image-scan-pipelines';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useAppDispatch } from 'src/state/use-app-dispatch';
-import { createDeck } from 'src/state/decks/decks.state';
-import { queueForDesktop, scanPhoto, scansAreSlowHere } from 'src/state/scans/scans.state';
+import { useAppDispatch } from 'src/redux/use-app-dispatch';
+import { createDeck } from 'src/redux/decks/decks.thunks';
+import { queueForDesktop, scanPhoto, scansAreSlowHere } from 'src/redux/scans/scans.thunks';
 import { HeaderBackButton } from 'src/ui/kit/components/BackLink/BackLink';
 import { HeaderBackSlot } from 'src/ui/kit/components/Header/HeaderBackSlot';
 import { DeckControlIcon } from 'src/ui/kit/components/DeckControlIcons/DeckControlIcons';

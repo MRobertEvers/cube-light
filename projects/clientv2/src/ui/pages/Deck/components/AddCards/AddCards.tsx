@@ -1,19 +1,15 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Button } from 'src/ui/kit/components/Button/Button';
 import { Spinner } from 'src/ui/kit/components/Spinner/Spinner';
 import { HeaderBackButton } from 'src/ui/kit/components/BackLink/BackLink';
 import { HeaderBackSlot } from 'src/ui/kit/components/Header/HeaderBackSlot';
 import { useCardListLint } from 'src/ui/kit/hooks/useCardListLint';
-import {
-	closeAddCards,
-	importDeckCards,
-	selectAddCards,
-	setAddCardsBoard,
-	setAddCardsText
-} from 'src/state/add-cards/add-cards.state';
+import { closeAddCards, setAddCardsBoard, setAddCardsText } from 'src/redux/add-cards/addCardsSlice';
+import { importDeckCards } from 'src/redux/add-cards/add-cards.thunks';
+import { selectAddCards } from 'src/redux/add-cards/add-cards.selectors';
 import { DECK_BOARD_LABELS, DECK_BOARD_ORDER } from 'src/domain/deck/boards';
-import { useAppDispatch } from 'src/state/use-app-dispatch';
+import { useAppDispatch } from 'src/redux/use-app-dispatch';
+import { useAppSelector } from 'src/redux/use-app-selector';
 import {
 	CardListNote,
 	locateCardName,
@@ -50,7 +46,7 @@ export function AddCards(props: { onClose?: () => void }) {
 		submitting: isSubmitting,
 		error,
 		unknownCards
-	} = useSelector(selectAddCards);
+	} = useAppSelector(selectAddCards);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const summaryId = useId();
 	const errorId = useId();

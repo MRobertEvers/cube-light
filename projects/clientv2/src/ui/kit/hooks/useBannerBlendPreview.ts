@@ -5,11 +5,8 @@ import {
 	type BannerBlendConfig,
 	type BannerBlendVariant
 } from '../../../domain/appearance/banner-blend';
-import { useAppDispatch } from '../../../state/use-app-dispatch';
-import {
-	cancelBannerBlendPreview,
-	previewBannerBlend
-} from '../../../state/appearance-settings/banner-preview.thunks';
+import { useAppDispatch } from '../../../redux/use-app-dispatch';
+import { cancelBannerBlendPreview, previewBannerBlend } from '../../../redux/appearance-settings/appearance-settings.thunks';
 
 type Rendered = { key: string; images: Record<BannerBlendVariant, string> };
 type PreviewError = { key: string; message: string };

@@ -9,11 +9,8 @@ import {
 	type BannerSubjectMask,
 	BannerWorkCancelled
 } from '../../../../../domain/appearance/banner-blend';
-import { useAppDispatch } from '../../../../../state/use-app-dispatch';
-import {
-	cancelSubjectMaskPreview,
-	previewSubjectMask
-} from '../../../../../state/appearance-settings/banner-preview.thunks';
+import { useAppDispatch } from '../../../../../redux/use-app-dispatch';
+import { cancelSubjectMaskPreview, previewSubjectMask } from '../../../../../redux/appearance-settings/appearance-settings.thunks';
 import styles from './subject-protection.module.css';
 
 type Tool = 'rect' | 'foreground' | 'background';

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useAppDispatch } from 'src/state/use-app-dispatch';
-import { readDeck } from 'src/state/decks/decks.state';
+import { useAppDispatch } from 'src/redux/use-app-dispatch';
+import { readDeck } from 'src/redux/decks/decks.thunks';
 import { createNameLookupTree } from 'src/domain/card-names/lookup-tables/create-name-lookup-tree';
 import { getFirstNMatchesInLookupTree } from 'src/domain/card-names/lookup-tables/iter-matches-in-lookup-tree';
 import { TextInputButtonGroup } from './TextInputButtonGroup/TextInputButtonGroup';

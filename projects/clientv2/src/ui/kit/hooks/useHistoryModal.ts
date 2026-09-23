@@ -1,15 +1,11 @@
 import { useCallback, useLayoutEffect, useMemo } from 'react';
-import { useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-	deserializeHistoryModal,
-	findHistoryModal,
-	type HistoryModalEntry,
-	restoreHistoryModal,
-	selectHistoryModal,
-	serializeHistoryModal
-} from '../../../state/history-modal/history-modal.state';
-import { useAppDispatch } from '../../../state/use-app-dispatch';
+import { deserializeHistoryModal, findHistoryModal, serializeHistoryModal } from '../../../redux/history-modal/history-modal.browser-state';
+import { type HistoryModalEntry } from '../../../redux/history-modal/history-modal.types';
+import { restoreHistoryModal } from '../../../redux/history-modal/historyModalSlice';
+import { selectHistoryModal } from '../../../redux/history-modal/history-modal.selectors';
+import { useAppDispatch } from '../../../redux/use-app-dispatch';
+import { useAppSelector } from '../../../redux/use-app-selector';
 
 /**
  * Keeps one scope's modal value in Redux and in the current browser-history entry.
@@ -20,7 +16,7 @@ export function useHistoryModal<T>(scope: string) {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const location = useLocation();
-	const entry = useSelector(selectHistoryModal);
+	const entry = useAppSelector(selectHistoryModal);
 	const locationEntry = useMemo(
 		() => deserializeHistoryModal(location.state),
 		[location.state]

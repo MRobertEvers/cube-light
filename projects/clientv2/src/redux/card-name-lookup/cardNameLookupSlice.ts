@@ -1,0 +1,22 @@
+import { createSlice } from '@reduxjs/toolkit';
+import { ActionsCardNameLookup } from './card-name-lookup.thunks';
+import type { CardNameLookupState } from './card-name-lookup.types';
+
+export const initialCardNameLookupSlice: CardNameLookupState = {
+	cardNameLookupTable: null
+};
+
+export const cardNameLookupSlice = createSlice({
+	name: 'cardNameLookup',
+	initialState: initialCardNameLookupSlice,
+	// Ignore this field for typed reducers
+	reducers: {},
+	extraReducers: function (builder) {
+		return builder.addCase(
+			ActionsCardNameLookup.getCardNameLookup.fulfilled,
+			(slice, action) => {
+				slice.cardNameLookupTable = action.payload;
+			}
+		);
+	}
+});

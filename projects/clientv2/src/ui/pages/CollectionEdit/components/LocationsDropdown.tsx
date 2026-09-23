@@ -5,7 +5,7 @@ import {
 } from 'src/domain/models/library';
 import { ComboBox, ComboBoxEvent } from 'src/ui/kit/components/ComboBox/ComboBox';
 import { useSavedData } from 'src/ui/kit/hooks/useSavedData';
-import { readStorageLocations } from 'src/state/library/library.thunks';
+import { readStorageLocations } from 'src/redux/library/library.thunks';
 
 const NO_LOCATIONS: StorageLocationSummaries = [];
 

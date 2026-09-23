@@ -3,9 +3,9 @@ import { Provider } from 'react-redux';
 
 import { Routes } from './routes';
 import { AuthGate } from '../ui/kit/components/Auth/AuthGate';
-import type { StoreType } from '../state/configure-store';
-import { useAppDispatch } from '../state/use-app-dispatch';
-import { runQueuedScansHere, watchWorkQueue } from '../state/scans/scans.state';
+import type { StoreType } from '../redux/configure-store';
+import { useAppDispatch } from '../redux/use-app-dispatch';
+import { runQueuedScansHere, watchWorkQueue } from '../redux/scans/scans.thunks';
 import { OfflineStatus } from '../ui/kit/components/OfflineStatus/OfflineStatus';
 import { PwaInstallProvider } from '../ui/kit/components/InstallApp/PwaInstallProvider';
 

@@ -9,19 +9,11 @@ import {
 import type { CardPalette } from '../../../domain/appearance/card-palette';
 import { DeckFullArtTop } from '../../kit/components/DeckFullArtTop/DeckFullArtTop';
 import { SpotlightCard } from '../../features/SpotlightCard/SpotlightCard';
-import {
-	openBannerPicker,
-	type OpenBannerPickerPayload
-} from '../../../state/banner-picker/banner-picker.state';
-import {
-	appearanceActions,
-	appearanceView,
-	saveCrop,
-	savePalette,
-	saveStyle,
-	saveBlend,
-	saveVisualization
-} from '../../../state/appearance-settings/appearance-settings.state';
+import { openBannerPicker } from '../../../redux/banner-picker/bannerPickerSlice';
+import { type OpenBannerPickerPayload } from '../../../redux/banner-picker/banner-picker.types';
+import { appearanceActions } from '../../../redux/appearance-settings/appearanceSettingsSlice';
+import { appearanceView } from '../../../redux/appearance-settings/appearance-settings.selectors';
+import { saveCrop, savePalette, saveStyle, saveBlend, saveVisualization } from '../../../redux/appearance-settings/appearance-settings.thunks';
 import { BOARD_VISUALIZATIONS } from '../../features/boards/board-visualizations';
 import {
 	artworkKey,
@@ -30,7 +22,7 @@ import {
 	type BannerBlendConfig
 } from '../../../domain/appearance/banner-blend';
 import { SubjectProtection } from './components/SubjectProtection/SubjectProtection';
-import { useAppDispatch } from '../../../state/use-app-dispatch';
+import { useAppDispatch } from '../../../redux/use-app-dispatch';
 import { useBannerBlendPreview } from '../../kit/hooks/useBannerBlendPreview';
 import styles from './deck-settings.module.css';
 
