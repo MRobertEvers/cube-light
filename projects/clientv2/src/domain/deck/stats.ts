@@ -29,10 +29,10 @@ export type DeckStats = {
 	types: TypeBreakdown[];
 };
 
-/** A card is filed under the first of its types listed here, so an Artifact Creature counts as a Creature. */
+/** A card is filed under the first of its types listed here, so an Artifact Creature counts as a Creature and a Land Creature as a Land. */
 const TYPE_PRECEDENCE = [
-	'Creature',
 	'Land',
+	'Creature',
 	'Planeswalker',
 	'Battle',
 	'Instant',

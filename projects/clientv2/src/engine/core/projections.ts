@@ -3,6 +3,7 @@ import type { DeckBoard, DeckState, EventEnvelope, Query, WorkState } from '@tor
 import type { Dataset } from './types';
 import { cardFields, identityOf, overviewOf, type CardCatalog } from './card-catalog';
 import type { BlobUrlResolver } from '../ports';
+import { manaCostColors } from '../../domain/deck/deck-colors';
 
 function art(deck: DeckState, cards: CardCatalog): string | null {
     return deck.art || identityOf(cards[deck.bannerCardUuid || ''])?.art || identityOf(cards[Object.keys(deck.cards)[0]])?.art || null;
@@ -28,6 +29,11 @@ function boardEntries(deck: DeckState, board: DeckBoard, cards: CardCatalog): un
     });
 }
 
+/** The colors of the main board's mana costs. Cards not yet described on this device add none. */
+function colors(deck: DeckState, cards: CardCatalog): string[] {
+    return manaCostColors(Object.keys(deck.cards).map((uuid) => overviewOf(cards[uuid])?.manaCost ?? ''));
+}
+
 function notes(deck: DeckState): unknown[] {
     return Object.entries(deck.notes || {}).map((entry) => ({ noteId: entry[0], text: entry[1].text, createdAt: entry[1].createdAt, updatedAt: entry[1].updatedAt })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
@@ -40,12 +46,12 @@ function blend(deck: DeckState, blobs: BlobUrlResolver): unknown {
 export function projectQuery(data: Dataset, cards: CardCatalog, blobs: BlobUrlResolver, query: Query): unknown {
     const states = data.states.filter((state) => !state.deleted);
     switch (query.type) {
-        case 'decks': return states.filter((state): state is DeckState => state.kind === 'deck').map((deck) => ({ deckId: deck.id, name: deck.name, art: art(deck, cards), bannerBlend: blend(deck, blobs), createdAt: deck.createdAt, updatedAt: deck.updatedAt }));
+        case 'decks': return states.filter((state): state is DeckState => state.kind === 'deck').map((deck) => ({ deckId: deck.id, name: deck.name, art: art(deck, cards), bannerBlend: blend(deck, blobs), colors: colors(deck, cards), tags: deck.tags ?? [], createdAt: deck.createdAt, updatedAt: deck.updatedAt }));
         case 'deck': {
             const deck = states.find((state) => state.id === query.id);
             if (deck?.kind !== 'deck') return null;
             const banner = identityOf(cards[deck.bannerCardUuid || '']);
-            return { name: deck.name, icon: art(deck, cards), bannerCardUuid: deck.bannerCardUuid, bannerCard: banner, palette: deck.palette, bannerCrop: deck.bannerCrop, bannerBlend: blend(deck, blobs), topStyle: deck.topStyle, boardVisualization: deck.boardVisualization ?? null, lastEdit: deck.updatedAt, cards: boardEntries(deck, 'main', cards), sideboard: boardEntries(deck, 'side', cards), notes: notes(deck) };
+            return { name: deck.name, icon: art(deck, cards), bannerCardUuid: deck.bannerCardUuid, bannerCard: banner, palette: deck.palette, bannerCrop: deck.bannerCrop, bannerBlend: blend(deck, blobs), topStyle: deck.topStyle, boardVisualization: deck.boardVisualization ?? null, lastEdit: deck.updatedAt, cards: boardEntries(deck, 'main', cards), sideboard: boardEntries(deck, 'side', cards), notes: notes(deck), tags: deck.tags ?? [] };
         }
         case 'collections': return states.filter((state) => state.kind === 'collection').map((state) => ({ collection_id: state.id, name: 'name' in state ? state.name : '' }));
         case 'locations': return states.filter((state) => state.kind === 'location').map((state) => ({ storage_location_id: state.id, name: 'name' in state ? state.name : '' }));
@@ -74,6 +80,7 @@ function historyEntry(envelope: EventEnvelope, cards: CardCatalog): unknown {
     else if (event.type === 'DeckVisualizationSelected') entry.details.push({ field: 'boardVisualization', before: null, after: event.boardVisualization });
     else if (event.type === 'DeckNoteSaved') entry.details.push({ field: 'note', before: null, after: event.text });
     else if (event.type === 'DeckNoteDeleted') entry.details.push({ field: 'note', before: null, after: null });
+    else if (event.type === 'DeckTagsSet') entry.details.push({ field: 'tags', before: null, after: event.tags.length ? event.tags.join(', ') : null });
     else if (event.type === 'DeckBlendGenerated') entry.details.push({ field: 'bannerBlend', before: null, after: JSON.stringify(event.blend.config) });
     else return null;
     return entry;

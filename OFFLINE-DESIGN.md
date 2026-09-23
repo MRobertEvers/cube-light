@@ -41,9 +41,9 @@ These are architectural invariants:
 3. Exactly one sync host performs application API requests, and it always runs
    the same `SyncCoordinator` against the same IndexedDB store. There is no
    online fast path: the UI never talks to the API directly. That host is
-   `InThreadSyncHost`, which runs the coordinator on the page. There is no
-   service worker: loading the app needs the server, but once loaded it keeps
-   working offline and syncs when the network returns.
+   `InThreadSyncHost`, which runs the coordinator on the page. A shell-only
+   service worker (section 13) lets the app start offline where it can register;
+   it never touches API traffic.
 4. Server results, receipts, errors, and sync progress are persisted before the
    UI is notified. Notifications tell the UI to reread; they do not carry data.
 5. Work survives closing a tab, reloading the page, and retrying a request.
@@ -81,18 +81,16 @@ IndexedDB, sends it to the server, reconciles responses into IndexedDB, and
 announces local commits. Elsewhere in this document "the worker" refers to this
 host; the protocol, lease, and retry rules are the same wherever it runs.
 
-There is deliberately no service worker. An earlier design used one to run sync
-and to serve the app shell from Cache Storage, but registration depends on a
-trusted secure context and failed in too many environments (LAN origins,
-untrusted certificates, private browsing) to be worth its complexity. The
-consequences are:
+Sync deliberately does not run in a service worker. An earlier design did, but
+registration depends on a trusted secure context and failed in too many
+environments (LAN origins, untrusted certificates, private browsing) to carry
+the app's data path. The consequences are:
 
-* The app must be loaded from the server; it does not start with no network.
 * Once loaded, every read and edit is local, and edits made offline sync when the
   network returns while the app is open.
 * Nothing syncs while every tab is closed; queued work resumes at the next launch.
-* The build ships a self-unregistering `/sw.js` that retires the old worker on
-  devices that installed it.
+* Starting the app with no network depends only on the shell worker (section 13),
+  an optional enhancement.
 
 IndexedDB does not invoke the host automatically. After committing work, the
 engine wakes it. The host reads the work itself. Missing a wake-up cannot lose the
@@ -1067,11 +1065,16 @@ Provide a manifest with stable `id`, `start_url`, scope, name, standalone displa
 theme colors, and appropriate regular/maskable icons. Serve the application and
 API over HTTPS, preferably through one origin with `/api` reverse-proxied.
 
-There is no service worker and no Cache Storage shell, so launching the app needs
-the server; ordinary HTTP caching of fingerprinted assets is the only asset cache.
-IndexedDB holds structured application state, durable commands, and saved blobs,
-which the page turns into object URLs. `/sw.js` exists only to unregister the
-worker older builds installed.
+`ShellWorker` (`src/workers/shell/`, built to `/sw.js` by `tools/shell-worker.mjs`)
+only serves files. It precaches the built HTML, JS, CSS, icons, and small WASM,
+answers same-origin navigations with the cached `index.html` so deep links open
+offline, and caches `/assets/` and `/mana-symbols/` files on first use. It ignores
+`/api/` entirely and holds no application data; IndexedDB holds structured state,
+durable commands, and saved blobs, which the page turns into object URLs.
+
+It registers only in production builds on a secure context (localhost or a
+trusted certificate). Where it cannot, the app behaves the same but needs the
+network to load. Development builds unregister any leftover worker.
 
 Downloading large OCR models/card packs is explicit, resumable, and size-aware.
 Do not include every model in the mandatory install transaction. Show offline
@@ -1091,12 +1094,14 @@ Evict reproducible images/catalog packs before private data. Persistence is not
 guaranteed, and users can clear site data, so “saved on this device” is not a server
 backup. See [MDN: storage quotas and eviction](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria).
 
-Never promise that the app will start without a network. If IndexedDB is
+Never promise that a first-ever visit, or an origin without the shell worker, will start without a network. If IndexedDB is
 unavailable, block persistent edits.
 
 ## 14. Updates and recovery
 
-A reload picks up a new build. Pending outbox work does not have to be uploaded
+A new shell worker installs its build's cache, takes over immediately, and keeps
+the previous build's cache so open tabs can still load its lazy chunks; the next
+load runs the new build. Pending outbox work does not have to be uploaded
 first.
 
 Handshake on protocol/schema compatibility. Version command payloads so newer

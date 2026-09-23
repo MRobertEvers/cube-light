@@ -3,6 +3,7 @@ import { sessionSlice } from './session/sessionSlice';
 import { scansSlice } from './scans/scansSlice';
 import { cardNameLookupSlice } from './card-name-lookup/cardNameLookupSlice';
 import { decksSlice } from './decks/decksSlice';
+import { deckGroupsSlice } from './deck-groups/deckGroupsSlice';
 import { bannerPickerSlice } from './banner-picker/bannerPickerSlice';
 import { addCardsSlice } from './add-cards/addCardsSlice';
 import { appearanceSettingsSlice } from './appearance-settings/appearanceSettingsSlice';
@@ -16,6 +17,7 @@ export const rootReducers = {
 	[scansSlice.name]: scansSlice.reducer,
 	[cardNameLookupSlice.name]: cardNameLookupSlice.reducer,
 	[decksSlice.name]: decksSlice.reducer,
+	[deckGroupsSlice.name]: deckGroupsSlice.reducer,
 	[bannerPickerSlice.name]: bannerPickerSlice.reducer,
 	[addCardsSlice.name]: addCardsSlice.reducer,
 	[appearanceSettingsSlice.name]: appearanceSettingsSlice.reducer,

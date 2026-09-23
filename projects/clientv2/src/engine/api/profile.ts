@@ -1,5 +1,7 @@
 import type { ToriMTG } from '../core/types';
 import type { AuthUser, PrintingView, UserProfile } from '../../domain/models/session';
+import type { DeckGroup } from '../../domain/models/deck';
+import type { Versioned } from './versioned';
 
 /** The signed-in user's own settings, synced like any other data. */
 export class ProfileApi {
@@ -39,6 +41,25 @@ export class ProfileApi {
 			id: `profile_${user.id}`,
 			userId: user.id,
 			printingView
+		});
+	}
+
+	/** How the deck list is grouped, in display order. Empty before any group is saved. */
+	async deckGroups(): Promise<Versioned<DeckGroup[]>> {
+		const saved = await this.tori.queries.read<{ deckGroups?: DeckGroup[] }>({
+			type: 'profile'
+		});
+		return { value: saved.data?.deckGroups ?? [], revision: saved.localRevision };
+	}
+
+	/** Replaces every deck group, keeping their order. */
+	async setDeckGroups(deckGroups: DeckGroup[]): Promise<void> {
+		const user = await this.signedInUser();
+		await this.tori.commands.execute({
+			type: 'profile.deckGroups',
+			id: `profile_${user.id}`,
+			userId: user.id,
+			deckGroups
 		});
 	}
 

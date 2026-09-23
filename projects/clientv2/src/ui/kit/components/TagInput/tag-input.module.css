@@ -1,0 +1,87 @@
+.tag-input {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 42px;
+	padding: 5px 6px;
+	border: 1px solid var(--deck-border, #cac4c1);
+	border-radius: 7px;
+	background: white;
+}
+
+.tag-input:focus-within {
+	outline: 2px solid var(--deck-accent, #a65350);
+	outline-offset: 1px;
+}
+
+.tag-input[aria-disabled='true'] {
+	opacity: 0.7;
+}
+
+.chips {
+	display: contents;
+	list-style: none;
+}
+
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	max-width: 100%;
+	min-height: 28px;
+	padding: 0 2px 0 10px;
+	border-radius: 999px;
+	background: #f1ecea;
+	color: #4a4542;
+	font-size: 14px;
+}
+
+.chip span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.chip button {
+	display: inline-grid;
+	place-items: center;
+	width: 24px;
+	height: 24px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: #736c68;
+	cursor: pointer;
+}
+
+.chip button:hover:enabled {
+	background: #e2dbd8;
+	color: #26211f;
+}
+
+.chip button:focus-visible {
+	outline: 2px solid var(--deck-accent, #a65350);
+}
+
+/* Overrides the dialogs' own full-width input rule. */
+.tag-input .field {
+	flex: 1 1 120px;
+	width: auto;
+	min-width: 0;
+	height: 30px;
+	margin: 0;
+	padding: 0 4px;
+	border: 0;
+	outline: none;
+	background: transparent;
+	font: inherit;
+}
+
+.tag-input .field:focus {
+	outline: none;
+}

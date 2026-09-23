@@ -14,6 +14,8 @@ export type SpotlightCardProps = {
 	crop?: BannerCrop;
 	bannerBlend?: BannerBlend | null;
 	tile?: boolean;
+	/** Shown under the dates. */
+	footer?: React.ReactNode;
 	onCropChange?: (variant: keyof BannerCrop, frame: BannerFrame) => void;
 	variant?: 'responsive' | 'desktop' | 'mobile';
 	preview?: boolean;
@@ -29,6 +31,7 @@ export function SpotlightCard(props: SpotlightCardProps) {
 		crop,
 		bannerBlend,
 		tile = false,
+		footer,
 		onCropChange,
 		variant = 'responsive',
 		preview = false
@@ -152,6 +155,7 @@ export function SpotlightCard(props: SpotlightCardProps) {
 							</span>
 						</div>
 					)}
+					{footer}
 				</div>
 			</div>
 		</div>

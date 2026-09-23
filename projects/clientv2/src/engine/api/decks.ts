@@ -1,4 +1,4 @@
-import type { CardEdit, DomainCommand } from '@torimtg/core';
+import { normalizeTags, type CardEdit, type DomainCommand } from '@torimtg/core';
 import type { ToriMTG } from '../core/types';
 import type { LocalReader } from '../core/local-reader';
 import { newId } from '../../domain/ids';
@@ -154,6 +154,11 @@ export class DeckApi {
 				images
 			}
 		});
+	}
+
+	/** Replaces the deck's tags. Blank and repeated tags are dropped. */
+	async setTags(deckId: string, tags: string[]): Promise<void> {
+		await this.tori.commands.execute({ type: 'deck.tags', id: deckId, tags: normalizeTags(tags) });
 	}
 
 	/** Returns the new note's id. */

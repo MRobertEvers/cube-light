@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Page } from '../../kit/components/Page/Page';
 import { PageFrame } from '../../kit/components/Page/PageFrame';
 import { DeckHeader } from './DeckHeader';
@@ -34,8 +34,10 @@ import type { DeckView } from '../../features/deck-chrome/DeckViewSwitch';
 import { DeckNotes } from './components/DeckNotes/DeckNotes';
 
 import styles from './deck.module.css';
-import { deleteDeck, editDeckCards, loadDeck, renameDeck } from '../../../redux/decks/decks.thunks';
-import { selectDeck, selectDeckCardAction, selectDeckError } from '../../../redux/decks/decks.selectors';
+import { deleteDeck, editDeckCards, loadDeck, loadDecks, renameDeck, saveDeckTags } from '../../../redux/decks/decks.thunks';
+import { selectDeck, selectDeckCardAction, selectDeckError, selectDecks } from '../../../redux/decks/decks.selectors';
+import { TagInput } from '../../kit/components/TagInput/TagInput';
+import { knownDeckTags } from '../../../domain/deck/deck-groups';
 import { setInitialDeck } from '../../../redux/decks/decksSlice';
 import { useAppDispatch } from '../../../redux/use-app-dispatch';
 import { useAppSelector } from '../../../redux/use-app-selector';
@@ -98,6 +100,7 @@ export function Deck(props: DeckProps) {
 	const [detailsDraft, setDetailsDraft] = useState<{
 		deckId: string;
 		name: string;
+		tags: string[];
 	} | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
@@ -141,6 +144,9 @@ export function Deck(props: DeckProps) {
 		.reduce((total, item) => total + item.cardsAdded, 0);
 	const draft = detailsDraft?.deckId === deckId ? detailsDraft : null;
 	const name = draft?.name ?? data?.name ?? '';
+	const tags = draft?.tags ?? data?.tags ?? [];
+	const deckList = useAppSelector(selectDecks);
+	const tagSuggestions = useMemo(() => knownDeckTags(deckList ?? []), [deckList]);
 	const topBannerCard = data ? deckTopBannerCard(data) : undefined;
 
 	const previewIcon = data?.icon;
@@ -233,18 +239,21 @@ export function Deck(props: DeckProps) {
 		navigate('/', { replace: true });
 	}
 
-	async function saveName() {
+	async function saveDetails() {
 		if (!data || !name.trim() || isSaving) return;
 		const nextName = name.trim();
+		const tagsChanged = tags.join('\n') !== (data.tags ?? []).join('\n');
 		setSaveError(null);
-		if (nextName === data.name) {
+		if (nextName === data.name && !tagsChanged) {
 			setDetailsDraft(null);
 			modalHistory.close();
 			return;
 		}
 		setIsSaving(true);
 		try {
-			await storeDispatch(renameDeck(deckId, nextName));
+			if (nextName !== data.name)
+				await storeDispatch(renameDeck(deckId, nextName));
+			if (tagsChanged) await storeDispatch(saveDeckTags(deckId, tags));
 			setDetailsDraft(null);
 			modalHistory.close();
 		} catch {
@@ -298,7 +307,9 @@ export function Deck(props: DeckProps) {
 		},
 		onImportImage: () => modalHistory.open({ type: 'image-import' }),
 		onEditName: () => {
-			setDetailsDraft({ deckId, name: data.name });
+			setDetailsDraft({ deckId, name: data.name, tags: data.tags ?? [] });
+			// Suggest the tags other decks use.
+			if (!deckList) void storeDispatch(loadDecks());
 			setSaveError(null);
 			modalHistory.open({ type: 'deck-details' });
 		},
@@ -376,7 +387,7 @@ export function Deck(props: DeckProps) {
 						aria-modal="true"
 						aria-labelledby="deck-details-title"
 					>
-						<h2 id="deck-details-title">Edit deck name</h2>
+						<h2 id="deck-details-title">Name and tags</h2>
 						<div className={styles['deck-details-fields']}>
 							<label htmlFor="edit-deck-name">Deck name</label>
 							<input
@@ -388,13 +399,30 @@ export function Deck(props: DeckProps) {
 								onChange={(event) =>
 									setDetailsDraft({
 										deckId,
-										name: event.target.value
+										name: event.target.value,
+										tags
 									})
 								}
 								onKeyDown={(event) => {
-									if (event.key === 'Enter') void saveName();
+									if (event.key === 'Enter') void saveDetails();
 								}}
 							/>
+							<label htmlFor="edit-deck-tags">Tags</label>
+							<TagInput
+								id="edit-deck-tags"
+								tags={tags}
+								suggestions={tagSuggestions}
+								disabled={isSaving}
+								placeholder="Add a tag, e.g. Cube"
+								onChange={(next) =>
+									setDetailsDraft({ deckId, name, tags: next })
+								}
+								onSubmit={() => void saveDetails()}
+							/>
+							<p className={styles['field-hint']}>
+								Press Enter or comma after each tag. Tags put
+								this deck into groups on the decks page.
+							</p>
 						</div>
 						{saveError && (
 							<p className={styles['save-error']} role="alert">
@@ -410,11 +438,11 @@ export function Deck(props: DeckProps) {
 							</Button>
 							<Button
 								onClick={() => {
-									void saveName();
+									void saveDetails();
 								}}
 								disabled={!name.trim() || isSaving}
 							>
-								{isSaving ? <SavingLabel /> : 'Save name'}
+								{isSaving ? <SavingLabel /> : 'Save'}
 							</Button>
 						</div>
 					</section>

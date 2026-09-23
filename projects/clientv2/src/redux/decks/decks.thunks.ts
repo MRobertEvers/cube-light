@@ -102,6 +102,13 @@ export function renameDeck(deckId: string, name: string): AppThunk<Promise<void>
 	};
 }
 
+/** Replaces the deck's tags. */
+export function saveDeckTags(deckId: string, tags: string[]): AppThunk<Promise<void>> {
+	return function (_dispatch, _getState, engine) {
+		return engine.decks.setTags(deckId, tags);
+	};
+}
+
 /** Returns the new note's id. */
 export function addDeckNote(deckId: string, text: string): AppThunk<Promise<string>> {
 	return function (_dispatch, _getState, engine) {

@@ -136,12 +136,13 @@ function SymbolText(props: SymbolTextProps) {
 	);
 }
 
-export function ManaCost(props: { cost: string }) {
-	const { cost } = props;
+/** `label` names the symbols for screen readers; it defaults to "Mana cost: <cost>". */
+export function ManaCost(props: { cost: string; label?: string }) {
+	const { cost, label } = props;
 	if (!cost) return null;
 
 	return (
-		<span className={styles.manaCost} aria-label={`Mana cost: ${cost}`}>
+		<span className={styles.manaCost} aria-label={label ?? `Mana cost: ${cost}`}>
 			<SymbolText
 				text={cost}
 				symbolClassName={styles.manaSymbol}

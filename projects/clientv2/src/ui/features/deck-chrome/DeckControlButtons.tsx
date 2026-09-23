@@ -83,7 +83,7 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 							onClick={onEditName}
 							disabled={isSaving}
 						>
-							Rename
+							Name and tags
 						</Button>
 						<Button
 							className={styles['deck-control-button']}

@@ -24,6 +24,8 @@ export type CardEdit = { uuid: string; action: 'add' | 'remove' | 'set'; count: 
 export type CardQuantityChange = { uuid: string; previous: number; delta: number; resulting: number; board?: 'side' };
 /** A free-text note kept with a deck. */
 export type DeckNote = { text: string; createdAt: string; updatedAt: string };
+/** A named set of decks: those carrying any, or all, of its tags. Tags match ignoring case. */
+export type DeckGroup = { groupId: string; name: string; tags: string[]; match: 'any' | 'all' };
 export type CommonState = { id: string; kind: AggregateKind; deleted: boolean; createdAt: string; updatedAt: string };
 export type DeckState = CommonState & {
     /** Main-board quantities by printing UUID. */
@@ -36,9 +38,15 @@ export type DeckState = CommonState & {
     boardVisualization?: string;
     /** Notes by note ID. Absent while the deck has none, so older states hash the same. */
     notes?: Record<string, DeckNote>;
+    /** Labels for sorting decks into groups, in the order given. Absent while the deck has none, so older states hash the same. */
+    tags?: string[];
 };
 export type NamedState = CommonState & { kind: 'collection' | 'location'; name: string };
-export type ProfileState = CommonState & { kind: 'profile'; userId: number; profile: Profile | null; printingView: 'compact' | 'grid' };
+export type ProfileState = CommonState & {
+    kind: 'profile'; userId: number; profile: Profile | null; printingView: 'compact' | 'grid';
+    /** How the deck list is grouped, in display order. Absent while there are none, so older states hash the same. */
+    deckGroups?: DeckGroup[];
+};
 export type WorkState = CommonState & {
     kind: 'work'; deckId: string; fileName: string; contentType: string; blobId: string;
     pipeline: 'card-aware' | 'paddle-only'; status: 'pending' | 'running' | 'completed' | 'failed';
@@ -57,11 +65,13 @@ export type DomainCommand =
     | { type: 'deck.blend'; id: string; blend: Blend }
     | { type: 'deck.note'; id: string; noteId: string; text: string }
     | { type: 'deck.noteDelete'; id: string; noteId: string }
+    | { type: 'deck.tags'; id: string; tags: string[] }
     | { type: 'deck.delete'; id: string }
     | { type: 'collection.create' | 'location.create'; id: string; name: string }
     | { type: 'collection.rename' | 'location.rename'; id: string; name: string }
     | { type: 'profile.artwork'; id: string; userId: number; profile: Profile }
     | { type: 'profile.printingView'; id: string; userId: number; printingView: 'compact' | 'grid' }
+    | { type: 'profile.deckGroups'; id: string; userId: number; deckGroups: DeckGroup[] }
     | { type: 'work.queue'; id: string; deckId: string; fileName: string; contentType: string; blobId: string; pipeline: 'card-aware' | 'paddle-only' }
     | { type: 'work.start'; id: string; token: string }
     | { type: 'work.progress'; id: string; token: string; completed: number; total: number }
@@ -81,11 +91,13 @@ export type DomainEvent =
     | { type: 'DeckBlendGenerated'; blend: Blend }
     | { type: 'DeckNoteSaved'; noteId: string; text: string }
     | { type: 'DeckNoteDeleted'; noteId: string }
+    | { type: 'DeckTagsSet'; tags: string[] }
     | { type: 'DeckDeleted' }
     | { type: 'CollectionCreated' | 'StorageLocationCreated'; name: string }
     | { type: 'CollectionRenamed' | 'StorageLocationRenamed'; name: string }
     | { type: 'ProfileArtworkSelected'; userId: number; profile: Profile }
     | { type: 'PrintingViewPreferenceSet'; userId: number; printingView: 'compact' | 'grid' }
+    | { type: 'DeckGroupsSet'; userId: number; deckGroups: DeckGroup[] }
     | { type: 'ScanQueued'; deckId: string; fileName: string; contentType: string; blobId: string; pipeline: 'card-aware' | 'paddle-only' }
     | { type: 'ScanStarted' | 'ScanReleased' | 'ScanRetried' | 'ScanDeleted' }
     | { type: 'ScanCompleted'; cardsAdded: number }

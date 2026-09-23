@@ -39,7 +39,7 @@ export type ToriMTGEngine = {
 		| 'list' | 'listLocal' | 'get' | 'getLocal' | 'history'
 		| 'create' | 'rename' | 'delete' | 'setPalette' | 'setTopStyle' | 'setBoardVisualization'
 		| 'addCardByName' | 'applyCardSteps' | 'moveCards' | 'removeCards' | 'importList'
-		| 'addNote' | 'editNote' | 'removeNote'
+		| 'addNote' | 'editNote' | 'removeNote' | 'setTags'
 	>;
 	banners: Pick<BannersApi, 'chooseCard' | 'crop' | 'render' | 'preview' | 'cancelPreview' | 'subjectMask' | 'cancelSubjectMask'>;
 	cards: Pick<
@@ -47,7 +47,7 @@ export type ToriMTGEngine = {
 		'details' | 'printings' | 'allNames' | 'prepareNameSearch' | 'suggestNames' | 'prepareListChecks' | 'checkList' | 'completeName'
 	>;
 	library: Pick<LibraryApi, 'collections' | 'storageLocations' | 'createCollection' | 'createStorageLocation'>;
-	profile: Pick<ProfileApi, 'setArtwork' | 'printingView' | 'setPrintingView'>;
+	profile: Pick<ProfileApi, 'setArtwork' | 'printingView' | 'setPrintingView' | 'deckGroups' | 'setDeckGroups'>;
 	scans: Pick<
 		ScansApi,
 		| 'scansAreSlowHere' | 'scanPhoto' | 'queueForDesktop' | 'runQueued' | 'runQueuedScansHere' | 'watchQueue'

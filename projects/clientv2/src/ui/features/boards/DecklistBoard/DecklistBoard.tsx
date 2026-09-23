@@ -21,14 +21,20 @@ export type DecklistBoardProps = BoardProps & DecklistSpotlightProps;
 /** Names of the cards on a board that have more than one printing. */
 function multiPrintingNames(board: BoardGroups): string[] {
 	const categories = Object.values(board.cardCategories);
-	const groups = categories.flatMap((category) => groupDeckCardsByName(category.cards));
-	return groups.filter((group) => group.printings.length > 1).map((group) => group.name);
+	const groups = categories.flatMap((category) =>
+		groupDeckCardsByName(category.cards)
+	);
+	return groups
+		.filter((group) => group.printings.length > 1)
+		.map((group) => group.name);
 }
 
 /** Keys of the rows that can expand, the ones with more than one printing, in every board. */
 function expandableRowKeys(cards: Record<DeckBoard, BoardGroups>): string[] {
 	return DECK_BOARD_ORDER.flatMap((board) =>
-		multiPrintingNames(cards[board]).map((name) => expandedRowKey(board, name))
+		multiPrintingNames(cards[board]).map((name) =>
+			expandedRowKey(board, name)
+		)
 	);
 }
 
@@ -60,8 +66,16 @@ function hoverCardPosition(pointer: Point, viewport: Size) {
 		: pointer.x + 120;
 	const top = pointer.y - 170;
 	return {
-		left: clamp(left, HOVER_MARGIN, viewport.width - HOVER_CARD.width - HOVER_MARGIN),
-		top: clamp(top, HOVER_MARGIN, viewport.height - HOVER_CARD.height - HOVER_MARGIN)
+		left: clamp(
+			left,
+			HOVER_MARGIN,
+			viewport.width - HOVER_CARD.width - HOVER_MARGIN
+		),
+		top: clamp(
+			top,
+			HOVER_MARGIN,
+			viewport.height - HOVER_CARD.height - HOVER_MARGIN
+		)
 	};
 }
 
@@ -69,10 +83,13 @@ function hoverCardPosition(pointer: Point, viewport: Size) {
 export function DecklistBoard(props: DecklistBoardProps) {
 	const { cards, banner, bannerCrop, bannerBlend, topStyle, onCardEvent } =
 		props;
+
 	const [expanded, setExpanded] = useState<ReadonlySet<string>>(
 		() => new Set()
 	);
+
 	const expandableKeys = useMemo(() => expandableRowKeys(cards), [cards]);
+
 	const allExpanded =
 		expandableKeys.length > 0 &&
 		expandableKeys.every((key) => expanded.has(key));

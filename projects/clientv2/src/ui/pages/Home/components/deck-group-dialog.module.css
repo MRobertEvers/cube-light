@@ -1,0 +1,230 @@
+.dialog {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	width: min(520px, calc(100vw - 40px));
+	max-height: calc(100vh - 40px);
+	max-height: calc(100dvh - 40px);
+	border-radius: 14px;
+	background: white;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+	overflow: clip;
+}
+
+/* Title and every dialog-wide action stay in view while the body scrolls. */
+.top-bar {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 8px;
+	box-sizing: border-box;
+	min-height: var(--app-header-height, 56px);
+	padding: 10px 16px 10px 24px;
+	border-bottom: 1px solid #eee7e4;
+	background: white;
+}
+
+.top-bar h2 {
+	flex: 1;
+	min-width: 0;
+	margin: 0;
+	font-size: 21px;
+}
+
+.actions {
+	display: flex;
+	flex: none;
+	gap: 8px;
+}
+
+.actions button {
+	min-height: 36px;
+	margin: 0;
+	padding: 0 14px;
+	border-radius: 8px;
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.actions button:disabled {
+	cursor: default;
+	opacity: 0.55;
+}
+
+.primary {
+	border: 1px solid #a65350;
+	background: #a65350;
+	color: white;
+}
+
+.secondary {
+	border: 1px solid #ddd6d2;
+	background: white;
+	color: #4a4542;
+}
+
+.actions .delete {
+	border: 1px solid transparent;
+	background: transparent;
+	color: #b42323;
+}
+
+.actions .delete:hover:enabled {
+	background: #fbeeee;
+}
+
+.body {
+	display: grid;
+	gap: 20px;
+	padding: 20px 24px 24px;
+	overflow: auto;
+}
+
+.field {
+	display: grid;
+	gap: 8px;
+}
+
+.field > label,
+.match legend {
+	padding: 0;
+	font-size: 14px;
+	font-weight: 650;
+}
+
+.field > input {
+	box-sizing: border-box;
+	width: 100%;
+	height: 42px;
+	padding: 10px 12px;
+	border: 1px solid #cac4c1;
+	border-radius: 7px;
+	font: inherit;
+}
+
+.field > input:focus {
+	outline: 2px solid #a65350;
+	outline-offset: 1px;
+}
+
+.hint {
+	margin: 0;
+	color: #736c68;
+	font-size: 13px;
+}
+
+.known-tags {
+	display: grid;
+	gap: 6px;
+}
+
+.known-tags > span {
+	color: #736c68;
+	font-size: 12px;
+}
+
+.known-tags ul {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.known-tags button {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 30px;
+	margin: 0;
+	padding: 0 10px;
+	border: 1px dashed #cac4c1;
+	border-radius: 999px;
+	background: white;
+	color: #4a4542;
+	font: inherit;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+.known-tags button:hover:enabled {
+	border-style: solid;
+	background: #f7f4f2;
+}
+
+.known-tags small {
+	color: #8c8480;
+	font-size: 12px;
+}
+
+.match {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 20px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.match legend {
+	margin-bottom: 8px;
+}
+
+.match label {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+}
+
+.preview {
+	padding: 12px 14px;
+	border-radius: 10px;
+	background: #f7f4f2;
+	font-size: 14px;
+}
+
+.preview ul {
+	margin: 8px 0 0;
+	padding-left: 18px;
+	color: #4a4542;
+}
+
+.error {
+	margin: 0;
+	color: #a12323;
+	font-size: 14px;
+}
+
+@media (max-width: 680px) {
+	.dialog {
+		width: 100%;
+		height: 100%;
+		max-height: none;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	.top-bar {
+		height: var(--app-header-height, 56px);
+		padding: 8px 12px;
+	}
+
+	.top-bar h2 {
+		font-size: 18px;
+	}
+
+	/* The back chevron in the top bar closes the dialog on phones. */
+	.cancel {
+		display: none;
+	}
+
+	.body {
+		padding: 16px;
+	}
+}

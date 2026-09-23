@@ -3,9 +3,10 @@ import type { BannerCrop } from '../appearance/banner-crop';
 import type { DeckTopStyle } from '../appearance/deck-top-style';
 import type { BannerBlend } from '../appearance/banner-blend';
 import type { CardPreviewDetails } from './card';
-import type { DeckBoard } from '@torimtg/core';
+import type { DeckColor } from '../deck/deck-colors';
+import type { DeckBoard, DeckGroup } from '@torimtg/core';
 
-export type { DeckBoard };
+export type { DeckBoard, DeckGroup };
 
 export type DeckCardEntry = CardPreviewDetails & {
 	name: string;
@@ -57,6 +58,8 @@ export type DeckDetail = {
 	sideboard?: DeckCardEntry[];
 	/** Most recently edited first. */
 	notes?: DeckNote[];
+	/** In the order they were given. Missing from decks read before tags existed. */
+	tags?: string[];
 	lastEdit: string;
 };
 
@@ -65,6 +68,9 @@ export type DeckSummary = {
 	name: string;
 	art: string | null;
 	bannerBlend?: BannerBlend | null;
+	/** Every color in a main-board card's mana cost, in WUBRG order. */
+	colors: DeckColor[];
+	tags: string[];
 	createdAt: string;
 	updatedAt: string;
 };
@@ -87,7 +93,8 @@ export type DeckHistoryDetail = {
 		| 'topStyle'
 		| 'boardVisualization'
 		| 'bannerBlend'
-		| 'note';
+		| 'note'
+		| 'tags';
 	before: string | null;
 	after: string | null;
 };

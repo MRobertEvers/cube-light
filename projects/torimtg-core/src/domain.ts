@@ -1,5 +1,42 @@
 import { DomainError } from './types.js';
-import type { AggregateState, CardQuantityChange, DomainCommand, DomainEvent, DeckBoard, DeckState, ProfileState, WorkState, Crop } from './types.js';
+import type { AggregateState, CardQuantityChange, DomainCommand, DomainEvent, DeckBoard, DeckGroup, DeckState, ProfileState, WorkState, Crop } from './types.js';
+
+export const MAX_DECK_TAGS = 32;
+export const MAX_TAG_LENGTH = 40;
+export const MAX_DECK_GROUPS = 50;
+export const MAX_GROUP_NAME_LENGTH = 80;
+
+/** A tag as it is stored: trimmed, with runs of whitespace collapsed to one space. */
+export function normalizeTag(tag: string): string {
+    return tag.trim().replace(/\s+/g, ' ');
+}
+
+/** Tags are the same tag when they match ignoring case. */
+export function tagKey(tag: string): string {
+    return normalizeTag(tag).toLowerCase();
+}
+
+/** Stored tags, in the order given, without blanks or repeats. The first spelling of a repeat wins. */
+export function normalizeTags(tags: readonly string[]): string[] {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const tag of tags) {
+        const normalized = normalizeTag(tag);
+        const key = normalized.toLowerCase();
+        if (!normalized || seen.has(key)) continue;
+        seen.add(key);
+        result.push(normalized);
+    }
+    return result;
+}
+
+/** Whether a deck with these tags belongs in the group. A group without tags holds no decks. */
+export function deckInGroup(deckTags: readonly string[] | undefined, group: Pick<DeckGroup, 'tags' | 'match'>): boolean {
+    if (!group.tags.length) return false;
+    const held = new Set((deckTags || []).map(tagKey));
+    const wanted = group.tags.map(tagKey);
+    return group.match === 'all' ? wanted.every((key) => held.has(key)) : wanted.some((key) => held.has(key));
+}
 
 /** The quantities one board of a deck holds, by printing UUID. */
 export function boardCards(deck: DeckState, board: DeckBoard): Record<string, number> {
@@ -16,6 +53,24 @@ function validName(value: unknown): asserts value is string {
 
 function validNoteId(value: unknown): asserts value is string {
     requireValue(typeof value === 'string' && isPublicId(value, 'note'), 'Invalid note ID.');
+}
+
+function validTags(value: unknown): asserts value is string[] {
+    requireValue(Array.isArray(value) && value.length <= MAX_DECK_TAGS, `A deck may have at most ${MAX_DECK_TAGS} tags.`);
+    for (const tag of value) requireValue(typeof tag === 'string' && normalizeTag(tag).length > 0 && normalizeTag(tag).length <= MAX_TAG_LENGTH, `Enter each tag as 1-${MAX_TAG_LENGTH} characters.`);
+}
+
+function validDeckGroups(value: unknown): asserts value is DeckGroup[] {
+    requireValue(Array.isArray(value) && value.length <= MAX_DECK_GROUPS, `You may have at most ${MAX_DECK_GROUPS} deck groups.`);
+    const ids = new Set<string>();
+    for (const group of value as DeckGroup[]) {
+        requireValue(group && typeof group === 'object' && typeof group.groupId === 'string' && isPublicId(group.groupId, 'group') && !ids.has(group.groupId), 'Invalid deck group ID.');
+        ids.add(group.groupId);
+        requireValue(typeof group.name === 'string' && group.name.trim().length > 0 && group.name.trim().length <= MAX_GROUP_NAME_LENGTH, `Enter a group name (1-${MAX_GROUP_NAME_LENGTH} characters).`);
+        validTags(group.tags);
+        requireValue(normalizeTags(group.tags).length > 0, 'Choose at least one tag for each group.');
+        requireValue(group.match === 'any' || group.match === 'all', 'Invalid group match.');
+    }
 }
 
 function validCrop(crop: Crop, maxXArg?: number): boolean {
@@ -110,6 +165,11 @@ export function decide(state: AggregateState | null, command: DomainCommand): Do
         case 'deck.noteDelete':
             validNoteId(command.noteId);
             return (state as DeckState).notes?.[command.noteId] ? [{ type: 'DeckNoteDeleted', noteId: command.noteId }] : [];
+        case 'deck.tags': {
+            validTags(command.tags);
+            const tags = normalizeTags(command.tags);
+            return canonicalJson(tags) === canonicalJson((state as DeckState).tags || []) ? [] : [{ type: 'DeckTagsSet', tags }];
+        }
         case 'deck.delete': return [{ type: 'DeckDeleted' }];
         case 'collection.create': validName(command.name); return [{ type: 'CollectionCreated', name: command.name.trim() }];
         case 'location.create': validName(command.name); return [{ type: 'StorageLocationCreated', name: command.name.trim() }];
@@ -122,6 +182,12 @@ export function decide(state: AggregateState | null, command: DomainCommand): Do
             return [{ type: 'ProfileArtworkSelected', userId: command.userId, profile }];
         }
         case 'profile.printingView': requireValue(command.id === `profile_${command.userId}` && ['compact', 'grid'].includes(command.printingView), 'Invalid preference.'); return [{ type: 'PrintingViewPreferenceSet', userId: command.userId, printingView: command.printingView }];
+        case 'profile.deckGroups': {
+            requireValue(Number.isSafeInteger(command.userId) && command.userId > 0 && command.id === `profile_${command.userId}`, 'Invalid profile identity.');
+            validDeckGroups(command.deckGroups);
+            const deckGroups: DeckGroup[] = command.deckGroups.map((group) => ({ groupId: group.groupId, name: group.name.trim(), tags: normalizeTags(group.tags), match: group.match }));
+            return canonicalJson(deckGroups) === canonicalJson((state as ProfileState | null)?.deckGroups || []) ? [] : [{ type: 'DeckGroupsSet', userId: command.userId, deckGroups }];
+        }
         case 'work.queue':
             requireValue(isPublicId(command.deckId, 'deck') && typeof command.fileName === 'string' && command.fileName.length <= 255 && /^image\/(jpeg|png|webp|heic|heif|gif)$/.test(command.contentType) && /^blob_[a-f0-9]{64}$/.test(command.blobId) && ['card-aware', 'paddle-only'].includes(command.pipeline), 'Invalid scan.');
             return [{ type: 'ScanQueued', deckId: command.deckId, fileName: command.fileName, contentType: command.contentType, blobId: command.blobId, pipeline: command.pipeline }];
@@ -142,9 +208,13 @@ export function applyEvent(state: AggregateState | null, event: DomainEvent, id:
             requireValue(!state && event.state.id === id, 'Invalid opening balance.'); return structuredClone(event.state);
         case 'DeckCreated': requireValue(!state, 'Duplicate creation event.'); return { id, deleted: false, createdAt: at, updatedAt: at, kind: 'deck', name: event.name, cards: {}, art: null, bannerCardUuid: null, palette: null, bannerCrop: null, topStyle: 'card', bannerBlend: null };
         case 'CollectionCreated': case 'StorageLocationCreated': requireValue(!state, 'Duplicate creation event.'); return { id, deleted: false, createdAt: at, updatedAt: at, kind: event.type === 'CollectionCreated' ? 'collection' : 'location', name: event.name };
-        case 'ProfileArtworkSelected': case 'PrintingViewPreferenceSet': {
+        case 'ProfileArtworkSelected': case 'PrintingViewPreferenceSet': case 'DeckGroupsSet': {
             const profile: ProfileState = state?.kind === 'profile' ? structuredClone(state) : { id, deleted: false, createdAt: at, updatedAt: at, kind: 'profile', userId: event.userId, profile: null, printingView: 'grid' };
-            if (event.type === 'ProfileArtworkSelected') profile.profile = event.profile; else profile.printingView = event.printingView;
+            if (event.type === 'ProfileArtworkSelected') profile.profile = event.profile;
+            else if (event.type === 'PrintingViewPreferenceSet') profile.printingView = event.printingView;
+            // No groups are stored as absent so the profile hashes like one that never had any.
+            else if (event.deckGroups.length) profile.deckGroups = structuredClone(event.deckGroups);
+            else delete profile.deckGroups;
             profile.updatedAt = at;
             return profile;
         }
@@ -180,6 +250,10 @@ export function applyEvent(state: AggregateState | null, event: DomainEvent, id:
                 if (next.notes) delete next.notes[event.noteId];
                 // No notes are stored as absent so the deck hashes like one that never had any.
                 if (next.notes && !Object.keys(next.notes).length) delete next.notes;
+                return next;
+            case 'DeckTagsSet':
+                // No tags are stored as absent so the deck hashes like one that never had any.
+                if (event.tags.length) next.tags = event.tags.slice(); else delete next.tags;
                 return next;
             case 'DeckDeleted': next.deleted = true; return next;
         }

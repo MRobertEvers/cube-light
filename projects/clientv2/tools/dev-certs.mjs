@@ -18,7 +18,7 @@ export async function loadAcmeConfig() {
 }
 
 /**
- * Installing the app and Web Crypto need a secure context. http://localhost is
+ * Installing the app, starting it offline, and Web Crypto need a secure context. http://localhost is
  * one; a LAN name such as http://host.local:3000 is not, so testing the installed
  * app from a phone needs a trusted certificate. Returns
  * null when none has been generated, leaving the dev server on plain HTTP.

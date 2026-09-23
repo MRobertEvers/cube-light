@@ -10,11 +10,11 @@ base defaults to same-origin `/api`: Vite and `serve-client.mjs` proxy this to
 `http://127.0.0.1:4040` (set `API_ORIGIN` for the production static server).
 An explicit `VITE_BACKEND_HOST_URI` still overrides the default.
 
-There is no service worker. Edits made offline stay on the device and sync once the
-network returns while the app is open; loading the app itself needs the server.
-The build ships a self-unregistering `/sw.js` that retires the service worker older
-installs registered. Serve it with revalidation, never an immutable cache header or
-HTML fallback, until those installs have all updated.
+The client build includes a shell-only service worker at `/sw.js`. It caches the
+built app so it can start with no network; sync and data never pass through it.
+It registers only over HTTPS with a trusted certificate (or on localhost), so a
+plain-HTTP `.local` address works but needs the network to load. Serve `sw.js`
+with revalidation, never an immutable cache header or HTML fallback.
 
 On first server startup, existing decks, collections, locations, profiles, and work
 items become explicit opening-balance events in the same application database.

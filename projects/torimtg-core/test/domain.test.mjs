@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyEvent, canonicalJson, decide, preview } from '../dist/index.js';
+import { applyEvent, canonicalJson, decide, deckInGroup, preview } from '../dist/index.js';
 
 const id = 'deck_abcdefghijklmnop';
 const at = '2026-09-22T00:00:00.000Z';
@@ -94,4 +94,35 @@ test('a deck keeps its board visualization without changing the hash of decks th
     assert.equal(state.boardVisualization, 'mtg-arena-table');
     assert.deepEqual(decide(state, { type: 'deck.visualization', id, boardVisualization: 'mtg-arena-table' }), []);
     assert.throws(() => decide(state, { type: 'deck.visualization', id, boardVisualization: 'Not An Id' }), /Invalid board visualization/);
+});
+
+test('a deck keeps its tags tidy and drops them entirely when cleared', () => {
+    const opening = applyEvent(null, { type: 'DeckCreated', name: 'Tags' }, id, at);
+    assert.equal('tags' in opening, false);
+    let state = preview(opening, { type: 'deck.tags', id, tags: ['  Cube ', 'aggro   red', 'cube'] }, at);
+    assert.deepEqual(state.tags, ['Cube', 'aggro red'], 'tags are trimmed, collapsed and deduplicated ignoring case');
+    assert.deepEqual(decide(state, { type: 'deck.tags', id, tags: ['Cube', 'aggro red'] }), []);
+    assert.throws(() => decide(state, { type: 'deck.tags', id, tags: ['x'.repeat(41)] }), /1-40 characters/);
+    assert.throws(() => decide(state, { type: 'deck.tags', id, tags: Array.from({ length: 33 }, (_, index) => `t${index}`) }), /at most 32 tags/);
+    state = preview(state, { type: 'deck.tags', id, tags: [] }, at);
+    assert.equal('tags' in state, false, 'a deck without tags stores none');
+});
+
+test('deck groups live on the profile and match decks by any or all of their tags', () => {
+    const profileId = 'profile_7';
+    const groupId = 'group_abcdefghijklmnop';
+    const group = { groupId, name: ' Cubes ', tags: ['cube', ' Vintage '], match: 'any' };
+    let state = preview(null, { type: 'profile.deckGroups', id: profileId, userId: 7, deckGroups: [group] }, at);
+    assert.deepEqual(state.deckGroups, [{ groupId, name: 'Cubes', tags: ['cube', 'Vintage'], match: 'any' }]);
+    assert.deepEqual(decide(state, { type: 'profile.deckGroups', id: profileId, userId: 7, deckGroups: state.deckGroups }), []);
+    assert.throws(() => decide(state, { type: 'profile.deckGroups', id: profileId, userId: 7, deckGroups: [{ groupId, name: 'x', tags: [], match: 'any' }] }), /at least one tag/);
+    assert.throws(() => decide(state, { type: 'profile.deckGroups', id: profileId, userId: 7, deckGroups: [group, group] }), /group ID/);
+    assert.throws(() => decide(state, { type: 'profile.deckGroups', id: profileId, userId: 8, deckGroups: [] }), /profile identity/);
+    state = preview(state, { type: 'profile.deckGroups', id: profileId, userId: 7, deckGroups: [] }, at);
+    assert.equal('deckGroups' in state, false, 'a profile without groups stores none');
+
+    assert.equal(deckInGroup(['Cube'], { tags: ['cube', 'vintage'], match: 'any' }), true);
+    assert.equal(deckInGroup(['Cube'], { tags: ['cube', 'vintage'], match: 'all' }), false);
+    assert.equal(deckInGroup(['CUBE', 'Vintage'], { tags: ['cube', 'vintage'], match: 'all' }), true);
+    assert.equal(deckInGroup(undefined, { tags: ['cube'], match: 'any' }), false);
 });

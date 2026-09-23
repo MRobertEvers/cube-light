@@ -61,7 +61,7 @@ export function MobileDeckControls(props: MobileDeckControlsProps) {
 				<h2 id="mobile-deck-actions">Deck</h2>
 				<div className={styles.deckActions}>
 					<Button onClick={onEditName} disabled={isSaving}>
-						Rename
+						Name and tags
 					</Button>
 					<Button onClick={() => navigate(`/deck/${deckId}/history`)}>
 						History

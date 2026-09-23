@@ -72,7 +72,7 @@ export function DeckToolbarControls(props: BoardControlsProps) {
 				</div>
 				<div className={styles.group} role="group" aria-label="Deck">
 					<button type="button" onClick={onEditName} disabled={isSaving}>
-						Rename
+						Name and tags
 					</button>
 					<button
 						type="button"

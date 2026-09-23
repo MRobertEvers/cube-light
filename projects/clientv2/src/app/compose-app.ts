@@ -12,6 +12,7 @@ import { WasmNameIndexBuilder } from '../platform/wasm/name-index-builder';
 import { API_URI } from '../platform/api-url';
 import { BannerBlendWorkerClient } from '../workers/banner-blend/banner-blend.client';
 import { CardListLintWorkerClient } from '../workers/card-list-lint/card-list-lint.client';
+import { ShellWorkerClient } from '../workers/shell/shell.client';
 import { configureStore, type StoreType } from '../redux/configure-store';
 import { startProjections } from '../redux/projections';
 
@@ -21,6 +22,7 @@ import { startProjections } from '../redux/projections';
  * ports; Redux gets the engine; React gets only the store.
  */
 export function composeApp(): StoreType {
+	new ShellWorkerClient().start(import.meta.env.PROD);
 	const crypto = new WebCrypto();
 	const localStore = new OutboxLocalStore(new IndexedDbDriver('torimtg-v1', indexedDB), crypto);
 	const transport = new HttpSyncTransport(API_URI, localStore);

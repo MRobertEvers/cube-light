@@ -19,7 +19,7 @@ async function main(args) {
 	const [command = 'dev'] = positionals;
 	const { port, host, open, strictPort, mode } = values;
 	// Without a trusted certificate a LAN origin is not a secure context, so the
-	// browser withholds APIs such as the install prompt.
+	// browser withholds the install prompt and the offline shell worker.
 	const certificate = await loadDevCertificate();
 	// A publicly trusted certificate is issued for a real domain, so that name
 	// has to be accepted alongside the mDNS one the config already allows.

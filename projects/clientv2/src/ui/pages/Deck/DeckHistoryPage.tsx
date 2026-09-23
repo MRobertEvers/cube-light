@@ -56,7 +56,8 @@ const detailLabels: Record<DeckHistoryDetail['field'], string> = {
 	topStyle: 'Deck top style',
 	boardVisualization: 'Card view',
 	bannerBlend: 'Banner blend',
-	note: 'Note'
+	note: 'Note',
+	tags: 'Tags'
 };
 
 export function DeckHistoryPage(props: { deckId: string }) {

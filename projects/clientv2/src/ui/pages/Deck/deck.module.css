@@ -76,6 +76,12 @@
 	font: inherit;
 }
 
+.field-hint {
+	margin: 0;
+	color: #736c68;
+	font-size: 12px;
+}
+
 .banner-hint,
 .save-error {
 	font-size: 13px;
@@ -87,7 +93,7 @@
 
 .deck-details-modal {
 	box-sizing: border-box;
-	width: min(360px, calc(100vw - 40px));
+	width: min(420px, calc(100vw - 40px));
 	padding: 24px;
 	border-radius: 12px;
 	background: white;

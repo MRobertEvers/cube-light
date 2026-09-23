@@ -46,6 +46,7 @@ export function groupDeck(data: DeckDetail): GroupedDeck {
 	if ('boardVisualization' in data)
 		grouped.boardVisualization = data.boardVisualization;
 	if ('notes' in data) grouped.notes = data.notes;
+	if ('tags' in data) grouped.tags = data.tags;
 	return grouped;
 }
 
@@ -59,8 +60,12 @@ export function groupBoardCards(
 	};
 	const deckCards = deck.cardCategories;
 	for (const card of cards) {
-		// Creature takes precedence over other types when grouping the deck.
-		const category = /\bCreature\b/i.test(card.types) ? 'Creature' : card.types;
+		// Land takes precedence over every other type, then Creature.
+		const category = /\bLand\b/i.test(card.types)
+			? 'Land'
+			: /\bCreature\b/i.test(card.types)
+				? 'Creature'
+				: card.types;
 		if (!(category in deckCards)) {
 			deckCards[category] = {
 				count: 0,
