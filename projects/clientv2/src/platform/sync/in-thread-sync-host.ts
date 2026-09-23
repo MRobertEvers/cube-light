@@ -1,14 +1,11 @@
 import type { LocalNotice, LocalStore } from '../../engine/core/types';
-import type { Crypto, SyncHost, SyncHostKind, SyncTransport } from '../../engine/ports';
+import type { Crypto, SyncHost, SyncTransport } from '../../engine/ports';
 import { SyncCoordinator } from '../../engine/sync/sync-coordinator';
 
-// A service worker needs a secure context, which a LAN dev origin such as
-// http://host.local:3000 is not. This host runs the same SyncCoordinator on the
-// window instead, so the transport, retry, and lease behaviour stay identical;
-// only the shell/media caching and background wake-ups of the worker are lost.
-// Production over HTTPS still uses SyncWorker.
+// Runs the SyncCoordinator on the page. Edits commit to IndexedDB first and sync
+// whenever this tab is open and the server is reachable; the page lifecycle wakes
+// it on focus, visibility, and when the network returns.
 export class InThreadSyncHost implements SyncHost {
-    readonly hostKind: SyncHostKind = 'window';
     private readonly store: LocalStore;
     private readonly server: SyncTransport;
     private readonly coordinator: SyncCoordinator;
@@ -28,8 +25,7 @@ export class InThreadSyncHost implements SyncHost {
         for (const listener of this.listeners) listener(notice);
     };
 
-    // The worker serialises runs through its event loop; do the same here so a
-    // burst of wake() calls cannot start overlapping passes.
+    // Serialise runs so a burst of wake() calls cannot start overlapping passes.
     private run(): Promise<void> {
         if (this.running) { this.queued = true; return this.running; }
         this.running = this.pass().finally(() => {
@@ -48,11 +44,12 @@ export class InThreadSyncHost implements SyncHost {
             catch { return; }
         }
         const remains = await this.coordinator.run().catch(() => false);
-        // Background Sync belongs to the worker. Retry on a timer instead.
+        // Work remains (another tab held the lease, or a retry is due): try again shortly.
         if (remains && !this.followUp) this.followUp = setTimeout(() => { this.followUp = null; void this.run(); }, 1000);
     }
 
-    connect(): Promise<void> { return Promise.resolve(); }
+    // Launch: deliver whatever earlier sessions left queued, and refresh.
+    connect(): Promise<void> { return this.run(); }
 
     async wake(): Promise<void> { await this.run(); }
 

@@ -7,8 +7,7 @@ import {
     readPendingEdits,
     resolveEdit,
     retrySync,
-    selectOffline,
-    syncHostKind
+    selectOffline
 } from '../../../../state/offline.state';
 import styles from './offline-status.module.css';
 
@@ -40,7 +39,6 @@ export function OfflineStatus() {
         <div className={styles.panel}>
             <p>{state.pending ? 'Your edits are saved locally and will sync when the server is available.' : 'This app reads and saves data on your device first.'}</p>
             {state.lastValidatedAt && <p>Last checked: {new Date(state.lastValidatedAt).toLocaleString()}</p>}
-            {dispatch(syncHostKind()) === 'window' && <p>The offline worker could not start on this origin, so edits sync only while this tab is open and the app will not load while offline. Open the app over HTTPS with a trusted certificate, or on localhost, for the full offline behaviour.</p>}
             {(error || state.error) && <p role="alert">{error || state.error}</p>}
             <button type="button" onClick={() => { void dispatch(retrySync()); }}>Retry sync</button>
             <button type="button" onClick={() => { void exportEdits(); }}>Export unsynced edits</button>

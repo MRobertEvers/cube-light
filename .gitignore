@@ -42,6 +42,5 @@
 
 # ToriMTG generated artifacts
 projects/torimtg-core/dist/
-projects/clientv2/.pwa-dev/
 projects/clientv2/test-results/
 projects/clientv2/playwright-report/

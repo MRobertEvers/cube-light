@@ -53,7 +53,7 @@ export type ToriMTGEngine = {
 		| 'scansAreSlowHere' | 'scanPhoto' | 'queueForDesktop' | 'runQueued' | 'runQueuedScansHere' | 'watchQueue'
 		| 'addCandidate' | 'dismiss' | 'retry' | 'remove'
 	>;
-	sync: Pick<SyncApi, 'hostKind' | 'pendingEdits' | 'keepMine' | 'useServer' | 'exportUnsynced' | 'retryNow'>;
+	sync: Pick<SyncApi, 'pendingEdits' | 'keepMine' | 'useServer' | 'exportUnsynced' | 'retryNow'>;
 	events: Pick<EngineEvents, 'subscribe'>;
 };
 
@@ -91,7 +91,7 @@ export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
 		library: new LibraryApi(tori, reader),
 		profile: new ProfileApi(tori),
 		scans: new ScansApi(workQueue, imageImports, runner, device),
-		sync: new SyncApi(tori, syncHost),
+		sync: new SyncApi(tori),
 		events
 	};
 }

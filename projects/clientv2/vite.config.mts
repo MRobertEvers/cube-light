@@ -3,7 +3,6 @@ import { cp } from 'node:fs/promises';
 import path from 'node:path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { buildWorker } from './tools/pwa.mjs';
 
 // tools/vite.mjs loads this named export through Vite's programmatic API.
 export const config = defineConfig({
@@ -19,7 +18,6 @@ export const config = defineConfig({
 					dereference: false,
 					verbatimSymlinks: true
 				});
-				await buildWorker({ root, outDir: path.join(root, 'dist'), production: true });
 			}
 		}
 	],

@@ -1,16 +1,12 @@
-import type { AccountScope, DomainCommand, ResourceQuery, StoredResource } from '@torimtg/core';
+import type { DomainCommand } from '@torimtg/core';
 import type { LocalNotice, LocalStore } from '../core/types';
-import { outstanding } from '../local-store/local-store';
+import { LEASE_MS, outstanding } from '../local-store/local-store';
 import { SyncTransportError, type Crypto, type SyncTransport } from '../ports';
 
 function blobIds(command: DomainCommand): string[] {
     if (command.type === 'work.queue') return [command.blobId];
     if (command.type === 'deck.blend') return Object.values(command.blend.images);
     return [];
-}
-
-function pause(milliseconds: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function retryTime(attempts: number, error: unknown): number {
@@ -26,35 +22,16 @@ export class SyncCoordinator {
         this.store = store; this.server = server; this.crypto = crypto; this.notify = notify;
     }
 
-    /**
-     * Downloads one resource now, for a caller that has to answer with it (the service
-     * worker's image responses). Another run may hold the lease, and a run reads the job
-     * list only once, so this keeps running until the resource is stored, its download
-     * fails, sync pauses after a failed run (offline, signed out), or `timeoutMs` passes.
-     * Null means it is not available.
-     */
-    async download(scope: AccountScope, query: ResourceQuery, timeoutMs: number): Promise<StoredResource | null> {
-        const known = await this.store.resourceState(scope, query);
-        if (known.resource) return known.resource;
-        await this.store.refresh(scope, query);
-        const deadline = Date.now() + timeoutMs;
-        while (Date.now() < deadline) {
-            await this.run();
-            const state = await this.store.resourceState(scope, query);
-            if (state.resource) return state.resource;
-            if (!state.job || state.job.error !== null || state.syncPaused) return null;
-            await pause(150);
-        }
-        return null;
-    }
-
     async run(): Promise<boolean> {
         const scope = await this.store.scope();
         if (!scope) return false;
         const lease = await this.store.acquire(scope, this.crypto.randomUUID());
-        if (!lease) return false;
+        // Another tab is syncing, or a page that died mid-run left its lease to lapse: try again.
+        if (!lease) return true;
         const deadline = Date.now() + 20000;
         let workRemains = false;
+        // Keep the lease while this run is alive; if the page dies, it lapses within LEASE_MS.
+        const heartbeat = setInterval(() => { void this.store.renew(lease).catch(() => undefined); }, LEASE_MS / 3);
         try {
             let data = await this.store.dataset(scope);
             if (data.meta.refresh === 'auth-required' || data.meta.nextAttemptAt > Date.now()) return false;
@@ -108,6 +85,7 @@ export class SyncCoordinator {
             const final = await this.store.dataset(scope);
             return workRemains || final.intents.some((intent) => ['queued', 'sending'].includes(intent.status) && intent.nextAttemptAt <= Date.now() && (!intent.dependsOn || final.intents.find((previous) => previous.operationId === intent.dependsOn)?.status === 'accepted') && (!intent.deckDependsOn || final.intents.find((previous) => previous.operationId === intent.deckDependsOn)?.status === 'accepted'));
         } finally {
+            clearInterval(heartbeat);
             const data = await this.store.dataset(scope).catch(() => null);
             if (data) await this.notify({ partition: scope.partition, generation: scope.generation, localRevision: data.meta.revision });
             await this.store.release(lease);

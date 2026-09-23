@@ -13,7 +13,7 @@ const { UserStore } = requireServer('./build/src/auth/UserStore');
 const { createKVStore } = requireServer('./build/src/auth/kv-store');
 const { createRoutes } = requireServer('./build/src/routes/routes');
 
-test('installed PWA saves offline, reloads a deep link, and syncs via bearer-authenticated worker', { timeout: 120000 }, async () => {
+test('saves offline, keeps the edit across a reload, and syncs it with bearer auth', { timeout: 120000 }, async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), 'torimtg-browser-'));
     const db = await Database.Sqlite(path.join(directory, 'app.sqlite'));
     const users = await UserStore.Sqlite(path.join(directory, 'app.sqlite'));
@@ -63,10 +63,11 @@ test('installed PWA saves offline, reloads a deep link, and syncs via bearer-aut
         await page.getByRole('heading', { name: 'Offline test deck', exact: true }).waitFor();
         const id = new URL(page.url()).pathname.split('/')[2];
         assert.equal(db.sync.readState(id), null);
+        // There is no service worker, so the page itself needs the network to load.
+        await context.setOffline(false);
         await page.reload();
         await page.getByRole('heading', { name: 'Offline test deck', exact: true }).waitFor();
-        await context.setOffline(false);
-        await page.locator('details summary').filter({ hasText: /saved on this device|Offline|Refresh/ }).first().click();
+        await page.locator('details summary').filter({ hasText: /saved on this device|Offline|Refresh|Synced/ }).first().click();
         await page.getByRole('button', { name: 'Retry sync', exact: true }).click();
         await page.waitForFunction(async () => {
             const db = await new Promise((resolve) => { const request = indexedDB.open('torimtg-v1'); request.onsuccess = () => resolve(request.result); });

@@ -2,19 +2,19 @@
 
 ## Offline PWA and bearer authentication
 
-The client now saves domain edits to IndexedDB through Redux/ToriMTG before the
-service worker sends them to the API. Install dependencies in both `clientv2` and
-`server` before building; their build scripts compile `projects/torimtg-core`.
-The client build includes `/sw.js` and `/manifest.webmanifest`. Its API base now
-defaults to same-origin `/api`: Vite and `serve-client.mjs` proxy this to
+The client saves domain edits to IndexedDB through Redux/ToriMTG, and the open
+tab sends them to the API whenever the server is reachable. Install dependencies in
+both `clientv2` and `server` before building; their build scripts compile
+`projects/torimtg-core`. The client build includes `/manifest.webmanifest`. Its API
+base defaults to same-origin `/api`: Vite and `serve-client.mjs` proxy this to
 `http://127.0.0.1:4040` (set `API_ORIGIN` for the production static server).
 An explicit `VITE_BACKEND_HOST_URI` still overrides the default.
 
-Use HTTPS for LAN/installed use, or `http://localhost` for local development.
-Plain HTTP `.local` hostnames cannot register a worker. Restart the Vite development
-process after changing its worker build configuration. The development worker
-handles synchronization; test offline shell installation using a production build.
-Serve `sw.js` with revalidation, never an immutable cache header or HTML fallback.
+There is no service worker. Edits made offline stay on the device and sync once the
+network returns while the app is open; loading the app itself needs the server.
+The build ships a self-unregistering `/sw.js` that retires the service worker older
+installs registered. Serve it with revalidation, never an immutable cache header or
+HTML fallback, until those installs have all updated.
 
 On first server startup, existing decks, collections, locations, profiles, and work
 items become explicit opening-balance events in the same application database.

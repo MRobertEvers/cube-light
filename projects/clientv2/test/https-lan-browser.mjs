@@ -8,7 +8,7 @@ import https from 'node:https';
 import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import { chromium } from '@playwright/test';
+import { chromium, expect } from '@playwright/test';
 
 const run = promisify(execFile);
 const requireServer = createRequire(new URL('../../server/package.json', import.meta.url));
@@ -30,11 +30,6 @@ async function selfSigned(directory, host) {
         '-keyout', path.join(directory, 'key.pem'), '-out', path.join(directory, 'cert.pem'),
         '-days', '2', '-subj', '/CN=localhost',
         '-addext', `subjectAltName=DNS:localhost,IP:127.0.0.1,IP:${host}`]);
-    return directory;
-}
-
-async function mkcertSigned(directory, host) {
-    await run('mkcert', ['-cert-file', path.join(directory, 'cert.pem'), '-key-file', path.join(directory, 'key.pem'), host, 'localhost', '127.0.0.1']);
     return directory;
 }
 
@@ -69,9 +64,9 @@ async function signUp(page, name) {
 }
 
 // Chrome reports a secure context for an HTTPS origin whose certificate it was
-// told to ignore, but still refuses to register a service worker there. The app
-// must stay usable rather than dead-ending on "Can't reach the server".
-test('an HTTPS origin whose certificate is untrusted still syncs through the window', { timeout: 180000 }, async (t) => {
+// told to ignore. The app must stay usable there rather than dead-ending on
+// "Can't reach the server".
+test('an HTTPS origin whose certificate is untrusted still syncs', { timeout: 180000 }, async (t) => {
     const host = lanAddress();
     if (!host) return t.skip('No non-loopback IPv4 address available.');
     try { await run('openssl', ['version']); } catch { return t.skip('openssl is unavailable.'); }
@@ -88,9 +83,9 @@ test('an HTTPS origin whose certificate is untrusted still syncs through the win
         await page.goto(`https://${host}:${port}`);
         assert.equal(await page.evaluate(() => window.isSecureContext), true);
         await signUp(page, 'untrusted-owner');
-        assert.equal(await page.evaluate(() => !!navigator.serviceWorker.controller), false, 'the worker must not have registered');
 
-        await page.getByRole('button', { name: 'New Deck', exact: true }).click();
+        await page.getByRole('button', { name: 'Create a deck' }).click();
+        await page.getByRole('button', { name: 'New deck', exact: true }).click();
         await page.getByRole('textbox').last().fill('Fallback deck');
         await page.getByRole('button', { name: 'Ok', exact: true }).click();
         await page.waitForURL(/\/deck\/deck_/);
@@ -100,51 +95,8 @@ test('an HTTPS origin whose certificate is untrusted still syncs through the win
             const rows = await new Promise((resolve) => { const request = store.transaction('outbox').objectStore('outbox').getAll(); request.onsuccess = () => resolve(request.result); });
             store.close(); return rows.length > 0 && rows.every((row) => row.status === 'accepted');
         });
+        await expect.poll(() => db.sync.readState(id), { timeout: 20000 }).not.toBeNull();
         assert.equal(db.sync.readState(id).name, 'Fallback deck', 'the edit must still reach the server');
-        assert.deepEqual(errors, []);
-    } catch (error) {
-        console.error('Browser state:', await page.locator('body').innerText());
-        throw error;
-    } finally {
-        await browser.close(); await new Promise((resolve) => server.close(resolve));
-        await users.close(); await db.close(); await rm(directory, { recursive: true, force: true });
-    }
-});
-
-// The payoff of a trusted certificate: it makes the LAN origin a real secure
-// context, so the worker installs and the app starts up with no network.
-test('a LAN origin with a trusted certificate starts up with no network', { timeout: 180000 }, async (t) => {
-    const host = lanAddress();
-    if (!host) return t.skip('No non-loopback IPv4 address available.');
-    // Any locally trusted certificate proves the point; mkcert is simply the
-    // quickest way to obtain one in a test. The shipped path is Let's Encrypt.
-    try { await run('mkcert', ['-version']); } catch { return t.skip('No locally trusted certificate authority available for this check.'); }
-    const directory = await mkdtemp(path.join(os.tmpdir(), 'torimtg-trusted-'));
-    await mkcertSigned(directory, host);
-    const { db, users, server, port } = await serve(directory);
-    // No ignoreHTTPSErrors: the certificate must be trusted on its own merits.
-    const browser = await chromium.launch({ channel: 'chrome', headless: true });
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    page.setDefaultTimeout(30000);
-    const errors = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    try {
-        await page.goto(`https://${host}:${port}`);
-        assert.equal(await page.evaluate(() => window.isSecureContext), true);
-        await signUp(page, 'trusted-owner');
-        await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
-
-        await page.getByRole('button', { name: 'New Deck', exact: true }).click();
-        await page.getByRole('textbox').last().fill('Offline capable deck');
-        await page.getByRole('button', { name: 'Ok', exact: true }).click();
-        await page.waitForURL(/\/deck\/deck_/);
-        await page.getByRole('heading', { name: 'Offline capable deck', exact: true }).waitFor();
-
-        // The point of the exercise: a cold start with the network cut.
-        await context.setOffline(true);
-        await page.reload();
-        await page.getByRole('heading', { name: 'Offline capable deck', exact: true }).waitFor();
         assert.deepEqual(errors, []);
     } catch (error) {
         console.error('Browser state:', await page.locator('body').innerText());

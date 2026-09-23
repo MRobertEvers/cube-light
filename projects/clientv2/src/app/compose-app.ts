@@ -5,13 +5,11 @@ import { WebCrypto } from '../platform/crypto';
 import { BlobUrls } from '../platform/blob-urls';
 import { HttpSyncTransport } from '../platform/http/http-sync-transport';
 import { InThreadSyncHost } from '../platform/sync/in-thread-sync-host';
-import { ResilientSyncHost } from '../platform/sync/resilient-sync-host';
 import { BrowserPageLifecycle } from '../platform/page-lifecycle';
 import { BrowserDevice } from '../platform/device';
 import { BrowserCardScanner } from '../platform/card-scanner/browser-card-scanner';
 import { WasmNameIndexBuilder } from '../platform/wasm/name-index-builder';
 import { API_URI } from '../platform/api-url';
-import { SyncWorkerClient } from '../workers/sync/sync.client';
 import { BannerBlendWorkerClient } from '../workers/banner-blend/banner-blend.client';
 import { CardListLintWorkerClient } from '../workers/card-list-lint/card-list-lint.client';
 import { configureStore, type StoreType } from '../state/configure-store';
@@ -25,13 +23,9 @@ import { startProjections } from '../state/projections';
 export function composeApp(): StoreType {
 	const crypto = new WebCrypto();
 	const localStore = new OutboxLocalStore(new IndexedDbDriver('torimtg-v1', indexedDB), crypto);
-	const blobs = new BlobUrls(localStore);
 	const transport = new HttpSyncTransport(API_URI, localStore);
-	const syncHost = new ResilientSyncHost(
-		new SyncWorkerClient(),
-		() => new InThreadSyncHost(localStore, transport, crypto),
-		blobs
-	);
+	const syncHost = new InThreadSyncHost(localStore, transport, crypto);
+	const blobs = new BlobUrls(localStore, syncHost.announce);
 	const engine = createToriMTGEngine({
 		store: localStore,
 		crypto,

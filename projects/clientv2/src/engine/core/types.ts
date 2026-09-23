@@ -57,7 +57,6 @@ export interface LocalStore {
      * The stored copy of one resource, if any, its download job, if one was ever queued,
      * and whether sync is paused (backing off after a failure, or waiting for sign-in).
      */
-    resourceState(scope: AccountScope, query: ResourceQuery): Promise<{ resource: StoredResource | null; job: ResourceJob | null; syncPaused: boolean }>;
     saveResource(lease: Lease, job: ResourceJob, resource: StoredResource): Promise<LocalNotice>;
     failResource(lease: Lease, job: ResourceJob, message: string, retryAt: number): Promise<void>;
     putBlob(scope: AccountScope, blob: Blob): Promise<string>;

@@ -1,34 +1,36 @@
 import type { LocalNotice, LocalStore } from '../engine/core/types';
 import type { BlobUrlResolver } from '../engine/ports';
 
+/** Shown in place of a blob until its object URL exists. */
+const LOADING = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+
 /**
- * Turns a local blob id into a URL an <img> can load.
+ * Turns a local blob id into an object URL an <img> can load.
  *
- * The service worker answers /__tori_blob/<id> from its fetch handler. Without one
- * nothing answers that path, so once the window hosts sync it resolves ids to object
- * URLs instead. Lookups are synchronous because projections are; a miss returns the
- * worker path, starts the read, and announces a revision bump so the view projects again.
+ * Lookups are synchronous because projections are; a miss returns a transparent
+ * placeholder, starts the read (downloading the blob if it is not stored yet), and
+ * announces a revision bump through `announce` so the view projects again.
  */
 export class BlobUrls implements BlobUrlResolver {
     private readonly store: LocalStore;
+    private readonly announce: (notice: LocalNotice) => void;
     private readonly objectUrls = new Map<string, string>();
     private readonly pending = new Set<string>();
-    private announce: ((notice: LocalNotice) => void) | null = null;
 
-    constructor(store: LocalStore) { this.store = store; }
-
-    /** Switches to object URLs, announcing each one through `announce` once it is ready. */
-    useObjectUrls(announce: (notice: LocalNotice) => void): void { this.announce = announce; }
-
-    url(id: string): string {
-        if (!id || !this.announce) return `/__tori_blob/${id}`;
-        const known = this.objectUrls.get(id);
-        if (known) return known;
-        if (!this.pending.has(id)) void this.load(id, this.announce);
-        return `/__tori_blob/${id}`;
+    constructor(store: LocalStore, announce: (notice: LocalNotice) => void) {
+        this.store = store;
+        this.announce = announce;
     }
 
-    private async load(id: string, announce: (notice: LocalNotice) => void): Promise<void> {
+    url(id: string): string {
+        if (!id) return LOADING;
+        const known = this.objectUrls.get(id);
+        if (known) return known;
+        if (!this.pending.has(id)) void this.load(id);
+        return LOADING;
+    }
+
+    private async load(id: string): Promise<void> {
         const store = this.store;
         this.pending.add(id);
         try {
@@ -38,7 +40,7 @@ export class BlobUrls implements BlobUrlResolver {
             const data = await store.dataset(scope).then((set) => local?.data || set.resources.find((entry) => entry.key === JSON.stringify({ id, type: 'blob' }))?.body);
             if (!data) { await store.refresh(scope, { type: 'blob', id }); return; }
             this.objectUrls.set(id, URL.createObjectURL(data));
-            announce({ partition: scope.partition, generation: scope.generation, localRevision: (await store.dataset(scope)).meta.revision });
+            this.announce({ partition: scope.partition, generation: scope.generation, localRevision: (await store.dataset(scope)).meta.revision });
         } catch { /* The image stays unavailable until the next projection. */ }
         finally { this.pending.delete(id); }
     }

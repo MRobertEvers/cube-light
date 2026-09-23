@@ -68,6 +68,14 @@ export function createToriMTG(
 				if (lifecycle.isVisible()) wake();
 			}, 15000);
 			void worker.connect().catch(() => undefined);
+			// Publish what is already saved, so the status does not wait on a sync pass.
+			const active = await store.scope();
+			if (active)
+				emit({
+					partition: active.partition,
+					generation: active.generation,
+					localRevision: (await store.dataset(active)).meta.revision
+				});
 		}
 	}
 	// Every catalog or resource write bumps the revision, so one parse serves all reads until then.

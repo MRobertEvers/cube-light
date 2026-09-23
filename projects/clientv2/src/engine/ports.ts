@@ -56,12 +56,8 @@ export interface Crypto {
 
 // ── Sync ─────────────────────────────────────────────────────────────────────
 
-/** 'worker' once the service worker hosts sync, 'window' when it could not register. */
-export type SyncHostKind = 'pending' | 'worker' | 'window';
-
-/** Runs the SyncCoordinator somewhere: in SyncWorker, or in this thread as a fallback. */
+/** Runs the SyncCoordinator and reports what it changed in local storage. */
 export interface SyncHost {
-	readonly hostKind: SyncHostKind;
 	connect(): Promise<void>;
 	wake(): Promise<void>;
 	authenticate(id: string, credentials?: { username: string; password: string }): Promise<void>;

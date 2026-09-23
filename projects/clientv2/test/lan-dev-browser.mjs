@@ -13,8 +13,8 @@ const { UserStore } = requireServer('./build/src/auth/UserStore');
 const { createKVStore } = requireServer('./build/src/auth/kv-store');
 const { createRoutes } = requireServer('./build/src/routes/routes');
 
-// A LAN address is not a trustworthy origin, so the browser withholds service
-// workers and the secure-context half of Web Crypto. This is how the app is
+// A LAN address is not a trustworthy origin, so the browser withholds the
+// secure-context half of Web Crypto. This is how the app is
 // reached from a phone during development.
 function lanAddress() {
     for (const entries of Object.values(os.networkInterfaces()))
@@ -23,7 +23,7 @@ function lanAddress() {
     return null;
 }
 
-test('syncs from an insecure LAN origin with no service worker', { timeout: 120000 }, async (t) => {
+test('syncs from an insecure LAN origin', { timeout: 120000 }, async (t) => {
     const host = lanAddress();
     if (!host) return t.skip('No non-loopback IPv4 address available.');
     const directory = await mkdtemp(path.join(os.tmpdir(), 'torimtg-lan-'));
@@ -57,22 +57,19 @@ test('syncs from an insecure LAN origin with no service worker', { timeout: 1200
         // The premise: this origin really is missing the secure-context APIs.
         const environment = await page.evaluate(() => ({
             secure: window.isSecureContext,
-            worker: 'serviceWorker' in navigator,
             subtle: typeof crypto.subtle,
             uuid: typeof crypto.randomUUID
         }));
         assert.equal(environment.secure, false, 'expected an insecure context');
-        assert.equal(environment.worker, false, 'expected no service worker support');
         assert.equal(environment.subtle, 'undefined', 'expected crypto.subtle to be absent');
         assert.equal(environment.uuid, 'undefined', 'expected crypto.randomUUID to be absent');
 
-        // Account creation drives the whole auth path through the window host.
+        // Account creation drives the whole auth path through the in-page sync host.
         await page.getByLabel('Username', { exact: true }).fill('lan-owner');
         await page.getByLabel('Password', { exact: true }).fill('local-test-password');
         await page.getByLabel('Repeat password', { exact: true }).fill('local-test-password');
         await page.getByRole('button', { name: 'Create account', exact: true }).click();
         await page.getByRole('heading', { name: 'Your decks' }).waitFor();
-        assert.equal(await page.evaluate(() => !!navigator.serviceWorker?.controller), false, 'no worker should be controlling the page');
 
         // Bootstrap completes, proving pull + checkpoint hash verification ran
         // through the pure-JS SHA-256.

@@ -66,13 +66,6 @@ export function retrySync(): AppThunk<Promise<void>> {
 	};
 }
 
-/** Whether SyncWorker is hosting sync ('worker') or it fell back to this tab ('window'). */
-export function syncHostKind(): AppThunk<'pending' | 'worker' | 'window'> {
-	return function (_dispatch, _getState, engine) {
-		return engine.sync.hostKind();
-	};
-}
-
 export function selectOffline(state: { offline: OfflineState }): OfflineState {
 	return state.offline;
 }

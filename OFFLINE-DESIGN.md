@@ -17,17 +17,17 @@ checkpoints to reconstruct state without replaying the entire history each time.
                        ToriMTG core
                  +---------------------------------------+
  UI <-> Redux    |                                       |
-        + thunks <-> IndexedDB <-> Service Worker <-> Server
+        + thunks <-> IndexedDB <-> Sync host  <-> Server
                  |                                       |
                  +---------------------------------------+
 
- Outbound: Redux -> IndexedDB -> Service Worker -> Server
- Inbound:  Server -> Service Worker -> IndexedDB -> Redux
+ Outbound: Redux -> IndexedDB -> Sync host -> Server
+ Inbound:  Server -> Sync host -> IndexedDB -> Redux
  Local:    Redux -> IndexedDB -> Redux     (no network wait)
 ```
 
 The local return is the first part of the same flow: Redux can display a committed
-local edit immediately while the worker delivers it to the server later.
+local edit immediately while the sync host delivers it to the server later.
 All Redux domain values, including server responses, come from IndexedDB reads.
 Thunks never receive a raw server response to put directly into Redux.
 
@@ -40,16 +40,13 @@ These are architectural invariants:
    domain value before that commit.
 3. Exactly one sync host performs application API requests, and it always runs
    the same `SyncCoordinator` against the same IndexedDB store. There is no
-   online fast path: the UI never talks to the API directly. That host is the
-   service worker wherever one can run. An origin that is not a secure context
-   cannot register one -- a LAN development origin such as
-   `http://host.local:3000` is the usual case -- and there the window hosts the
-   coordinator instead (`InThreadSyncHost`). The window host trades away offline
-   page loads and background wake-ups; the transport, retry, lease, and
-   conflict behaviour are unchanged.
+   online fast path: the UI never talks to the API directly. That host is
+   `InThreadSyncHost`, which runs the coordinator on the page. There is no
+   service worker: loading the app needs the server, but once loaded it keeps
+   working offline and syncs when the network returns.
 4. Server results, receipts, errors, and sync progress are persisted before the
    UI is notified. Notifications tell the UI to reread; they do not carry data.
-5. Work survives closing a tab, restarting a worker, and retrying a request.
+5. Work survives closing a tab, reloading the page, and retrying a request.
 6. Refreshing server state never silently overwrites pending local intent.
 7. Domain state is reconstructible from a typed checkpoint and ordered events.
    Projections and query caches are rebuildable; they are never the history.
@@ -77,32 +74,42 @@ The existing deck history and banner revision are useful domain features, but
 neither is a general event ledger or aggregate revision system. Historical data
 migration is described with the CQRS model below.
 
-## 3. What the service worker does
+## 3. What the sync host does
 
-The service worker has two jobs:
+`InThreadSyncHost` runs synchronization on the page: it reads durable work from
+IndexedDB, sends it to the server, reconciles responses into IndexedDB, and
+announces local commits. Elsewhere in this document "the worker" refers to this
+host; the protocol, lease, and retry rules are the same wherever it runs.
 
-* **Run synchronization:** read durable work from IndexedDB, send it to the server,
-  reconcile responses into IndexedDB, and announce local commits.
-* **Make the application launch offline:** serve the installed HTML, JavaScript,
-  CSS, and other static assets from Cache Storage.
+There is deliberately no service worker. An earlier design used one to run sync
+and to serve the app shell from Cache Storage, but registration depends on a
+trusted secure context and failed in too many environments (LAN origins,
+untrusted certificates, private browsing) to be worth its complexity. The
+consequences are:
 
-IndexedDB does not invoke the worker automatically. After committing work, the
-window sends a small wake-up message. The worker opens the same origin's database
-and reads the work itself. Missing a message cannot lose the command because the
-outbox is durable and is scanned at the next wake-up.
+* The app must be loaded from the server; it does not start with no network.
+* Once loaded, every read and edit is local, and edits made offline sync when the
+  network returns while the app is open.
+* Nothing syncs while every tab is closed; queued work resumes at the next launch.
+* The build ships a self-unregistering `/sw.js` that retires the old worker on
+  devices that installed it.
+
+IndexedDB does not invoke the host automatically. After committing work, the
+engine wakes it. The host reads the work itself. Missing a wake-up cannot lose the
+command because the outbox is durable and is scanned at the next wake-up.
 
 ```text
- Window / Redux             IndexedDB          Service Worker        Server
+ Window / Redux             IndexedDB             Sync host            Server
        |                        |                    |                 |
        |-- commit command ----->|                    |                 |
        |<-- committed snapshot -|                    |                 |
        | render local result    |                    |                 |
-       |-- WAKE (hint only) ------------------------>|                 |
+       |-- wake (hint only) ------------------------>|                 |
        |                        |<-- read outbox ----|                 |
        |                        |                    |-- send command ->|
        |                        |                    |<-- receipt -----|
        |                        |<-- commit result --|                 |
-       |<-- LOCAL_CHANGED (hint only) ---------------|                 |
+       |<-- local change notice (hint only) ---------|                 |
        |-- read snapshot ------>|                    |                 |
        |<-- committed snapshot -|                    |                 |
        | render sync result     |                    |                 |
@@ -111,11 +118,10 @@ outbox is durable and is scanned at the next wake-up.
 This is an explicit queue processor, not a scheme that lets thunks fetch and then
 intercepts failed requests. API responses are not stored in Cache Storage.
 
-A service worker is event-driven and can be stopped by the browser. Wrap work in
-`event.waitUntil(runSyncSlice())`, use bounded batches and fetch timeouts, and persist
-all continuation state. Do not rely on global variables or worker timers to keep
-sync alive. Background operation is best effort, including when all tabs are
-closed. See [MDN: offline and background operation](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation).
+The host serialises its runs so overlapping wake-ups cannot start concurrent
+passes, uses bounded batches and fetch timeouts, and persists all continuation
+state, so a closed tab or reload loses nothing. When work remains after a pass it
+retries on a short timer.
 
 ## 4. ToriMTG core boundary
 
@@ -262,11 +268,8 @@ adapters; neither thunks nor core orchestration call `indexedDB.open`,
       |                               |
       +--> SyncHost                   |
              |                        |
-       SyncWorkerClient               |
+       InThreadSyncHost               |
              | wake-up only           |
-             v                        |
-       WorkerHost adapter             |
-             |                        |
              v                        v
        Sync coordinator -------> LocalStore (same IndexedDB)
              |
@@ -274,12 +277,12 @@ adapters; neither thunks nor core orchestration call `indexedDB.open`,
              |
              +--> LocalStore.reconcile(...)         (commit response)
              |
-             +--> WorkerHost.notifyCommitted(...)   (invalidation only)
+             +--> SyncHost.announce(...)            (invalidation only)
 ```
 
 The diagram shows code dependencies. Domain data still follows
-`Redux -> IndexedDB -> Service Worker -> Server` and the reverse path. The bridge
-only wakes the worker after durable work exists; it cannot send domain payloads
+`Redux -> IndexedDB -> Sync host -> Server` and the reverse path. The bridge
+only wakes the host after durable work exists; it cannot send domain payloads
 as a shortcut around IndexedDB.
 
 **`LocalStore` abstracts IndexedDB with domain-aware atomic operations.** It
@@ -317,31 +320,19 @@ the whole inbound transaction and verifies the lease fence/account generation.
 Repositories beneath this interface share the adapter's unit of work: composing
 separate `saveView` and `saveOutbox` promises would not satisfy atomicity.
 
-**`SyncHost` abstracts where sync runs** (`SyncWorkerClient` for the service worker, `InThreadSyncHost` as the fallback). It owns registration,
-readiness, version negotiation, message validation, reconnects, and controller
-changes. Its promises describe registration or wake-up delivery, not remote save
-completion. Queued mutations remain successful local saves if a wake-up fails.
+**`SyncHost` runs sync** (`InThreadSyncHost`, on the page). It serialises runs,
+authenticates, and relays committed-change notices. Its promises describe wake-up
+delivery, not remote save completion. Queued mutations remain successful local
+saves if a wake-up fails.
 
 ```ts
 interface SyncHost {
-    connect(requirements: ProtocolRequirements): Promise<WorkerConnection>;
-    wake(scope: AccountScope): Promise<WakeResult>;
-    subscribe(listener: (notice: LocalChangeNotice) => void): () => void;
-    requestActivation(buildId: string): Promise<void>;
-    close(): void;
-}
-
-interface WorkerHost {
-    bind(handler: (trigger: SyncTrigger) => Promise<void>): () => void;
-    notifyCommitted(notice: LocalChangeNotice): Promise<void>;
+    connect(): Promise<void>;
+    wake(): Promise<void>;
+    authenticate(id: string, credentials?: { username: string; password: string }): Promise<void>;
+    subscribe(listener: (notice: LocalNotice) => void): () => void;
 }
 ```
-
-`WorkerHost` is the matching worker-side lifecycle adapter. It binds browser
-`message`, `sync`, and activation events, calls `waitUntil`, and sends committed
-revision notices to eligible clients. The sync coordinator receives typed
-triggers without depending on raw browser event objects. The window facade merges
-local commit notices with bridge notices into ToriMTG's public subscription.
 
 **`SyncTransport` abstracts the network API.** It is injected only into the worker
 coordinator. Calls take typed, durably prepared work and return validated domain
@@ -365,8 +356,8 @@ the coordinator persists retry decisions through `LocalStore`, preserving the
 same operation ID and frozen body. The authentication control API uses the same
 transport adapter with transient credentials, as described in section 12.
 
-Construct the window facade with `{ localStore, syncHost }`, and the worker
-coordinator with `{ localStore, syncTransport, workerHost, clock, idGenerator }`.
+Construct the window facade with `{ localStore, syncHost }`, and the sync host
+with `{ localStore, syncTransport, crypto }`.
 Only composition roots select browser adapters. Tests inject deterministic
 implementations of these interfaces; adapter contract tests separately verify
 actual IndexedDB atomicity, browser messaging, and HTTP serialization. This keeps
@@ -994,28 +985,23 @@ new compensating command; uncertain sends must be settled before cancellation.
 
 ## 12. Wake-ups, concurrency, and accounts
 
-After committing work, post `WAKE { protocolVersion, partition, accountGeneration }`
-to the active registration. On initial load the page may have no controller yet;
-use `navigator.serviceWorker.ready` and `registration.active`, then retry the
-handshake on `controllerchange`. Handshake failure leaves durable work queued and
-shows unavailable sync; it never reroutes traffic through the window.
+After committing work, the engine wakes the sync host. A failed wake-up leaves
+durable work queued and shows unavailable sync; it never reroutes traffic.
 
 The following all wake the same `runSyncSlice` implementation:
 
 * Successful local enqueue and explicit retry/refresh.
 * Application startup, focus/visibility restoration, and the `online` event.
 * A modest visible-page timer while work is pending/due.
-* Worker activation and a registered Background Sync event where supported.
 
 `navigator.onLine` is a scheduling hint; requests determine actual reachability.
-Persist retry deadlines. Page timers only wake the worker; they never drain work.
-Background Sync has limited availability and cannot be the correctness mechanism.
-Without it, queued work resumes when the app is next open and runnable. See
-[MDN: Background Synchronization API](https://developer.mozilla.org/en-US/docs/Web/API/Background_Synchronization_API).
+Persist retry deadlines. Timers only wake the host; they never drain work.
+Nothing runs while every tab is closed: queued work resumes when the app is next
+open.
 
 Acquire a partition lease transactionally in IndexedDB, with an owner token,
 expiry, and increasing fence. Renew during bounded work; verify the fence before
-local reconciliation. Old/new worker overlap may still send duplicate requests,
+local reconciliation. Two tabs' hosts may still send duplicate requests,
 which the server deduplicates. Only the current owner may advance local state.
 No in-memory boolean is sufficient for cross-event or cross-version exclusion.
 
@@ -1078,32 +1064,14 @@ before deleting it. Browser storage is not encrypted simply because it is partit
 ## 13. PWA installation, assets, and storage
 
 Provide a manifest with stable `id`, `start_url`, scope, name, standalone display,
-theme colors, and appropriate regular/maskable icons. Build and register `/sw.js`
-with scope `/`; serve it with update-friendly cache headers. Serve the application
-and API over HTTPS, preferably through one origin with `/api` reverse-proxied.
-Service workers require a secure context, with a localhost development exception;
-the repository's current plain-HTTP `.local`/LAN URL needs HTTPS for PWA testing.
-See [MDN: using service workers](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers).
+theme colors, and appropriate regular/maskable icons. Serve the application and
+API over HTTPS, preferably through one origin with `/api` reverse-proxied.
 
-```text
-                      Service Worker
-                       /           \
-              domain sync          fetch handler
-                  |                     |
-              IndexedDB             Cache Storage
-          entities + outbox       shell + static assets
-```
-
-Cache Storage holds resource bytes needed to launch and render; IndexedDB holds
-structured application state and durable commands. This asset path does not
-create a second application-data write path.
-
-Precache a build-generated list of HTML, hashed JS/CSS, route chunks, icons, and
-required small WASM/runtime assets. Serve the installed shell on same-origin app
-navigations, including deep links; never return HTML fallback for API, worker, or
-asset URLs. Self-host the currently external font or provide a usable system-font
-fallback. Cache fingerprinted assets by version. Use a bounded runtime image
-cache and an offline placeholder for uncached art.
+There is no service worker and no Cache Storage shell, so launching the app needs
+the server; ordinary HTTP caching of fingerprinted assets is the only asset cache.
+IndexedDB holds structured application state, durable commands, and saved blobs,
+which the page turns into object URLs. `/sw.js` exists only to unregister the
+worker older builds installed.
 
 Downloading large OCR models/card packs is explicit, resumable, and size-aware.
 Do not include every model in the mandatory install transaction. Show offline
@@ -1123,18 +1091,13 @@ Evict reproducible images/catalog packs before private data. Persistence is not
 guaranteed, and users can clear site data, so “saved on this device” is not a server
 backup. See [MDN: storage quotas and eviction](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria).
 
-An offline-ready indicator requires both a complete shell install and completion
-of the selected data download. Never promise a first-ever visit will work offline.
-If IndexedDB is unavailable, block persistent edits. If workers are unavailable,
-local data remains usable where possible but sync is blocked with a clear error;
-there is no second transport implementation.
+Never promise that the app will start without a network. If IndexedDB is
+unavailable, block persistent edits.
 
 ## 14. Updates and recovery
 
-Install new shell assets in a new cache; only activate a coherent completed build.
-Offer an update/reload once local saves have committed. Pending outbox work does
-not have to be uploaded first. Avoid unconditional `skipWaiting` that mixes an old
-window with an incompatible worker or database schema.
+A reload picks up a new build. Pending outbox work does not have to be uploaded
+first.
 
 Handshake on protocol/schema compatibility. Version command payloads so newer
 workers can drain older queued commands. Prefer additive migrations and support
@@ -1143,7 +1106,7 @@ the prior active client version during rollout. Close IndexedDB connections on
 delete/recreate the database to fix an upgrade error. Retain old shell assets
 until old clients no longer need their chunks.
 
-On launch, open storage, hydrate Redux, register/handshake the worker, reclaim
+On launch, open storage, hydrate Redux, reclaim
 expired leases, and request sync. A crash before an IndexedDB commit produces no
 partial edit. A crash after server commit is recovered through the idempotency
 receipt. A crash after local reconciliation but before notification is recovered

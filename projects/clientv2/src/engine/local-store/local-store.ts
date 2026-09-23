@@ -17,6 +17,8 @@ export async function hash(crypto: Crypto, value: unknown): Promise<string> {
     return crypto.sha256Hex(new TextEncoder().encode(canonicalJson(value)));
 }
 
+/** How long a sync lease outlives its last renewal. A run renews it well within this, so a lapsed lease means its page died. */
+export const LEASE_MS = 15000;
 export function queryKey(query: ResourceQuery): string { return canonicalJson(query); }
 export function outstanding(intent: Intent): boolean { return !['accepted', 'discarded'].includes(intent.status); }
 
@@ -263,7 +265,7 @@ export class OutboxLocalStore implements LocalStore {
         return this.driver.transaction(['control', 'meta'], 'readwrite', async (tables) => {
             const meta = await checked(tables, this.crypto, scope);
             if (meta.lease && meta.lease.expiresAt > Date.now()) return null;
-            const lease = { scope, owner, fence: (meta.lease?.fence || 0) + 1, expiresAt: Date.now() + 90000 };
+            const lease = { scope, owner, fence: (meta.lease?.fence || 0) + 1, expiresAt: Date.now() + LEASE_MS };
             meta.lease = lease;
             await tables.put('meta', meta);
             return lease;
@@ -273,7 +275,7 @@ export class OutboxLocalStore implements LocalStore {
     async renew(lease: Lease): Promise<boolean> {
         return this.driver.transaction(['control', 'meta'], 'readwrite', async (tables) => {
             const meta = await checked(tables, this.crypto, lease.scope, lease);
-            meta.lease!.expiresAt = Date.now() + 90000;
+            meta.lease!.expiresAt = Date.now() + LEASE_MS;
             await tables.put('meta', meta); return true;
         });
     }
@@ -376,18 +378,6 @@ export class OutboxLocalStore implements LocalStore {
         return this.driver.transaction(['control', 'meta', 'jobs'], 'readonly', async (tables) => {
             await checked(tables, this.crypto, scope);
             return (await tables.all<ResourceJob>('jobs', scope.partition)).filter((job) => job.served < job.generation && job.nextAttemptAt <= Date.now());
-        });
-    }
-
-    async resourceState(scope: AccountScope, query: ResourceQuery): Promise<{ resource: StoredResource | null; job: ResourceJob | null; syncPaused: boolean }> {
-        const key = queryKey(query);
-        return this.driver.transaction(['control', 'meta', 'jobs', 'resources'], 'readonly', async (tables) => {
-            const meta = await checked(tables, this.crypto, scope);
-            return {
-                syncPaused: meta.refresh === 'auth-required' || meta.nextAttemptAt > Date.now(),
-                resource: await tables.get<StoredResource>('resources', [scope.partition, key]) || null,
-                job: await tables.get<ResourceJob>('jobs', [scope.partition, key]) || null
-            };
         });
     }
 

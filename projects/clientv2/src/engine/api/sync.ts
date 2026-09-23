@@ -1,19 +1,11 @@
 import type { Intent, ToriMTG } from '../core/types';
-import type { SyncHost, SyncHostKind } from '../ports';
 
 /** What is waiting to sync, and the choices for edits the server refused. */
 export class SyncApi {
 	private readonly tori: ToriMTG;
-	private readonly syncHost: SyncHost;
 
-	constructor(tori: ToriMTG, syncHost: SyncHost) {
+	constructor(tori: ToriMTG) {
 		this.tori = tori;
-		this.syncHost = syncHost;
-	}
-
-	/** 'worker' once SyncWorker hosts sync, 'window' when it could not start. */
-	hostKind(): SyncHostKind {
-		return this.syncHost.hostKind;
 	}
 
 	/** Edits saved on this device that the server has not accepted yet. */
