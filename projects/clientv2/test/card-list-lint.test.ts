@@ -1,8 +1,8 @@
 import { before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CardListLintWasm } from '../src/utils/card-list-lint-wasm';
-import { locateCardName } from '../src/utils/parse-card-list';
+import { CardListLintWasm } from '../src/platform/wasm/card-list-lint-wasm';
+import { locateCardName } from '../src/domain/card-names/parse-card-list';
 
 /** The server's NMI1 layout: magic, count, byte length, offsets, sorted NUL-terminated names. */
 function nameIndex(names: string[]): Uint8Array {
@@ -27,7 +27,7 @@ function nameIndex(names: string[]): Uint8Array {
 
 // Created once; tests await it rather than using top-level await, which tsx's CJS output rejects.
 const ready = CardListLintWasm.create(
-	readFileSync(new URL('../src/wasm/card-list-lint.wasm', import.meta.url)),
+	readFileSync(new URL('../src/platform/wasm/card-list-lint.wasm', import.meta.url)),
 	nameIndex([
 		'Lightning Bolt',
 		'Lightning Colt',
@@ -140,7 +140,7 @@ test('rejects a malformed name index', async function () {
 	await assert.rejects(
 		CardListLintWasm.create(
 			readFileSync(
-				new URL('../src/wasm/card-list-lint.wasm', import.meta.url)
+				new URL('../src/platform/wasm/card-list-lint.wasm', import.meta.url)
 			),
 			new TextEncoder().encode('not an index')
 		),

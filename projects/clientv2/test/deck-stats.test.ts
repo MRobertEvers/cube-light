@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { FetchAPIDeckCardResponse } from '../src/api/fetch-api-deck';
-import { deckStats } from '../src/utils/deck-stats';
+import type { DeckCardEntry } from '../src/domain/models/deck';
+import { deckStats } from '../src/domain/deck/stats';
 
 function card(
 	types: string,
 	subtypes: string,
 	manaCost: string,
 	count = 1
-): FetchAPIDeckCardResponse {
+): DeckCardEntry {
 	return {
 		name: `${types} ${subtypes} ${manaCost}`,
 		count,
@@ -20,7 +20,7 @@ function card(
 		image: '',
 		art: '',
 		board: 'main'
-	} as FetchAPIDeckCardResponse;
+	} as DeckCardEntry;
 }
 
 test('deck stats split creatures, curve, pips and types', () => {

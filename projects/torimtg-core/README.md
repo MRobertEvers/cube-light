@@ -1,7 +1,7 @@
 # ToriMTG core
 
 Shared, framework-independent commands, accepted events, reducers, protocol DTOs,
-and canonical serialization. Browser adapters live in `clientv2/src/torimtg`;
+and canonical serialization. Browser adapters live in `clientv2/src/platform`;
 the SQLite ledger and bearer authentication live in `server/src/sync` and
 `server/src/auth`. See [the offline design](../../OFFLINE-DESIGN.md).
 

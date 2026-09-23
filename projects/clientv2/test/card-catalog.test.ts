@@ -6,7 +6,7 @@ import {
 	identityOf,
 	overviewOf,
 	recordCards
-} from '../src/torimtg/card-catalog';
+} from '../src/engine/core/card-catalog';
 
 const printing = {
 	uuid: 'bolt-m10',

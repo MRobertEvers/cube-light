@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { FetchAPIDeckCardResponse } from '../src/api/fetch-api-deck';
-import { groupCubeTutorCards } from '../src/utils/group-cube-tutor-cards';
+import type { DeckCardEntry } from '../src/domain/models/deck';
+import { groupCubeTutorCards } from '../src/domain/deck/group-cube-tutor-cards';
 
 function card(
 	name: string,
@@ -9,7 +9,7 @@ function card(
 	manaCost: string,
 	text = '',
 	subtypes = ''
-): FetchAPIDeckCardResponse {
+): DeckCardEntry {
 	return {
 		name,
 		count: 1,
@@ -22,7 +22,7 @@ function card(
 		image: '',
 		art: '',
 		board: 'main'
-	} as FetchAPIDeckCardResponse;
+	} as DeckCardEntry;
 }
 
 test('cube tutor columns split colors by type and the rest by color combination', () => {

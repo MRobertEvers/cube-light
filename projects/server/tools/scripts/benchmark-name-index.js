@@ -32,11 +32,11 @@ function loadClientTypescript(mode) {
 		});
 		module._compile(compiled.outputText, filename);
 	};
-	const client = path.resolve(root, '../clientv2/src/utils/lookup-tables');
+	const client = path.resolve(root, '../clientv2/src');
 	return mode === 'json'
-		? require(path.join(client, 'iter-matches-in-lookup-tree.ts'))
+		? require(path.join(client, 'domain/card-names/lookup-tables/iter-matches-in-lookup-tree.ts'))
 				.getFirstNMatchesInLookupTree
-		: require(path.join(client, 'name-index-wasm.ts')).NameIndexWasm;
+		: require(path.join(client, 'platform/wasm/name-index-wasm.ts')).NameIndexWasm;
 }
 
 function memory() {

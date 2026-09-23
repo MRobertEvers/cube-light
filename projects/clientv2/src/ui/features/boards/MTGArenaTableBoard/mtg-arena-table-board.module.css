@@ -1,0 +1,123 @@
+.tabletop {
+	min-width: 0;
+	border: 1px solid #293634;
+	border-radius: 16px;
+	background: #091210;
+	color: #eef3f1;
+	overflow: hidden;
+}
+
+.toolbar {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 16px 24px;
+	padding: 20px 24px;
+	border-bottom: 1px solid #293634;
+}
+
+.toolbar h1 {
+	margin: 0;
+	font-size: 21px;
+}
+
+.toolbar p {
+	margin: 6px 0 0;
+	color: #aabbb5;
+	font-size: 13px;
+}
+
+.search {
+	flex: 1 1 320px;
+	max-width: 560px;
+	display: grid;
+	grid-template-columns: auto 1fr;
+	align-items: center;
+	gap: 6px 10px;
+	font-size: 13px;
+}
+
+.search input {
+	min-width: 0;
+	padding: 7px 10px;
+	border: 1px solid #3c4d48;
+	border-radius: 8px;
+	background: #111c17;
+	color: #eef3f1;
+	font: inherit;
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.search input:focus-visible {
+	outline: 2px solid #d8ece3;
+	outline-offset: 1px;
+}
+
+.search input[aria-invalid='true'] {
+	border-color: #e08b83;
+}
+
+.search .status,
+.search .error,
+.search .help {
+	grid-column: 2;
+	margin: 0;
+}
+
+.search .error {
+	color: #f0a39c;
+}
+
+.help summary {
+	color: #bad2c8;
+	cursor: pointer;
+}
+
+.help dl {
+	display: grid;
+	gap: 4px;
+	margin: 8px 0 0;
+	padding: 10px 12px;
+	border: 1px solid #293634;
+	border-radius: 8px;
+	background: #0e1916;
+}
+
+.help dl > div {
+	display: grid;
+	grid-template-columns: 9.5em 1fr;
+	gap: 10px;
+}
+
+.help dt,
+.help dd {
+	margin: 0;
+}
+
+.help code {
+	color: #eef3f1;
+}
+
+.help dd {
+	color: #aabbb5;
+}
+
+.size {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 13px;
+	white-space: nowrap;
+}
+
+.size input {
+	width: 110px;
+	accent-color: #bad2c8;
+}
+
+@media (max-width: 680px) {
+	.toolbar {
+		padding: 18px 14px;
+	}
+}

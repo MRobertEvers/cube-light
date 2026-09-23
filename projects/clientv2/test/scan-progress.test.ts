@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { progressFor } from '../src/utils/scan-progress';
+import { progressFor } from '../src/domain/scans/scan-progress';
 test('loading is indeterminate and names the loading stage', () => {
 	const p = progressFor('card-aware', { phase: 'Prepare verifier' }, 87);
 	assert.equal(p.indeterminate, true);

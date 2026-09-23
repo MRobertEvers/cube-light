@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bestCardName, prepareCardNames } from '../src/utils/card-name-match';
+import { bestCardName, prepareCardNames } from '../src/domain/card-names/card-name-match';
 
 const names = prepareCardNames([
 	'Hedge Whisperer',

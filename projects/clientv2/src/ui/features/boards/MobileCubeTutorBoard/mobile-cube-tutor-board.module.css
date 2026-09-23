@@ -1,0 +1,247 @@
+.board {
+	/* The page runs this board edge to edge; controls keep the page's inset. */
+	--gutter: 14px;
+	min-width: 0;
+	font-size: 0.9rem;
+}
+
+/* Each tab and column's tint, edge and ink come from its color, as on the desktop board. */
+.tab,
+.column {
+	--tint: #f4f3f1;
+	--edge: #b9b5b1;
+	--head: #e4e1de;
+	--ink: #4b4845;
+}
+
+.tab[data-color='W'],
+.column[data-color='W'] {
+	--tint: #fbf8ea;
+	--edge: #cfc49a;
+	--head: #efe8c8;
+	--ink: #6f6232;
+}
+.tab[data-color='U'],
+.column[data-color='U'] {
+	--tint: #edf3fb;
+	--edge: #7fa0cf;
+	--head: #d3e1f3;
+	--ink: #23487d;
+}
+.tab[data-color='B'],
+.column[data-color='B'] {
+	--tint: #ecebec;
+	--edge: #6b676c;
+	--head: #d6d3d6;
+	--ink: #231f24;
+}
+.tab[data-color='R'],
+.column[data-color='R'] {
+	--tint: #fbeeed;
+	--edge: #cd8783;
+	--head: #f3d5d3;
+	--ink: #8a2621;
+}
+.tab[data-color='G'],
+.column[data-color='G'] {
+	--tint: #eef6ec;
+	--edge: #85b67c;
+	--head: #d5e9d0;
+	--ink: #2f6b28;
+}
+.tab[data-color='multicolor'],
+.column[data-color='multicolor'] {
+	--tint: #fbf7e4;
+	--edge: #cdb35a;
+	--head: #f1e6b7;
+	--ink: #6c5a13;
+}
+.tab[data-color='colorless'],
+.column[data-color='colorless'] {
+	--tint: #f1f1f2;
+	--edge: #a3a5a9;
+	--head: #dfe0e2;
+	--ink: #45484d;
+}
+.tab[data-color='land'],
+.column[data-color='land'] {
+	--tint: #f7efe8;
+	--edge: #b78b67;
+	--head: #ead8c8;
+	--ink: #6a4225;
+}
+
+.deck-boards {
+	display: flex;
+	margin: 0 var(--gutter) 10px;
+	padding: 3px;
+	border-radius: 9px;
+	background: #f1efee;
+}
+
+.deck-boards button {
+	flex: 1;
+	min-height: 40px;
+	margin: 0;
+	border: 0;
+	border-radius: 7px;
+	background: transparent;
+	color: #6d6764;
+	font: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.deck-boards button[aria-checked='true'] {
+	background: white;
+	color: #383331;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+/* One line of color tabs that swipes to the screen's edges; the page never scrolls sideways. */
+.tabs {
+	display: flex;
+	gap: 6px;
+	margin: 0 0 10px;
+	padding: 2px var(--gutter) 4px;
+	scroll-padding-inline: var(--gutter);
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+	display: none;
+}
+
+.tab {
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 6px;
+	min-height: 40px;
+	margin: 0;
+	padding: 0 12px;
+	border: 1.5px solid var(--edge);
+	border-radius: 20px;
+	background: white;
+	color: var(--ink);
+	font: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.tab[aria-selected='true'] {
+	background: var(--head);
+	box-shadow: inset 0 0 0 1px var(--edge);
+}
+
+.tab-count {
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+	opacity: 0.8;
+}
+
+.deck-boards button:focus-visible,
+.tab:focus-visible,
+.row-main:focus-visible {
+	outline: 2px solid var(--deck-accent, #7a3431);
+	outline-offset: 2px;
+}
+
+/* Edge to edge, so only the top and bottom carry the column's border. */
+.column {
+	overflow: hidden;
+	border-block: 2px solid var(--edge);
+	background: var(--tint);
+}
+
+.section + .section {
+	margin-top: 6px;
+}
+
+.section-header {
+	display: flex;
+	justify-content: space-between;
+	margin: 0;
+	padding: 8px var(--gutter);
+	background: var(--head);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.section-header span {
+	font-variant-numeric: tabular-nums;
+}
+
+.rows {
+	margin: 0;
+	padding: 2px 0 4px;
+	list-style: none;
+}
+
+/* A new mana value within a section, as CubeTutor gaps its curve: space, no rule. */
+.rows > .tier {
+	margin-top: 4px;
+	padding-top: 4px;
+}
+
+.row {
+	display: flex;
+	align-items: stretch;
+	min-height: 36px;
+}
+
+.row-main {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	margin: 0;
+	padding: 2px 0 2px var(--gutter);
+	border: 0;
+	background: transparent;
+	color: var(--ink);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.row-main:disabled {
+	opacity: 0.55;
+	cursor: progress;
+}
+
+.count {
+	flex: none;
+	min-width: 16px;
+	font-weight: 700;
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.name {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.delete {
+	color: #b42323;
+}
+
+.delete:hover,
+.delete:focus-visible {
+	background: #fff0ef;
+}
+
+.empty {
+	padding: 40px 16px;
+	color: var(--theme-text);
+	text-align: center;
+}

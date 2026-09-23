@@ -6,7 +6,7 @@ import {
 	historyModalSlice,
 	restoreHistoryModal,
 	serializeHistoryModal
-} from '../src/store/history-modal/history-modal.state';
+} from '../src/state/history-modal/history-modal.state';
 
 test('serializes a modal without discarding other router state', () => {
 	const entry = {

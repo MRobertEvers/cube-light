@@ -1,0 +1,96 @@
+.controls {
+	display: grid;
+	gap: 8px;
+}
+
+.toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 16px;
+	padding: 8px 10px;
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 10px;
+	background: var(--deck-surface, #f2efed);
+}
+
+.identity {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	margin-right: auto;
+}
+
+.thumb {
+	flex: none;
+	width: 64px;
+	height: 44px;
+	border-radius: 6px;
+	object-fit: cover;
+}
+
+.title {
+	min-width: 0;
+}
+
+.title h1 {
+	margin: 0;
+	overflow: hidden;
+	color: var(--deck-banner-ink, inherit);
+	font-size: 17px;
+	line-height: 1.2;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.title p {
+	margin: 2px 0 0;
+	font-size: 12px;
+	opacity: 0.8;
+}
+
+/* The tabs keep their look from the sidebar, minus the space it leaves below them. */
+.tabs > nav {
+	min-width: 240px;
+	margin: 0;
+}
+
+.group {
+	display: flex;
+	gap: 4px;
+}
+
+.group button {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 6px 10px;
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 6px;
+	background: var(--theme-background, #fff);
+	color: var(--deck-accent-text, inherit);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.group button:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.group button:hover:not(:disabled) {
+	border-color: var(--deck-accent, #384e43);
+}
+
+.group svg {
+	width: 15px;
+	height: 15px;
+}
+
+.group .delete {
+	color: #b42323;
+}

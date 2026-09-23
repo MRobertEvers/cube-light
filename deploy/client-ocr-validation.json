@@ -1,5 +1,5 @@
 {
-  "entryPoint": "projects/clientv2/src/utils/card-image-ocr.ts:scanCardImage",
+  "entryPoint": "projects/clientv2/src/platform/card-scanner/card-image-ocr.ts:scanCardImage",
   "date": "2026-09-21",
   "milliseconds": 174445.19999998808,
   "distinctNames": 12,

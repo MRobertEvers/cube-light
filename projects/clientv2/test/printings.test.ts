@@ -1,17 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { FetchAPIDeckCardResponse } from '../src/api/fetch-api-deck';
+import type { DeckCardEntry } from '../src/domain/models/deck';
 import {
 	deckCardEditTarget,
 	groupDeckCardsByName
-} from '../src/utils/group-deck-cards';
-import { parseCardList } from '../src/utils/parse-card-list';
+} from '../src/domain/deck/group-deck-cards';
+import { parseCardList } from '../src/domain/card-names/parse-card-list';
 
 function card(
 	name: string,
 	setCode: string,
 	count: number
-): FetchAPIDeckCardResponse {
+): DeckCardEntry {
 	return {
 		name,
 		count,

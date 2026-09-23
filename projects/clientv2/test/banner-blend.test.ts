@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { BannerWasm } from '../src/utils/banner-wasm';
-import { DEFAULT_BANNER_BLEND } from '../src/utils/banner-blend';
+import { BannerWasm } from '../src/platform/wasm/banner-wasm';
+import { DEFAULT_BANNER_BLEND } from '../src/domain/appearance/banner-blend';
 
 const wasm = await BannerWasm.create(
-	readFileSync(new URL('../src/wasm/banner-blend.wasm', import.meta.url))
+	readFileSync(new URL('../src/platform/wasm/banner-blend.wasm', import.meta.url))
 );
 const blendBannerPixels: BannerWasm['blend'] = function blendBannerPixels(
 	...args

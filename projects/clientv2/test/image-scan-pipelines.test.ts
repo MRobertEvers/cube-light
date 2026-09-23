@@ -4,7 +4,7 @@ import {
 	DEFAULT_IMAGE_PIPELINE,
 	IMAGE_PIPELINES,
 	isCardImagePipeline
-} from '../src/utils/image-scan-pipelines';
+} from '../src/domain/scans/image-scan-pipelines';
 test('compact card-aware scanning is the default', () =>
 	assert.equal(DEFAULT_IMAGE_PIPELINE, 'card-aware'));
 test('only supported executable pipelines can be selected', () => {

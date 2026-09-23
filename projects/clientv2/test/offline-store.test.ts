@@ -1,14 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { indexedDB } from 'fake-indexeddb';
-import { IndexedDbDriver, TABLES } from '../src/torimtg/adapters/indexeddb-driver';
-import { IndexedDbLocalStore, hash } from '../src/torimtg/adapters/local-store';
+import { IndexedDbDriver } from '../src/platform/indexeddb/indexeddb-driver';
+import { TABLES } from '../src/engine/local-store/schema';
+import { WebCrypto } from '../src/platform/crypto';
+import { OutboxLocalStore, hash } from '../src/engine/local-store/local-store';
+
+const webCrypto = new WebCrypto();
 import { applyEvent } from '@torimtg/core';
 import type { EventEnvelope, Replica, DomainEvent } from '@torimtg/core';
 
 async function fixture() {
     const driver = new IndexedDbDriver(`test-${crypto.randomUUID()}`, indexedDB);
-    const store = new IndexedDbLocalStore(driver);
+    const store = new OutboxLocalStore(driver, webCrypto);
     await store.open();
     const job = await store.startAuth('login');
     await store.finishAuth(job, { user: { id: 1, username: 'owner', profile: null }, serverInstanceId: 'test-server', setupRequired: false });
@@ -19,9 +23,9 @@ async function fixture() {
 async function replica(id: string, operationId: string, event: DomainEvent, previous?: Replica): Promise<Replica> {
     const sequence = (previous?.sequence || 0) + 1;
     const unsigned = { eventId: crypto.randomUUID(), aggregateId: id, aggregateSequence: sequence, commitPosition: sequence, operationId, actorId: 1, recordedAt: new Date().toISOString(), eventSchemaVersion: 1 as const, previousEventHash: previous?.hash || '', event };
-    const envelope: EventEnvelope = { ...unsigned, eventHash: await hash(unsigned) };
+    const envelope: EventEnvelope = { ...unsigned, eventHash: await hash(webCrypto, unsigned) };
     const state = applyEvent(previous?.state || null, event, id, envelope.recordedAt);
-    const checkpoint = previous?.checkpoint || { aggregateId: id, throughSequence: sequence, throughEventId: envelope.eventId, schemaVersion: 1 as const, reducerVersion: 1 as const, stateHash: await hash(state), ledgerHash: envelope.eventHash, createdAt: envelope.recordedAt, state };
+    const checkpoint = previous?.checkpoint || { aggregateId: id, throughSequence: sequence, throughEventId: envelope.eventId, schemaVersion: 1 as const, reducerVersion: 1 as const, stateHash: await hash(webCrypto, state), ledgerHash: envelope.eventHash, createdAt: envelope.recordedAt, state };
     return { id, sequence, hash: envelope.eventHash, state, checkpoint, events: previous ? [...previous.events, envelope] : [] };
 }
 

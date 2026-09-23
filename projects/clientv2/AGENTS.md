@@ -57,3 +57,31 @@ items.map((item) => {
 ```
 
 The rules about named parameters, unpacking, and defaults also apply to lambdas.
+
+# Architecture
+
+`src/` is layered. Each layer imports only the layers below it; `test/layers.test.ts`
+enforces this and fails on any violation or unresolved relative import.
+
+```text
+ app/            composition root: builds adapters, worker clients, the engine, the store
+ ui/pages/       routes and screens            ─┐
+ ui/features/    boards, deck chrome, widgets   ├─ React; data only via Redux
+ ui/kit/         shared components and hooks   ─┘
+ state/          Redux slices and thunks; thunks receive the ToriMTGEngine as `extra`
+ ═══════════════ UI ↔ data boundary: the ToriMTGEngine's semantic API ═══════════════
+ engine/         ToriMTGEngine; imports only domain/ and its own ports (engine/ports.ts)
+ ─────────────── port boundary ───────────────────────────────────────────────────────
+ platform/       browser adapters implementing ports (IndexedDB, HTTP, crypto, device)
+ workers/<name>/ <name>.worker.ts, <name>.client.ts (implements a port), <name>.protocol.ts
+ domain/         pure models and rules
+```
+
+- Pass dependencies explicitly. Classes take their dependencies in the constructor;
+  do not add wrapping binders (`withX`, `bindX`) or React contexts that hand out services.
+- Components use selectors and dispatch thunks. They never import the engine, a
+  worker client, or a platform adapter.
+- A worker lives in `src/workers/<name>/` and is named `<Name>Worker`. Only its
+  `.client.ts` starts it, and the engine reaches it through a port.
+- Engine changes reach Redux as `EngineEvents` (`state/projections.ts`); notices tell
+  the UI to reread, they do not carry data.

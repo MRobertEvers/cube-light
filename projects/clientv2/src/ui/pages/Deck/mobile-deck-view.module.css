@@ -1,0 +1,82 @@
+.layout {
+	box-sizing: border-box;
+	max-width: 680px;
+	margin: 0 auto;
+	padding: 18px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+/* A mobile board that asked for the full width runs edge to edge. */
+.fullWidth {
+	max-width: none;
+}
+
+.board {
+	min-width: 0;
+}
+
+.fullWidth .board {
+	margin-inline: -14px;
+}
+
+.fullArt {
+	position: relative;
+	margin-top: -56px;
+	padding-top: 0;
+}
+
+.summary {
+	min-width: 0;
+}
+
+.cardActionError {
+	margin: 0;
+	padding: 10px 12px;
+	border: 1px solid #efc5c2;
+	border-radius: 8px;
+	background: #fff0ef;
+	color: #a12323;
+	font-size: 13px;
+}
+
+.addCardButton {
+	position: fixed;
+	right: max(20px, env(safe-area-inset-right));
+	bottom: max(20px, env(safe-area-inset-bottom));
+	z-index: 40;
+	display: grid;
+	place-items: center;
+	width: 56px;
+	height: 56px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: var(--deck-accent, #384e43);
+	color: var(--deck-on-accent, white);
+	box-shadow: 0 8px 22px rgba(38, 38, 38, 0.3);
+	cursor: pointer;
+}
+
+.addCardButton svg {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+}
+
+.addCardButton:hover {
+	filter: brightness(1.08);
+}
+
+.addCardButton:focus-visible {
+	outline: 3px solid white;
+	outline-offset: 2px;
+}
+
+.addCardButton:disabled {
+	opacity: 0.55;
+	cursor: default;
+}

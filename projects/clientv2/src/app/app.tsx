@@ -2,17 +2,19 @@ import * as React from 'react';
 import { Provider } from 'react-redux';
 
 import { Routes } from './routes';
-import { AuthGate } from '../components/Auth/AuthGate';
-import { configureStore } from '../store/configure-store';
-import { startDeferredWorkRunner } from '../utils/deferred-work-runner';
-import { OfflineStatus } from '../components/OfflineStatus/OfflineStatus';
-import { PwaInstallProvider } from '../components/InstallApp/PwaInstallProvider';
+import { AuthGate } from '../ui/kit/components/Auth/AuthGate';
+import type { StoreType } from '../state/configure-store';
+import { useAppDispatch } from '../state/use-app-dispatch';
+import { runQueuedScansHere, watchWorkQueue } from '../state/scans/scans.state';
+import { OfflineStatus } from '../ui/kit/components/OfflineStatus/OfflineStatus';
+import { PwaInstallProvider } from '../ui/kit/components/InstallApp/PwaInstallProvider';
 
 import '../assets/common.css';
 
-const store = configureStore();
+export type AppProps = { store: StoreType };
 
-export function App() {
+export function App(props: AppProps) {
+	const { store } = props;
 	return (
 		<Provider store={store}>
 			<PwaInstallProvider>
@@ -24,9 +26,17 @@ export function App() {
 	);
 }
 
-/** Mounted only with a session: the work runner polls routes that require one. */
+/** Mounted only with a session: the queue and the scan runner need one. */
 function SignedInApp() {
-	React.useEffect(startDeferredWorkRunner, []);
+	const dispatch = useAppDispatch();
+	React.useEffect(() => {
+		const stopWatching = dispatch(watchWorkQueue());
+		const stopRunning = dispatch(runQueuedScansHere());
+		return function () {
+			stopRunning();
+			stopWatching();
+		};
+	}, [dispatch]);
 
 	return (
 		<div className={'application-container'}>

@@ -84,7 +84,8 @@ test('syncs from an insecure LAN origin with no service worker', { timeout: 1200
 
         // An edit made while offline must queue locally and reach the server later.
         await context.setOffline(true);
-        await page.getByRole('button', { name: 'New Deck', exact: true }).click();
+        await page.getByRole('button', { name: 'Create a deck' }).click();
+        await page.getByRole('button', { name: 'New deck', exact: true }).click();
         await page.getByRole('textbox').last().fill('LAN test deck');
         await page.getByRole('button', { name: 'Ok', exact: true }).click();
         await page.waitForURL(/\/deck\/deck_/);

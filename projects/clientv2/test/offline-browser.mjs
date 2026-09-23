@@ -55,7 +55,8 @@ test('installed PWA saves offline, reloads a deep link, and syncs via bearer-aut
             db.close(); return rows.some((row) => row.bootstrap.complete);
         });
         await context.setOffline(true);
-        await page.getByRole('button', { name: 'New Deck', exact: true }).click();
+        await page.getByRole('button', { name: 'Create a deck' }).click();
+        await page.getByRole('button', { name: 'New deck', exact: true }).click();
         await page.getByRole('textbox').last().fill('Offline test deck');
         await page.getByRole('button', { name: 'Ok', exact: true }).click();
         await page.waitForURL(/\/deck\/deck_/);

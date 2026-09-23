@@ -10,7 +10,7 @@ export async function buildWorker(options) {
     if (production) {
         for (const name of await readdir(path.join(outDir, 'assets'))) {
             // Lazy application chunks and small WASM runtimes are needed on an offline route.
-            const optionalOcr = /^(ort|worker-entry|experimental-scanner|ocr-recognizer|title-index|paddle-region-reader)/.test(name);
+            const optionalOcr = /^(ort|worker-entry|experimental-scanner|card-ocr|title-index|paddle-region-reader)/.test(name);
             if (!optionalOcr && /\.(js|css|wasm|woff2?|svg|png)$/.test(name)) files.push(`/assets/${name}`);
         }
     }
@@ -19,6 +19,6 @@ export async function buildWorker(options) {
     await build({
         configFile: false, root, publicDir: false,
         define: { __PRECACHE__: JSON.stringify(files), __BUILD_ID__: JSON.stringify(production ? digest.digest('hex').slice(0, 16) : 'development') },
-        build: { outDir, emptyOutDir: false, copyPublicDir: false, sourcemap: true, lib: { entry: path.join(root, 'src/service-worker/sw.ts'), name: 'ToriMTGWorker', formats: ['iife'], fileName: function () { return 'sw.js'; } } }
+        build: { outDir, emptyOutDir: false, copyPublicDir: false, sourcemap: true, lib: { entry: path.join(root, 'src/workers/sync/sync.worker.ts'), name: 'ToriMTGWorker', formats: ['iife'], fileName: function () { return 'sw.js'; } } }
     });
 }

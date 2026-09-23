@@ -1,0 +1,189 @@
+.board {
+	min-width: 0;
+}
+
+.deck-board + .deck-board {
+	margin-top: 14px;
+}
+
+.board-title {
+	margin: 0 0 6px;
+	font-size: 16px;
+}
+
+.columns {
+	display: flex;
+	align-items: flex-start;
+	gap: 4px;
+	overflow-x: auto;
+	padding-bottom: 6px;
+}
+
+/* Each column's tint, edge and ink come from its color. */
+.column {
+	--tint: #f4f3f1;
+	--edge: #b9b5b1;
+	--head: #e4e1de;
+	--ink: #4b4845;
+	/* Columns share the width up to a readable cap, and scroll sideways once they reach their minimum. */
+	flex: 1 0 170px;
+	min-width: 0;
+	max-width: 260px;
+	overflow: hidden;
+	border: 1px solid var(--edge);
+	border-radius: 5px;
+	background: var(--tint);
+}
+
+.column[data-color='W'] {
+	--tint: #fbf8ea;
+	--edge: #cfc49a;
+	--head: #efe8c8;
+	--ink: #6f6232;
+}
+.column[data-color='U'] {
+	--tint: #edf3fb;
+	--edge: #7fa0cf;
+	--head: #d3e1f3;
+	--ink: #23487d;
+}
+.column[data-color='B'] {
+	--tint: #ecebec;
+	--edge: #6b676c;
+	--head: #d6d3d6;
+	--ink: #231f24;
+}
+.column[data-color='R'] {
+	--tint: #fbeeed;
+	--edge: #cd8783;
+	--head: #f3d5d3;
+	--ink: #8a2621;
+}
+.column[data-color='G'] {
+	--tint: #eef6ec;
+	--edge: #85b67c;
+	--head: #d5e9d0;
+	--ink: #2f6b28;
+}
+.column[data-color='multicolor'] {
+	--tint: #fbf7e4;
+	--edge: #cdb35a;
+	--head: #f1e6b7;
+	--ink: #6c5a13;
+}
+.column[data-color='colorless'] {
+	--tint: #f1f1f2;
+	--edge: #a3a5a9;
+	--head: #dfe0e2;
+	--ink: #45484d;
+}
+.column[data-color='land'] {
+	--tint: #f7efe8;
+	--edge: #b78b67;
+	--head: #ead8c8;
+	--ink: #6a4225;
+}
+
+.column-header {
+	margin: 0;
+	padding: 3px 6px 1px;
+	color: var(--ink);
+	font-size: 14px;
+	white-space: nowrap;
+	font-weight: 700;
+	text-align: center;
+}
+
+.section {
+	margin-top: 2px;
+}
+
+.section-header {
+	margin: 0;
+	padding: 1px 6px;
+	background: var(--head);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 700;
+	text-align: center;
+}
+
+.rows {
+	margin: 0;
+	padding: 1px 0 3px;
+	list-style: none;
+}
+
+/* A new mana value within a section, as CubeTutor gaps its curve: space, no rule. */
+.rows > .tier {
+	margin-top: 2px;
+	padding-top: 2px;
+}
+
+.row {
+	display: flex;
+	align-items: baseline;
+	gap: 4px;
+	width: 100%;
+	margin: 0;
+	padding: 0 6px;
+	border: 0;
+	background: transparent;
+	color: var(--ink);
+	font: inherit;
+	font-size: 13px;
+	line-height: 1.3;
+	text-align: left;
+	cursor: pointer;
+}
+
+.row:disabled {
+	opacity: 0.5;
+	cursor: progress;
+}
+
+.row:focus-visible {
+	outline: 2px solid var(--edge);
+	outline-offset: -2px;
+}
+
+.count {
+	flex: none;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.name {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.preview {
+	position: fixed;
+	z-index: 20;
+	width: 250px;
+	height: 350px;
+	border-radius: 12px;
+	box-shadow: 0 8px 24px #0006;
+	pointer-events: none;
+}
+
+.empty {
+	padding: 40px 16px;
+	color: var(--theme-text);
+	text-align: center;
+}
+
+@media (hover: hover) {
+	.row:hover:not(:disabled) {
+		background: var(--head);
+	}
+}
+
+@media (hover: none) {
+	.preview {
+		display: none;
+	}
+}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applySteps, countEdits, printingCounts } from '../src/utils/deck-card-steps';
+import { applySteps, countEdits, printingCounts } from '../src/domain/deck/card-steps';
 
 const deck = printingCounts([
     { uuid: 'a', count: 2 },

@@ -1,0 +1,99 @@
+.deck-view-switch {
+	display: flex;
+	padding: 3px;
+	gap: 4px;
+	margin-bottom: 12px;
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 8px;
+}
+
+.deck-view-switch a {
+	flex: 1;
+	padding: 8px;
+	border-radius: 5px;
+	text-align: center;
+	text-decoration: none;
+	font-size: 13px;
+	font-weight: 600;
+	color: inherit;
+}
+
+.deck-view-switch a[aria-current='page'] {
+	background: var(--deck-accent, #384e43);
+	color: var(--deck-on-accent, white);
+}
+
+.deck-view-switch a:hover {
+	text-decoration: underline;
+}
+
+.deck-controls {
+	display: flex;
+	flex-direction: column;
+	margin: 16px 0;
+}
+
+.deck-edit-panel-body {
+	display: grid;
+	gap: 14px;
+	padding-top: 14px;
+}
+
+.deck-control-group {
+	display: grid;
+	gap: 6px;
+}
+
+.deck-control-label {
+	margin: 0;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	opacity: 0.7;
+}
+
+.deck-add-tiles {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 6px;
+}
+
+.deck-control-button,
+.deck-add-tile {
+	min-width: unset !important;
+	margin: 0 !important;
+	border-color: var(--deck-border, #e5e1df);
+	color: var(--deck-accent-text, inherit) !important;
+	font-size: 13px !important;
+}
+
+.deck-add-tile {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3px;
+	padding: 10px 4px;
+}
+
+.deck-add-tile-hint {
+	font-size: 11px;
+	font-weight: 400;
+	color: var(--deck-on-wash, #595959);
+	opacity: 0.75;
+}
+
+.deck-control-row {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 6px;
+}
+
+.deck-control-button {
+	width: 100%;
+	padding: 0 10px;
+}
+
+.delete-deck-button {
+	color: #b42323 !important;
+}

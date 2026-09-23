@@ -44,7 +44,7 @@ These are architectural invariants:
    service worker wherever one can run. An origin that is not a secure context
    cannot register one -- a LAN development origin such as
    `http://host.local:3000` is the usual case -- and there the window hosts the
-   coordinator instead (`WindowSyncApi`). The window host trades away offline
+   coordinator instead (`InThreadSyncHost`). The window host trades away offline
    page loads and background wake-ups; the transport, retry, lease, and
    conflict behaviour are unchanged.
 4. Server results, receipts, errors, and sync progress are persisted before the
@@ -128,22 +128,21 @@ browser or Express dependencies. The client-side folders below compose that
 package with browser adapters rather than duplicating server business rules.
 
 ```text
- projects/clientv2/src/torimtg/
-   index.ts                    Window-facing public API
-   domain/                     Aggregate commands, events, reducers, invariants
-   projections/                Versioned query models derived from domain events
-   checkpoints/                Typed balances, verification, replay, retention
-   ports/                      LocalStore, ServiceWorkerApi, ServerApi contracts
-   adapters/indexeddb/          Browser DB driver, repositories, migrations
-   adapters/service-worker/    Registration, messages, lifecycle event bindings
-   adapters/http/              Typed server client and private HTTP transport
-   window/                     Local reads/writes and subscriptions
-   worker/                     Queue runner and reconciliation
-   protocol/                   Versioned messages and wire contracts
-
- projects/clientv2/src/service-worker/
-   register.ts                 Window-side registration and handshake
-   sw.ts                       Worker events, core runner, asset caching
+ projects/clientv2/src/
+   app/                        Composition root: builds adapters, worker clients, engine, store
+   ui/pages|features|kit/      React; reaches data only through Redux selectors and thunks
+   state/                      Redux slices, thunks (extra = ToriMTGEngine), event projections
+   engine/                     The ToriMTGEngine: semantic API, core, local store, sync, jobs
+     ports.ts                  Every interface the engine needs from outside itself
+     api/                      Semantic namespaces: decks, cards, library, session, sync, ...
+     core/  local-store/       Local reads/writes, projections, outbox transactions
+     sync/sync-coordinator.ts  Queue runner and reconciliation (runs in a SyncHost)
+   platform/                   Browser adapters implementing ports: IndexedDB, HTTP, crypto, ...
+   workers/<name>/             One folder per worker thread:
+     <name>.worker.ts          Worker entry (its thread's composition root)
+     <name>.client.ts          Main-thread binding; implements an engine port
+     <name>.protocol.ts        Message types shared by both sides
+   domain/                     Pure models and rules; imports nothing else in src
 
  projects/server/src/sync/
    commands.ts                 Authorization and transactional command handling
@@ -151,7 +150,9 @@ package with browser adapters rather than duplicating server business rules.
    changes.ts                  Incremental replication and bootstrap
 ```
 
-The names below define the intended API contract, not finished implementation:
+`test/layers.test.ts` enforces this layout: each layer may import only the layers
+below it, and only a `*.client.ts` may start its worker. The names below define the
+intended API contract, not finished implementation:
 
 ```ts
 interface ToriMTG {
@@ -259,9 +260,9 @@ adapters; neither thunks nor core orchestration call `indexedDB.open`,
       |                               |
       |                         commit domain intent
       |                               |
-      +--> ServiceWorkerApi           |
+      +--> SyncHost                   |
              |                        |
-       BrowserServiceWorkerApi        |
+       SyncWorkerClient               |
              | wake-up only           |
              v                        |
        WorkerHost adapter             |
@@ -269,7 +270,7 @@ adapters; neither thunks nor core orchestration call `indexedDB.open`,
              v                        v
        Sync coordinator -------> LocalStore (same IndexedDB)
              |
-             +--> ServerApi ----> HttpServerApi ----> Server
+             +--> SyncTransport -> HttpSyncTransport -> Server
              |
              +--> LocalStore.reconcile(...)         (commit response)
              |
@@ -316,13 +317,13 @@ the whole inbound transaction and verifies the lease fence/account generation.
 Repositories beneath this interface share the adapter's unit of work: composing
 separate `saveView` and `saveOutbox` promises would not satisfy atomicity.
 
-**`ServiceWorkerApi` abstracts the browser worker API.** It owns registration,
+**`SyncHost` abstracts where sync runs** (`SyncWorkerClient` for the service worker, `InThreadSyncHost` as the fallback). It owns registration,
 readiness, version negotiation, message validation, reconnects, and controller
 changes. Its promises describe registration or wake-up delivery, not remote save
 completion. Queued mutations remain successful local saves if a wake-up fails.
 
 ```ts
-interface ServiceWorkerApi {
+interface SyncHost {
     connect(requirements: ProtocolRequirements): Promise<WorkerConnection>;
     wake(scope: AccountScope): Promise<WakeResult>;
     subscribe(listener: (notice: LocalChangeNotice) => void): () => void;
@@ -342,12 +343,12 @@ revision notices to eligible clients. The sync coordinator receives typed
 triggers without depending on raw browser event objects. The window facade merges
 local commit notices with bridge notices into ToriMTG's public subscription.
 
-**`ServerApi` abstracts the network API.** It is injected only into the worker
+**`SyncTransport` abstracts the network API.** It is injected only into the worker
 coordinator. Calls take typed, durably prepared work and return validated domain
 results rather than HTTP `Response` objects.
 
 ```ts
-interface ServerApi {
+interface SyncTransport {
     sendCommand(command: PreparedCommand): Promise<CommandOutcome>;
     query(request: PreparedQuery): Promise<QueryOutcome>;
     pullChanges(request: PreparedPull): Promise<ChangePage>;
@@ -356,7 +357,7 @@ interface ServerApi {
 }
 ```
 
-`HttpServerApi` owns endpoint selection, request/response codecs, credentialed
+`HttpSyncTransport` owns endpoint selection, request/response codecs, credentialed
 transport, abort timeouts, protocol checks, and mapping HTTP failures into typed
 errors. A private `HttpTransport` adapter contains the raw `fetch` call. It never
 updates Redux or local storage. It also never independently retries mutations:
@@ -364,8 +365,8 @@ the coordinator persists retry decisions through `LocalStore`, preserving the
 same operation ID and frozen body. The authentication control API uses the same
 transport adapter with transient credentials, as described in section 12.
 
-Construct the window facade with `{ localStore, serviceWorkerApi }`, and the worker
-coordinator with `{ localStore, serverApi, workerHost, clock, idGenerator }`.
+Construct the window facade with `{ localStore, syncHost }`, and the worker
+coordinator with `{ localStore, syncTransport, workerHost, clock, idGenerator }`.
 Only composition roots select browser adapters. Tests inject deterministic
 implementations of these interfaces; adapter contract tests separately verify
 actual IndexedDB atomicity, browser messaging, and HTTP serialization. This keeps
@@ -644,9 +645,9 @@ implemented by adapters; only adapters access browser, network, or SQL primitive
 | Core -> aggregate domain module | State + command + explicit context -> proposed events/errors; state + event -> state | Pure deterministic rules own domain invariants; no I/O or Redux types |
 | Core -> `LocalStore` | Typed atomic operation -> committed plain values | IndexedDB adapter owns transactions, indexes, migration, and account fences |
 | Local commit -> store subscription | Partition/generation, local revision, affected query keys -> reread thunk | Notice is an at-least-once/best-effort hint; revisions and recovery reads ensure correctness |
-| Window core -> `ServiceWorkerApi` | Protocol handshake, wake, update request -> capability/delivery result | Bridge owns browser registration/messaging; no domain response shortcut |
+| Window core -> `SyncHost` | Protocol handshake, wake, update request -> capability/delivery result | Bridge owns browser registration/messaging; no domain response shortcut |
 | Browser lifecycle -> `WorkerHost` -> sync coordinator | Validated typed trigger -> bounded work promise | Host owns lifecycle extension; coordinator owns scheduling and durable continuation |
-| Worker coordinator -> `ServerApi` | Prepared command/query/pull/upload -> typed outcome/error | Network adapter owns transport/codecs/timeouts; coordinator owns retries and local reconciliation |
+| Worker coordinator -> `SyncTransport` | Prepared command/query/pull/upload -> typed outcome/error | Network adapter owns transport/codecs/timeouts; coordinator owns retries and local reconciliation |
 | Server HTTP boundary -> command/query services | Authenticated versioned DTO -> receipt/query/event page | Server checks identity, dataset authorization, versions, size limits, and input schema |
 | Server command service -> aggregate/event repository | Expected revision + command -> accepted event batch + receipt | One server transaction owns append, revision, receipt, and immediate projections |
 | Event repository -> projectors/checkpoint builder | Ordered immutable events + coverage -> read models/typed checkpoints | Pure replay with versioned reducers; atomic watermark/checkpoint publication |

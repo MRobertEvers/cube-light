@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { BannerWasm, type SubjectFrame } from '../src/utils/banner-wasm';
+import { BannerWasm, type SubjectFrame } from '../src/platform/wasm/banner-wasm';
 import {
 	computeSubjectLayer,
 	GC_BGD,
 	GC_FGD,
 	GC_PR_FGD,
 	protectionLabels
-} from '../src/utils/banner-subject';
+} from '../src/platform/banner/banner-subject';
 import {
 	configForGeneration,
 	DEFAULT_BANNER_BLEND,
@@ -16,10 +16,10 @@ import {
 	normalizeBannerBlendConfig,
 	BANNER_BLEND_ALGORITHM_VERSION,
 	type BannerProtection
-} from '../src/utils/banner-blend';
+} from '../src/domain/appearance/banner-blend';
 
 const wasm = await BannerWasm.create(
-	readFileSync(new URL('../src/wasm/banner-blend.wasm', import.meta.url))
+	readFileSync(new URL('../src/platform/wasm/banner-blend.wasm', import.meta.url))
 );
 // Mirrors the C constants and gate (native/banner_blend.c).
 const SURFACE_START = 0.68;
