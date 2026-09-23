@@ -181,8 +181,8 @@ function colorTest(
 	}
 	return function (card) {
 		const colors = colorsOf(card);
-		const within = [...colors].every((color) => target.has(color));
-		const covers = [...target].every((color) => colors.has(color));
+		const within = Array.from(colors).every((color) => target.has(color));
+		const covers = Array.from(target).every((color) => colors.has(color));
 		const same = within && covers;
 		switch (operator) {
 			// Like Arena, c:r finds every red card, and c=r only mono-red ones.

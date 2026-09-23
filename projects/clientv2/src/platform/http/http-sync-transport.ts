@@ -47,7 +47,7 @@ export class HttpSyncTransport implements SyncTransport {
                 const credentials = await this.authStore.credentials();
                 if (credentials) headers.set('Authorization', `Bearer ${credentials.tokens.accessToken}`);
             }
-            const response = await fetch(this.base + path, { ...options, headers, credentials: 'omit', signal: controller.signal, cache: 'no-store' });
+            const response = await fetch(this.base + path, { method: options?.method, body: options?.body, headers, credentials: 'omit', signal: controller.signal, cache: 'no-store' });
             if (!response.ok) {
                 const body = await response.clone().json().catch(() => null);
                 const retry = response.headers.get('Retry-After');
@@ -73,7 +73,7 @@ export class HttpSyncTransport implements SyncTransport {
 
     async pull(scope: AccountScope, meta: ReplicaMeta, operationIds: string[]): Promise<SyncPage> {
         const bootstrap = !meta.bootstrap.complete;
-        const result = await this.json<SyncPage>(`/sync/v1/${bootstrap ? 'bootstrap' : 'changes'}`, { protocolVersion: 1, serverInstanceId: scope.serverInstanceId, accountId: scope.accountId, cursor: meta.cursor, operationIds, ...(bootstrap ? { after: meta.bootstrap.after, watermark: meta.bootstrap.watermark } : {}) });
+        const result = await this.json<SyncPage>(`/sync/v1/${bootstrap ? 'bootstrap' : 'changes'}`, { protocolVersion: 1, serverInstanceId: scope.serverInstanceId, accountId: scope.accountId, cursor: meta.cursor, operationIds, after: bootstrap ? meta.bootstrap.after : undefined, watermark: bootstrap ? meta.bootstrap.watermark : undefined });
         if (result.protocolVersion !== 1 || !Array.isArray(result.replicas) || !Array.isArray(result.outcomes) || !Number.isSafeInteger(result.cursor)) throw new SyncTransportError('Unsupported replication response.', 426);
         return result;
     }
@@ -96,7 +96,7 @@ export class HttpSyncTransport implements SyncTransport {
     async upload(scope: AccountScope, blob: LocalBlob): Promise<number> {
         const chunk = new Uint8Array(await blob.data.slice(blob.uploaded, blob.uploaded + 1024 * 1024).arrayBuffer());
         let binary = '';
-        for (let start = 0; start < chunk.length; start += 8192) binary += String.fromCharCode(...chunk.subarray(start, start + 8192));
+        for (let start = 0; start < chunk.length; start += 8192) binary += String.fromCharCode.apply(null, Array.from(chunk.subarray(start, start + 8192)));
         const result = await this.json<{ received: number }>(`/sync/v1/blobs/${blob.id}/chunks`, { accountId: scope.accountId, offset: blob.uploaded, total: blob.data.size, contentType: blob.data.type, data: btoa(binary) });
         if (!Number.isSafeInteger(result.received) || result.received <= blob.uploaded || result.received > blob.data.size) throw new SyncTransportError('Invalid upload receipt.', 426);
         return result.received;
@@ -113,7 +113,7 @@ export class HttpSyncTransport implements SyncTransport {
             const response = await this.request(`/auth/${type}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(credentials) }, false);
             const reply = await response.json() as AuthSession;
             if (!reply.tokens || reply.tokens.tokenType !== 'Bearer') throw new SyncTransportError('Server did not issue bearer credentials.', 426);
-            return { ...reply, setupRequired: false };
+            return { user: reply.user, setupRequired: false, serverInstanceId: reply.serverInstanceId, tokens: reply.tokens };
         }
         return (await this.request('/auth/session')).json();
     }

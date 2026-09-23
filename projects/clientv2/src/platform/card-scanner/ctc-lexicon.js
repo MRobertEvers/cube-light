@@ -118,8 +118,8 @@ export function decodeLexicon(
 				out.n = logadd(out.n, from + p[c]);
 			}
 		}
-		beam = [...next.values()]
-			.map((r) => ({ ...r, total: logadd(r.b, r.n) }))
+		beam = Array.from(next.values())
+			.map((r) => ({ id: r.id, b: r.b, n: r.n, total: logadd(r.b, r.n) }))
 			.sort(
 				(a, b) =>
 					b.total +

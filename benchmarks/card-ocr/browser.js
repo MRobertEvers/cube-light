@@ -158,7 +158,8 @@ window.runMultiTitles = async (engine, truth, onProgress) => {
       : (await worker.predict(canvas))[0].items;
     const sortedItems = engine !== 'tesseract'
       ? result.slice().sort((a, b) => a.poly[0][0] - b.poly[0][0]) : undefined;
-    const output = { ...item,
+    const output = { name: item.name,
+      box: item.box,
       output: engine === 'tesseract' ? result.trim() : sortedItems.map(x => x.text).join(' ').trim(),
       items: sortedItems,
       ms: performance.now() - start };

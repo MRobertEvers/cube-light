@@ -2,10 +2,10 @@ import{findTitleStrips,stripCanvas}from'./edge-titles.js';import{createRecognize
 export async function expandedLines(image){
  const lines=await findTitleStrips(image),lengths=lines.map(l=>l.length).sort((a,b)=>b-a),typical=lengths[Math.min(15,lengths.length-1)]||image.width/10,result=[];
  for(const line of lines){
-  for(const width of [...new Set([line.length,Math.max(line.length,typical)])]){
+  for(const width of Array.from(new Set([line.length,Math.max(line.length,typical)]))){
    for(const align of (width>line.length*1.15?[0,.5,1]:[0])){
     const d=(width-line.length)*align,c=Math.cos(line.angle),s=Math.sin(line.angle),x1=line.x1-d*c,y1=line.y1-d*s;
-    result.push({...line,x1,y1,x2:x1+width*c,y2:y1+width*s,length:width});
+    result.push({x1,y1,x2:x1+width*c,y2:y1+width*s,length:width,angle:line.angle});
    }
   }
  }

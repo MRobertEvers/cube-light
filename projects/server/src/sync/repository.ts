@@ -96,7 +96,7 @@ export class SyncRepository {
         const envelopes: EventEnvelope[] = [];
         for (const event of events) {
             const unsigned = { eventId: randomBytes(16).toString('hex'), aggregateId: id, aggregateSequence: ++sequence, commitPosition: position, operationId, actorId, recordedAt: at, eventSchemaVersion: 1 as const, previousEventHash: hash, event };
-            const envelope: EventEnvelope = { ...unsigned, eventHash: digest(unsigned) };
+            const envelope: EventEnvelope = { eventId: unsigned.eventId, aggregateId: unsigned.aggregateId, aggregateSequence: unsigned.aggregateSequence, commitPosition: unsigned.commitPosition, operationId: unsigned.operationId, actorId: unsigned.actorId, recordedAt: unsigned.recordedAt, eventSchemaVersion: unsigned.eventSchemaVersion, previousEventHash: unsigned.previousEventHash, event: unsigned.event, eventHash: digest(unsigned) };
             state = applyEvent(state, event, id, at);
             hash = envelope.eventHash;
             tx.run('INSERT INTO SyncEvents VALUES (?, ?, ?, ?, ?)', [envelope.eventId, id, sequence, position, JSON.stringify(envelope)]);
@@ -124,7 +124,8 @@ export class SyncRepository {
         if (checkpoint && digest(state) !== checkpoint.stateHash) throw new Error('Invalid checkpoint hash.');
         const events = tx.all<EventRow>('SELECT Envelope FROM SyncEvents WHERE AggregateId=? AND Sequence>? AND Position<=? ORDER BY Sequence', [id, sequence, position]).map((entry) => JSON.parse(entry.Envelope) as EventEnvelope);
         for (const event of events) {
-            const { eventHash, ...unsigned } = event;
+            const eventHash = event.eventHash;
+            const unsigned = { eventId: event.eventId, aggregateId: event.aggregateId, aggregateSequence: event.aggregateSequence, commitPosition: event.commitPosition, operationId: event.operationId, actorId: event.actorId, recordedAt: event.recordedAt, eventSchemaVersion: event.eventSchemaVersion, previousEventHash: event.previousEventHash, event: event.event };
             if (event.eventSchemaVersion !== 1 || event.aggregateSequence !== sequence + 1 || event.previousEventHash !== hash || digest(unsigned) !== eventHash) throw new Error('Invalid event ledger.');
             state = applyEvent(state, event.event, id, event.recordedAt);
             sequence = event.aggregateSequence;
@@ -138,7 +139,7 @@ export class SyncRepository {
         const position = positionArg === undefined ? Number.MAX_SAFE_INTEGER : positionArg;
         const restored = this.reconstruct(tx, id, position);
         if (!restored.checkpoint) throw new Error('Aggregate has no opening checkpoint.');
-        return { id, ...restored, checkpoint: restored.checkpoint };
+        return { id, state: restored.state, sequence: restored.sequence, hash: restored.hash, events: restored.events, checkpoint: restored.checkpoint };
     }
 
     commit(request: CommandRequest, accountId: number): CommandOutcome {
@@ -177,7 +178,7 @@ export class SyncRepository {
                     }
                     const position = events.length || deckEvents.length ? tx.run('INSERT INTO SyncCommits(OperationId) VALUES (?)', [request.operationId]).lastID : 0;
                     outcome.events = this.append(tx, command.id, events, request.operationId, accountId, at, position);
-                    if (command.type === 'work.complete') outcome.events.push(...this.append(tx, command.deckId, deckEvents, request.operationId, accountId, at, position));
+                    if (command.type === 'work.complete') outcome.events = outcome.events.concat(this.append(tx, command.deckId, deckEvents, request.operationId, accountId, at, position));
                     this.updateClaim(tx, request);
                 }
             } catch (error) {
@@ -187,7 +188,7 @@ export class SyncRepository {
                 outcome.status = 'rejected'; outcome.message = error.message;
             }
             tx.run('RELEASE command_effects');
-            for (const id of new Set([command.id, ...outcome.events.map((event) => event.aggregateId)])) {
+            for (const id of new Set([command.id].concat(outcome.events.map((event) => event.aggregateId)))) {
                 if (!tx.get('SELECT 1 FROM SyncHeads WHERE Id=?', [id])) continue;
                 const replica = this.replica(tx, id);
                 outcome.replicas.push(replica); outcome.revisions[id] = replica.sequence;
@@ -307,7 +308,7 @@ export class SyncRepository {
             tx.run('INSERT INTO SyncBlobChunks VALUES (?, ?, ?, ?, ?)', [id, offset, total, contentType, bytes]);
             received += bytes.length;
             if (received === total) {
-                const data = Buffer.concat([...chunks.map((chunk) => Buffer.from(chunk.Data)), bytes]);
+                const data = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk.Data)).concat([bytes]));
                 if (`blob_${createHash('sha256').update(data).digest('hex')}` !== id) throw new DomainError('Upload hash does not match.');
                 tx.run('INSERT INTO SyncBlobs VALUES (?, ?, ?)', [id, contentType, data]);
                 tx.run('DELETE FROM SyncBlobChunks WHERE Id=?', [id]);

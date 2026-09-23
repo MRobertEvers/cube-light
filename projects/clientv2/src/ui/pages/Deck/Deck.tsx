@@ -220,10 +220,10 @@ export function Deck(props: DeckProps) {
 		if (!data) return;
 		modalHistory.open({
 			type: 'manage-printings',
-			target: deckCardEditTarget(group, [
-				...data.cards,
-				...(data.sideboard ?? [])
-			])
+			target: deckCardEditTarget(
+				group,
+				data.cards.concat(data.sideboard ?? [])
+			)
 		});
 	}
 
@@ -287,10 +287,9 @@ export function Deck(props: DeckProps) {
 		bannerCrop,
 		previewIcon: previewIcon ?? null,
 		isSaving,
-		errors: [
-			...(saveError && !showDeckDetailsModal ? [saveError] : []),
-			...(cardActionError ? [cardActionError] : [])
-		],
+		errors: (saveError && !showDeckDetailsModal ? [saveError] : []).concat(
+			cardActionError ? [cardActionError] : []
+		),
 		onBannerElement: setBannerElement,
 		onAddCard: () => modalHistory.open({ type: 'add-card' }),
 		onAddCards: () => {
@@ -338,10 +337,9 @@ export function Deck(props: DeckProps) {
 				<Modal key={managingModal.name} extraWide fullScreenOnMobile>
 					<ManagePrintings
 						target={managingModal}
-						cards={[
-							...data.cards,
-							...(data.sideboard ?? [])
-						].filter((card) => card.name === managingModal.name)}
+						cards={data.cards
+							.concat(data.sideboard ?? [])
+							.filter((card) => card.name === managingModal.name)}
 						onSteps={savePrintingSteps}
 						onClose={closeManaging}
 					/>
@@ -440,12 +438,12 @@ export function Deck(props: DeckProps) {
 				/>
 			) : (
 				<div
-					className={concatClassNames(
+					className={concatClassNames([
 						styles['deck-theme'],
 						topStyle === 'full-art'
 							? styles['full-art-theme']
 							: undefined
-					)}
+					])}
 					style={paletteStyle}
 				>
 					{topStyle === 'full-art' && topBannerCard && (
@@ -458,7 +456,7 @@ export function Deck(props: DeckProps) {
 						/>
 					)}
 					<div
-						className={concatClassNames(
+						className={concatClassNames([
 							styles['index-container'],
 							layout.controls === 'top'
 								? styles['controls-top']
@@ -469,7 +467,7 @@ export function Deck(props: DeckProps) {
 							topStyle === 'full-art'
 								? styles['full-index']
 								: undefined
-						)}
+						])}
 					>
 						<div
 							className={
@@ -478,7 +476,22 @@ export function Deck(props: DeckProps) {
 									: styles['controls-slot']
 							}
 						>
-							<Controls {...controls} />
+							<Controls
+								deck={controls.deck}
+								deckId={controls.deckId}
+								view={controls.view}
+								topStyle={controls.topStyle}
+								bannerCrop={controls.bannerCrop}
+								previewIcon={controls.previewIcon}
+								isSaving={controls.isSaving}
+								errors={controls.errors}
+								onBannerElement={controls.onBannerElement}
+								onAddCard={controls.onAddCard}
+								onAddCards={controls.onAddCards}
+								onImportImage={controls.onImportImage}
+								onEditName={controls.onEditName}
+								onDeleteDeck={controls.onDeleteDeck}
+							/>
 						</div>
 						{deckViewShowsBoard(view) ? (
 							<BoardVisualizationReduxWidget

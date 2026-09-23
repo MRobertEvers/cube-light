@@ -160,7 +160,7 @@ type MobileDecklistSectionProps = MobileCardActions & {
 
 /** One board of a deck: its heading and card-type sections, lands last. */
 function MobileDecklistSection(props: MobileDecklistSectionProps) {
-	const { board, deck, ...rowProps } = props;
+	const { board, deck, busyGroup, onEdit, onView, onDelete, onMove } = props;
 	const headingId = `mobile-decklist-board-${board}`;
 	const categories = useMemo(
 		() =>
@@ -203,7 +203,11 @@ function MobileDecklistSection(props: MobileDecklistSectionProps) {
 							<MobileCardRow
 								key={group.name}
 								group={group}
-								{...rowProps}
+								busyGroup={busyGroup}
+								onEdit={onEdit}
+								onView={onView}
+								onDelete={onDelete}
+								onMove={onMove}
 							/>
 						))}
 					</ul>
@@ -250,7 +254,11 @@ export function MobileDecklistBoard(props: MobileDecklistBoardProps) {
 					key={board}
 					board={board}
 					deck={cards[board]}
-					{...rowProps}
+					busyGroup={rowProps.busyGroup}
+					onEdit={rowProps.onEdit}
+					onView={rowProps.onView}
+					onDelete={rowProps.onDelete}
+					onMove={rowProps.onMove}
 				/>
 			))}
 		</div>

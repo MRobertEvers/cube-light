@@ -24,7 +24,7 @@ export async function readPaddleRegions(image, rows, names, options) {
 	full.getContext('2d').drawImage(image, 0, 0);
 	const src = cv.imread(full),
 		outputs = [],
-		queue = [...rows],
+		queue = rows.slice(),
 		loadMs = performance.now() - started;
 	onProgress({ phase: 'Prepare verifier', completed: 1, total: 1 });
 	onProgress({
@@ -104,8 +104,9 @@ export async function readPaddleRegions(image, rows, names, options) {
 			)
 				for (const poly of row.variants)
 					queue.push({
-						...row,
+						mode: row.mode,
 						poly,
+						candidates: row.candidates,
 						variants: undefined,
 						geometryVariant: true
 					});

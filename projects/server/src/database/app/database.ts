@@ -813,7 +813,7 @@ export class Database {
 		if (uuids.length === 0) return;
 		await this.db.run(
 			`DELETE FROM Deck_Cards WHERE DeckId = ? AND Uuid IN (${placeholders(uuids)})`,
-			[deckId, ...uuids]
+			[deckId].concat(uuids)
 		);
 	}
 

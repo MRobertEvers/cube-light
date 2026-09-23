@@ -13,10 +13,10 @@ const grams = (s) => {
   return out;
 };
 export function buildIndex(names) {
-  const entries = [...new Set(names)]
+  const entries = Array.from(new Set(names))
     .filter((name) => !name.startsWith("A-"))
     .flatMap((name) =>
-      [name, ...(name.includes(" // ") ? name.split(" // ") : [])].map(
+      [name].concat(name.includes(" // ") ? name.split(" // ") : []).map(
         (alias) => ({ name, key: normalize(alias) }),
       ),
     );
@@ -51,7 +51,7 @@ export function rankNames(text, index) {
     for (const id of index.postings.get(g) || [])
       shared.set(id, (shared.get(id) || 0) + 1);
   const byName = new Map();
-  for (const [id] of [...shared].sort((a, b) => b[1] - a[1]).slice(0, 180)) {
+  for (const [id] of Array.from(shared).sort((a, b) => b[1] - a[1]).slice(0, 180)) {
     const e = index.entries[id];
     if (Math.abs(e.key.length - key.length) > Math.max(8, key.length * 0.5))
       continue;
@@ -59,16 +59,16 @@ export function rankNames(text, index) {
     if (score > (byName.get(e.name)?.score ?? -1))
       byName.set(e.name, { name: e.name, score, exact: key === e.key });
   }
-  return [...byName.values()].sort((a, b) => b.score - a.score).slice(0, 3);
+  return Array.from(byName.values()).sort((a, b) => b.score - a.score).slice(0, 3);
 }
 export function bounds(poly) {
   const xs = poly.map((p) => p[0]),
     ys = poly.map((p) => p[1]);
   return {
-    x: Math.min(...xs),
-    y: Math.min(...ys),
-    w: Math.max(...xs) - Math.min(...xs),
-    h: Math.max(...ys) - Math.min(...ys),
+    x: Math.min.apply(null, xs),
+    y: Math.min.apply(null, ys),
+    w: Math.max.apply(null, xs) - Math.min.apply(null, xs),
+    h: Math.max.apply(null, ys) - Math.min.apply(null, ys),
   };
 }
 export function sameLine(a, b) {

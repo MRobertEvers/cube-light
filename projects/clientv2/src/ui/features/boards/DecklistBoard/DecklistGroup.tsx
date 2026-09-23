@@ -91,6 +91,7 @@ type CardRowProps = {
 function CardRow(props: CardRowProps) {
 	const { group, expanded, onToggle, onCardEvent } = props;
 	const [top] = group.printings;
+	const topPreview = previewHandlers(top, onCardEvent);
 	const printingsId = `printings-${group.board}-${group.name.replace(/\W+/g, '-')}`;
 
 	if (group.printings.length === 1) {
@@ -106,7 +107,10 @@ function CardRow(props: CardRowProps) {
 							payload: { card: top, group }
 						})
 					}
-					{...previewHandlers(top, onCardEvent)}
+					onMouseEnter={topPreview.onMouseEnter}
+					onFocus={topPreview.onFocus}
+					onMouseLeave={topPreview.onMouseLeave}
+					onBlur={topPreview.onBlur}
 				>
 					<span className={styles['count']}>{group.count}</span>
 					<span className={styles['name']}>
@@ -143,7 +147,10 @@ function CardRow(props: CardRowProps) {
 					aria-expanded={expanded}
 					aria-controls={expanded ? printingsId : undefined}
 					onClick={() => onToggle(group.name)}
-					{...previewHandlers(top, onCardEvent)}
+					onMouseEnter={topPreview.onMouseEnter}
+					onFocus={topPreview.onFocus}
+					onMouseLeave={topPreview.onMouseLeave}
+					onBlur={topPreview.onBlur}
 				>
 					<span className={styles['count']}>{group.count}</span>
 					<span className={styles['name']}>{group.name}</span>
@@ -204,35 +211,41 @@ function CardRow(props: CardRowProps) {
 					className={styles['printings']}
 					aria-label={`${group.name} printings`}
 				>
-					{group.printings.map((card) => (
-						<li key={card.uuid}>
-							<button
-								type="button"
-								className={styles['printing']}
-								aria-label={`${card.count} ${group.name}, ${card.setCode} printing${card.manaCost ? `, mana cost ${card.manaCost}` : ''}`}
-								onClick={() =>
-									onCardEvent?.({
-										type: CardInteractionEventType.CLICK,
-										payload: { card, group }
-									})
-								}
-								{...previewHandlers(card, onCardEvent)}
-							>
-								<img
-									src={thumbnailOf(card)}
-									alt=""
-									loading="lazy"
-								/>
-								<span className={styles['printing-code']}>
-									{card.setCode}
-								</span>
-								<ManaCost cost={card.manaCost} />
-								<span className={styles['printing-count']}>
-									×{card.count}
-								</span>
-							</button>
-						</li>
-					))}
+					{group.printings.map((card) => {
+						const preview = previewHandlers(card, onCardEvent);
+						return (
+							<li key={card.uuid}>
+								<button
+									type="button"
+									className={styles['printing']}
+									aria-label={`${card.count} ${group.name}, ${card.setCode} printing${card.manaCost ? `, mana cost ${card.manaCost}` : ''}`}
+									onClick={() =>
+										onCardEvent?.({
+											type: CardInteractionEventType.CLICK,
+											payload: { card, group }
+										})
+									}
+									onMouseEnter={preview.onMouseEnter}
+									onFocus={preview.onFocus}
+									onMouseLeave={preview.onMouseLeave}
+									onBlur={preview.onBlur}
+								>
+									<img
+										src={thumbnailOf(card)}
+										alt=""
+										loading="lazy"
+									/>
+									<span className={styles['printing-code']}>
+										{card.setCode}
+									</span>
+									<ManaCost cost={card.manaCost} />
+									<span className={styles['printing-count']}>
+										×{card.count}
+									</span>
+								</button>
+							</li>
+						);
+					})}
 				</ul>
 			)}
 		</>
@@ -293,7 +306,7 @@ export type DecklistGroupProps = {
 	onCardEvent?: OnCardEvent;
 };
 export function DecklistGroup(props: DecklistGroupProps) {
-	const { groups, ...rest } = props;
+	const { groups, isExpanded, onToggle, onCardEvent } = props;
 	return (
 		<>
 			{groups.map((options) => {
@@ -303,7 +316,9 @@ export function DecklistGroup(props: DecklistGroupProps) {
 						key={name}
 						name={name}
 						group={groupData}
-						{...rest}
+						isExpanded={isExpanded}
+						onToggle={onToggle}
+						onCardEvent={onCardEvent}
 					/>
 				);
 			})}

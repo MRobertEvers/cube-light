@@ -15,13 +15,17 @@ export function MobileDecklistBoardReduxWidget(props: BoardReduxWidgetProps) {
 	);
 	const onCardEvent = useBoardCardEvents(props);
 	if (!data) return null;
+	const spotlight = decklistSpotlight(data);
 
 	return (
 		<MobileDecklistBoard
 			cards={data.boards}
 			busyGroup={cardAction.busy}
 			onCardEvent={onCardEvent}
-			{...decklistSpotlight(data)}
+			banner={spotlight.banner}
+			bannerCrop={spotlight.bannerCrop}
+			bannerBlend={spotlight.bannerBlend}
+			topStyle={spotlight.topStyle}
 		/>
 	);
 }

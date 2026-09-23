@@ -28,7 +28,7 @@ export function* iterCompletionListFromLookupTree(
 			const [b] = entry1;
 			return a < b ? 1 : -1;
 		});
-		stack.push(...next);
+		for (const entry of next) stack.push(entry);
 	}
 }
 

@@ -80,7 +80,7 @@ export function createRoutesAuth(
 		if (res.locals.tokenFamilyId) tokens.revoke(res.locals.tokenFamilyId);
 		const issued = tokens.issue(userId, username);
 		const user = await users.findById(userId);
-		res.json({ user: user ? exposedUser(user) : null, ...(sync ? { serverInstanceId: sync.serverInstanceId } : {}), ...(issued ? { tokens: issued } : {}) });
+		res.json({ user: user ? exposedUser(user) : null, serverInstanceId: sync ? sync.serverInstanceId : undefined, tokens: issued ? issued : undefined });
 	}
 
 	app.post('/auth/refresh', async (req, res) => {
@@ -102,7 +102,7 @@ export function createRoutesAuth(
 		const user = session ? await users.findById(session.userId) : undefined;
 		res.json({
 			user: user ? exposedUser(user) : null,
-			...(sync ? { serverInstanceId: sync.serverInstanceId } : {}),
+			serverInstanceId: sync ? sync.serverInstanceId : undefined,
 			setupRequired: !(await users.hasAccounts())
 		});
 	});

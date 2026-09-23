@@ -22,7 +22,9 @@ export function getTraversalsFromBaseInLookupTree(
 			const branches: [string[], any][] = branchKeys
 				.filter((key) => tree[key])
 				.map((key) => [traversal.concat([key]), tree[key]]);
-			next.push(...branches);
+			for (const branch of branches) {
+				next.push(branch);
+			}
 		}
 
 		level = next;
@@ -39,7 +41,7 @@ function deepMerge(branchOne: any, branchTwo: any): any | undefined {
 	if (!branchOne || !branchTwo) {
 		return branchOne || branchTwo;
 	} else {
-		const result = { ...branchOne };
+		const result = Object.assign({}, branchOne);
 
 		for (const [key, followTree] of Object.entries(branchTwo)) {
 			const otherTree = branchOne[key];
@@ -70,14 +72,15 @@ export function getStartTreeFromRoot(base: string, lookupTree: any): any {
 	return lookup;
 }
 
-function deepMergeEx(...branches: any[]): any | undefined {
+function deepMergeEx(branches: any[]): any | undefined {
 	const cleaned = branches.filter(Boolean);
 
 	if (cleaned.length === 0) {
 		return undefined;
 	}
 
-	const [first, ...others] = cleaned;
+	const first = cleaned[0];
+	const others = cleaned.slice(1);
 
 	let result = first;
 	for (const other of others) {
@@ -110,7 +113,7 @@ export function getStartTreeFromRootEx(
 	for (const char of base) {
 		const branchKeys = Array.from(new Set(equivalentBranches(char)));
 		const branches = branchKeys.map((key) => lookup[key]);
-		lookup = deepMergeEx(...branches);
+		lookup = deepMergeEx(branches);
 
 		if (typeof lookup === 'undefined') {
 			return {};
@@ -152,7 +155,9 @@ export function* iterCompletionListFromLookupTree(
 			const [b] = entry1;
 			return a < b ? 1 : -1;
 		});
-		stack.push(...next);
+		for (const entry of next) {
+			stack.push(entry);
+		}
 	}
 }
 
@@ -205,7 +210,9 @@ export function createCompletionListFromLookupTree(
 			const [b] = entry1;
 			return a < b ? 1 : -1;
 		});
-		stack.push(...next);
+		for (const entry of next) {
+			stack.push(entry);
+		}
 	}
 
 	return words;

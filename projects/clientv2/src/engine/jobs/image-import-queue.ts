@@ -48,14 +48,26 @@ export class ImageImportQueue {
 
 	/** The scans as they stand now. */
 	current(): ImageScanTask[] {
-		return this.tasks.map((args) => {
-			const { file: _file, writes: _writes, runner: _runner, ...task } = args;
-			return {
-				...task,
-				candidates: [...task.candidates],
-				addedCounts: { ...task.addedCounts },
-				plannedCounts: { ...task.plannedCounts }
+		return this.tasks.map((task) => {
+			const scan: ImageScanTask = {
+				id: task.id,
+				deckId: task.deckId,
+				imageUrl: task.imageUrl,
+				fileName: task.fileName,
+				pipeline: task.pipeline,
+				status: task.status,
+				completed: task.completed,
+				total: task.total,
+				region: task.region,
+				candidates: task.candidates.slice(),
+				addedCounts: Object.assign({}, task.addedCounts),
+				plannedCounts: Object.assign({}, task.plannedCounts),
+				error: task.error,
+				workId: task.workId
 			};
+			if ('phaseLabel' in task) scan.phaseLabel = task.phaseLabel;
+			if ('progressIndeterminate' in task) scan.progressIndeterminate = task.progressIndeterminate;
+			return scan;
 		});
 	}
 

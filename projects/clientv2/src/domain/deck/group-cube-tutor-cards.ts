@@ -132,7 +132,7 @@ function place(card: DeckCardEntry): {
 		};
 	}
 	if (costColors.size === 1)
-		return { column: [...costColors][0], section: type };
+		return { column: Array.from(costColors)[0], section: type };
 	if (costColors.size > 1)
 		return { column: 'multicolor', section: combinationName(costColors)! };
 	const produced = symbolColors(card.text);
@@ -181,12 +181,12 @@ export function groupCubeTutorCards(
 		const { column, section } = place(group.printings[0]);
 		const sections = placed.get(column) ?? new Map();
 		placed.set(column, sections);
-		sections.set(section, [...(sections.get(section) ?? []), group]);
+		sections.set(section, (sections.get(section) ?? []).concat([group]));
 	}
 	return COLUMNS.flatMap(({ key, label }) => {
 		const sections = placed.get(key);
 		if (!sections) return [];
-		const sorted = [...sections.entries()]
+		const sorted = Array.from(sections.entries())
 			.sort((a, b) => sectionRank(a[0]) - sectionRank(b[0]))
 			.map(([section, groups]) => ({
 				label: section,

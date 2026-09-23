@@ -89,6 +89,20 @@ try {
 }
 await writeFile(
   path.join(resolved, "repository", "latest.json"),
-  JSON.stringify({ directory: stamp, ...report }, null, 2) + "\n",
+  JSON.stringify(
+    {
+      directory: stamp,
+      created: report.created,
+      commit: report.commit,
+      dirty: report.dirty,
+      gitStatus: report.gitStatus,
+      archive: report.archive,
+      bytes: report.bytes,
+      sha256: report.sha256,
+      includes: report.includes,
+    },
+    null,
+    2,
+  ) + "\n",
 );
 console.log("Verified NAS backup:", destination, report.sha256);

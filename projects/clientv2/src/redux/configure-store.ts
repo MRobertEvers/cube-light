@@ -26,8 +26,7 @@ export function configureStore(engine: ToriMTGEngine): StoreType {
 		}
 	});
 
-	return {
-		...store,
+	return Object.assign({}, store, {
 		reducerManager: reducerManager
-	};
+	});
 }

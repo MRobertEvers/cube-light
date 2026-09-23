@@ -80,7 +80,27 @@ test('details stand in offline from an overview without inventing sets', () => {
 test('full details also provide the overview', () => {
 	const cards: CardCatalog = {};
 	recordCards(cards, 'card.details', {
-		...overview,
+		uuid: overview.uuid,
+		name: overview.name,
+		scryfallId: overview.scryfallId,
+		setCode: overview.setCode,
+		types: overview.types,
+		subtypes: overview.subtypes,
+		manaCost: overview.manaCost,
+		text: overview.text,
+		type: overview.type,
+		rarity: overview.rarity,
+		power: overview.power,
+		toughness: overview.toughness,
+		loyalty: overview.loyalty,
+		defense: overview.defense,
+		number: overview.number,
+		artist: overview.artist,
+		flavorText: overview.flavorText,
+		legalities: overview.legalities,
+		image: overview.image,
+		images: overview.images,
+		art: overview.art,
 		sets: [['M10', 'Magic 2010']],
 		highResImage: '/normal.jpg'
 	});

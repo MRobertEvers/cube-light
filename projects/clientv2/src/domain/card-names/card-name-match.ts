@@ -25,7 +25,7 @@ function gramsFor(value: string): string[] {
 	const grams = new Set<string>();
 	for (let i = 0; i <= compact.length - 3; i++)
 		grams.add(compact.slice(i, i + 3));
-	return [...grams];
+	return Array.from(grams);
 }
 
 export function prepareCardNames(names: string[]): PreparedCardNames {
@@ -39,14 +39,16 @@ export function prepareCardNames(names: string[]): PreparedCardNames {
 		};
 	}
 	// Standalone card names take precedence over the same text used as a face alias.
-	const items = [
-		...names.map((name) => entry(name, name)),
-		...names.flatMap((name) =>
-			name.includes('//')
-				? name.split('//').map((face) => entry(name, face.trim()))
-				: []
+	const items = names
+		.map((name) => entry(name, name))
+		.concat(
+			names.flatMap((name) =>
+				name.includes('//')
+					? name.split('//').map((face) => entry(name, face.trim()))
+					: []
+			)
 		)
-	].filter((item) => item.length >= 4);
+		.filter((item) => item.length >= 4);
 	const exact = new Map<string, string>();
 	const grams = new Map<string, number[]>();
 	items.forEach((item, index) => {
@@ -139,7 +141,7 @@ function fuzzyCardName(
 			shared.set(index, (shared.get(index) ?? 0) + 1);
 		}
 	}
-	const shortlist = [...shared.entries()]
+	const shortlist = Array.from(shared.entries())
 		.sort((a, b) => b[1] - a[1])
 		.slice(0, 200);
 	let best: { name: string; score: number } | null = null;

@@ -24,7 +24,7 @@ function features(c) {
  * @param {Float32Array} v
  */
 function normalize(v) {
-	const n = Math.hypot(...v) || 1;
+	const n = Math.hypot.apply(null, v) || 1;
 	return v.map((x) => x / n);
 }
 /**
@@ -197,14 +197,14 @@ export async function refineFontMatches(image, rough, options) {
 							}
 						}
 					return {
-						...candidate,
+						name: candidate.name,
 						coarseScore: candidate.score,
 						score,
 						blur
 					};
 				})
 				.sort((a, b) => b.score - a.score);
-			results.push({ ...r, candidates });
+			results.push({ mode: r.mode, poly: r.poly, candidates });
 			source.delete();
 			M.delete();
 			out.delete();

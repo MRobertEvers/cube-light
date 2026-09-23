@@ -11,9 +11,9 @@ try {
     const OriginalWorker = window.Worker;
     window.__workerUrls = [];
     window.Worker = class extends OriginalWorker {
-      constructor(...args) {
-        super(...args);
-        window.__workerUrls.push(String(args[0]));
+      constructor(scriptURL, options) {
+        super(scriptURL, options);
+        window.__workerUrls.push(String(scriptURL));
       }
     };
   });

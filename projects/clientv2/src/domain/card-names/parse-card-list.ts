@@ -205,13 +205,12 @@ export function parseCardList(
 				message: `Same card and printing as line ${existing.lines[0]}`
 			});
 		} else {
-			merged.set(key, {
-				name,
-				count,
-				...(setCode ? { setCode } : {}),
-				board,
-				lines: [line]
-			});
+			merged.set(
+				key,
+				setCode
+					? { name, count, setCode, board, lines: [line] }
+					: { name, count, board, lines: [line] }
+			);
 		}
 	});
 
@@ -221,7 +220,7 @@ export function parseCardList(
 	for (const [key, card] of merged) {
 		if (card.setCode) continue;
 		const name = card.name.toLowerCase();
-		const printed = [...merged.values()]
+		const printed = Array.from(merged.values())
 			.filter(
 				(other) =>
 					other.setCode &&
@@ -232,7 +231,7 @@ export function parseCardList(
 		if (!printed) continue;
 		const fromLine = printed.lines[0];
 		printed.count = Math.min(MAX_COUNT, printed.count + card.count);
-		printed.lines = [...printed.lines, ...card.lines].sort((a, b) => a - b);
+		printed.lines = printed.lines.concat(card.lines).sort((a, b) => a - b);
 		merged.delete(key);
 		for (const line of card.lines)
 			notes.push({
@@ -246,7 +245,7 @@ export function parseCardList(
 	}
 
 	return {
-		cards: [...merged.values()],
+		cards: Array.from(merged.values()),
 		skipped,
 		errors,
 		notes: notes.sort((a, b) => a.line - b.line)

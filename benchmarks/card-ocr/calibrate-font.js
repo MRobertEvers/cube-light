@@ -1,7 +1,7 @@
 import{getCV,findTitleStrips}from'./edge-titles.js';import{buildIndex,matchDetections}from'./photo-match.js';
 export async function calibrateFont(plane,ocrOutputs,names){
  const font=await new FontFace('CalibratedTitle','url(/models/fonts/beleren.woff)').load();document.fonts.add(font);const{cv}=await getCV(),m=plane.matrix,transform=([x,y])=>[(m[0]*x+m[1]*y+m[2])/(m[6]*x+m[7]*y+m[8]),(m[3]*x+m[4]*y+m[5])/(m[6]*x+m[7]*y+m[8])],origin=transform(plane.quad[0]);
- const candidates=matchDetections(ocrOutputs,buildIndex(names)).filter(c=>c.status==='accepted').map(c=>({...c,p:c.poly.map(transform)}));
+ const candidates=matchDetections(ocrOutputs,buildIndex(names)).filter(c=>c.status==='accepted').map(c=>({text:c.text,ocrScore:c.ocrScore,name:c.name,similarity:c.similarity,margin:c.margin,status:c.status,alternatives:c.alternatives,poly:c.poly,box:c.box,p:c.poly.map(transform)}));
  const seed=candidates.find(c=>{const x=c.p.reduce((s,p)=>s+p[0]/4,0)-origin[0],y=c.p.reduce((s,p)=>s+p[1]/4,0)-origin[1];return x>0&&x<plane.cardWidth&&y>0&&y<plane.cardWidth*.2;});if(!seed)throw Error('Reference card title not independently recognized');
  const region={x:Math.floor(origin[0]),y:Math.floor(origin[1]),w:Math.ceil(plane.cardWidth*.88),h:Math.ceil(plane.cardWidth*.17)},c=document.createElement('canvas');c.width=region.w;c.height=region.h;c.getContext('2d').drawImage(plane.canvas,region.x,region.y,region.w,region.h,0,0,region.w,region.h);const rgba=cv.imread(c),gray=new cv.Mat();cv.cvtColor(rgba,gray,cv.COLOR_RGBA2GRAY);let best={score:-1};
  try{
@@ -14,7 +14,7 @@ export async function calibrateFont(plane,ocrOutputs,names){
    trgba.delete();tg.delete();
   }
   const edges=await findTitleStrips(plane.canvas),line=edges.filter(l=>Math.abs(l.angle)<.15&&l.length>plane.cardWidth*.6).sort((a,b)=>{const dist=l=>Math.abs(l.y1-origin[1])+Math.abs(l.x1-origin[0])*.5;return dist(a)-dist(b);})[0];
-  return{...best,name:seed.name,origin,seedPoly:seed.p,left:best.x-origin[0],top:best.y-origin[1],cardWidth:plane.cardWidth,referenceLine:line};
+  return{score:best.score,fontSize:best.fontSize,blur:best.blur,x:best.x,y:best.y,height:best.height,baseline:best.baseline,name:seed.name,origin,seedPoly:seed.p,left:best.x-origin[0],top:best.y-origin[1],cardWidth:plane.cardWidth,referenceLine:line};
  }finally{rgba.delete();gray.delete();}
 }
 window.calibrateExisting=async()=>{const{rectifyPlane}=await import('./rectify-plane.js'),image=await createImageBitmap(await(await fetch('/res/IMG_8535.jpeg')).blob()),plane=await rectifyPlane(image),r=await(await fetch('/photo-results/paddle-plane.json')).json(),names=await(await fetch('/res/card-names.json')).json();try{return await calibrateFont(plane,r.outputs,names);}finally{image.close();}};

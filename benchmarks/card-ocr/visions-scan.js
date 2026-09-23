@@ -15,7 +15,7 @@ window.scanVisions=async({model='visions',pad=0,trim=true,offsets=[0],oracle=fal
   for(let x=0;x<canvas.width;x++)for(let y=0;y<32;y++){const i=(y*canvas.width+x)*4;input[x*32+y]=(.299*rgba[i]+.587*rgba[i+1]+.114*rgba[i+2])/255-.5;}
   const tensor=new ort.Tensor('float32',input,[1,312,32,1]),result=await session.run({pixels:tensor}),p=result.probabilities;let text='',last=-1,confidence=0,n=0;
   for(let t=0;t<78;t++){let best=0;for(let c=1;c<58;c++)if(p.data[t*58+c]>p.data[t*58+best])best=c;if(best!==57&&best!==last){text+=chars[best];confidence+=p.data[t*58+best];n++;}last=best;}
-  const toImage=(x,y)=>strip.toImage(x+band.left-band.pad,y+band.top-band.pad),poly=[[band.pad,band.pad],[band.canvas.width-band.pad,band.pad],[band.canvas.width-band.pad,band.canvas.height-band.pad],[band.pad,band.canvas.height-band.pad]].map(p=>toImage(...p));
+  const toImage=(x,y)=>strip.toImage(x+band.left-band.pad,y+band.top-band.pad),poly=[[band.pad,band.pad],[band.canvas.width-band.pad,band.pad],[band.canvas.width-band.pad,band.canvas.height-band.pad],[band.pad,band.canvas.height-band.pad]].map(p=>toImage(p[0],p[1]));
   const lexical=decodeLexicon(p.data,78,chars,lexicon,{skip:0});
   outputs.push({line,offset,lexical,items:[{text:text.trim().replaceAll('Æ','Ae'),score:n?confidence/n:0,poly}]});console.log(`Visions ${outputs.length}: ${text}`,JSON.stringify(lexical.slice(0,2)));tensor.dispose();p.dispose();
  }

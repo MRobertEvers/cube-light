@@ -65,8 +65,8 @@ async function build(names: string[], blur: number, fontUrl: string) {
 				proj[x] += v[y * W + x];
 			}
 		}
-		const norm = Math.hypot(...v) || 1,
-			pnorm = Math.hypot(...proj) || 1;
+		const norm = Math.hypot.apply(null, Array.from(v)) || 1,
+			pnorm = Math.hypot.apply(null, Array.from(proj)) || 1;
 		for (let i = 0; i < D; i++) features[n * D + i] = v[i] / norm;
 		for (let i = 0; i < W; i++) projections[n * W + i] = proj[i] / pnorm;
 		if (n % 500 === 499) post({ kind: 'progress', completed: n + 1 });

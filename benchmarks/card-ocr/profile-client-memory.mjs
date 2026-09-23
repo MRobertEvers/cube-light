@@ -207,7 +207,7 @@ try {
               stages.push({ stage, candidates: data.candidates });
           },
           onProgress: (event) => {
-            progress.push({ms: performance.now()-start, ...event});
+            progress.push(Object.assign({ms: performance.now()-start}, event));
             void window.profilePhase({ phase: event.phase });
           },
         });
@@ -219,7 +219,7 @@ try {
               (s, t) => s + Math.max(0, t.duration - 50),
               0,
             ),
-            maxMs: Math.max(0, ...tasks.map((t) => t.duration)),
+            maxMs: Math.max.apply(null, [0].concat(tasks.map((t) => t.duration))),
           };
         return {
           pipeline,
@@ -315,7 +315,7 @@ try {
     rss.length,
     "samples",
     "peak RSS MiB",
-    Math.max(...rss.map((r) => r.totalBytes)) / 1024 ** 2,
+    Math.max.apply(null, rss.map((r) => r.totalBytes)) / 1024 ** 2,
   );
 } finally {
   stopped = true;

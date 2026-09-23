@@ -125,25 +125,54 @@ test('generated banners persist, have immutable URLs, and reject stale renders',
 			304
 		);
 		assert.equal(
-			(await put({ ...payload, config: { ...config, width: 9 } })).status,
-			400
-		);
-		assert.equal(
 			(
 				await put({
-					...payload,
-					images: { ...images, tile: images.desktop }
+					source: payload.source,
+					config: {
+						method: config.method,
+						contentAware: config.contentAware,
+						position: config.position,
+						width: 9,
+						surface: config.surface
+					},
+					crop: payload.crop,
+					images: payload.images
 				})
 			).status,
 			400
 		);
 		assert.equal(
-			(await put({ ...payload, source: base + '/wrong.jpg' })).status,
+			(
+				await put({
+					source: payload.source,
+					config: payload.config,
+					crop: payload.crop,
+					images: {
+						desktop: images.desktop,
+						mobile: images.mobile,
+						tile: images.desktop
+					}
+				})
+			).status,
+			400
+		);
+		assert.equal(
+			(
+				await put({
+					source: base + '/wrong.jpg',
+					config: payload.config,
+					crop: payload.crop,
+					images: payload.images
+				})
+			).status,
 			409
 		);
 		await database.setDeckBannerCrop(
 			id,
-			JSON.stringify({ ...crop, desktop: { ...crop.desktop, x: 1.1 } })
+			JSON.stringify({
+				desktop: { x: 1.1, y: crop.desktop.y, zoom: crop.desktop.zoom },
+				mobile: crop.mobile
+			})
 		);
 		assert.equal((await put(payload)).status, 409);
 		response = await (await fetch(url)).json();
@@ -333,7 +362,18 @@ test('v2 subject-protection configs validate, persist, change the revision, and 
 			(
 				await put({
 					source: base + art,
-					config: { ...config, version: 3 },
+					config: {
+						version: 3,
+						method: config.method,
+						contentAware: config.contentAware,
+						position: config.position,
+						width: config.width,
+						surface: config.surface,
+						protectSubject: config.protectSubject,
+						protection: config.protection,
+						feather: config.feather,
+						decontamination: config.decontamination
+					},
 					crop,
 					images
 				})

@@ -18,27 +18,37 @@ async function main(args) {
 	});
 	const [command = 'dev'] = positionals;
 	const { port, host, open, strictPort, mode } = values;
-	const serverOptions = {
-		...(port === undefined ? {} : { port: Number(port) }),
-		...(host === undefined ? {} : { host }),
-		...(open === undefined ? {} : { open }),
-		...(strictPort === undefined ? {} : { strictPort })
-	};
 	// Without a trusted certificate a LAN origin is not a secure context, so the
 	// browser withholds APIs such as the install prompt.
 	const certificate = await loadDevCertificate();
-	const secure = certificate === null ? {} : { https: certificate };
 	// A publicly trusted certificate is issued for a real domain, so that name
 	// has to be accepted alongside the mDNS one the config already allows.
 	const acme = await loadAcmeConfig();
-	const hosts = acme ? { allowedHosts: [...(config.server.allowedHosts || []), `.${acme.domain}`] } : {};
+	/** @param {typeof config.server} base */
+	function serverConfig(base) {
+		/** @type {Record<string, unknown>} */
+		const result = { proxy: base.proxy, port: base.port };
+		if (base.strictPort !== undefined) result.strictPort = base.strictPort;
+		result.host = base.host;
+		result.allowedHosts = base.allowedHosts;
+		if (port !== undefined) result.port = Number(port);
+		if (host !== undefined) result.host = host;
+		if (open !== undefined) result.open = open;
+		if (strictPort !== undefined) result.strictPort = strictPort;
+		if (certificate !== null) result.https = certificate;
+		if (acme) result.allowedHosts = (config.server.allowedHosts || []).concat([`.${acme.domain}`]);
+		return result;
+	}
+	/** @type {Record<string, unknown>} */
 	const options = {
-		...config,
-		configFile: false,
-		...(mode === undefined ? {} : { mode }),
-		server: { ...config.server, ...serverOptions, ...secure, ...hosts },
-		preview: { ...config.preview, ...serverOptions, ...secure, ...hosts }
+		plugins: config.plugins,
+		resolve: config.resolve,
+		server: serverConfig(config.server),
+		preview: serverConfig(config.preview),
+		build: config.build,
+		configFile: false
 	};
+	if (mode !== undefined) options.mode = mode;
 	if (command === 'build') {
 		await build(options);
 		return;

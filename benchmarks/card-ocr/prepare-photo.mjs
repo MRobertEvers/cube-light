@@ -3,15 +3,14 @@ import { createHash } from "node:crypto";
 const dir = new URL("./models/", import.meta.url);
 await mkdir(dir, { recursive: true });
 const decoder = new TextDecoder();
-for (const [name, prefix] of [
-  ["PP-OCRv6_small_rec", "rec"],
-  ...(process.argv.includes("--english")
+for (const [name, prefix] of [["PP-OCRv6_small_rec", "rec"]].concat(
+  process.argv.includes("--english")
     ? [["en_PP-OCRv5_mobile_rec", "en-rec"]]
-    : []),
-  ...(process.argv.includes("--server")
+    : [],
+  process.argv.includes("--server")
     ? [["PP-OCRv5_server_rec", "server-rec"]]
-    : []),
-]) {
+    : [],
+)) {
   const url = `https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/${name}_onnx_infer.tar`;
   console.log(`Downloading ${name}…`);
   const res = await fetch(url);

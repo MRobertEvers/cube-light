@@ -28,12 +28,25 @@ export function groupDeck(data: DeckDetail): GroupedDeck {
 	const { cards, sideboard = [] } = data;
 	const main = groupBoardCards(cards);
 
-	return {
-		...data,
+	const grouped: GroupedDeck = {
+		name: data.name,
+		icon: data.icon,
+		bannerCardUuid: data.bannerCardUuid,
+		bannerCard: data.bannerCard,
+		palette: data.palette,
+		bannerCrop: data.bannerCrop,
+		topStyle: data.topStyle,
+		cards,
 		sideboard,
+		lastEdit: data.lastEdit,
 		deck: main,
 		boards: { main, side: groupBoardCards(sideboard) }
 	};
+	if ('bannerBlend' in data) grouped.bannerBlend = data.bannerBlend;
+	if ('boardVisualization' in data)
+		grouped.boardVisualization = data.boardVisualization;
+	if ('notes' in data) grouped.notes = data.notes;
+	return grouped;
 }
 
 /** Groups one board's entries by card type, counting every copy. */

@@ -46,7 +46,7 @@ export async function getDeckOverviewCardInfo(
 
 	return uuids.map((uuid) => {
 		const baseCard = cardMap[uuid];
-		const { uuid: _uuid, ...cardRules } = rules.get(uuid) ?? {
+		const cardRules = rules.get(uuid) ?? {
 			uuid,
 			type: null,
 			rarity: null,
@@ -82,8 +82,24 @@ export async function getDeckOverviewCardInfo(
 			: undefined;
 
 		return {
-			...baseCard,
-			...cardRules,
+			name: baseCard.name,
+			uuid: baseCard.uuid,
+			scryfallId: baseCard.scryfallId,
+			types: baseCard.types,
+			subtypes: baseCard.subtypes,
+			manaCost: baseCard.manaCost,
+			text: baseCard.text,
+			setCode: baseCard.setCode,
+			type: cardRules.type,
+			rarity: cardRules.rarity,
+			power: cardRules.power,
+			toughness: cardRules.toughness,
+			loyalty: cardRules.loyalty,
+			defense: cardRules.defense,
+			number: cardRules.number,
+			artist: cardRules.artist,
+			flavorText: cardRules.flavorText,
+			legalities: cardRules.legalities,
 			image: images?.small,
 			images,
 			art: images?.art_crop

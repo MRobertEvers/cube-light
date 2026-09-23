@@ -30,5 +30,8 @@ export function PassParams<T>(props: PassParamsProps<T>) {
 		return buildProps as T & React.JSX.IntrinsicAttributes;
 	}, [params]);
 
-	return <Component {...passProps} />;
+	return React.createElement<T & React.JSX.IntrinsicAttributes>(
+		Component as React.FunctionComponent<T & React.JSX.IntrinsicAttributes>,
+		passProps
+	);
 }

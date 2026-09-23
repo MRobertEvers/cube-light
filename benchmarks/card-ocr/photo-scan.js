@@ -15,7 +15,7 @@ export function tileStarts(length, size, overlap) {
   const out = [];
   for (let p = 0; p < length - size; p += size - overlap) out.push(p);
   out.push(length - size);
-  return [...new Set(out)];
+  return Array.from(new Set(out));
 }
 export const scanPhoto = (window.scanPhoto = async ({
   url = "/res/IMG_8535.jpeg",
@@ -106,13 +106,14 @@ export const scanPhoto = (window.scanPhoto = async ({
       outputs.push({
         region,
         ms: performance.now() - t,
-        items: items.map((item) => ({
-          ...item,
-          poly: item.poly.map(([x, y]) => [
-            x / scale + region.x,
-            y / scale + region.y,
-          ]),
-        })),
+        items: items.map((item) =>
+          Object.assign({}, item, {
+            poly: item.poly.map(([x, y]) => [
+              x / scale + region.x,
+              y / scale + region.y,
+            ]),
+          }),
+        ),
       });
       const message = `${engine}: tile ${outputs.length}/${regions.length}`;
       if (document.getElementById("status"))

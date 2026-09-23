@@ -39,7 +39,7 @@ function groupCandidates(task: ImageScanTask): CandidateGroup[] {
 			});
 		}
 	}
-	return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+	return Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function statusText(task: ImageScanTask): string {

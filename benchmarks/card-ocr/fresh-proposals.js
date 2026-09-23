@@ -31,21 +31,23 @@ export async function freshProposals(
       let bands = [];
       if (mode === "light")
         for (const light of lightTitleBand(strip.canvas))
-          bands.push(
-            ...(await tightInkCrops(light.canvas)).map((b) => ({
-              ...b,
+          for (const b of await tightInkCrops(light.canvas))
+            bands.push({
+              canvas: b.canvas,
+              left: b.left,
               top: b.top + light.top,
-            })),
-          );
+              pad: b.pad,
+            });
       else {
         bands = await tightInkCrops(strip.canvas, { allowTall: true });
         for (const light of lightTitleBand(strip.canvas))
-          bands.push(
-            ...(await tightInkCrops(light.canvas)).map((b) => ({
-              ...b,
+          for (const b of await tightInkCrops(light.canvas))
+            bands.push({
+              canvas: b.canvas,
+              left: b.left,
               top: b.top + light.top,
-            })),
-          );
+              pad: b.pad,
+            });
       }
       for (const band of bands) {
         if (
@@ -62,7 +64,7 @@ export async function freshProposals(
           ].map(([x, y]) => strip.toImage(x + band.left, y + band.top));
         outputs.push({
           mode,
-          poly: plane ? poly.map((p) => plane.toOriginal(...p)) : poly,
+          poly: plane ? poly.map((p) => plane.toOriginal(p[0], p[1])) : poly,
           candidates,
         });
       }

@@ -48,7 +48,7 @@ export class SyncCoordinator {
                             await this.store.renew(lease);
                             const received = await this.server.upload(scope, blob);
                             await this.store.uploaded(lease, id, received);
-                            blob = { ...blob, uploaded: received };
+                            blob = { partition: blob.partition, id: blob.id, data: blob.data, uploaded: received };
                         }
                     }
                     await this.store.renew(lease);

@@ -108,10 +108,10 @@ export function ComboBox<T = string>(props: ComboBoxProps<T>) {
 				}}
 			/>
 			<ul
-				className={concatClassNames(
+				className={concatClassNames([
 					styles['suggestions'],
 					!showDropDown ? styles['hidden'] : ''
-				)}
+				])}
 			>
 				{suggestions.map((suggestion, index) => (
 					<li

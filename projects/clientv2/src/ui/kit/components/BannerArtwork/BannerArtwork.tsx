@@ -95,7 +95,6 @@ export function BannerArtwork(props: Props) {
 								startLeft + event.clientX - pointer.current.x;
 							const verticalRange = bounds.height - height;
 							onChange({
-								...pointer.current.frame,
 								x:
 									allowLeftBleed &&
 									nextLeft < -horizontalOverflow
@@ -121,7 +120,8 @@ export function BannerArtwork(props: Props) {
 														pointer.current.y) /
 														verticalRange
 											)
-										: 0.5
+										: 0.5,
+								zoom: pointer.current.frame.zoom
 							});
 						}
 					: undefined

@@ -4,7 +4,8 @@ import {
 	CardInteractionEventType
 } from './DecklistGroup';
 import { DecklistSection, expandedRowKey } from './DecklistSection';
-import type { DeckCardEntry } from '../../../../domain/models/deck';
+import type { DeckBoard, DeckCardEntry } from '../../../../domain/models/deck';
+import type { BoardGroups } from '../../../../domain/deck/grouping';
 import { DECK_BOARD_ORDER } from '../../../../domain/deck/boards';
 import type { BoardProps } from '../board.types';
 import type { DecklistSpotlightProps } from '../decklist-spotlight';
@@ -17,35 +18,64 @@ export type DecklistCardInfo = DeckCardEntry;
 /** Each deck board is listed separately, in DECK_BOARD_ORDER. */
 export type DecklistBoardProps = BoardProps & DecklistSpotlightProps;
 
+/** Names of the cards on a board that have more than one printing. */
+function multiPrintingNames(board: BoardGroups): string[] {
+	const categories = Object.values(board.cardCategories);
+	const groups = categories.flatMap((category) => groupDeckCardsByName(category.cards));
+	return groups.filter((group) => group.printings.length > 1).map((group) => group.name);
+}
+
+/** Keys of the rows that can expand, the ones with more than one printing, in every board. */
+function expandableRowKeys(cards: Record<DeckBoard, BoardGroups>): string[] {
+	return DECK_BOARD_ORDER.flatMap((board) =>
+		multiPrintingNames(cards[board]).map((name) => expandedRowKey(board, name))
+	);
+}
+
+const HOVER_CARD = { width: 300, height: 420 };
+/** The closest the hover card comes to the viewport's edges. */
+const HOVER_MARGIN = 16;
+
+type Point = { x: number; y: number };
+type Size = { width: number; height: number };
+
+/** `value` kept within [minimum, maximum]; `minimum` wins when the range is empty. */
+function clamp(value: number, minimum: number, maximum: number) {
+	return Math.min(Math.max(value, minimum), Math.max(minimum, maximum));
+}
+
+function viewportSize(): Size {
+	if (typeof window === 'undefined') return { width: 1200, height: 800 };
+	return { width: window.innerWidth, height: window.innerHeight };
+}
+
+/**
+ * Where the hover card goes for a pointer: left of it when there is room, otherwise
+ * to its right, and a little above it; always inside the viewport's margins.
+ */
+function hoverCardPosition(pointer: Point, viewport: Size) {
+	const fitsLeft = pointer.x > HOVER_CARD.width + 40;
+	const left = fitsLeft
+		? pointer.x - HOVER_CARD.width - HOVER_MARGIN
+		: pointer.x + 120;
+	const top = pointer.y - 170;
+	return {
+		left: clamp(left, HOVER_MARGIN, viewport.width - HOVER_CARD.width - HOVER_MARGIN),
+		top: clamp(top, HOVER_MARGIN, viewport.height - HOVER_CARD.height - HOVER_MARGIN)
+	};
+}
+
 /** The default deck view: rows by card type, with a card preview on hover. */
 export function DecklistBoard(props: DecklistBoardProps) {
-	const {
-		cards,
-		banner,
-		bannerCrop,
-		bannerBlend,
-		topStyle,
-		onCardEvent
-	} = props;
+	const { cards, banner, bannerCrop, bannerBlend, topStyle, onCardEvent } =
+		props;
 	const [expanded, setExpanded] = useState<ReadonlySet<string>>(
 		() => new Set()
 	);
-	// Rows with more than one printing, the only ones that expand, in every board.
-	const multiPrintNames = useMemo(
-		() =>
-			DECK_BOARD_ORDER.flatMap((board) =>
-				Object.values(cards[board].cardCategories).flatMap(
-					(category) =>
-						groupDeckCardsByName(category.cards)
-							.filter((group) => group.printings.length > 1)
-							.map((group) => expandedRowKey(board, group.name))
-				)
-			),
-		[cards]
-	);
+	const expandableKeys = useMemo(() => expandableRowKeys(cards), [cards]);
 	const allExpanded =
-		multiPrintNames.length > 0 &&
-		multiPrintNames.every((name) => expanded.has(name));
+		expandableKeys.length > 0 &&
+		expandableKeys.every((key) => expanded.has(key));
 	const isExpanded = useCallback(
 		(name: string) => expanded.has(name),
 		[expanded]
@@ -70,7 +100,11 @@ export function DecklistBoard(props: DecklistBoardProps) {
 		(event: CardInteractionEvent) => {
 			switch (event.type) {
 				case CardInteractionEventType.CLICK:
-					onCardEvent({ type: 'view', ...event.payload });
+					onCardEvent({
+						type: 'view',
+						card: event.payload.card,
+						group: event.payload.group
+					});
 					break;
 				case CardInteractionEventType.MANAGE:
 					onCardEvent({ type: 'edit', group: event.payload });
@@ -85,29 +119,9 @@ export function DecklistBoard(props: DecklistBoardProps) {
 		},
 		[onCardEvent, setImageSource]
 	);
-	const hoverCardWidth = 300;
-	const hoverCardHeight = 420;
-	const viewportWidth =
-		typeof window === 'undefined' ? 1200 : window.innerWidth;
-	const viewportHeight =
-		typeof window === 'undefined' ? 800 : window.innerHeight;
-	const hoverLeft = imageSource
-		? Math.min(
-				Math.max(
-					16,
-					imageSource.position.x > hoverCardWidth + 40
-						? imageSource.position.x - hoverCardWidth - 16
-						: imageSource.position.x + 120
-				),
-				Math.max(16, viewportWidth - hoverCardWidth - 16)
-			)
-		: 0;
-	const hoverTop = imageSource
-		? Math.min(
-				Math.max(16, imageSource.position.y - 170),
-				Math.max(16, viewportHeight - hoverCardHeight - 16)
-			)
-		: 0;
+	const hover = imageSource
+		? hoverCardPosition(imageSource.position, viewportSize())
+		: { left: 0, top: 0 };
 
 	return (
 		<div className={styles['body']}>
@@ -117,8 +131,8 @@ export function DecklistBoard(props: DecklistBoardProps) {
 					(imageSource ? ` ${styles['hover-card-visible']}` : '')
 				}
 				style={{
-					left: hoverLeft,
-					top: hoverTop
+					left: hover.left,
+					top: hover.top
 				}}
 			>
 				{imageSource && (
@@ -142,7 +156,7 @@ export function DecklistBoard(props: DecklistBoardProps) {
 						/>
 					</div>
 				)}
-				{multiPrintNames.length > 0 && (
+				{expandableKeys.length > 0 && (
 					<div className={styles['toolbar']}>
 						<span id="printings-view-label">Printings</span>
 						<div
@@ -161,7 +175,7 @@ export function DecklistBoard(props: DecklistBoardProps) {
 								type="button"
 								aria-pressed={allExpanded}
 								onClick={() =>
-									setExpanded(new Set(multiPrintNames))
+									setExpanded(new Set(expandableKeys))
 								}
 							>
 								Expanded

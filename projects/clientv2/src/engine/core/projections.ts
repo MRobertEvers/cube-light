@@ -1,7 +1,7 @@
 import { boardCards } from '@torimtg/core';
 import type { DeckBoard, DeckState, EventEnvelope, Query, WorkState } from '@torimtg/core';
 import type { Dataset } from './types';
-import { identityOf, overviewOf, type CardCatalog } from './card-catalog';
+import { cardFields, identityOf, overviewOf, type CardCatalog } from './card-catalog';
 import type { BlobUrlResolver } from '../ports';
 
 function art(deck: DeckState, cards: CardCatalog): string | null {
@@ -12,7 +12,16 @@ function boardEntries(deck: DeckState, board: DeckBoard, cards: CardCatalog): un
     return Object.entries(boardCards(deck, board)).map((entry) => {
         const [uuid, count] = entry;
         const overview = overviewOf(cards[uuid]);
-        if (overview) return { ...overview, uuid, count, board };
+        if (overview) {
+            const row: Record<string, unknown> = cardFields(overview);
+            if ('image' in overview) row.image = overview.image;
+            if ('images' in overview) row.images = overview.images;
+            if ('art' in overview) row.art = overview.art;
+            row.uuid = uuid;
+            row.count = count;
+            row.board = board;
+            return row;
+        }
         // Without an overview the card's type is unknown; a printing still names it.
         const printing = cards[uuid]?.printing;
         return { name: printing?.name || uuid, types: 'Unknown', manaCost: '', image: printing?.image || '', art: printing?.art || '', setCode: printing?.setCode || '', text: '', legalities: {}, uuid, count, board };
@@ -20,7 +29,7 @@ function boardEntries(deck: DeckState, board: DeckBoard, cards: CardCatalog): un
 }
 
 function notes(deck: DeckState): unknown[] {
-    return Object.entries(deck.notes || {}).map((entry) => ({ noteId: entry[0], ...entry[1] })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    return Object.entries(deck.notes || {}).map((entry) => ({ noteId: entry[0], text: entry[1].text, createdAt: entry[1].createdAt, updatedAt: entry[1].updatedAt })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 function blend(deck: DeckState, blobs: BlobUrlResolver): unknown {
@@ -47,7 +56,7 @@ export function projectQuery(data: Dataset, cards: CardCatalog, blobs: BlobUrlRe
         }) };
         case 'history': {
             const deck = states.find((state) => state.id === query.id);
-            return { deckId: query.id, deckName: deck?.kind === 'deck' ? deck.name : '', edits: [...data.events.filter((event) => event.aggregateId === query.id).sort((a, b) => b.aggregateSequence - a.aggregateSequence).map((event) => historyEntry(event, cards)).filter(Boolean), ...(data.legacyHistory || [])] };
+            return { deckId: query.id, deckName: deck?.kind === 'deck' ? deck.name : '', edits: data.events.filter((event) => event.aggregateId === query.id).sort((a, b) => b.aggregateSequence - a.aggregateSequence).map((event) => historyEntry(event, cards)).filter(Boolean).concat(data.legacyHistory || []) };
         }
         case 'resource': return null;
     }

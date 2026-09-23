@@ -34,7 +34,7 @@ export function groupTabletopColumns(
 		column.push(group);
 		columns.set(value, column);
 	}
-	return [...columns.entries()]
+	return Array.from(columns.entries())
 		.sort((a, b) => a[0] - b[0])
 		.map((entry) => {
 			const [value, groups] = entry;

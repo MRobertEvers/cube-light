@@ -17,9 +17,9 @@ export function CollectionEdit(props: HomeProps) {
 
 	return (
 		<Page>
-			<div className={scls(styles, 'page-contents')}>
-				<div className={scls(styles, 'module')}>
-					<div className={scls(styles, 'module-container')}>
+			<div className={scls(styles, ['page-contents'])}>
+				<div className={scls(styles, ['module'])}>
+					<div className={scls(styles, ['module-container'])}>
 						<div>
 							<label>Location</label>
 							<LocationsDropdown

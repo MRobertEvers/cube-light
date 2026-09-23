@@ -58,7 +58,7 @@ export function scoreCTCNames(probabilities, steps, chars, names, blankArg) {
 	const pb = sequence(null),
 		results = [];
 	for (const name of new Set(names)) {
-		const target = [...clean(name)];
+		const target = Array.from(clean(name));
 		if (!target.length || target.length > steps) continue;
 		const pp = target.map(sequence);
 		if (pp.some((p) => !p)) continue;

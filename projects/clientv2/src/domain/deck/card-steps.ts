@@ -34,7 +34,8 @@ export function printingCounts(
 ): Map<string, BoardCounts> {
 	const byUuid = new Map<string, BoardCounts>();
 	for (const card of cards) {
-		const counts = { ...countsIn(byUuid, card.uuid) };
+		const existing = countsIn(byUuid, card.uuid);
+		const counts: BoardCounts = { main: existing.main, side: existing.side };
 		counts[card.board ?? 'main'] += card.count;
 		byUuid.set(card.uuid, counts);
 	}
@@ -54,10 +55,9 @@ export function applyStep(
 	switch (step.type) {
 		case 'adjust': {
 			const current = countsIn(counts, step.uuid);
-			next.set(step.uuid, {
-				...current,
-				[step.board]: clamp(current[step.board] + step.delta)
-			});
+			const adjusted: BoardCounts = { main: current.main, side: current.side };
+			adjusted[step.board] = clamp(current[step.board] + step.delta);
+			next.set(step.uuid, adjusted);
 			return next;
 		}
 		case 'move': {
@@ -67,18 +67,20 @@ export function applyStep(
 				0,
 				Math.min(step.count, current[step.from], MAX_COPIES - current[to])
 			);
-			next.set(step.uuid, {
-				...current,
-				[step.from]: current[step.from] - moved,
-				[to]: current[to] + moved
-			} as BoardCounts);
+			const movedCounts: BoardCounts = {
+				main: current.main,
+				side: current.side
+			};
+			movedCounts[step.from] = current[step.from] - moved;
+			movedCounts[to] = current[to] + moved;
+			next.set(step.uuid, movedCounts);
 			return next;
 		}
 		case 'replace': {
 			const source = countsIn(counts, step.from);
 			const destination = countsIn(counts, step.to);
 			if (step.from === step.to) return next;
-			next.set(step.from, { ...NO_COPIES });
+			next.set(step.from, { main: NO_COPIES.main, side: NO_COPIES.side });
 			next.set(step.to, {
 				main: clamp(destination.main + source.main),
 				side: clamp(destination.side + source.side)
@@ -103,14 +105,20 @@ export function countEdits(
 	before: PrintingCounts,
 	after: PrintingCounts
 ): CardEdit[] {
-	return [...new Set([...before.keys(), ...after.keys()])].flatMap((uuid) =>
+	return Array.from(
+		new Set(Array.from(before.keys()).concat(Array.from(after.keys())))
+	).flatMap((uuid) =>
 		DECK_BOARD_ORDER.filter(
 			(board) => countsIn(before, uuid)[board] !== countsIn(after, uuid)[board]
-		).map((board) => ({
-			uuid,
-			action: 'set' as const,
-			count: countsIn(after, uuid)[board],
-			...(board === 'side' ? { board } : {})
-		}))
+		).map((board): CardEdit =>
+			board === 'side'
+				? {
+						uuid,
+						action: 'set',
+						count: countsIn(after, uuid)[board],
+						board
+					}
+				: { uuid, action: 'set', count: countsIn(after, uuid)[board] }
+		)
 	);
 }

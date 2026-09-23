@@ -16,7 +16,7 @@ export function createReducerManager<T>(
 	initialReducers: ReducersMapObject<T>
 ): ReducerManager<T> {
 	// Create an object which maps keys to reducers
-	const reducers: Record<string, Reducer<any>> = { ...initialReducers };
+	const reducers: Record<string, Reducer<any>> = Object.assign({}, initialReducers);
 
 	// Create the initial combinedReducer
 	function combine() {
@@ -37,7 +37,7 @@ export function createReducerManager<T>(
 		reduce: function (state: T | undefined, action: UnknownAction) {
 			// If any reducers have been removed, clean up their state first
 			if (state && keysToRemove.length > 0) {
-				state = { ...state };
+				state = Object.assign({}, state);
 				for (const key of keysToRemove) {
 					delete state[key];
 				}

@@ -84,18 +84,18 @@ export async function rectifyPlane(image) {
 		}
 		const edges = await findTitleStrips(image),
 			ys = edges.flatMap((l) => [l.y1, l.y2]),
-			minY = Math.max(0, Math.min(...ys) - 200),
-			maxY = Math.min(image.height, Math.max(...ys) + 200),
+			minY = Math.max(0, Math.min.apply(null, ys) - 200),
+			maxY = Math.min(image.height, Math.max.apply(null, ys) + 200),
 			corners = [
 				[0, minY],
 				[image.width, minY],
 				[image.width, maxY],
 				[0, maxY]
-			].map((p) => transform(...p));
-		const x0 = Math.min(...corners.map((p) => p[0])),
-			y0 = Math.min(...corners.map((p) => p[1])),
-			outW = Math.max(...corners.map((p) => p[0])) - x0,
-			outH = Math.max(...corners.map((p) => p[1])) - y0,
+			].map((p) => transform(p[0], p[1]));
+		const x0 = Math.min.apply(null, corners.map((p) => p[0])),
+			y0 = Math.min.apply(null, corners.map((p) => p[1])),
+			outW = Math.max.apply(null, corners.map((p) => p[0])) - x0,
+			outH = Math.max.apply(null, corners.map((p) => p[1])) - y0,
 			s = Math.min(1, 6500 / Math.max(outW, outH));
 		const n = [
 				s * (m[0] - x0 * m[6]),

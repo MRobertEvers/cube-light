@@ -34,7 +34,7 @@ export function renderCandidates(candidates) {
     `${new Set(accepted.map((c) => c.name)).size} card names · ${accepted.length} accepted title locations · ${candidates.length - accepted.length} suggestions to review`;
   const fragment = document.createDocumentFragment(),
     overlay = document.createDocumentFragment();
-  for (const c of [...candidates].sort(
+  for (const c of candidates.slice().sort(
     (a, b) =>
       (a.status === "accepted" ? 0 : 1) - (b.status === "accepted" ? 0 : 1),
   )) {
@@ -85,7 +85,7 @@ export function renderCandidates(candidates) {
   );
   $("overlay").replaceChildren(overlay);
   last = {
-    names: [...new Set(accepted.map((c) => c.name))].sort(),
+    names: Array.from(new Set(accepted.map((c) => c.name))).sort(),
     image: { width: $("photo").naturalWidth, height: $("photo").naturalHeight },
     candidates,
     warning:
@@ -141,7 +141,8 @@ $("scan").onclick = async () => {
           $("progress").value = e.ratio;
         },
       });
-      outputs.push(...result.passes.flatMap((p) => p.outputs));
+      for (const output of result.passes.flatMap((p) => p.outputs))
+        outputs.push(output);
       render(outputs);
     } else {
       const result = await window.scanPhoto({
@@ -157,7 +158,7 @@ $("scan").onclick = async () => {
           $("progress").value = e.completed / e.total;
         },
       });
-      outputs.push(...result.outputs);
+      for (const output of result.outputs) outputs.push(output);
       render(outputs);
     }
     $("status").textContent =

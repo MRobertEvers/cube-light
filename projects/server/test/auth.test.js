@@ -58,7 +58,7 @@ function post(url, body, headersArg) {
 
 	return fetch(url, {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json', ...headers },
+		headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
 		body: JSON.stringify(body)
 	});
 }

@@ -7,7 +7,7 @@ import { locateCardName } from '../src/domain/card-names/parse-card-list';
 /** The server's NMI1 layout: magic, count, byte length, offsets, sorted NUL-terminated names. */
 function nameIndex(names: string[]): Uint8Array {
 	const encoder = new TextEncoder();
-	const encoded = [...new Set(names)]
+	const encoded = Array.from(new Set(names))
 		.map((name) => encoder.encode(name))
 		.sort((a, b) => Buffer.compare(a, b));
 	const dataSize = encoded.reduce((size, name) => size + name.length + 1, 0);

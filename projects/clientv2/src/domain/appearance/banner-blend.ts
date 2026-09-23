@@ -76,7 +76,16 @@ export const DEFAULT_PROTECT_RECT: BannerProtectRect = {
 };
 
 export function defaultSubjectProtection(src: string): BannerProtection {
-	return { source: src, rect: { ...DEFAULT_PROTECT_RECT }, strokes: [] };
+	return {
+		source: src,
+		rect: {
+			x: DEFAULT_PROTECT_RECT.x,
+			y: DEFAULT_PROTECT_RECT.y,
+			width: DEFAULT_PROTECT_RECT.width,
+			height: DEFAULT_PROTECT_RECT.height
+		},
+		strokes: []
+	};
 }
 
 /**
@@ -88,13 +97,18 @@ export function configForNewArtwork(
 	src: string,
 	mobile: boolean
 ): BannerBlendConfig {
-	return mobile
-		? { ...config, protectSubject: false, protection: null }
-		: {
-				...config,
-				protectSubject: true,
-				protection: defaultSubjectProtection(src)
-			};
+	return {
+		version: config.version,
+		method: config.method,
+		contentAware: config.contentAware,
+		position: config.position,
+		width: config.width,
+		surface: config.surface,
+		protectSubject: !mobile,
+		protection: mobile ? null : defaultSubjectProtection(src),
+		feather: config.feather,
+		decontamination: config.decontamination
+	};
 }
 
 // Fixed output sizes keep the persisted result independent of viewport and DPR.
@@ -138,10 +152,17 @@ export function normalizeBannerBlendConfig(
 	raw: Partial<BannerBlendConfig> | null | undefined
 ): BannerBlendConfig {
 	return {
-		...DEFAULT_BANNER_BLEND,
-		...raw,
 		version: raw?.version ?? 1,
-		protection: raw?.protection ?? null
+		method: raw?.method ?? DEFAULT_BANNER_BLEND.method,
+		contentAware: raw?.contentAware ?? DEFAULT_BANNER_BLEND.contentAware,
+		position: raw?.position ?? DEFAULT_BANNER_BLEND.position,
+		width: raw?.width ?? DEFAULT_BANNER_BLEND.width,
+		surface: raw?.surface ?? DEFAULT_BANNER_BLEND.surface,
+		protectSubject: raw?.protectSubject ?? DEFAULT_BANNER_BLEND.protectSubject,
+		protection: raw?.protection ?? null,
+		feather: raw?.feather ?? DEFAULT_BANNER_BLEND.feather,
+		decontamination:
+			raw?.decontamination ?? DEFAULT_BANNER_BLEND.decontamination
 	};
 }
 
@@ -155,7 +176,18 @@ export function configForGeneration(
 		artworkKey(config.protection.source) === artworkKey(src)
 			? config.protection
 			: null;
-	return { ...config, version: BANNER_BLEND_ALGORITHM_VERSION, protection };
+	return {
+		version: BANNER_BLEND_ALGORITHM_VERSION,
+		method: config.method,
+		contentAware: config.contentAware,
+		position: config.position,
+		width: config.width,
+		surface: config.surface,
+		protectSubject: config.protectSubject,
+		protection,
+		feather: config.feather,
+		decontamination: config.decontamination
+	};
 }
 
 /** Thrown when newer banner work replaces a request; leave the newer request's status alone. */

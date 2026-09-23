@@ -8,29 +8,31 @@ function card(
 	name: string,
 	fields: Partial<DeckCardEntry>
 ): DeckCardEntry {
-	return {
-		name,
-		count: 1,
-		image: '',
-		uuid: `${name}-uuid`,
-		art: '',
-		setCode: 'DSK',
-		types: 'Creature',
-		manaCost: '',
-		board: 'main',
-		text: '',
-		type: null,
-		rarity: 'common',
-		power: null,
-		toughness: null,
-		loyalty: null,
-		defense: null,
-		number: null,
-		artist: null,
-		flavorText: null,
-		legalities: {},
-		...fields
+	const entry: DeckCardEntry = {
+		name: fields.name === undefined ? name : fields.name,
+		count: fields.count === undefined ? 1 : fields.count,
+		image: fields.image === undefined ? '' : fields.image,
+		uuid: fields.uuid === undefined ? `${name}-uuid` : fields.uuid,
+		art: fields.art === undefined ? '' : fields.art,
+		setCode: fields.setCode === undefined ? 'DSK' : fields.setCode,
+		types: fields.types === undefined ? 'Creature' : fields.types,
+		manaCost: fields.manaCost === undefined ? '' : fields.manaCost,
+		board: fields.board === undefined ? 'main' : fields.board,
+		text: fields.text === undefined ? '' : fields.text,
+		type: fields.type === undefined ? null : fields.type,
+		rarity: fields.rarity === undefined ? 'common' : fields.rarity,
+		power: fields.power === undefined ? null : fields.power,
+		toughness: fields.toughness === undefined ? null : fields.toughness,
+		loyalty: fields.loyalty === undefined ? null : fields.loyalty,
+		defense: fields.defense === undefined ? null : fields.defense,
+		number: fields.number === undefined ? null : fields.number,
+		artist: fields.artist === undefined ? null : fields.artist,
+		flavorText: fields.flavorText === undefined ? null : fields.flavorText,
+		legalities: fields.legalities === undefined ? {} : fields.legalities
 	};
+	if (fields.images !== undefined) entry.images = fields.images;
+	if (fields.subtypes !== undefined) entry.subtypes = fields.subtypes;
+	return entry;
 }
 
 const DECK = groupDeckCardsByName([

@@ -44,11 +44,29 @@ export async function getCardsDetails(
 		const sets = cardSets[uuid];
 
 		return {
-			...card,
-			sets: sets,
-			highResImage: card.images?.normal || null,
+			name: card.name,
+			uuid: card.uuid,
+			scryfallId: card.scryfallId,
+			types: card.types,
+			subtypes: card.subtypes,
+			manaCost: card.manaCost,
+			text: card.text,
+			setCode: card.setCode,
+			type: card.type,
+			rarity: card.rarity,
+			power: card.power,
+			toughness: card.toughness,
+			loyalty: card.loyalty,
+			defense: card.defense,
+			number: card.number,
+			artist: card.artist,
+			flavorText: card.flavorText,
+			legalities: card.legalities,
 			image: card.images?.small || null,
-			art: card.images?.art_crop || null
+			images: card.images,
+			art: card.images?.art_crop || null,
+			sets: sets,
+			highResImage: card.images?.normal || null
 		};
 	});
 }

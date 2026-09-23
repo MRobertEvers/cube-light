@@ -94,7 +94,7 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 	);
 	// Printings listed on the deck side, the opened board's first, in the order they joined.
 	const [order, setOrder] = useState(() =>
-		[...initial.keys()].sort(
+		Array.from(initial.keys()).sort(
 			(a, b) =>
 				Number(initial.get(b)![target.board] > 0) -
 				Number(initial.get(a)![target.board] > 0)
@@ -194,10 +194,9 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 		return countsIn(counts, uuid);
 	}
 	// Printings that joined elsewhere, such as on another device, follow the opening ones.
-	const rows = [
-		...order,
-		...[...counts.keys()].filter((uuid) => !order.includes(uuid))
-	].filter((uuid) => totalOf(countsOf(uuid)) > 0);
+	const rows = order
+		.concat(Array.from(counts.keys()).filter((uuid) => !order.includes(uuid)))
+		.filter((uuid) => totalOf(countsOf(uuid)) > 0);
 	const boardTotals: BoardCounts = {
 		main: rows.reduce((sum, uuid) => sum + countsOf(uuid).main, 0),
 		side: rows.reduce((sum, uuid) => sum + countsOf(uuid).side, 0)
@@ -207,7 +206,7 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 	function take(steps: DeckCardStep[]) {
 		if (steps.length === 0) return;
 		const entry = { id: nextPendingId++, steps };
-		setPending((previous) => [...previous, entry]);
+		setPending((previous) => previous.concat([entry]));
 		setSaveError(null);
 		for (const step of steps) {
 			const joined =
@@ -223,7 +222,7 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 						return previous.map((uuid) =>
 							uuid === step.from ? joined : uuid
 						);
-					return [...previous, joined];
+					return previous.concat([joined]);
 				});
 		}
 		onSteps(steps)

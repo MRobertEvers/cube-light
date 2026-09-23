@@ -35,10 +35,9 @@ export function serializeHistoryModal(
 	entry: HistoryModalEntry
 ): Record<string, unknown> {
 	const currentState = state && typeof state === 'object' ? state : {};
-	return {
-		...currentState,
+	return Object.assign({}, currentState, {
 		[HISTORY_STATE_KEY]: entry
-	};
+	});
 }
 
 export function findHistoryModal(

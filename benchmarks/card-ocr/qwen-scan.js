@@ -14,7 +14,7 @@ window.scanQwen=async({limit=0}={})=>{
   const message='Transcribe the printed text in each numbered row. Return only a JSON array of objects with row (integer) and text (string). Preserve partial words. For blank or unreadable rows use an empty text string. Do not invent missing text.';
   const prompt=processor.apply_chat_template([{role:'user',content:[{type:'image'},{type:'text',text:message}]}],{add_generation_prompt:true});
   const inputs=await processor(prompt,RawImage.fromCanvas(c));console.log('Qwen input',at,inputs.pixel_values?.dims,inputs.input_ids.dims);
-  const ids=await model.generate({...inputs,max_new_tokens:512,do_sample:false});
+  const ids=await model.generate(Object.assign({},inputs,{max_new_tokens:512,do_sample:false}));
   const raw=processor.tokenizer.decode(ids.tolist()[0].slice(inputs.input_ids.dims[1]),{skip_special_tokens:true});console.log('Qwen output',raw);
   let rows=[];try{rows=JSON.parse(raw.match(/\[[\s\S]*\]/)?.[0]||'[]');}catch{}
   const items=rows.filter(r=>Number.isInteger(r.row)&&r.row>=1&&r.row<=strips.length&&typeof r.text==='string').map(r=>({text:r.text,score:1,poly:strips[r.row-1].poly}));

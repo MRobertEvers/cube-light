@@ -6,6 +6,11 @@ export type IconProps = React.DetailedHTMLProps<
 
 export function IconTemplate(svg: string) {
 	return function (props: IconProps) {
-		return <span {...props} dangerouslySetInnerHTML={{ __html: svg }} />;
+		return React.createElement(
+			'span',
+			Object.assign({}, props, {
+				dangerouslySetInnerHTML: { __html: svg }
+			})
+		);
 	};
 }

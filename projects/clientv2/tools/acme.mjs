@@ -29,7 +29,7 @@ function thumbprint(jwk) {
 export class AcmeClient {
     constructor(accountKeyPem, directoryUrl) {
         this.key = createPrivateKey(accountKeyPem);
-        this.jwk = this.key.asymmetricKeyType ? { ...exportPublicJwk(this.key) } : null;
+        this.jwk = this.key.asymmetricKeyType ? exportPublicJwk(this.key) : null;
         this.directoryUrl = directoryUrl;
         this.directory = null;
         this.nonce = null;
@@ -52,9 +52,10 @@ export class AcmeClient {
         const protectedHeader = {
             alg: 'ES256',
             nonce: await this.takeNonce(),
-            url,
-            ...(this.kid ? { kid: this.kid } : { jwk: this.jwk })
+            url
         };
+        if (this.kid) protectedHeader.kid = this.kid;
+        else protectedHeader.jwk = this.jwk;
         const encodedHeader = base64url(JSON.stringify(protectedHeader));
         const encodedPayload = payload === '' ? '' : base64url(JSON.stringify(payload));
         const signature = base64url(sign('sha256', Buffer.from(`${encodedHeader}.${encodedPayload}`), {
@@ -88,7 +89,7 @@ export class AcmeClient {
         const { body, headers } = await this.post(this.directory.newOrder, {
             identifiers: domains.map((value) => ({ type: 'dns', value }))
         });
-        return { ...body, url: headers.get('location') };
+        return Object.assign({}, body, { url: headers.get('location') });
     }
 
     async fetchResource(url) { return (await this.post(url, '')).body; }
@@ -120,7 +121,7 @@ export async function awaitTxt(name, expected, { attempts = 40, delay = 5000, lo
     try {
         const plain = new Resolver();
         const nameservers = await plain.resolveNs(parent);
-        for (const host of nameservers) servers.push(...await plain.resolve4(host).catch(() => []));
+        for (const host of nameservers) servers = servers.concat(await plain.resolve4(host).catch(() => []));
     } catch { /* Fall back to the system resolver. */ }
     if (servers.length) resolver.setServers(servers);
     for (let attempt = 1; attempt <= attempts; attempt++) {

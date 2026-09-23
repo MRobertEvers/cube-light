@@ -2,7 +2,7 @@ function deepMerge(branchOne: any, branchTwo: any): any | undefined {
 	if (!branchOne || !branchTwo) {
 		return branchOne || branchTwo;
 	} else {
-		const result = { ...branchOne };
+		const result = Object.assign({}, branchOne);
 
 		for (const [key, followTree] of Object.entries(branchTwo)) {
 			const otherTree = branchOne[key];
@@ -33,14 +33,15 @@ export function getStartTreeFromRoot(base: string, lookupTree: any): any {
 	return lookup;
 }
 
-export function deepMergeEx(...branches: any[]): any | undefined {
+export function deepMergeEx(branches: any[]): any | undefined {
 	const cleaned = branches.filter(Boolean);
 
 	if (cleaned.length === 0) {
 		return undefined;
 	}
 
-	const [first, ...others] = cleaned;
+	const first = cleaned[0];
+	const others = cleaned.slice(1);
 
 	let result = first;
 	for (const other of others) {
@@ -77,7 +78,7 @@ export function getStartTreeFromRootEx(
 	for (const char of base) {
 		const branchKeys = Array.from(new Set(equivalentBranches(char)));
 		const branches = branchKeys.map((key) => lookup[key]);
-		lookup = deepMergeEx(...branches);
+		lookup = deepMergeEx(branches);
 
 		if (typeof lookup === 'undefined') {
 			return {};

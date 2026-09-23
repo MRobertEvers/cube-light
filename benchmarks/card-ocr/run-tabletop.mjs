@@ -119,7 +119,15 @@ try {
   await mkdir(new URL("./photo-results/", import.meta.url), {
     recursive: true,
   });
-  const report = { metadata, metrics, ...result };
+  const report = {
+    metadata,
+    metrics,
+    names: result.names,
+    candidates: result.candidates,
+    passes: result.passes,
+    totalMs: result.totalMs,
+    cancelled: result.cancelled,
+  };
   await writeFile(
     new URL("./photo-results/final.json", import.meta.url),
     JSON.stringify(report, null, 2),

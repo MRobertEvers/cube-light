@@ -35,14 +35,14 @@ export function deckCardEditTarget(
 
 /** Mana value outside the stack: variable symbols are zero, hybrid costs count once. */
 export function manaValue(manaCost: string): number {
-	return [...manaCost.matchAll(/\{([^}]+)\}/g)].reduce((total, match) => {
+	return Array.from(manaCost.matchAll(/\{([^}]+)\}/g)).reduce((total, match) => {
 		const values = match[1].split('/').map((symbol) => {
 			if (/^\d+$/.test(symbol)) return Number(symbol);
 			if (/^[XYZP]$/.test(symbol)) return 0;
 			if (symbol === 'HW') return 0.5;
 			return 1;
 		});
-		return total + Math.max(...values);
+		return total + Math.max.apply(null, values);
 	}, 0);
 }
 
@@ -79,5 +79,5 @@ export function groupDeckCardsByName(
 		group.printings.sort(
 			(a, b) => b.count - a.count || a.setCode.localeCompare(b.setCode)
 		);
-	return [...groups.values()];
+	return Array.from(groups.values());
 }

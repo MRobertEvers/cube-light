@@ -1,4 +1,4 @@
-import type { CardEdit } from '@torimtg/core';
+import type { CardEdit, DomainCommand } from '@torimtg/core';
 import type { ToriMTG } from '../core/types';
 import type { LocalReader } from '../core/local-reader';
 import { newId } from '../../domain/ids';
@@ -16,7 +16,7 @@ import {
 	printingCounts,
 	type DeckCardStep
 } from '../../domain/deck/card-steps';
-import { boardOf, type CardApi } from './cards';
+import { boardOf, cardEdit, type CardApi } from './cards';
 import type { Versioned } from './versioned';
 import type {
 	DeckBoard,
@@ -97,13 +97,14 @@ export class DeckApi {
 	/** Shows this printing's artwork in the deck's banner. */
 	async setBannerCard(deckId: string, cardUuid: string): Promise<void> {
 		const [{ value: deck }, { art }] = await Promise.all([this.get(deckId), this.cards.details(cardUuid)]);
-		await this.tori.commands.execute({
+		const command: Extract<DomainCommand, { type: 'deck.details' }> = {
 			type: 'deck.details',
 			id: deckId,
 			name: deck.name,
-			bannerCardUuid: cardUuid,
-			...(art ? { art } : {})
-		});
+			bannerCardUuid: cardUuid
+		};
+		if (art) command.art = art;
+		await this.tori.commands.execute(command);
 	}
 
 	async setPalette(deckId: string, palette: CardPalette | null): Promise<void> {
@@ -179,12 +180,7 @@ export class DeckApi {
 		const { uuid } = await this.cards.resolve(cardName);
 		const edits: CardEdit[] = Object.entries(counts)
 			.filter((entry) => entry[1] > 0)
-			.map((entry) => ({
-				uuid,
-				action: 'add' as const,
-				count: entry[1],
-				...boardOf(entry[0])
-			}));
+			.map((entry) => cardEdit(uuid, 'add', entry[1], entry[0]));
 		await this.tori.commands.execute({ type: 'deck.cards', id: deckId, edits });
 	}
 
@@ -193,7 +189,7 @@ export class DeckApi {
 		await this.tori.commands.execute({
 			type: 'deck.cards',
 			id: deckId,
-			edits: printings.map((uuid) => ({ uuid, action: 'set' as const, count: 0, ...boardOf(board) }))
+			edits: printings.map((uuid) => cardEdit(uuid, 'set', 0, board))
 		});
 	}
 
@@ -213,8 +209,8 @@ export class DeckApi {
 			const count = Math.min(card.count, held.get(card.uuid) || 0);
 			return count > 0
 				? [
-						{ uuid: card.uuid, action: 'remove' as const, count, ...from },
-						{ uuid: card.uuid, action: 'add' as const, count, ...to }
+						cardEdit(card.uuid, 'remove', count, from.board),
+						cardEdit(card.uuid, 'add', count, to.board)
 					]
 				: [];
 		});
@@ -259,10 +255,9 @@ export class DeckApi {
 		const current = await this.tori.queries.read<DeckDetail>(query);
 		if (!current.data)
 			throw new Error('This deck was deleted or is not downloaded.');
-		const before = printingCounts([
-			...current.data.cards,
-			...(current.data.sideboard ?? [])
-		]);
+		const before = printingCounts(
+			current.data.cards.concat(current.data.sideboard ?? [])
+		);
 		const edits = countEdits(before, applySteps(before, steps));
 		if (edits.length === 0) return null;
 		// A printing new to the deck needs its details to be filed; download it first.

@@ -38,20 +38,20 @@ export async function scanCardNames({
       ratio: p / configurations.length,
       candidates: matchDetections(outputs, index),
     });
-    const result = await run({
-      url,
-      ...options,
-      isCancelled,
-      onProgress: (event) =>
-        onProgress({
-          phase: label,
-          ratio: (p + event.completed / event.total) / configurations.length,
-          completed: event.completed,
-          total: event.total,
-        }),
-    });
+    const result = await run(
+      Object.assign({ url }, options, {
+        isCancelled,
+        onProgress: (event) =>
+          onProgress({
+            phase: label,
+            ratio: (p + event.completed / event.total) / configurations.length,
+            completed: event.completed,
+            total: event.total,
+          }),
+      }),
+    );
     passes.push(result);
-    outputs.push(...result.outputs);
+    for (const output of result.outputs) outputs.push(output);
     onProgress({
       phase: label,
       ratio: (p + 1) / configurations.length,
@@ -60,11 +60,11 @@ export async function scanCardNames({
   }
   const candidates = matchDetections(outputs, index);
   return {
-    names: [
-      ...new Set(
+    names: Array.from(
+      new Set(
         candidates.filter((c) => c.status === "accepted").map((c) => c.name),
       ),
-    ].sort(),
+    ).sort(),
     candidates,
     passes,
     totalMs: performance.now() - started,

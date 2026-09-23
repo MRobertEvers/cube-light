@@ -48,10 +48,13 @@ export async function scanExperimental(options) {
 		boxThresh: 0.3,
 		isCancelled,
 		onProgress: function (p) {
-			return onProgress({
-				...p,
+			const progress = {
+				completed: p.completed,
+				total: p.total,
 				phase: p.phase || 'Read visible titles'
-			});
+			};
+			if ('region' in p) progress.region = p.region;
+			return onProgress(progress);
 		}
 	});
 	passes.push(baseline);
@@ -63,7 +66,7 @@ export async function scanExperimental(options) {
 		return {
 			engine: 'paddle-text-only',
 			pipeline,
-			names: [...new Set(candidates.map((c) => c.name))].sort(),
+			names: Array.from(new Set(candidates.map((c) => c.name))).sort(),
 			candidates,
 			passes,
 			totalMs: performance.now() - started,
@@ -76,7 +79,12 @@ export async function scanExperimental(options) {
 			onProgress,
 			isCancelled
 		});
-		passes.push({ engine: 'font-proposals', ...rough });
+		passes.push({
+			engine: 'font-proposals',
+			outputs: rough.outputs,
+			totalMs: rough.totalMs,
+			passes: rough.passes
+		});
 		await onStage('proposals', rough);
 		onProgress({ phase: 'Refine printed-name matches' });
 		const refineStart = performance.now(),
@@ -90,7 +98,7 @@ export async function scanExperimental(options) {
 			outputs: refined
 		});
 		function add(rows, minimum, gap, kind) {
-			for (const row of [...rows].sort(
+			for (const row of rows.slice().sort(
 				(a, b) =>
 					(b.candidates[0]?.score || 0) -
 					(a.candidates[0]?.score || 0)
@@ -120,7 +128,7 @@ export async function scanExperimental(options) {
 		add(refined, 0.75, 0.12, 'Printed-name font fit');
 		await onStage('font', { candidates, outputs: refined });
 		const lines = await findTitleStrips(image),
-			typical = [...lines].sort((a, b) => b.length - a.length)[
+			typical = lines.slice().sort((a, b) => b.length - a.length)[
 				Math.min(12, lines.length - 1)
 			].length;
 		function eligible(row) {
@@ -152,7 +160,7 @@ export async function scanExperimental(options) {
 		}
 		function distinct(rows) {
 			const kept = [];
-			for (const r of [...rows].sort(
+			for (const r of rows.slice().sort(
 				(a, b) => b.candidates[0].score - a.candidates[0].score
 			)) {
 				const box = bounds(r.poly);
@@ -173,7 +181,9 @@ export async function scanExperimental(options) {
 		const referenceRows = distinct(
 			refined.filter((r) => r.candidates[0].score >= 0.6 && eligible(r))
 		).map((r) => ({
-			...r,
+			mode: r.mode,
+			poly: r.poly,
+			candidates: r.candidates,
 			seeds: r.candidates.map((c) => c.name)
 		}));
 		console.log('Fresh reference queries', referenceRows.length);
@@ -234,7 +244,7 @@ export async function scanExperimental(options) {
 		return {
 			engine: 'card-aware-paddle-medium',
 			pipeline,
-			names: [...new Set(candidates.map((c) => c.name))].sort(),
+			names: Array.from(new Set(candidates.map((c) => c.name))).sort(),
 			candidates,
 			passes,
 			totalMs: performance.now() - started,

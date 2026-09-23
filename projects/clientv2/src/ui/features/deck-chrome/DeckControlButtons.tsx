@@ -98,10 +98,10 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 							Appearance
 						</Button>
 						<Button
-							className={concatClassNames(
+							className={concatClassNames([
 								styles['deck-control-button'],
 								styles['delete-deck-button']
-							)}
+							])}
 							disabled={isSaving}
 							onClick={onDeleteDeck}
 						>

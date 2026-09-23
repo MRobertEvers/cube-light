@@ -13,12 +13,12 @@ for(const row of rows.sort((a,b)=>b.candidates[0].score-a.candidates[0].score)){
  const c={name:best.name,score:best.score,text:'Printed-name glyph fit',status:'accepted',poly:row.poly,box:bounds(row.poly)};
  if(!candidates.some(a=>sameLine(a.box,c.box)))candidates.push(c);
 }
-const hybrid={scope:'Composite of cached browser experiments; not integrated end-to-end timing',inputs:['final',...files],totalMs:null,candidates,names:[...new Set(candidates.map(c=>c.name))].sort(),metrics:evaluatePhoto(candidates,truth)};
+const hybrid={scope:'Composite of cached browser experiments; not integrated end-to-end timing',inputs:['final'].concat(files),totalMs:null,candidates,names:Array.from(new Set(candidates.map(c=>c.name))).sort(),metrics:evaluatePhoto(candidates,truth)};
 await writeFile(new URL('photo-results/hybrid-v12.json',import.meta.url),JSON.stringify(hybrid,null,2));
 const rough=(await Promise.all(['font-lightband-v3','font-proposals-v2','font-plane-v7','font-bands-v6'].map(f=>read('photo-results/'+f+'.json')))).flatMap(r=>r.outputs);
 const glm=await read('photo-results/glm-constrained-preserve-crops-v4.json');
 const consensusCandidates=addTextConsensus(candidates,glm.outputs,rough);
-const consensus={scope:'Cached experimental composite, thresholds tuned on this photo',totalMs:null,integrated:false,candidates:consensusCandidates,names:[...new Set(consensusCandidates.map(c=>c.name))].sort(),metrics:evaluatePhoto(consensusCandidates,truth)};
+const consensus={scope:'Cached experimental composite, thresholds tuned on this photo',totalMs:null,integrated:false,candidates:consensusCandidates,names:Array.from(new Set(consensusCandidates.map(c=>c.name))).sort(),metrics:evaluatePhoto(consensusCandidates,truth)};
 await writeFile(new URL('photo-results/consensus-v14.json',import.meta.url),JSON.stringify(consensus,null,2));
 const index=buildIndex(await read('res/card-names.json'));
 const experiments=[];

@@ -33,7 +33,7 @@ test('idempotency settles a lost response without duplicating events or quantiti
         assert.deepEqual(db.sync.commit(request, 1), first);
         assert.equal(db.sync.readState(id).cards['card-a'], 2);
         assert.equal(db.sync.history(id).length, 2);
-        assert.throws(() => db.sync.commit({ ...request, command: { ...request.command, edits: [] } }, 1), /reused/);
+        assert.throws(() => db.sync.commit({ protocolVersion: request.protocolVersion, serverInstanceId: request.serverInstanceId, accountId: request.accountId, datasetId: request.datasetId, operationId: request.operationId, clientId: request.clientId, expectedRevision: request.expectedRevision, command: { type: request.command.type, id: request.command.id, edits: [] } }, 1), /reused/);
         const stale = db.sync.commit(envelope(db.sync, { type: 'deck.details', id, name: 'Other device' }, 1), 1);
         assert.equal(stale.status, 'conflict');
         assert.equal(db.sync.readState(id).name, 'Offline');
@@ -131,7 +131,8 @@ test('principal token generation revokes all devices without rewriting individua
         assert.equal(replacement.generation, 1);
         assert.equal(db.tokens.access(replacement.accessToken).userId, 1);
         const [header, payload, signature] = replacement.accessToken.split('.');
-        const forged = {...JSON.parse(Buffer.from(payload, 'base64url')), generation: 2};
+        const payloadClaims = JSON.parse(Buffer.from(payload, 'base64url'));
+        const forged = {iss: payloadClaims.iss, aud: payloadClaims.aud, sub: payloadClaims.sub, generation: 2, familyId: payloadClaims.familyId, iat: payloadClaims.iat, type: payloadClaims.type, jti: payloadClaims.jti, exp: payloadClaims.exp};
         assert.equal(db.tokens.access(`${header}.${Buffer.from(JSON.stringify(forged)).toString('base64url')}.${signature}`), null);
     });
 });

@@ -164,12 +164,22 @@ test('banner crops are validated, saved, returned, and recorded in history', asy
 		assert.equal((await put(crop)).status, 204);
 		assert.deepEqual((await (await fetch(url)).json()).bannerCrop, crop);
 		assert.equal(
-			(await put({ ...crop, mobile: { ...crop.mobile, zoom: 8 } }))
+			(
+				await put({
+					desktop: crop.desktop,
+					mobile: { x: crop.mobile.x, y: crop.mobile.y, zoom: 8 }
+				})
+			)
 				.status,
 			400
 		);
 		assert.equal(
-			(await put({ ...crop, mobile: { ...crop.mobile, x: 1.13 } }))
+			(
+				await put({
+					desktop: crop.desktop,
+					mobile: { x: 1.13, y: crop.mobile.y, zoom: crop.mobile.zoom }
+				})
+			)
 				.status,
 			400
 		);

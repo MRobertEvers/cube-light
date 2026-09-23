@@ -88,12 +88,12 @@ export async function findTitleStrips(image, options) {
 			kept.push(line);
 		}
 		return kept.map((l) => ({
-			...l,
 			x1: l.x1 / scale,
 			y1: l.y1 / scale,
 			x2: l.x2 / scale,
 			y2: l.y2 / scale,
-			length: l.length / scale
+			length: l.length / scale,
+			angle: l.angle
 		}));
 	} finally {
 		for (const m of [src, rgb, hsv, mask, edges, lines, lo, hi])
@@ -182,8 +182,8 @@ export function trimTitleBand(input) {
 				.reduce((a, b) => a + b, 0) /
 			(Math.min(h, y + 3) - Math.max(0, y - 2))
 	);
-	const lo = Math.min(...smooth),
-		hi = Math.max(...smooth),
+	const lo = Math.min.apply(null, smooth),
+		hi = Math.max.apply(null, smooth),
 		threshold = lo + (hi - lo) * 0.6;
 	let start = 0,
 		best = null;
@@ -303,7 +303,7 @@ export async function tightInkCrops(input, options) {
 						p.height < seed.height * 2.5
 				);
 				if (!same.length) continue;
-				const sorted = [...same].sort((a, b) => a.x - b.x),
+				const sorted = same.slice().sort((a, b) => a.x - b.x),
 					groups = [];
 				let current = [];
 				for (const part of sorted) {
@@ -325,10 +325,10 @@ export async function tightInkCrops(input, options) {
 				}
 				if (current.length) groups.push(current);
 				for (const same of groups) {
-					const x = Math.min(...same.map((p) => p.x)),
-						y = Math.min(...same.map((p) => p.y)),
-						right = Math.max(...same.map((p) => p.x + p.width)),
-						bottom = Math.max(...same.map((p) => p.y + p.height));
+					const x = Math.min.apply(null, same.map((p) => p.x)),
+						y = Math.min.apply(null, same.map((p) => p.y)),
+						right = Math.max.apply(null, same.map((p) => p.x + p.width)),
+						bottom = Math.max.apply(null, same.map((p) => p.y + p.height));
 					if (right - x < (bottom - y) * 2.5) continue;
 					const r = {
 						x: Math.max(0, x - 2),
@@ -394,8 +394,8 @@ export function lightTitleBand(input) {
 		v.sort((a, b) => a - b);
 		rows.push(v[Math.floor(v.length * 0.8)] || 0);
 	}
-	const lo = Math.min(...rows),
-		hi = Math.max(...rows),
+	const lo = Math.min.apply(null, rows),
+		hi = Math.max.apply(null, rows),
 		threshold = lo + (hi - lo) * 0.72,
 		runs = [];
 	let from = 0;
@@ -477,7 +477,7 @@ export async function mserInkCrops(input) {
 			for (const p of same) {
 				if (
 					group.length &&
-					p.x - Math.max(...group.map((r) => r.x + r.width)) >
+					p.x - Math.max.apply(null, group.map((r) => r.x + r.width)) >
 						seed.height * 0.9
 				) {
 					groups.push(group);
@@ -487,10 +487,10 @@ export async function mserInkCrops(input) {
 			}
 			if (group.length) groups.push(group);
 			for (const group of groups) {
-				const x = Math.min(...group.map((p) => p.x)),
-					y = Math.min(...group.map((p) => p.y)),
-					w = Math.max(...group.map((p) => p.x + p.width)) - x,
-					h = Math.max(...group.map((p) => p.y + p.height)) - y;
+				const x = Math.min.apply(null, group.map((p) => p.x)),
+					y = Math.min.apply(null, group.map((p) => p.y)),
+					w = Math.max.apply(null, group.map((p) => p.x + p.width)) - x,
+					h = Math.max.apply(null, group.map((p) => p.y + p.height)) - y;
 				if (w / h < 4 || w < 80) continue;
 				if (
 					rows.some(

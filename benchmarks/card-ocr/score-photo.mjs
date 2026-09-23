@@ -13,7 +13,25 @@ for (const file of (
   if (!run.outputs || run.engine === "collectorvision") continue;
   const candidates = matchDetections(run.outputs, index),
     metrics = score(candidates, truth);
-  const result = { file, ms: run.totalMs, ...metrics, candidates };
+  const result = {
+    file,
+    ms: run.totalMs,
+    accepted: metrics.accepted,
+    correct: metrics.correct,
+    precision: metrics.precision,
+    recall: metrics.recall,
+    fullCorrect: metrics.fullCorrect,
+    fullTotal: metrics.fullTotal,
+    partialCorrect: metrics.partialCorrect,
+    partialTotal: metrics.partialTotal,
+    uniqueCorrect: metrics.uniqueCorrect,
+    uniqueTotal: metrics.uniqueTotal,
+    missing: metrics.missing,
+    hits: metrics.hits,
+    falsePositives: metrics.falsePositives,
+    meetsTarget: metrics.meetsTarget,
+    candidates,
+  };
   await writeFile(
     new URL(
       "./photo-results/" + file.replace(".json", ".scored.json"),

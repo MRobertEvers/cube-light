@@ -33,7 +33,7 @@ for (const [name, id] of [
   );
   const stages = (r.stages || []).map((s) => ({
     stage: s.stage,
-    names: [...new Set(s.candidates.map((c) => c.name))].sort(),
+    names: Array.from(new Set(s.candidates.map((c) => c.name))).sort(),
     titleInstances: s.candidates.length,
   }));
   result.runs.push({
@@ -45,11 +45,12 @@ for (const [name, id] of [
     correctNames: r.metrics.uniqueCorrect,
     correctTitles: r.metrics.correct,
     falsePositives: r.metrics.falsePositives.map((c) => c.name),
-    peakRssBytes: Math.max(...rss.map((s) => s.totalBytes)),
+    peakRssBytes: Math.max.apply(null, rss.map((s) => s.totalBytes)),
     idleRssBytes: idle.at(-1)?.totalBytes,
     requiredAssetBytes: name === "glm" ? 2254006369 : used.reduce((n, a) => n + a.bytes, 0),
-    largestModelBytes: name === "glm" ? 1164318720 : Math.max(
-      ...used.filter((a) => /\.onnx|\.tar$/.test(a.path)).map((a) => a.bytes),
+    largestModelBytes: name === "glm" ? 1164318720 : Math.max.apply(
+      null,
+      used.filter((a) => /\.onnx|\.tar$/.test(a.path)).map((a) => a.bytes),
     ),
     timings: r.timings,
     stages,

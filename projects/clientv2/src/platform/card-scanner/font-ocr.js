@@ -47,8 +47,8 @@ function descriptor(input, shearArg, blurArg) {
 			proj[x] += v[y * W + x];
 		}
 	}
-	const norm = Math.hypot(...v) || 1,
-		pnorm = Math.hypot(...proj) || 1;
+	const norm = Math.hypot.apply(null, v) || 1,
+		pnorm = Math.hypot.apply(null, proj) || 1;
 	for (let i = 0; i < D; i++) v[i] /= norm;
 	for (let i = 0; i < W; i++) proj[i] /= pnorm;
 	return { v, proj };

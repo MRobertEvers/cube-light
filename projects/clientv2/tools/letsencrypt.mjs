@@ -59,7 +59,7 @@ async function main() {
         return;
     }
     const production = process.argv.includes('--production');
-    const domains = [config.domain, ...(config.extraDomains || [])];
+    const domains = [config.domain].concat(config.extraDomains || []);
     await mkdir(CERT_DIR, { recursive: true });
 
     let accountKey;

@@ -15,8 +15,32 @@ import {
 	hasProtection,
 	normalizeBannerBlendConfig,
 	BANNER_BLEND_ALGORITHM_VERSION,
+	type BannerBlendConfig,
 	type BannerProtection
 } from '../src/domain/appearance/banner-blend';
+
+function copyConfig(base: BannerBlendConfig): BannerBlendConfig {
+	return {
+		version: base.version,
+		method: base.method,
+		contentAware: base.contentAware,
+		position: base.position,
+		width: base.width,
+		surface: base.surface,
+		protectSubject: base.protectSubject,
+		protection: base.protection,
+		feather: base.feather,
+		decontamination: base.decontamination
+	};
+}
+function withMethod(
+	base: BannerBlendConfig,
+	method: BannerBlendConfig['method']
+): BannerBlendConfig {
+	const config = copyConfig(base);
+	config.method = method;
+	return config;
+}
 
 const wasm = await BannerWasm.create(
 	readFileSync(new URL('../src/platform/wasm/banner-blend.wasm', import.meta.url))
@@ -355,7 +379,8 @@ test('seam search routes the transition around a protected subject', () => {
 		foregroundDelta: new Float32Array(w * h * 3),
 		backgroundDelta: new Float32Array(w * h * 3)
 	};
-	const config = { ...DEFAULT_BANNER_BLEND, width: 0.12 };
+	const config = copyConfig(DEFAULT_BANNER_BLEND);
+	config.width = 0.12;
 	const half = (config.width * w) / 2;
 	const routed = { path: new Float32Array() },
 		straight = { path: new Float32Array() };
@@ -391,12 +416,13 @@ test('subject-preserving composite keeps protected pixels, reaches the exact sur
 		foregroundDelta: new Float32Array(w * h * 3),
 		backgroundDelta: new Float32Array(w * h * 3)
 	};
-	const config = { ...DEFAULT_BANNER_BLEND, protectSubject: true };
+	const config = copyConfig(DEFAULT_BANNER_BLEND);
+	config.protectSubject = true;
 	for (const method of ['multiband', 'poisson', 'fade'] as const) {
-		const out = wasm.blend(rgba, w, h, { ...config, method }, subject);
+		const out = wasm.blend(rgba, w, h, withMethod(config, method), subject);
 		assert.deepEqual(
 			out,
-			wasm.blend(rgba, w, h, { ...config, method }, subject)
+			wasm.blend(rgba, w, h, withMethod(config, method), subject)
 		);
 		for (let y = 0; y < h; y++) {
 			for (let x = 120; x < 170; x++)
@@ -408,7 +434,7 @@ test('subject-preserving composite keeps protected pixels, reaches the exact sur
 					);
 			for (let x = Math.ceil(SURFACE_START * w); x < w; x++)
 				assert.deepEqual(
-					[...out.slice((y * w + x) * 4, (y * w + x) * 4 + 4)],
+					Array.from(out.slice((y * w + x) * 4, (y * w + x) * 4 + 4)),
 					[242, 233, 230, 255]
 				);
 		}
@@ -449,14 +475,15 @@ test('config migration keeps v1 artifacts and generation drops selections for ot
 	assert.equal(legacy.protectSubject, false);
 	assert.equal(legacy.feather, DEFAULT_BANNER_BLEND.feather);
 	const protection = rectProtection(0.1, 0.1, 0.5, 0.5);
-	const config = {
-		...legacy,
-		protectSubject: true,
-		protection: {
-			...protection,
-			source: 'http://a.test/images/art_crop/1.jpg'
-		}
+	const config = copyConfig(legacy);
+	config.protectSubject = true;
+	config.protection = {
+		source: 'http://a.test/images/art_crop/1.jpg',
+		rect: protection.rect,
+		strokes: protection.strokes
 	};
+	const unprotected = copyConfig(config);
+	unprotected.protectSubject = false;
 	assert.equal(
 		configForGeneration(config, 'http://b.test/images/art_crop/1.jpg')
 			.protection?.source,
@@ -476,10 +503,7 @@ test('config migration keeps v1 artifacts and generation drops selections for ot
 		true
 	);
 	assert.equal(
-		hasProtection(
-			{ ...config, protectSubject: false },
-			'http://b.test/images/art_crop/1.jpg'
-		),
+		hasProtection(unprotected, 'http://b.test/images/art_crop/1.jpg'),
 		false
 	);
 });
@@ -495,9 +519,14 @@ test('the WASM wrapper frees its scratch memory', () => {
 	wasm.blend(rgba, w, h, DEFAULT_BANNER_BLEND);
 	const size = memory();
 	for (let i = 0; i < 20; i++)
-		wasm.blend(rgba, w, h, {
-			...DEFAULT_BANNER_BLEND,
-			method: (['multiband', 'poisson', 'fade'] as const)[i % 3]
-		});
+		wasm.blend(
+			rgba,
+			w,
+			h,
+			withMethod(
+				DEFAULT_BANNER_BLEND,
+				(['multiband', 'poisson', 'fade'] as const)[i % 3]
+			)
+		);
 	assert.equal(memory(), size);
 });

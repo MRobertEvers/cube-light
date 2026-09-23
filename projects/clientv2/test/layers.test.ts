@@ -120,7 +120,7 @@ function violations(): string[] {
 		if (/new (Shared)?Worker\(|serviceWorker\.register\(/.test(text) && layerOf(relative) !== 'client')
 			found.add(`start: ${relative} starts a worker outside a *.client.ts`);
 	}
-	return [...found].sort();
+	return Array.from(found).sort();
 }
 
 test('imports follow the layer plan', () => {

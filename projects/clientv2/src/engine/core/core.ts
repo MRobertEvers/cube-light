@@ -120,12 +120,12 @@ export function createToriMTG(
 					? []
 					: archive.legacy;
 				const byId = new Map(
-					[...archived, ...data.events].map((event) => [
+					archived.concat(data.events).map((event) => [
 						event.eventId,
 						event
 					])
 				);
-				data.events = [...byId.values()];
+				data.events = Array.from(byId.values());
 			}
 		}
 		const pending = data.intents
@@ -242,7 +242,7 @@ export function createToriMTG(
 			return auth.session;
 		}
 		if (auth.locked && auth.session)
-			return { ...auth.session, user: null, setupRequired: false };
+			return { user: null, setupRequired: false, serverInstanceId: auth.session.serverInstanceId };
 		const id = await store.startAuth('session');
 		await worker.authenticate(id);
 		const updated = await store.auth();
@@ -316,8 +316,9 @@ export function createToriMTG(
 			const bytes = new Uint8Array(await local.data.arrayBuffer());
 			let binary = '';
 			for (let offset = 0; offset < bytes.length; offset += 8192)
-				binary += String.fromCharCode(
-					...bytes.subarray(offset, offset + 8192)
+				binary += String.fromCharCode.apply(
+					null,
+					Array.from(bytes.subarray(offset, offset + 8192))
 				);
 			blobs.push({
 				id,

@@ -46,7 +46,7 @@ export class BannerBlendWorkerClient implements BannerRenderer {
 		onProgress?: (progress: BannerBlendProgress) => void
 	): Promise<BannerSubjectMask & { milliseconds: number }> {
 		const result = await this.run<Extract<BannerWorkerResponse, { mask: unknown }>>('mask', { kind: 'mask', src, protection, feather }, onProgress, MASK_TIMEOUT_MS);
-		return { ...result.mask, milliseconds: result.timings.total };
+		return { width: result.mask.width, height: result.mask.height, alpha: result.mask.alpha, milliseconds: result.timings.total };
 	}
 
 	cancel(kind: Kind): void {
@@ -93,7 +93,11 @@ export class BannerBlendWorkerClient implements BannerRenderer {
 				finish();
 				reject(new Error('Banner rendering is unavailable in this browser. Try a current version of Chrome, Edge, Firefox, or Safari.'));
 			};
-			worker.postMessage({ ...request, id } as BannerWorkerRequest);
+			const message: BannerWorkerRequest =
+				request.kind === 'generate'
+					? { kind: 'generate', job: request.job, id }
+					: { kind: 'mask', src: request.src, protection: request.protection, feather: request.feather, id };
+			worker.postMessage(message);
 		});
 	}
 }

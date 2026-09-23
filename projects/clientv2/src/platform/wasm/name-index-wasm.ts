@@ -151,7 +151,7 @@ export class NameIndexWasm {
 	private completeLevel(level: string[], limit: number): string[] {
 		const results: string[] = [];
 		for (const prefix of level) {
-			results.push(...this.completions(prefix, limit - results.length));
+			Array.prototype.push.apply(results, this.completions(prefix, limit - results.length));
 			if (results.length >= limit) break;
 		}
 		return results;

@@ -37,7 +37,7 @@ async function initialize(model: string) {
 	const config = yaml.load(await response.text()) as {
 		PostProcess: { character_dict: string[] };
 	};
-	dict = [...config.PostProcess.character_dict, ' '];
+	dict = config.PostProcess.character_dict.concat([' ']);
 	session = await ort.InferenceSession.create(
 		`/ocr/models/paddle/${modelFile(model)}.onnx`,
 		{ executionProviders: navigator.gpu ? ['webgpu', 'wasm'] : ['wasm'] }
@@ -141,7 +141,7 @@ async function recognize(
 		lexicon ||= makeLexicon(
 			await (await fetch('/ocr/card-names.json')).json()
 		);
-		hypotheses = decodeLexicon(data, steps, ['_', ...dict], lexicon, {
+		hypotheses = decodeLexicon(data, steps, ['_'].concat(dict), lexicon, {
 			skip: 0,
 			blankIndex: 0
 		});
@@ -150,8 +150,8 @@ async function recognize(
 		hypotheses = scoreCTCNames(
 			data,
 			steps,
-			['_', ...dict],
-			[...candidateNames, ...(hypotheses || []).map((h) => h.name)],
+			['_'].concat(dict),
+			candidateNames.concat((hypotheses || []).map((h) => h.name)),
 			0
 		);
 	input.dispose();
@@ -168,7 +168,17 @@ async function handle(request: OcrRecognizerRequest) {
 	try {
 		if (!session) await initialize(request.model);
 		if (!request.pixels) post({ id: request.id, ready: true });
-		else await recognize({ ...request, pixels: request.pixels });
+		else
+			await recognize({
+				id: request.id,
+				pixels: request.pixels,
+				model: request.model,
+				stretch: request.stretch,
+				enhance: request.enhance,
+				deblur: request.deblur,
+				lexical: request.lexical,
+				candidateNames: request.candidateNames
+			});
 	} catch (error) {
 		post({ id: request.id, error: String(error) });
 	}

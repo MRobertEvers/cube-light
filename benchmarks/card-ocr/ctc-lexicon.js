@@ -23,7 +23,7 @@ export function decodeLexicon(probabilities,steps,sourceChars,nodes,{beamWidth=1
    if(node.char>=0)same.n=logadd(same.n,state.n+p[node.char]);
    for(const [c,id]of node.next){const out=entry(id),from=c===node.char?state.b:state.total;out.n=logadd(out.n,from+p[c]);}
   }
-  beam=[...next.values()].map(r=>({...r,total:logadd(r.b,r.n)})).sort((a,b)=>(b.total+nodes[b.id].length*bonus)-(a.total+nodes[a.id].length*bonus)).slice(0,beamWidth);
+  beam=Array.from(next.values()).map(r=>({id:r.id,b:r.b,n:r.n,total:logadd(r.b,r.n)})).sort((a,b)=>(b.total+nodes[b.id].length*bonus)-(a.total+nodes[a.id].length*bonus)).slice(0,beamWidth);
  }
  return beam.filter(b=>nodes[b.id].names.length).flatMap(b=>nodes[b.id].names.map(name=>({name,logProbability:b.total,perCharacter:Math.exp(b.total/nodes[b.id].length)}))).sort((a,b)=>b.logProbability-a.logProbability).slice(0,5);
 }

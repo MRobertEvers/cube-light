@@ -55,7 +55,7 @@ export class CardOcrWorkerClient {
 		const id = this.nextId++;
 		return new Promise((resolve, reject) => {
 			this.waiting.set(id, { resolve, reject });
-			const request: OcrRecognizerRequest = { id, pixels, ...this.options, candidateNames };
+			const request: OcrRecognizerRequest = { id, pixels, model: this.options.model, stretch: this.options.stretch, enhance: this.options.enhance, deblur: this.options.deblur, lexical: this.options.lexical, candidateNames };
 			this.worker.postMessage(request, pixels ? [pixels.data.buffer] : []);
 		});
 	}

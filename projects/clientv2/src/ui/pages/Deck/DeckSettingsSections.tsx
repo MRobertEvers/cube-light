@@ -92,7 +92,7 @@ export function BannerCardSection(
 	const { deckId, data, view, onPickerOpened } = props;
 	const dispatch = useAppDispatch();
 	const card = bannerCard(data);
-	const names = [...new Set(data.cards.map((item) => item.name))].sort(
+	const names = Array.from(new Set(data.cards.map((item) => item.name))).sort(
 		(a, b) => a.localeCompare(b)
 	);
 	return (
@@ -328,7 +328,10 @@ export function CropSection(props: SectionProps) {
 		: undefined;
 	function updateCrop(variant: keyof BannerCrop, frame: BannerFrame) {
 		return dispatch(
-			appearanceActions.changeCrop({ ...crop, [variant]: frame })
+			appearanceActions.changeCrop({
+				desktop: variant === 'desktop' ? frame : crop.desktop,
+				mobile: variant === 'mobile' ? frame : crop.mobile
+			})
 		);
 	}
 	return (
@@ -393,7 +396,9 @@ export function CropSection(props: SectionProps) {
 									className={styles['reset']}
 									onClick={() =>
 										updateCrop(variant, {
-											...DEFAULT_BANNER_CROP[variant]
+											x: DEFAULT_BANNER_CROP[variant].x,
+											y: DEFAULT_BANNER_CROP[variant].y,
+											zoom: DEFAULT_BANNER_CROP[variant].zoom
 										})
 									}
 									disabled={status.crop.saving}
@@ -450,7 +455,8 @@ export function CropSection(props: SectionProps) {
 									value={crop[variant].zoom}
 									onChange={(event) =>
 										updateCrop(variant, {
-											...crop[variant],
+											x: crop[variant].x,
+											y: crop[variant].y,
 											zoom: Number(event.target.value)
 										})
 									}
@@ -475,8 +481,9 @@ export function CropSection(props: SectionProps) {
 									)}
 									onChange={(event) =>
 										updateCrop(variant, {
-											...crop[variant],
-											x: Number(event.target.value)
+											x: Number(event.target.value),
+											y: crop[variant].y,
+											zoom: crop[variant].zoom
 										})
 									}
 								/>
@@ -491,8 +498,9 @@ export function CropSection(props: SectionProps) {
 									value={crop[variant].y}
 									onChange={(event) =>
 										updateCrop(variant, {
-											...crop[variant],
-											y: Number(event.target.value)
+											x: crop[variant].x,
+											y: Number(event.target.value),
+											zoom: crop[variant].zoom
 										})
 									}
 								/>
@@ -518,7 +526,30 @@ export function BlendSection(props: SectionProps) {
 	const dispatch = useAppDispatch();
 	const { blend, status, cropChanged } = view;
 	function change(update: Partial<BannerBlendConfig>) {
-		return dispatch(appearanceActions.changeBlend({ ...blend, ...update }));
+		return dispatch(
+			appearanceActions.changeBlend({
+				version:
+					update.version !== undefined ? update.version : blend.version,
+				method:
+					update.method !== undefined ? update.method : blend.method,
+				contentAware:
+					update.contentAware !== undefined ? update.contentAware : blend.contentAware,
+				position:
+					update.position !== undefined ? update.position : blend.position,
+				width:
+					update.width !== undefined ? update.width : blend.width,
+				surface:
+					update.surface !== undefined ? update.surface : blend.surface,
+				protectSubject:
+					update.protectSubject !== undefined ? update.protectSubject : blend.protectSubject,
+				protection:
+					update.protection !== undefined ? update.protection : blend.protection,
+				feather:
+					update.feather !== undefined ? update.feather : blend.feather,
+				decontamination:
+					update.decontamination !== undefined ? update.decontamination : blend.decontamination
+			})
+		);
 	}
 	const busy = status.blend.saving || status.crop.saving;
 	const art = data.icon;

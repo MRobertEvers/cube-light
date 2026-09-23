@@ -4,5 +4,22 @@ import { MobileDeckSummaryControls } from '../controls/MobileDeckSummaryControls
 
 /** The mobile deck list's controls: the deck summary above the list. */
 export function MobileDecklistBoardControls(props: BoardControlsProps) {
-	return <MobileDeckSummaryControls {...props} />;
+	return (
+		<MobileDeckSummaryControls
+			deck={props.deck}
+			deckId={props.deckId}
+			view={props.view}
+			topStyle={props.topStyle}
+			bannerCrop={props.bannerCrop}
+			previewIcon={props.previewIcon}
+			isSaving={props.isSaving}
+			errors={props.errors}
+			onBannerElement={props.onBannerElement}
+			onAddCard={props.onAddCard}
+			onAddCards={props.onAddCards}
+			onImportImage={props.onImportImage}
+			onEditName={props.onEditName}
+			onDeleteDeck={props.onDeleteDeck}
+		/>
+	);
 }

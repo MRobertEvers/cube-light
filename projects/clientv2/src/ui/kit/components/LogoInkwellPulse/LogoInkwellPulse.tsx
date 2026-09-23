@@ -23,10 +23,10 @@ export function LogoInkwellPulse(options: LogoInkwellPulseProps) {
 		<span
 			className={classes}
 			style={
-				{
-					'--inkwell-size': `${size}px`,
-					...style
-				} as React.CSSProperties
+				Object.assign(
+					{ '--inkwell-size': `${size}px` },
+					style
+				) as React.CSSProperties
 			}
 			aria-hidden="true"
 		>

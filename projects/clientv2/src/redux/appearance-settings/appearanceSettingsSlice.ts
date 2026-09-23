@@ -51,12 +51,14 @@ export const appearanceSettingsSlice = createSlice({
 				palette: CardPalette;
 			}>
 		) {
-			state.paletteDraft = {
-				value: {
-					...action.payload.palette,
-					[action.payload.key]: action.payload.value
-				}
+			const palette: CardPalette = {
+				accent: action.payload.palette.accent,
+				surface: action.payload.palette.surface,
+				wash: action.payload.palette.wash,
+				border: action.payload.palette.border
 			};
+			palette[action.payload.key] = action.payload.value;
+			state.paletteDraft = { value: palette };
 			state.status.palette = emptyStatus();
 		},
 		useCardColors: function (state) {

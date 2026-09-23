@@ -12,7 +12,7 @@ async function initialize(model) {
   if (!response.ok)
     throw new Error("Run npm run prepare:photo to download recognition assets");
   const config = yaml.load(await response.text());
-  dict = [...config.PostProcess.character_dict, " "];
+  dict = config.PostProcess.character_dict.concat([" "]);
   session = await ort.InferenceSession.create(
     `/models/${model === "medium" ? "medium-rec" : model === "server" ? "server-rec" : model === "english" ? "en-rec" : "rec"}.onnx`,
     { executionProviders: ["wasm"] },
@@ -105,9 +105,9 @@ self.onmessage = async ({
     let hypotheses;
     if(lexical && (text.length>=3 || candidateNames?.length)){
       lexicon ||= makeLexicon(await(await fetch('/res/card-names.json')).json());
-      hypotheses=decodeLexicon(out.data,steps,['_',...dict],lexicon,{skip:0,blankIndex:0});
+      hypotheses=decodeLexicon(out.data,steps,['_'].concat(dict),lexicon,{skip:0,blankIndex:0});
     }
-    if(candidateNames?.length)hypotheses=scoreCTCNames(out.data,steps,['_',...dict],[...candidateNames,...(hypotheses||[]).map(h=>h.name)],0);
+    if(candidateNames?.length)hypotheses=scoreCTCNames(out.data,steps,['_'].concat(dict),Array.from(candidateNames).concat((hypotheses||[]).map(h=>h.name)),0);
     input.dispose();
     for (const output of Object.values(outputs)) output.dispose();
     self.postMessage({ id, text, score: count ? sum / count : 0, lexical:hypotheses });

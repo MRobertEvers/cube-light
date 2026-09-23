@@ -16,7 +16,7 @@ test('checkbook events reconstruct quantities and preserve the original state', 
     const ledger = [];
     for (const command of commands) {
         const events = decide(state, command);
-        ledger.push(...events);
+        for (const event of events) ledger.push(event);
         state = events.reduce((current, event) => applyEvent(current, event, id, at), state);
     }
     assert.equal(state.cards['printing-a'], 4);

@@ -33,11 +33,11 @@ window.scanFlorence=async({mode='tiles',tileSize=1400,limit=0}={})=>{
    if(!c){c=document.createElement('canvas');c.width=region.w;c.height=region.h;c.getContext('2d').drawImage(im,region.x,region.y,region.w,region.h,0,0,c.width,c.height);}
    const inputs=await processor(RawImage.fromCanvas(c));
    const prompt=(mode==='tiles'||mode==='sheets')?'What is the text in the image, with regions?':'What is the text in the image?';
-   const ids=await model.generate({...inputs,...tokenizer(prompt),max_new_tokens:(mode==='tiles'||mode==='sheets')?768:100,num_beams:1,do_sample:false});
+   const ids=await model.generate(Object.assign({},inputs,tokenizer(prompt),{max_new_tokens:(mode==='tiles'||mode==='sheets')?768:100,num_beams:1,do_sample:false}));
    const raw=tokenizer.batch_decode(ids,{skip_special_tokens:false})[0];
    const items=[];
    if(mode==='tiles'||mode==='sheets')for(const match of raw.matchAll(/([^<>]+)((?:<loc_\d+>){8})/g)){
-    const coords=[...match[2].matchAll(/<loc_(\d+)>/g)].map(m=>Number(m[1]));
+    const coords=Array.from(match[2].matchAll(/<loc_(\d+)>/g)).map(m=>Number(m[1]));
     const local=Array.from({length:4},(_,i)=>[coords[i*2]/1000*c.width,coords[i*2+1]/1000*c.height]);
     const center=local.reduce((p,v)=>[p[0]+v[0]/4,p[1]+v[1]/4],[0,0]);
     const placement=region.placements?.find(p=>center[1]>=p.y&&center[1]<=p.y+p.h&&center[0]>=p.x&&center[0]<=p.x+p.w);

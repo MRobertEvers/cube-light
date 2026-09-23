@@ -86,7 +86,7 @@ async function projectedBefore(tables: Tables, partition: string, intent: Intent
 async function compact(tables: Tables, partition: string): Promise<void> {
     const balances = await tables.all<StoredCheckpoint>('checkpoints', partition);
     const grouped = new Map<string, StoredCheckpoint[]>();
-    for (const balance of balances) grouped.set(balance.id, [...(grouped.get(balance.id) || []), balance]);
+    for (const balance of balances) grouped.set(balance.id, (grouped.get(balance.id) || []).concat([balance]));
     const floors = new Map<string, number>();
     for (const [id, checkpoints] of grouped) {
         checkpoints.sort((a, b) => b.sequence - a.sequence);
@@ -112,7 +112,8 @@ async function verifyReplica(crypto: Crypto, replica: Replica): Promise<void> {
     let sequence = checkpoint.throughSequence;
     let ledgerHash = checkpoint.ledgerHash;
     for (const event of replica.events) {
-        const { eventHash, ...unsigned } = event;
+        const eventHash = event.eventHash;
+        const unsigned = { eventId: event.eventId, aggregateId: event.aggregateId, aggregateSequence: event.aggregateSequence, commitPosition: event.commitPosition, operationId: event.operationId, actorId: event.actorId, recordedAt: event.recordedAt, eventSchemaVersion: event.eventSchemaVersion, previousEventHash: event.previousEventHash, event: event.event };
         if (event.aggregateId !== replica.id || event.eventSchemaVersion !== 1 || event.aggregateSequence !== sequence + 1 || event.previousEventHash !== ledgerHash || await hash(crypto, unsigned) !== eventHash) throw new Error('The event ledger has a gap or invalid hash.');
         state = applyEvent(state, event.event, replica.id, event.recordedAt);
         sequence = event.aggregateSequence;
@@ -151,8 +152,8 @@ export class OutboxLocalStore implements LocalStore {
             auth.job.status = error ? 'failed' : 'complete'; auth.error = error || null;
             if (!error && session) {
                 if (auth.session?.user?.id !== session.user?.id || auth.session?.serverInstanceId !== session.serverInstanceId) auth.generation++;
-                const { tokens, ...identity } = session;
-                auth.session = identity; auth.locked = !session.user; auth.pendingLogout = false;
+                const tokens = session.tokens;
+                auth.session = { user: session.user, setupRequired: session.setupRequired, serverInstanceId: session.serverInstanceId }; auth.locked = !session.user; auth.pendingLogout = false;
                 if (tokens && session.user) await tables.put('control', { key: 'credentials', value: { tokens, serverInstanceId: session.serverInstanceId, accountId: session.user.id, generation: auth.generation, refreshRequestId: null } });
                 else if (!session.user) await tables.remove('control', 'credentials');
                 const scope = scopeOf(auth);
@@ -187,7 +188,7 @@ export class OutboxLocalStore implements LocalStore {
             const current = (await tables.get<{ value: AuthCredentials }>('control', 'credentials'))?.value;
             if (!current || auth.locked || auth.generation !== previous.generation || current.tokens.refreshToken !== previous.tokens.refreshToken) return;
             if (!result.tokens || result.user?.id !== previous.accountId || result.serverInstanceId !== previous.serverInstanceId) throw new Error('Refresh returned a different account or server.');
-            await tables.put('control', { key: 'credentials', value: { ...previous, tokens: result.tokens, refreshRequestId: null } });
+            await tables.put('control', { key: 'credentials', value: { tokens: result.tokens, serverInstanceId: previous.serverInstanceId, accountId: previous.accountId, generation: previous.generation, refreshRequestId: null } });
             auth.session = { user: result.user, serverInstanceId: result.serverInstanceId, setupRequired: result.setupRequired };
             await tables.put('control', { key: 'auth', value: auth });
         });
@@ -210,7 +211,7 @@ export class OutboxLocalStore implements LocalStore {
             await project(tables, scope.partition);
             meta.revision++; meta.syncRequested = true; meta.nextAttemptAt = 0;
             await tables.put('meta', meta);
-            return { ...notice(scope, meta), operationId: result.operationId };
+            return { partition: scope.partition, generation: scope.generation, localRevision: meta.revision, operationId: result.operationId };
         });
     }
 
@@ -219,7 +220,7 @@ export class OutboxLocalStore implements LocalStore {
         let deckDependsOn: string | undefined;
         if (command.type === 'work.complete') {
             const deck = await tables.get<StoredReplica>('base', [scope.partition, command.deckId]);
-            command = { ...command, deckRevision: deck?.sequence || 0 };
+            command = { type: command.type, id: command.id, token: command.token, edits: command.edits, deckId: command.deckId, deckRevision: deck?.sequence || 0 };
             const deckId = command.deckId;
             deckDependsOn = allIntents.filter((intent) => intent.command.id === deckId && outstanding(intent)).sort((a, b) => b.sequence - a.sequence)[0]?.operationId;
         }
@@ -233,7 +234,7 @@ export class OutboxLocalStore implements LocalStore {
         // A scan completed into the deck since then keeps the edits apart, so they stay in order.
         const overtaken = previous && allIntents.some((intent) => outstanding(intent) && intent.sequence > previous.sequence && intent.command.type === 'work.complete' && intent.command.deckId === command.id);
         if (command.type === 'deck.cards' && previous?.command.type === 'deck.cards' && previous.status === 'queued' && !previous.prepared && !overtaken && previous.command.edits.length + command.edits.length <= 2000) {
-            const joined: DomainCommand = { ...previous.command, edits: [...previous.command.edits, ...command.edits] };
+            const joined: DomainCommand = { type: previous.command.type, id: previous.command.id, edits: previous.command.edits.concat(command.edits) };
             const state = await projectedBefore(tables, scope.partition, previous);
             previous.command = joined;
             await journal(tables, meta, previous.operationId, { type: 'IntentAmended', command: joined, events: decide(state, joined) });
@@ -305,7 +306,7 @@ export class OutboxLocalStore implements LocalStore {
                 if (!intent.prepared) {
                     const expectedRevision = previous?.outcome?.revisions[intent.command.id] ?? intent.originalBaseRevision;
                     intent.prepared = { protocolVersion: 1, serverInstanceId: scope.serverInstanceId, accountId: scope.accountId, datasetId: 'shared', operationId: intent.operationId, clientId: meta.clientId, expectedRevision, command: intent.command };
-                    if (deckPrevious && intent.prepared.command.type === 'work.complete') intent.prepared.command = { ...intent.prepared.command, deckRevision: deckPrevious.outcome!.revisions[intent.prepared.command.deckId] };
+                    if (deckPrevious && intent.prepared.command.type === 'work.complete') intent.prepared.command = { type: intent.prepared.command.type, id: intent.prepared.command.id, token: intent.prepared.command.token, edits: intent.prepared.command.edits, deckId: intent.prepared.command.deckId, deckRevision: deckPrevious.outcome!.revisions[intent.prepared.command.deckId] };
                     await journal(tables, meta, intent.operationId, { type: 'RequestPrepared', request: intent.prepared });
                 }
                 intent.status = 'sending'; intent.attempts++;
@@ -318,7 +319,7 @@ export class OutboxLocalStore implements LocalStore {
 
     async settle(lease: Lease, result: CommandOutcome | SyncPage): Promise<LocalNotice> {
         const outcomes = 'operationId' in result ? [result] : result.outcomes;
-        const replicas = [...result.replicas, ...outcomes.flatMap((outcome) => outcome.replicas)];
+        const replicas = result.replicas.concat(outcomes.flatMap((outcome) => outcome.replicas));
         for (const replica of replicas) await verifyReplica(this.crypto, replica);
         return this.driver.transaction(TABLES, 'readwrite', async (tables) => {
             const scope = lease.scope;
@@ -329,7 +330,7 @@ export class OutboxLocalStore implements LocalStore {
                 const previous = await tables.get<StoredReplica>('base', [scope.partition, replica.id]);
                 if (previous && previous.sequence > replica.sequence) continue;
                 if (previous && previous.sequence === replica.sequence && previous.hash !== replica.hash) throw new Error('Conflicting event identities at the same sequence.');
-                await tables.put('base', { ...replica, partition: scope.partition });
+                await tables.put('base', { id: replica.id, sequence: replica.sequence, hash: replica.hash, state: replica.state, checkpoint: replica.checkpoint, events: replica.events, partition: scope.partition });
                 await tables.put('checkpoints', { partition: scope.partition, id: replica.id, sequence: replica.checkpoint.throughSequence, checkpoint: replica.checkpoint });
                 for (const event of replica.events) await tables.put('events', { partition: scope.partition, id: replica.id, sequence: event.aggregateSequence, event });
             }
@@ -384,7 +385,7 @@ export class OutboxLocalStore implements LocalStore {
     async saveResource(lease: Lease, job: ResourceJob, resource: StoredResource): Promise<LocalNotice> {
         return this.driver.transaction(['control', 'meta', 'jobs', 'resources', 'catalog'], 'readwrite', async (tables) => {
             const meta = await checked(tables, this.crypto, lease.scope, lease);
-            await tables.put('resources', { ...resource, partition: lease.scope.partition, key: job.key });
+            await tables.put('resources', { key: job.key, body: resource.body, status: resource.status, contentType: resource.contentType, validatedAt: resource.validatedAt, partition: lease.scope.partition });
             const current = await tables.get<ResourceJob>('jobs', [lease.scope.partition, job.key]);
             if (current) { current.served = job.generation; current.error = null; current.attempts = 0; await tables.put('jobs', current); }
             meta.revision++;

@@ -12,14 +12,13 @@ const defaultCrop = {
 	mobile: { x: 0.5, y: 0.5, zoom: 1 }
 };
 const LEGACY_KEYS = ['contentAware', 'method', 'position', 'surface', 'width'];
-const CURRENT_KEYS = [
-	...LEGACY_KEYS,
+const CURRENT_KEYS = LEGACY_KEYS.concat([
 	'decontamination',
 	'feather',
 	'protectSubject',
 	'protection',
 	'version'
-].sort();
+]).sort();
 const MAX_STROKES = 64,
 	MAX_STROKE_POINTS = 512,
 	MAX_CONFIG_JSON = 96 * 1024;
@@ -101,11 +100,10 @@ export function validBannerBlendConfig(config: any): boolean {
 /** History shows config diffs as text, so brush point lists are summarized. */
 export function bannerBlendHistoryValue(config: any): string {
 	if (!config?.protection) return JSON.stringify(config);
-	const { strokes, ...protection } = config.protection;
-	return JSON.stringify({
-		...config,
-		protection: { ...protection, strokes: strokes.length }
-	});
+	const protection = Object.assign({}, config.protection);
+	delete protection.strokes;
+	protection.strokes = config.protection.strokes.length;
+	return JSON.stringify(Object.assign({}, config, { protection }));
 }
 
 /**

@@ -40,10 +40,9 @@ export class BannerBlending {
 		onProgress?.('Preparing banner artwork…', 0);
 		const started = performance.now();
 		const result = await this.renderer.render(job, (progress) => onProgress?.(progress.message, progress.fraction));
-		console.info('Banner blend timings (ms):', {
-			...result.timings,
+		console.info('Banner blend timings (ms):', Object.assign({}, result.timings, {
 			total: Math.round(performance.now() - started)
-		});
+		}));
 		onProgress?.('Saving generated banners…', 0.97);
 		await this.decks.saveBannerBlend(deckId, {
 			source: deck.icon,

@@ -6,5 +6,10 @@ register();
 
 export default function ApplicationContainer(props: AppProps) {
 	const { Component, pageProps } = props;
-	return <Component {...pageProps} />;
+	return (
+		<Component
+			initialDeckData={pageProps.initialDeckData}
+			deckId={pageProps.deckId}
+		/>
+	);
 }

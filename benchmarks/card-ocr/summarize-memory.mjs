@@ -6,7 +6,7 @@ const data = JSON.parse(
   ),
 );
 const peak = (rows, key) =>
-  rows.length ? Math.max(...rows.map((r) => r[key] || 0)) : null;
+  rows.length ? Math.max.apply(null, rows.map((r) => r[key] || 0)) : null;
 const types = new Map();
 for (const sample of data.rss)
   for (const p of sample.processes)
@@ -28,7 +28,7 @@ const runs = data.results.map((result, i) => {
     );
   const idle = rows.filter((r) => r.phase === "idle-after-scan"),
     idleHeap = heaps.filter((r) => r.phase === "idle-after-scan");
-  const phases = [...new Set(rows.map((r) => r.phase))].map((phase) => {
+  const phases = Array.from(new Set(rows.map((r) => r.phase))).map((phase) => {
     const selected = rows.filter((r) => r.phase === phase),
       h = heaps.filter((r) => r.phase === phase);
     return {
@@ -46,8 +46,9 @@ const runs = data.results.map((result, i) => {
     falsePositives: result.metrics.falsePositives.length,
     peakProcessRssBytes: peak(rows, "totalBytes"),
     peakJSHeapUsedBytes: peak(heaps, "usedBytes"),
-    peakGPUProcessRssBytes: Math.max(
-      ...rows.map((r) => rssValue(r).gpuProcessRssBytes),
+    peakGPUProcessRssBytes: Math.max.apply(
+      null,
+      rows.map((r) => rssValue(r).gpuProcessRssBytes),
     ),
     idleImmediate: idle.length ? rssValue(idle[0]) : null,
     idleAfter10Seconds: idle.length ? rssValue(idle.at(-1)) : null,
@@ -66,7 +67,10 @@ const summary = {
   sourceCommit: data.sourceCommit ?? null,
   environment: data.environment,
   methodology: {
-    ...data.sampling,
+    rssIntervalMs: data.sampling.rssIntervalMs,
+    heapIntervalMs: data.sampling.heapIntervalMs,
+    forcedGC: data.sampling.forcedGC,
+    httpCache: data.sampling.httpCache,
     scope:
       "Isolated Chrome process tree only; excludes Node profiler and frontend/API servers",
     rss: "Sum of ps RSS; shared pages can be counted multiple times; not unique physical memory or complete GPU allocation accounting",
@@ -82,7 +86,12 @@ const summary = {
   baseline: baseline.length ? rssValue(baseline.at(-1)) : null,
   runs,
   afterForcedGC: gc.length
-    ? { ...rssValue(gc.at(-1)), jsHeapUsedBytes: gcHeap.at(-1)?.usedBytes }
+    ? {
+        ms: rssValue(gc.at(-1)).ms,
+        bytes: rssValue(gc.at(-1)).bytes,
+        gpuProcessRssBytes: rssValue(gc.at(-1)).gpuProcessRssBytes,
+        jsHeapUsedBytes: gcHeap.at(-1)?.usedBytes,
+      }
     : null,
   errors: data.errors,
   forbiddenFixtureRequests: data.forbidden,

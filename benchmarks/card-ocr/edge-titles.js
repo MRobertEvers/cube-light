@@ -57,12 +57,12 @@ export async function findTitleStrips(image, {saturation=125, value=100, hueLow=
       kept.push(line);
     }
     return kept.map((l) => ({
-      ...l,
       x1: l.x1 / scale,
       y1: l.y1 / scale,
       x2: l.x2 / scale,
       y2: l.y2 / scale,
       length: l.length / scale,
+      angle: l.angle,
     }));
   } finally {
     for (const m of [src, rgb, hsv, mask, edges, lines, lo, hi]) m?.delete();
@@ -126,8 +126,8 @@ export function trimTitleBand(input) {
         .reduce((a, b) => a + b, 0) /
       (Math.min(h, y + 3) - Math.max(0, y - 2)),
   );
-  const lo = Math.min(...smooth),
-    hi = Math.max(...smooth),
+  const lo = Math.min.apply(null, smooth),
+    hi = Math.max.apply(null, smooth),
     threshold = lo + (hi - lo) * 0.6;
   let start = 0,
     best = null;
@@ -183,10 +183,10 @@ export async function tightInkCrops(input,{allowTall=false,globalLevels=false}={
    for(const seed of parts){
     const same=parts.filter(p=>Math.abs(p.y+p.height/2-seed.y-seed.height/2)<Math.max(p.height,seed.height)*.45&&p.height>seed.height*.35&&p.height<seed.height*2.5);
     if(!same.length)continue;
-    const sorted=[...same].sort((a,b)=>a.x-b.x),groups=[];let current=[];
+    const sorted=same.slice().sort((a,b)=>a.x-b.x),groups=[];let current=[];
     for(const part of sorted){if(current.length){const last=current.at(-1),gap=part.x-last.x-last.width;if(gap>Math.max(10,Math.max(last.height,part.height)*.8)){groups.push(current);current=[];}}current.push(part);}if(current.length)groups.push(current);
     for(const same of groups){
-    const x=Math.min(...same.map(p=>p.x)),y=Math.min(...same.map(p=>p.y)),right=Math.max(...same.map(p=>p.x+p.width)),bottom=Math.max(...same.map(p=>p.y+p.height));
+    const x=Math.min.apply(null,same.map(p=>p.x)),y=Math.min.apply(null,same.map(p=>p.y)),right=Math.max.apply(null,same.map(p=>p.x+p.width)),bottom=Math.max.apply(null,same.map(p=>p.y+p.height));
     if(right-x<(bottom-y)*2.5)continue;
     const r={x:Math.max(0,x-2),y:Math.max(0,y-2),w:Math.min(input.width-x+2,right-x+4),h:Math.min(input.height-y+2,bottom-y+4),parts:same.length};
     if(regions.some(a=>Math.abs(a.x-r.x)<5&&Math.abs(a.y-r.y)<5&&Math.abs(a.w-r.w)<10&&Math.abs(a.h-r.h)<5))continue;
@@ -202,7 +202,7 @@ export async function tightInkCrops(input,{allowTall=false,globalLevels=false}={
 export function lightTitleBand(input){
  const {width:w,height:h}=input,ctx=input.getContext('2d',{willReadFrequently:true}),p=ctx.getImageData(0,0,w,h).data,rows=[];
  for(let y=0;y<h;y++){const v=[];for(let x=Math.floor(w*.1);x<w*.85;x+=2){const i=(y*w+x)*4;v.push(.299*p[i]+.587*p[i+1]+.114*p[i+2]);}v.sort((a,b)=>a-b);rows.push(v[Math.floor(v.length*.8)]||0);}
- const lo=Math.min(...rows),hi=Math.max(...rows),threshold=lo+(hi-lo)*.72,runs=[];let from=0;
+ const lo=Math.min.apply(null,rows),hi=Math.max.apply(null,rows),threshold=lo+(hi-lo)*.72,runs=[];let from=0;
  for(let y=0;y<=h;y++){if(y<h&&rows[y]>=threshold)continue;if(y-from>=10&&y-from<h*.85)runs.push({y:from,h:y-from});from=y+1;}
  return runs.sort((a,b)=>b.h-a.h).slice(0,2).map(r=>{const canvas=document.createElement('canvas');canvas.width=w;canvas.height=r.h;canvas.getContext('2d').drawImage(input,0,r.y,w,r.h,0,0,w,r.h);return{canvas,left:0,top:r.y,pad:0};});
 }
@@ -212,8 +212,8 @@ export async function mserInkCrops(input){
  try{
   cv.cvtColor(src,gray,cv.COLOR_RGBA2GRAY);detector.setDelta(2);detector.setMinArea(10);detector.setMaxArea(Math.floor(input.width*input.height*.4));detector.detectRegions(gray,regions,boxes);
   const parts=[];for(let i=0;i<regions.size();i++){const m=regions.get(i),r=cv.boundingRect(m);m.delete();if(r.height<7||r.height>input.height*.65||r.width<2||r.width>input.width*.75)continue;if(parts.some(p=>Math.abs(p.x-r.x)<3&&Math.abs(p.y-r.y)<3&&Math.abs(p.width-r.width)<5&&Math.abs(p.height-r.height)<4))continue;parts.push(r);}
-  const rows=[];for(const seed of parts){const same=parts.filter(p=>Math.abs(p.y+p.height/2-seed.y-seed.height/2)<Math.max(p.height,seed.height)*.4&&p.height>seed.height*.5&&p.height<seed.height*2).sort((a,b)=>a.x-b.x);let group=[],groups=[];for(const p of same){if(group.length&&p.x-Math.max(...group.map(r=>r.x+r.width))>seed.height*.9){groups.push(group);group=[];}group.push(p);}if(group.length)groups.push(group);
-   for(const group of groups){const x=Math.min(...group.map(p=>p.x)),y=Math.min(...group.map(p=>p.y)),w=Math.max(...group.map(p=>p.x+p.width))-x,h=Math.max(...group.map(p=>p.y+p.height))-y;if(w/h<4||w<80)continue;if(rows.some(r=>Math.abs(r.x-x)<5&&Math.abs(r.y-y)<4&&Math.abs(r.w-w)<10&&Math.abs(r.h-h)<5))continue;rows.push({x,y,w,h,count:group.length});}
+  const rows=[];for(const seed of parts){const same=parts.filter(p=>Math.abs(p.y+p.height/2-seed.y-seed.height/2)<Math.max(p.height,seed.height)*.4&&p.height>seed.height*.5&&p.height<seed.height*2).sort((a,b)=>a.x-b.x);let group=[],groups=[];for(const p of same){if(group.length&&p.x-Math.max.apply(null,group.map(r=>r.x+r.width))>seed.height*.9){groups.push(group);group=[];}group.push(p);}if(group.length)groups.push(group);
+   for(const group of groups){const x=Math.min.apply(null,group.map(p=>p.x)),y=Math.min.apply(null,group.map(p=>p.y)),w=Math.max.apply(null,group.map(p=>p.x+p.width))-x,h=Math.max.apply(null,group.map(p=>p.y+p.height))-y;if(w/h<4||w<80)continue;if(rows.some(r=>Math.abs(r.x-x)<5&&Math.abs(r.y-y)<4&&Math.abs(r.w-w)<10&&Math.abs(r.h-h)<5))continue;rows.push({x,y,w,h,count:group.length});}
   }
   return rows.sort((a,b)=>b.count-a.count).slice(0,6).map(r=>{const canvas=document.createElement('canvas');canvas.width=r.w+4;canvas.height=r.h+4;canvas.getContext('2d').drawImage(input,r.x-2,r.y-2,r.w+4,r.h+4,0,0,r.w+4,r.h+4);return{canvas,left:r.x-2,top:r.y-2,pad:0};});
  }finally{for(const m of[src,gray,regions,boxes,detector])m.delete();}

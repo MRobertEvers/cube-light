@@ -132,13 +132,23 @@ export class TokenStore {
 			accessExpiresAt,
 			refreshExpiresAt,
 			accessToken: this.sign({
-				...common,
+				iss: common.iss,
+				aud: common.aud,
+				sub: common.sub,
+				generation: common.generation,
+				familyId: common.familyId,
+				iat: common.iat,
 				type: 'access',
 				jti: `${seed}:access`,
 				exp: Math.floor(accessExpiresAt / 1000)
 			}),
 			refreshToken: this.sign({
-				...common,
+				iss: common.iss,
+				aud: common.aud,
+				sub: common.sub,
+				generation: common.generation,
+				familyId: common.familyId,
+				iat: common.iat,
 				type: 'refresh',
 				jti: `${seed}:refresh`,
 				exp: Math.floor(refreshExpiresAt / 1000)

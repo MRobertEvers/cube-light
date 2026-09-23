@@ -23,7 +23,7 @@ export function createSyncRoutes(repository: SyncRepository, cards: CardDatabase
             if (!command || typeof command.type !== 'string' || typeof command.id !== 'string') throw new DomainError('Invalid command.');
             const uuids = command.type === 'deck.cards' || command.type === 'work.complete' ? command.edits?.map((edit) => edit.uuid) : command.type === 'deck.details' && command.bannerCardUuid ? [command.bannerCardUuid] : [];
             if (!Array.isArray(uuids) || uuids.length > 2000) throw new DomainError('Invalid card batch.');
-            const unique = [...new Set(uuids)];
+            const unique = Array.from(new Set(uuids));
             if (unique.length && (await cards.queryCardInfo(unique)).length !== unique.length) throw new DomainError('Unknown card printing. Download card details before adding it.');
             res.json(repository.commit(request, currentSession(res)!.userId));
         } catch (error) { respondError(res, error); }
@@ -37,17 +37,17 @@ export function createSyncRoutes(repository: SyncRepository, cards: CardDatabase
             if (bootstrap && (typeof body.after !== 'string' || !Number.isSafeInteger(body.watermark) || body.watermark < 0)) throw new DomainError('Invalid bootstrap cursor.');
             const result = repository.readPage(body.accountId, body.cursor, body.operationIds, bootstrap ? { after: body.after, watermark: body.watermark } : undefined);
             const uuids = new Set<string>();
-            for (const replica of [...result.replicas, ...result.outcomes.flatMap((outcome) => outcome.replicas)]) if (replica.state.kind === 'deck') {
-                for (const uuid of [...Object.keys(replica.state.cards), ...Object.keys(replica.state.sideboard || {})]) uuids.add(uuid);
+            for (const replica of result.replicas.concat(result.outcomes.flatMap((outcome) => outcome.replicas))) if (replica.state.kind === 'deck') {
+                for (const uuid of Object.keys(replica.state.cards).concat(Object.keys(replica.state.sideboard || {}))) uuids.add(uuid);
                 if (replica.state.bannerCardUuid) uuids.add(replica.state.bannerCardUuid);
             }
             const catalog: Record<string, Json> = {};
-            const ids = [...uuids];
+            const ids = Array.from(uuids);
             for (let start = 0; start < ids.length; start += 500) {
                 const found = await cards.queryCardInfo(ids.slice(start, start + 500));
                 for (const card of await getDeckOverviewCardInfo(found.map((item) => item.uuid), cards, imageBaseUrl(req))) catalog[card.uuid] = JSON.parse(JSON.stringify(card));
             }
-            res.json({ protocolVersion: 1, serverInstanceId: repository.serverInstanceId, ...result, catalog, ...(bootstrap ? { bootstrapComplete: !result.hasMore } : {}) });
+            res.json({ protocolVersion: 1, serverInstanceId: repository.serverInstanceId, replicas: result.replicas, outcomes: result.outcomes, cursor: result.cursor, hasMore: result.hasMore, after: result.after, watermark: result.watermark, catalog, bootstrapComplete: bootstrap ? !result.hasMore : undefined });
         } catch (error) { respondError(res, error); }
     }
     router.get('/sync/v1/resolve-card', async (req, res) => {

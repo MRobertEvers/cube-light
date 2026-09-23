@@ -69,7 +69,8 @@ test("an exact short fragment cannot erase an accepted full title", () => {
         items: [
           item("Metallic Rebuke"),
           {
-            ...item("Rebuke", 80, 0),
+            text: "Rebuke",
+            score: 0.98,
             poly: [
               [80, 0],
               [180, 0],

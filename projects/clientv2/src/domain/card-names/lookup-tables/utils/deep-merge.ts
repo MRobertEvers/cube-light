@@ -2,7 +2,7 @@ function deepMerge2(branchOne: any, branchTwo: any): any | undefined {
 	if (!branchOne || !branchTwo) {
 		return branchOne || branchTwo;
 	} else {
-		const result = { ...branchOne };
+		const result = Object.assign({}, branchOne);
 
 		for (const [key, followTree] of Object.entries(branchTwo)) {
 			const otherTree = branchOne[key];
@@ -17,14 +17,15 @@ function deepMerge2(branchOne: any, branchTwo: any): any | undefined {
 	}
 }
 
-export function deepMerge(...branches: any[]): any | undefined {
+export function deepMerge(branches: any[]): any | undefined {
 	const cleaned = branches.filter(Boolean);
 
 	if (cleaned.length === 0) {
 		return undefined;
 	}
 
-	const [first, ...others] = cleaned;
+	const first = cleaned[0];
+	const others = cleaned.slice(1);
 
 	let result = first;
 	for (const other of others) {

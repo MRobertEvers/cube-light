@@ -22,9 +22,9 @@ function percent(part: number, whole: number) {
 export function DeckStats(props: { cards: DeckCardEntry[] }) {
 	const { cards } = props;
 	const stats = useMemo(() => deckStats(cards), [cards]);
-	const tallest = Math.max(
-		1,
-		...stats.curve.map((bucket) => bucket.creatures + bucket.nonCreatures)
+	const tallest = stats.curve.reduce(
+		(max, bucket) => Math.max(max, bucket.creatures + bucket.nonCreatures),
+		1
 	);
 	const colors = MANA_COLORS.filter(
 		(color) => color !== 'C' || stats.pips.C > 0

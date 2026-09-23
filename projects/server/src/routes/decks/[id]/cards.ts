@@ -92,21 +92,29 @@ export function createRoutesDecksIdCards(
 			return;
 		}
 
-		const upsertUuids = [...new Set(upsert.map((item) => item.uuid))];
+		const upsertUuids = Array.from(new Set(upsert.map((item) => item.uuid)));
 		const foundUpsertCards = await cardDatabase.queryCardInfo(upsertUuids);
 		if (foundUpsertCards.length !== upsertUuids.length) {
 			res.sendStatus(400);
 			return;
 		}
 
-		database.applyDeckCardEdit(String(deck.DeckId), [
-			...upsert.map((item) => ({ ...item, action: 'set' as const })),
-			...remove.map((uuid) => ({
-				uuid,
-				count: 0,
-				action: 'set' as const
-			}))
-		]);
+		database.applyDeckCardEdit(
+			String(deck.DeckId),
+			upsert
+				.map((item) => ({
+					uuid: item.uuid,
+					count: item.count,
+					action: 'set' as const
+				}))
+				.concat(
+					remove.map((uuid) => ({
+						uuid,
+						count: 0,
+						action: 'set' as const
+					}))
+				)
+		);
 
 		res.status(200);
 		res.send();

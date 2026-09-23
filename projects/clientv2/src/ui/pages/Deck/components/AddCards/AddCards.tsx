@@ -78,45 +78,47 @@ export function AddCards(props: { onClose?: () => void }) {
 	const unknownLines = parsed.cards.filter((card) =>
 		unknownCards.includes(card.name.toLowerCase())
 	);
-	const issues: Issue[] = [
-		...parsed.errors.map((options) => {
-			const { line, message } = options;
-			return {
-				line,
-				message,
-				skipped: false
-			};
-		}),
-		...problems.map((problem) => ({
-			line: problem.line,
-			message: `Unknown card: ${problem.name}`,
-			skipped: false,
-			problem
-		})),
-		...unknownLines.flatMap((card) =>
-			card.lines
-				.filter((line) => !problemLines.has(line))
-				.map((line) => ({
+	const issues: Issue[] = ([] as Issue[])
+		.concat(
+			parsed.errors.map((options) => {
+				const { line, message } = options;
+				return {
 					line,
-					message: `Unknown card: ${card.name}`,
+					message,
 					skipped: false
-				}))
-		),
-		...parsed.skipped.map((options) => {
-			const { line, message } = options;
-			return {
-				line,
-				message,
-				skipped: true
-			};
-		}),
-		...parsed.notes.map((note) => ({
-			line: note.line,
-			message: note.message,
-			skipped: true,
-			note
-		}))
-	].sort((a, b) => a.line - b.line);
+				};
+			}),
+			problems.map((problem) => ({
+				line: problem.line,
+				message: `Unknown card: ${problem.name}`,
+				skipped: false,
+				problem
+			})),
+			unknownLines.flatMap((card) =>
+				card.lines
+					.filter((line) => !problemLines.has(line))
+					.map((line) => ({
+						line,
+						message: `Unknown card: ${card.name}`,
+						skipped: false
+					}))
+			),
+			parsed.skipped.map((options) => {
+				const { line, message } = options;
+				return {
+					line,
+					message,
+					skipped: true
+				};
+			}),
+			parsed.notes.map((note) => ({
+				line: note.line,
+				message: note.message,
+				skipped: true,
+				note
+			}))
+		)
+		.sort((a, b) => a.line - b.line);
 	const hasBlockingIssues = issues.some((issue) => !issue.skipped);
 	// The line being typed keeps its earlier rows, so the list doesn't jump on each key;
 	// its current issues still block adding.
@@ -124,12 +126,21 @@ export function AddCards(props: { onClose?: () => void }) {
 	const listedIssues =
 		typingLine === null
 			? issues
-			: [
-					...issues.filter((issue) => issue.line !== typingLine),
-					...previousListed.current
-						.filter((issue) => issue.line === typingLine)
-						.map((issue) => ({ ...issue, stale: true }))
-				].sort((a, b) => a.line - b.line);
+			: issues
+					.filter((issue) => issue.line !== typingLine)
+					.concat(
+						previousListed.current
+							.filter((issue) => issue.line === typingLine)
+							.map((issue) => ({
+								line: issue.line,
+								message: issue.message,
+								skipped: issue.skipped,
+								problem: issue.problem,
+								note: issue.note,
+								stale: true
+							}))
+					)
+					.sort((a, b) => a.line - b.line);
 	useEffect(() => {
 		previousListed.current = listedIssues;
 	});

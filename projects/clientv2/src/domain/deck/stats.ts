@@ -132,7 +132,7 @@ export function deckStats(cards: readonly DeckCardEntry[]): DeckStats {
 		(type) => ({
 			type,
 			count: typeCounts.get(type) ?? 0,
-			subtypes: [...(types.get(type) ?? [])]
+			subtypes: Array.from(types.get(type) ?? [])
 				.map((entry) => ({ name: entry[0], count: entry[1] }))
 				.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 		})

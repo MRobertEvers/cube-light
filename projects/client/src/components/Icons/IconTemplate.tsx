@@ -5,7 +5,10 @@ export type IconProps = React.DetailedHTMLProps<
 
 function IconTemplate(svg: string) {
 	return (props: IconProps) => (
-		<span {...props} dangerouslySetInnerHTML={{ __html: svg }} />
+		<span
+			className={props.className}
+			dangerouslySetInnerHTML={{ __html: svg }}
+		/>
 	);
 }
 

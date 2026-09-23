@@ -9,7 +9,7 @@ import { retainClientAssets } from '../../scripts/retain-client-assets.mjs';
 
 async function startServer(root, retained) {
   const child = spawn(process.execPath, [new URL('../serve-client.mjs', import.meta.url).pathname], {
-    env: { ...process.env, CLIENT_DIST_ROOT: root, CLIENT_ASSET_ROOT: retained, HOST: '127.0.0.1', PORT: '0' },
+    env: Object.assign({}, process.env, { CLIENT_DIST_ROOT: root, CLIENT_ASSET_ROOT: retained, HOST: '127.0.0.1', PORT: '0' }),
     stdio: ['ignore', 'pipe', 'pipe']
   });
   const origin = await new Promise((resolve, reject) => {

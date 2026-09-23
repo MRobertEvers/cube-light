@@ -111,7 +111,7 @@ export async function scanCardImage(
 					region: r
 						? { x: r.x, y: r.y, width: r.w, height: r.h }
 						: null,
-					candidates: [...candidates],
+					candidates: candidates.slice(),
 					message,
 					indeterminate
 				});
@@ -123,7 +123,7 @@ export async function scanCardImage(
 					completed,
 					total: 100,
 					region: null,
-					candidates: [...candidates],
+					candidates: candidates.slice(),
 					message,
 					indeterminate
 				});

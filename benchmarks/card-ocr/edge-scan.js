@@ -55,7 +55,7 @@ export const scanEdges = (window.scanEdges = async ({
               [canvas.width - band.pad, band.pad],
               [canvas.width - band.pad, canvas.height - band.pad],
               [band.pad, canvas.height - band.pad],
-            ].map((p) => toImage(...p))
+            ].map((p) => toImage(p[0], p[1]))
           : strip.poly;
         let items;
         if (engine === "direct") {
@@ -73,10 +73,11 @@ export const scanEdges = (window.scanEdges = async ({
               textDetBoxThresh: 0.3,
               textRecScoreThresh: 0.3,
             })
-          )[0].items.map((i) => ({
-            ...i,
-            poly: i.poly.map((p) => toImage(...p)),
-          }));
+          )[0].items.map((i) =>
+            Object.assign({}, i, {
+              poly: i.poly.map((p) => toImage(p[0], p[1])),
+            }),
+          );
         outputs.push({ line, offset, items });
         console.log(
           `${engine} edge ${outputs.length}/${lines.length * (trim ? 1 : 4)}`,

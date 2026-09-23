@@ -72,7 +72,9 @@ export async function fetchSortedDeck(
 	}
 
 	return {
-		...data,
+		name: data.name,
+		icon: data.icon,
+		cards: data.cards,
 		deck: deck
 	};
 }

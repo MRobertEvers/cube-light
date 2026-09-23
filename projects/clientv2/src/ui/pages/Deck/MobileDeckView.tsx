@@ -63,7 +63,22 @@ export function MobileDeckView(props: MobileDeckViewProps) {
 					topStyle === 'full-art' ? ` ${styles.fullArt}` : ''
 				}${layout.width === 'full' ? ` ${styles.fullWidth}` : ''}`}
 			>
-				<Controls {...controls} />
+				<Controls
+					deck={controls.deck}
+					deckId={controls.deckId}
+					view={controls.view}
+					topStyle={controls.topStyle}
+					bannerCrop={controls.bannerCrop}
+					previewIcon={controls.previewIcon}
+					isSaving={controls.isSaving}
+					errors={controls.errors}
+					onBannerElement={controls.onBannerElement}
+					onAddCard={controls.onAddCard}
+					onAddCards={controls.onAddCards}
+					onImportImage={controls.onImportImage}
+					onEditName={controls.onEditName}
+					onDeleteDeck={controls.onDeleteDeck}
+				/>
 				{deckViewShowsBoard(view) ? (
 					<div className={styles.board}>
 						<BoardVisualizationReduxWidget

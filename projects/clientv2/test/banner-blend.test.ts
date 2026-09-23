@@ -3,15 +3,38 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { BannerWasm } from '../src/platform/wasm/banner-wasm';
 import { DEFAULT_BANNER_BLEND } from '../src/domain/appearance/banner-blend';
+import type { BannerBlendConfig } from '../src/domain/appearance/banner-blend';
 
 const wasm = await BannerWasm.create(
 	readFileSync(new URL('../src/platform/wasm/banner-blend.wasm', import.meta.url))
 );
 const blendBannerPixels: BannerWasm['blend'] = function blendBannerPixels(
-	...args
+	rgba,
+	w,
+	h,
+	config,
+	subjectArg,
+	diagnostics
 ) {
-	return wasm.blend(...args);
+	return wasm.blend(rgba, w, h, config, subjectArg, diagnostics);
 };
+function blendConfig(
+	method: BannerBlendConfig['method'],
+	contentAware: boolean
+): BannerBlendConfig {
+	return {
+		version: DEFAULT_BANNER_BLEND.version,
+		method,
+		contentAware,
+		position: DEFAULT_BANNER_BLEND.position,
+		width: DEFAULT_BANNER_BLEND.width,
+		surface: DEFAULT_BANNER_BLEND.surface,
+		protectSubject: DEFAULT_BANNER_BLEND.protectSubject,
+		protection: DEFAULT_BANNER_BLEND.protection,
+		feather: DEFAULT_BANNER_BLEND.feather,
+		decontamination: DEFAULT_BANNER_BLEND.decontamination
+	};
+}
 const width = 160,
 	height = 48;
 function fixture(solidArg?: boolean) {
@@ -32,16 +55,18 @@ for (const method of ['multiband', 'poisson', 'fade'] as const) {
 	test(`${method} preserves a matching solid surface`, () => {
 		const pixels = fixture(true);
 		assert.deepEqual(
-			blendBannerPixels(pixels, width, height, {
-				...DEFAULT_BANNER_BLEND,
-				method
-			}),
+			blendBannerPixels(
+				pixels,
+				width,
+				height,
+				blendConfig(method, DEFAULT_BANNER_BLEND.contentAware)
+			),
 			pixels
 		);
 	});
 	test(`${method} is deterministic and preserves both outer regions`, () => {
 		const source = fixture(),
-			config = { ...DEFAULT_BANNER_BLEND, method };
+			config = blendConfig(method, DEFAULT_BANNER_BLEND.contentAware);
 		const first = blendBannerPixels(source, width, height, config);
 		assert.deepEqual(
 			first,
@@ -55,7 +80,7 @@ for (const method of ['multiband', 'poisson', 'fade'] as const) {
 				source.slice(left, left + 4)
 			);
 			assert.deepEqual(
-				[...first.slice(right, right + 4)],
+				Array.from(first.slice(right, right + 4)),
 				[242, 233, 230, 255]
 			);
 		}
@@ -63,33 +88,17 @@ for (const method of ['multiband', 'poisson', 'fade'] as const) {
 }
 test('multiband, Poisson, and content-aware seams change the composite', () => {
 	const source = fixture();
-	const fade = blendBannerPixels(source, width, height, {
-		...DEFAULT_BANNER_BLEND,
-		method: 'fade',
-		contentAware: false
-	});
+	const fade = blendBannerPixels(source, width, height, blendConfig('fade', false));
 	assert.notDeepEqual(
 		fade,
-		blendBannerPixels(source, width, height, {
-			...DEFAULT_BANNER_BLEND,
-			method: 'multiband',
-			contentAware: false
-		})
+		blendBannerPixels(source, width, height, blendConfig('multiband', false))
 	);
 	assert.notDeepEqual(
 		fade,
-		blendBannerPixels(source, width, height, {
-			...DEFAULT_BANNER_BLEND,
-			method: 'poisson',
-			contentAware: false
-		})
+		blendBannerPixels(source, width, height, blendConfig('poisson', false))
 	);
 	assert.notDeepEqual(
 		fade,
-		blendBannerPixels(source, width, height, {
-			...DEFAULT_BANNER_BLEND,
-			method: 'fade',
-			contentAware: true
-		})
+		blendBannerPixels(source, width, height, blendConfig('fade', true))
 	);
 });

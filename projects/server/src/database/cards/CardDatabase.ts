@@ -123,15 +123,25 @@ export class CardDatabase {
 			uuids
 		);
 		const legalitiesByUuid = new Map<string, Record<string, string>>();
-		for (const { uuid, ...formats } of legalityRows) {
+		for (const row of legalityRows) {
 			const legalities: Record<string, string> = {};
-			for (const [format, status] of Object.entries(formats)) {
+			for (const [format, status] of Object.entries(row)) {
+				if (format === 'uuid') continue;
 				if (status) legalities[format] = status;
 			}
-			legalitiesByUuid.set(uuid!, legalities);
+			legalitiesByUuid.set(row.uuid!, legalities);
 		}
 		return cards.map((card) => ({
-			...card,
+			uuid: card.uuid,
+			type: card.type,
+			rarity: card.rarity,
+			power: card.power,
+			toughness: card.toughness,
+			loyalty: card.loyalty,
+			defense: card.defense,
+			number: card.number,
+			artist: card.artist,
+			flavorText: card.flavorText,
 			legalities: legalitiesByUuid.get(card.uuid) ?? {}
 		}));
 	}
@@ -148,9 +158,9 @@ export class CardDatabase {
 		}
 		const result: Array<[string, string]> = [];
 		for (const [setCode, uuids] of bySet) {
-			result.push(
-				...uuids.map((uuid) => [setCode, uuid] as [string, string])
-			);
+			for (const uuid of uuids) {
+				result.push([setCode, uuid]);
+			}
 		}
 		return result;
 	}

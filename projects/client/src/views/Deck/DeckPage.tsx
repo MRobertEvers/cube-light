@@ -24,7 +24,7 @@ export async function getStaticPaths() {
 	const pageSize = 100;
 	for (let start = 0; ; start += pageSize) {
 		const page = await fetchDecks(start, pageSize);
-		decks.push(...page);
+		Array.prototype.push.apply(decks, page);
 		if (page.length < pageSize) break;
 	}
 	return {

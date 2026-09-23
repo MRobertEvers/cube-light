@@ -113,7 +113,27 @@ export function createRoutesDecksId(
 		const cardData = deckCards.map((deckCard) => {
 			const cardData = cardInfosMapped[deckCard.Uuid];
 			return {
-				...cardData,
+				name: cardData.name,
+				uuid: cardData.uuid,
+				scryfallId: cardData.scryfallId,
+				types: cardData.types,
+				subtypes: cardData.subtypes,
+				manaCost: cardData.manaCost,
+				text: cardData.text,
+				setCode: cardData.setCode,
+				type: cardData.type,
+				rarity: cardData.rarity,
+				power: cardData.power,
+				toughness: cardData.toughness,
+				loyalty: cardData.loyalty,
+				defense: cardData.defense,
+				number: cardData.number,
+				artist: cardData.artist,
+				flavorText: cardData.flavorText,
+				legalities: cardData.legalities,
+				image: cardData.image,
+				images: cardData.images,
+				art: cardData.art,
 				count: deckCard.Count
 			};
 		});
@@ -177,18 +197,16 @@ export function createRoutesDecksId(
 			const edits = await database.getDeckEditHistory(
 				String(deck.DeckId)
 			);
-			const uuids = [
-				...new Set(
+			const uuids = Array.from(
+				new Set(
 					edits.reduce((all, edit) => {
-						all.push(
-							...[...edit.cardsIn, ...edit.cardsOut].map(
-								(card) => card.uuid
-							)
-						);
+						for (const card of edit.cardsIn.concat(edit.cardsOut)) {
+							all.push(card.uuid);
+						}
 						return all;
 					}, [] as string[])
 				)
-			];
+			);
 			const names = new Map<string, string>();
 			for (let start = 0; start < uuids.length; start += 500) {
 				for (const card of await cardDatabase.queryCardInfo(
@@ -201,15 +219,19 @@ export function createRoutesDecksId(
 				deckId: deck.PublicId,
 				deckName: deck.Name,
 				edits: edits.map((edit) => ({
-					...edit,
+					id: edit.id,
+					createdAt: edit.createdAt,
 					cardsIn: edit.cardsIn.map((card) => ({
-						...card,
+						uuid: card.uuid,
+						count: card.count,
 						name: names.get(card.uuid) || null
 					})),
 					cardsOut: edit.cardsOut.map((card) => ({
-						...card,
+						uuid: card.uuid,
+						count: card.count,
 						name: names.get(card.uuid) || null
-					}))
+					})),
+					details: edit.details
 				}))
 			});
 		}

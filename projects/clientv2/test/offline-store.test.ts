@@ -23,10 +23,10 @@ async function fixture() {
 async function replica(id: string, operationId: string, event: DomainEvent, previous?: Replica): Promise<Replica> {
     const sequence = (previous?.sequence || 0) + 1;
     const unsigned = { eventId: crypto.randomUUID(), aggregateId: id, aggregateSequence: sequence, commitPosition: sequence, operationId, actorId: 1, recordedAt: new Date().toISOString(), eventSchemaVersion: 1 as const, previousEventHash: previous?.hash || '', event };
-    const envelope: EventEnvelope = { ...unsigned, eventHash: await hash(webCrypto, unsigned) };
+    const envelope: EventEnvelope = { eventId: unsigned.eventId, aggregateId: unsigned.aggregateId, aggregateSequence: unsigned.aggregateSequence, commitPosition: unsigned.commitPosition, operationId: unsigned.operationId, actorId: unsigned.actorId, recordedAt: unsigned.recordedAt, eventSchemaVersion: unsigned.eventSchemaVersion, previousEventHash: unsigned.previousEventHash, event: unsigned.event, eventHash: await hash(webCrypto, unsigned) };
     const state = applyEvent(previous?.state || null, event, id, envelope.recordedAt);
     const checkpoint = previous?.checkpoint || { aggregateId: id, throughSequence: sequence, throughEventId: envelope.eventId, schemaVersion: 1 as const, reducerVersion: 1 as const, stateHash: await hash(webCrypto, state), ledgerHash: envelope.eventHash, createdAt: envelope.recordedAt, state };
-    return { id, sequence, hash: envelope.eventHash, state, checkpoint, events: previous ? [...previous.events, envelope] : [] };
+    return { id, sequence, hash: envelope.eventHash, state, checkpoint, events: previous ? previous.events.concat([envelope]) : [] };
 }
 
 test('local intent, projection and outbox commit atomically and reconstruct after reopening', async () => {
@@ -69,7 +69,7 @@ test('acknowledgement replaces the pending proposal atomically and preserves lat
     assert.equal(((await store.dataset(scope)).states[0] as any).cards['card-a'], 2);
     assert.equal((await store.prepare(lease))!.prepared!.expectedRevision, 2);
     const tampered = structuredClone(updated); (tampered.state as any).cards['card-a'] = 10;
-    await assert.rejects(store.settle(lease, { ...outcome, replicas: [tampered] }), /balance/);
+    await assert.rejects(store.settle(lease, { operationId: outcome.operationId, status: outcome.status, replicas: [tampered], events: outcome.events, revisions: outcome.revisions }), /balance/);
     assert.equal(((await store.dataset(scope)).states[0] as any).cards['card-a'], 2);
     store.close();
 });
@@ -117,10 +117,10 @@ test('refresh attempt identity survives restart and stale rotation cannot undo s
     const attempt = await store.prepareRefresh();
     store.close(); await store.open();
     assert.equal((await store.prepareRefresh()).refreshRequestId, attempt.refreshRequestId);
-    const records = await driver.transaction(['journal', 'outbox'], 'readonly', async (tables) => [...await tables.all('journal'), ...await tables.all('outbox')]);
+    const records = await driver.transaction(['journal', 'outbox'], 'readonly', async (tables) => (await tables.all('journal')).concat(await tables.all('outbox')));
     assert.equal(JSON.stringify(records).includes('accessToken'), false);
     await store.startAuth('logout');
-    await store.rotateCredentials(attempt, { ...session, tokens: { ...session.tokens, accessToken: 'new-access', refreshToken: 'new-refresh' } });
+    await store.rotateCredentials(attempt, { user: session.user, serverInstanceId: session.serverInstanceId, setupRequired: session.setupRequired, tokens: { tokenType: session.tokens.tokenType, generation: session.tokens.generation, familyId: session.tokens.familyId, accessToken: 'new-access', refreshToken: 'new-refresh', accessExpiresAt: session.tokens.accessExpiresAt, refreshExpiresAt: session.tokens.refreshExpiresAt } });
     assert.equal(await store.scope(), null);
     assert.equal((await store.credentials())?.tokens.refreshToken, 'refresh');
     store.close();

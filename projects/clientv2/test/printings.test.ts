@@ -170,9 +170,12 @@ test('lines before any heading go to the chosen board; headings still decide the
 });
 
 test('the card editor opens on every board’s printings of a name', () => {
-	const main = { ...card('Negate', 'M20', 2), board: 'main' as const };
-	const side = { ...card('Negate', 'M20', 1), board: 'side' as const };
-	const other = { ...card('Duress', 'M20', 1), board: 'side' as const };
+	const main = card('Negate', 'M20', 2);
+	main.board = 'main';
+	const side = card('Negate', 'M20', 1);
+	side.board = 'side';
+	const other = card('Duress', 'M20', 1);
+	other.board = 'side';
 	const [group] = groupDeckCardsByName([side]);
 	const target = deckCardEditTarget(group, [main, side, other]);
 	assert.equal(target.board, 'side');

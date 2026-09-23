@@ -6,7 +6,7 @@ const argparse = require('argparse');
  */
 function parseArguments(baseConfig) {
 	let newConfig = {
-		...baseConfig
+		webpackConfig: baseConfig.webpackConfig
 	};
 
 	let parser = new argparse.ArgumentParser({

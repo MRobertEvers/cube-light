@@ -54,7 +54,7 @@ export function Collection(props: HomeProps) {
 
 	return (
 		<Page>
-			<table className={scls(styles, 'list-table')}>
+			<table className={scls(styles, ['list-table'])}>
 				<thead>
 					<tr>
 						<th>Collections</th>

@@ -10,7 +10,7 @@ export async function titleProposals(image) {
 			hueLow: 0,
 			hueHigh: 40
 		}),
-		lines = [...original, ...extra];
+		lines = original.concat(extra);
 	const lengths = original.map((l) => l.length).sort((a, b) => b - a),
 		typical = lengths[Math.min(12, lengths.length - 1)] || 400,
 		joined = [];
@@ -73,7 +73,7 @@ export async function titleProposals(image) {
 			});
 		}
 	const kept = [];
-	for (const l of [...original, ...joined, ...extra]) {
+	for (const l of original.concat(joined, extra)) {
 		if (
 			kept.some(
 				(p) =>

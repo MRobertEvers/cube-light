@@ -8,7 +8,7 @@ type LoadingIndicator = React.DetailedHTMLProps<
 >;
 
 export function LoadingIndicator(props: LoadingIndicator) {
-	const { className, ...otherProps } = props;
+	const { className, style } = props;
 	let classes = styles['loading-indicator'];
 
 	if (className) {
@@ -17,7 +17,7 @@ export function LoadingIndicator(props: LoadingIndicator) {
 
 	return (
 		<div className={styles['loading-indicator-container']}>
-			<LogoIcon {...otherProps} className={classes} />
+			<LogoIcon style={style} className={classes} />
 		</div>
 	);
 }

@@ -17,7 +17,7 @@ export function addTextConsensus(
 	const verifier =
 		verifierArg === undefined ? 'Paddle v6 medium' : verifierArg;
 
-	const candidates = [...existing];
+	const candidates = existing.slice();
 	for (const row of verifierRows) {
 		const best = row.result?.ranked?.[0];
 		if (

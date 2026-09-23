@@ -72,8 +72,23 @@ export function recordCards(catalog: CardCatalog, source: CardSource, value: unk
 export function overviewOf(entry: CatalogEntry | undefined): OverviewCard | null {
     if (entry?.overview) return entry.overview;
     if (!entry?.details) return null;
-    const { sets: _sets, highResImage: _highResImage, image, art, ...overview } = entry.details;
-    return { ...overview, ...(image ? { image } : {}), ...(art ? { art } : {}) };
+    const details = entry.details;
+    const overview: OverviewCard = cardFields(details);
+    if ('images' in details) overview.images = details.images;
+    if (details.image) overview.image = details.image;
+    if (details.art) overview.art = details.art;
+    return overview;
+}
+
+/** The fields every overview and details card shares, apart from its images. */
+export function cardFields(card: Omit<OverviewCard, 'image' | 'images' | 'art'>): Omit<OverviewCard, 'image' | 'images' | 'art'> {
+    return {
+        uuid: card.uuid, name: card.name, scryfallId: card.scryfallId, setCode: card.setCode,
+        types: card.types, subtypes: card.subtypes, manaCost: card.manaCost, text: card.text,
+        type: card.type, rarity: card.rarity, power: card.power, toughness: card.toughness,
+        loyalty: card.loyalty, defense: card.defense, number: card.number, artist: card.artist,
+        flavorText: card.flavorText, legalities: card.legalities
+    };
 }
 
 /**
@@ -84,7 +99,16 @@ export function detailsOf(entry: CatalogEntry | undefined): DetailedCard | Omit<
     if (entry?.details) return entry.details;
     const overview = entry?.overview;
     if (!overview) return null;
-    return { ...overview, image: overview.images?.small ?? overview.image ?? null, highResImage: overview.images?.normal ?? null, art: overview.images?.art_crop ?? overview.art ?? null };
+    const details: Omit<DetailedCard, 'sets'> = {
+        uuid: overview.uuid, name: overview.name, scryfallId: overview.scryfallId, setCode: overview.setCode,
+        types: overview.types, subtypes: overview.subtypes, manaCost: overview.manaCost, text: overview.text,
+        type: overview.type, rarity: overview.rarity, power: overview.power, toughness: overview.toughness,
+        loyalty: overview.loyalty, defense: overview.defense, number: overview.number, artist: overview.artist,
+        flavorText: overview.flavorText, legalities: overview.legalities,
+        image: overview.images?.small ?? overview.image ?? null, highResImage: overview.images?.normal ?? null, art: overview.images?.art_crop ?? overview.art ?? null
+    };
+    if ('images' in overview) details.images = overview.images;
+    return details;
 }
 
 /** Name, set and artwork, from whichever shape is present. */

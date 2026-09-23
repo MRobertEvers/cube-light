@@ -173,7 +173,9 @@ function runWorker(mode, queries) {
 			input: JSON.stringify(queries),
 			encoding: 'utf8',
 			maxBuffer: 20 * 1024 * 1024,
-			env: { ...process.env, CUBE_NAME_BENCH_JSON: jsonPath }
+			env: Object.assign({}, process.env, {
+				CUBE_NAME_BENCH_JSON: jsonPath
+			})
 		}
 	);
 	if (result.status !== 0)
@@ -279,18 +281,21 @@ async function main() {
 		`## Runtime`,
 		``,
 		`| Implementation | Init ms | RSS delta MiB | JS heap delta MiB | External delta MiB | Wasm linear memory MiB | Mean query µs | P50 µs | P95 µs |`,
-		`| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |`,
-		...[json, wasm].map(
+		`| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |`
+	].concat(
+		[json, wasm].map(
 			(r) =>
 				`| ${r.mode} | ${r.initMs.toFixed(2)} | ${delta(r, 'rss')} | ${delta(r, 'heapUsed')} | ${delta(r, 'external')} | ${mb(r.linearMemory)} | ${r.meanUs.toFixed(2)} | ${r.p50Us.toFixed(2)} | ${r.p95Us.toFixed(2)} |`
 		),
-		``,
-		`Result mismatches: ${mismatches} of ${queries.length}.`,
-		`Prefix verification mismatches: ${verificationMismatches} of ${verificationQueries.size}. This covers the first five characters of every name, lowercase variants, and omitted punctuation.`,
-		``,
-		`The native node-gyp addon builds the index from SQLite. WebAssembly runs lookups in the browser. Initialization includes reading and parsing the generated JSON baseline or instantiating WebAssembly and loading the binary index. Memory deltas are process measurements and can vary with GC and the host allocator.`,
-		``
-	].join('\n');
+		[
+			``,
+			`Result mismatches: ${mismatches} of ${queries.length}.`,
+			`Prefix verification mismatches: ${verificationMismatches} of ${verificationQueries.size}. This covers the first five characters of every name, lowercase variants, and omitted punctuation.`,
+			``,
+			`The native node-gyp addon builds the index from SQLite. WebAssembly runs lookups in the browser. Initialization includes reading and parsing the generated JSON baseline or instantiating WebAssembly and loading the binary index. Memory deltas are process measurements and can vary with GC and the host allocator.`,
+			``
+		]
+	).join('\n');
 	console.log(report);
 	if (
 		!mismatches &&

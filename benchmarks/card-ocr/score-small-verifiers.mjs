@@ -19,7 +19,7 @@ for (const run of test.runs) {
     correctNames: m.uniqueCorrect,
     correctTitles: m.correct,
     falsePositives: m.falsePositives.map((c) => c.name),
-    addedNames: [...new Set(accepted.map((c) => c.name))].filter(
+    addedNames: Array.from(new Set(accepted.map((c) => c.name))).filter(
       (n) => !base.some((c) => c.name === n),
     ),
   });

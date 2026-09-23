@@ -99,7 +99,7 @@ export function computeSubjectLayer(
 	const workLabels = protectionLabels(protection, workWidth, workHeight);
 	// Full-resolution correction strokes are hard constraints the refinement must not undo.
 	const fullLabels = protection.strokes.length
-		? protectionLabels({ ...protection, rect: null }, width, height)
+		? protectionLabels({ source: protection.source, rect: null, strokes: protection.strokes }, width, height)
 		: null;
 	wasm.onStage = options.onStage ?? null;
 	try {

@@ -21,7 +21,7 @@ export class ProfileApi {
 		const saved = await this.tori.queries.read<{ profile: UserProfile | null }>({
 			type: 'profile'
 		});
-		return { ...user, profile: saved.data?.profile || null } as AuthUser;
+		return { id: user.id, username: user.username, profile: saved.data?.profile || null } as AuthUser;
 	}
 
 	/** The saved printing view, or null before one is saved. */

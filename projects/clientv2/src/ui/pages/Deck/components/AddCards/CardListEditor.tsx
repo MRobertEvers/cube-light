@@ -317,7 +317,8 @@ export function CardListEditor(props: CardListEditorProps) {
 		});
 		const observer = new ResizeObserver(() =>
 			setScroll((previous) => ({
-				...previous,
+				top: previous.top,
+				left: previous.left,
 				height: textarea.clientHeight
 			}))
 		);
@@ -855,20 +856,20 @@ export function CardListEditor(props: CardListEditorProps) {
 					aria-label={`Line ${menu.line}: ${menuSpan.name}`}
 					style={{
 						top: rowTop(menu.line) + metrics.lineHeight + 4,
-						...(menu.atName && {
-							right: 'auto',
-							left: Math.max(
-								6,
-								Math.min(
-									metrics.left +
-										menuSpan.start * metrics.charWidth -
-										scroll.left,
-									(textareaRef.current?.clientWidth ?? 0) -
-										POPOVER_WIDTH -
-										6
+						right: menu.atName ? 'auto' : undefined,
+						left: menu.atName
+							? Math.max(
+									6,
+									Math.min(
+										metrics.left +
+											menuSpan.start * metrics.charWidth -
+											scroll.left,
+										(textareaRef.current?.clientWidth ?? 0) -
+											POPOVER_WIDTH -
+											6
+									)
 								)
-							)
-						})
+							: undefined
 					}}
 					onKeyDown={(event) => {
 						if (event.key === 'Escape') {

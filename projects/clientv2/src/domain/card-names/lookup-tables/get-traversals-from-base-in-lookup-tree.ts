@@ -36,7 +36,7 @@ export function getTraversalsFromBaseInLookupTreeSimple(
 			const branches: [string[], any][] = branchKeys
 				.filter((key) => tree[key])
 				.map((key) => [traversal.concat([key]), tree[key]]);
-			next.push(...branches);
+			for (const branch of branches) next.push(branch);
 		}
 
 		level = next;
@@ -83,10 +83,10 @@ export function getTraversalsFromBaseInLookupTree(
 						traversal.concat([ignoreChar, key]),
 						skippedTree[key]
 					]);
-				branches.push(...laxBranches);
+				for (const branch of laxBranches) branches.push(branch);
 			}
 
-			next.push(...branches);
+			for (const branch of branches) next.push(branch);
 		}
 
 		level = next;

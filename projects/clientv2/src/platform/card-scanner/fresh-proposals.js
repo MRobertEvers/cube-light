@@ -41,7 +41,8 @@ export async function freshProposals(image, names, options) {
 					'beleren.woff',
 					(e) =>
 						onProgress({
-							...e,
+							completed: e.completed,
+							total: e.total,
 							phase: 'Build title index: ' + mode
 						})
 				);
@@ -86,10 +87,13 @@ export async function freshProposals(image, names, options) {
 				let bands = [];
 				if (mode === 'light')
 					for (const light of lightTitleBand(strip.canvas))
-						bands.push(
-							...(await tightInkCrops(light.canvas)).map((b) => ({
-								...b,
-								top: b.top + light.top
+						Array.prototype.push.apply(
+							bands,
+							(await tightInkCrops(light.canvas)).map((b) => ({
+								canvas: b.canvas,
+								left: b.left,
+								top: b.top + light.top,
+								pad: b.pad
 							}))
 						);
 				else {
@@ -97,10 +101,13 @@ export async function freshProposals(image, names, options) {
 						allowTall: true
 					});
 					for (const light of lightTitleBand(strip.canvas))
-						bands.push(
-							...(await tightInkCrops(light.canvas)).map((b) => ({
-								...b,
-								top: b.top + light.top
+						Array.prototype.push.apply(
+							bands,
+							(await tightInkCrops(light.canvas)).map((b) => ({
+								canvas: b.canvas,
+								left: b.left,
+								top: b.top + light.top,
+								pad: b.pad
 							}))
 						);
 				}
@@ -129,7 +136,7 @@ export async function freshProposals(image, names, options) {
 						index.lookup(band.canvas).then((candidates) => ({
 							mode,
 							poly: plane
-								? poly.map((p) => plane.toOriginal(...p))
+								? poly.map((p) => plane.toOriginal(p[0], p[1]))
 								: poly,
 							candidates
 						}))
@@ -144,7 +151,7 @@ export async function freshProposals(image, names, options) {
 					await new Promise((r) => setTimeout(r, 0));
 				}
 			}
-			outputs.push(...(await Promise.all(lookups)));
+			Array.prototype.push.apply(outputs, await Promise.all(lookups));
 			onProgress({
 				phase: 'Title proposals: ' + mode,
 				completed: lines.length,

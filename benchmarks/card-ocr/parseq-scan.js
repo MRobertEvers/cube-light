@@ -32,7 +32,7 @@ window.scanPARSeq = async ({ limit = 0, ar = false, pad = 0 } = {}) => {
     .filter((n) => !n.startsWith("A-"))
     .map((name) => ({
       name,
-      ids: [...name.replace(/\s/g, "")].map((c) => chars.indexOf(c)),
+      ids: Array.from(name.replace(/\s/g, "")).map((c) => chars.indexOf(c)),
     }))
     .filter((n) => n.ids.length <= 25 && n.ids.every((i) => i > 0));
   const image = await createImageBitmap(
@@ -94,7 +94,7 @@ window.scanPARSeq = async ({ limit = 0, ar = false, pad = 0 } = {}) => {
         const row = Array.from(
             logits.data.slice(t * classes, (t + 1) * classes),
           ),
-          max = Math.max(...row),
+          max = Math.max.apply(null, row),
           lse = max + Math.log(row.reduce((s, v) => s + Math.exp(v - max), 0)),
           lp = row.map((v) => v - lse);
         logp.push(lp);

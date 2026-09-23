@@ -12,13 +12,17 @@ interface NativeDatabase {
 	close(): void;
 }
 
+interface NativeMethod<R> {
+	apply(statement: NativeStatement, parameters: unknown[]): R;
+}
+
 interface NativeStatement {
-	all(...parameters: unknown[]): unknown[];
-	get(...parameters: unknown[]): unknown | undefined;
-	run(...parameters: unknown[]): {
+	all: NativeMethod<unknown[]>;
+	get: NativeMethod<unknown | undefined>;
+	run: NativeMethod<{
 		lastInsertRowid: number | bigint;
 		changes: number | bigint;
-	};
+	}>;
 }
 
 export interface SqliteTransaction {
@@ -39,13 +43,15 @@ export class SqliteDatabase {
 	async all<T>(sql: string, paramsArg?: unknown[]): Promise<T[]> {
 		const params = paramsArg === undefined ? [] : paramsArg;
 
-		return this.db.prepare(sql).all(...params) as T[];
+		const statement = this.db.prepare(sql);
+		return statement.all.apply(statement, params) as T[];
 	}
 
 	async get<T>(sql: string, paramsArg?: unknown[]): Promise<T | undefined> {
 		const params = paramsArg === undefined ? [] : paramsArg;
 
-		return this.db.prepare(sql).get(...params) as T | undefined;
+		const statement = this.db.prepare(sql);
+		return statement.get.apply(statement, params) as T | undefined;
 	}
 
 	async run(
@@ -54,7 +60,8 @@ export class SqliteDatabase {
 	): Promise<{ lastID: number; changes: number }> {
 		const params = paramsArg === undefined ? [] : paramsArg;
 
-		const result = this.db.prepare(sql).run(...params);
+		const statement = this.db.prepare(sql);
+		const result = statement.run.apply(statement, params);
 		return {
 			lastID: Number(result.lastInsertRowid),
 			changes: Number(result.changes)
@@ -76,16 +83,19 @@ export class SqliteDatabase {
 		const tx: SqliteTransaction = {
 			all: function <R>(sql: string, paramsArg?: unknown[]) {
 				const params = paramsArg === undefined ? [] : paramsArg;
-				return instance.db.prepare(sql).all(...params) as R[];
+				const statement = instance.db.prepare(sql);
+				return statement.all.apply(statement, params) as R[];
 			},
 			get: function <R>(sql: string, paramsArg?: unknown[]) {
 				const params = paramsArg === undefined ? [] : paramsArg;
-				return instance.db.prepare(sql).get(...params) as R | undefined;
+				const statement = instance.db.prepare(sql);
+				return statement.get.apply(statement, params) as R | undefined;
 			},
 			run: function (sql: string, paramsArg?: unknown[]) {
 				const params = paramsArg === undefined ? [] : paramsArg;
 
-				const result = instance.db.prepare(sql).run(...params);
+				const statement = instance.db.prepare(sql);
+				const result = statement.run.apply(statement, params);
 				return {
 					lastID: Number(result.lastInsertRowid),
 					changes: Number(result.changes)

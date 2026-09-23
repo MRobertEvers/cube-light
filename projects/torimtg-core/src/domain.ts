@@ -1,5 +1,5 @@
 import { DomainError } from './types.js';
-import type { AggregateState, CardQuantityChange, DomainCommand, DomainEvent, DeckBoard, DeckState, WorkState, Crop } from './types.js';
+import type { AggregateState, CardQuantityChange, DomainCommand, DomainEvent, DeckBoard, DeckState, ProfileState, WorkState, Crop } from './types.js';
 
 /** The quantities one board of a deck holds, by printing UUID. */
 export function boardCards(deck: DeckState, board: DeckBoard): Record<string, number> {
@@ -45,12 +45,15 @@ export function decide(state: AggregateState | null, command: DomainCommand): Do
             requireValue(command.art === undefined || (typeof command.art === 'string' && command.art.length <= 2048 && /^(https?:\/\/|\/)/.test(command.art)), 'Invalid artwork.');
             const deck = state as DeckState;
             if (deck.name === command.name.trim() && (command.bannerCardUuid === undefined || deck.bannerCardUuid === command.bannerCardUuid) && (command.art === undefined || command.art === deck.art)) return [];
-            return [{ type: 'DeckDetailsChanged', name: command.name.trim(), ...(command.bannerCardUuid === undefined ? {} : { bannerCardUuid: command.bannerCardUuid }), ...(command.art === undefined ? {} : { art: command.art }) }];
+            const changed: Extract<DomainEvent, { type: 'DeckDetailsChanged' }> = { type: 'DeckDetailsChanged', name: command.name.trim() };
+            if (command.bannerCardUuid !== undefined) changed.bannerCardUuid = command.bannerCardUuid;
+            if (command.art !== undefined) changed.art = command.art;
+            return [changed];
         }
         case 'deck.cards': {
             requireValue(Array.isArray(command.edits) && command.edits.length <= 2000, 'An edit may contain at most 2000 card changes.');
             const deck = state as DeckState;
-            const after: Record<DeckBoard, Record<string, number>> = { main: { ...deck.cards }, side: { ...boardCards(deck, 'side') } };
+            const after: Record<DeckBoard, Record<string, number>> = { main: Object.fromEntries(Object.entries(deck.cards)), side: Object.fromEntries(Object.entries(boardCards(deck, 'side'))) };
             for (const edit of command.edits) {
                 requireValue(edit && typeof edit.uuid === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(edit.uuid) && !['__proto__', 'constructor', 'prototype'].includes(edit.uuid), 'Invalid card ID.');
                 requireValue(['add', 'remove', 'set'].includes(edit.action) && Number.isSafeInteger(edit.count) && edit.count >= 0 && edit.count <= 1000000, 'Invalid card quantity.');
@@ -67,7 +70,9 @@ export function decide(state: AggregateState | null, command: DomainCommand): Do
                 const before = boardCards(deck, board);
                 for (const uuid of Object.keys(after[board]).filter((key) => (before[key] || 0) !== after[board][key]).sort()) {
                     const previous = before[uuid] || 0;
-                    changes.push({ uuid, previous, delta: after[board][uuid] - previous, resulting: after[board][uuid], ...(board === 'side' ? { board } : {}) });
+                    const change: CardQuantityChange = { uuid, previous, delta: after[board][uuid] - previous, resulting: after[board][uuid] };
+                    if (board === 'side') change.board = board;
+                    changes.push(change);
                 }
             }
             return changes.length ? [{ type: 'CardQuantitiesAdjusted', changes }] : [];
@@ -132,17 +137,18 @@ export function decide(state: AggregateState | null, command: DomainCommand): Do
 }
 
 export function applyEvent(state: AggregateState | null, event: DomainEvent, id: string, at: string): AggregateState {
-    const common = { id, deleted: false, createdAt: at, updatedAt: at };
     switch (event.type) {
         case 'DeckImportedFromLegacy': case 'CollectionImportedFromLegacy': case 'StorageLocationImportedFromLegacy': case 'ProfileImportedFromLegacy': case 'WorkImportedFromLegacy':
             requireValue(!state && event.state.id === id, 'Invalid opening balance.'); return structuredClone(event.state);
-        case 'DeckCreated': requireValue(!state, 'Duplicate creation event.'); return { ...common, kind: 'deck', name: event.name, cards: {}, art: null, bannerCardUuid: null, palette: null, bannerCrop: null, topStyle: 'card', bannerBlend: null };
-        case 'CollectionCreated': case 'StorageLocationCreated': requireValue(!state, 'Duplicate creation event.'); return { ...common, kind: event.type === 'CollectionCreated' ? 'collection' : 'location', name: event.name };
+        case 'DeckCreated': requireValue(!state, 'Duplicate creation event.'); return { id, deleted: false, createdAt: at, updatedAt: at, kind: 'deck', name: event.name, cards: {}, art: null, bannerCardUuid: null, palette: null, bannerCrop: null, topStyle: 'card', bannerBlend: null };
+        case 'CollectionCreated': case 'StorageLocationCreated': requireValue(!state, 'Duplicate creation event.'); return { id, deleted: false, createdAt: at, updatedAt: at, kind: event.type === 'CollectionCreated' ? 'collection' : 'location', name: event.name };
         case 'ProfileArtworkSelected': case 'PrintingViewPreferenceSet': {
-            const profile = state?.kind === 'profile' ? state : { ...common, kind: 'profile' as const, userId: event.userId, profile: null, printingView: 'grid' as const };
-            return event.type === 'ProfileArtworkSelected' ? { ...profile, profile: event.profile, updatedAt: at } : { ...profile, printingView: event.printingView, updatedAt: at };
+            const profile: ProfileState = state?.kind === 'profile' ? structuredClone(state) : { id, deleted: false, createdAt: at, updatedAt: at, kind: 'profile', userId: event.userId, profile: null, printingView: 'grid' };
+            if (event.type === 'ProfileArtworkSelected') profile.profile = event.profile; else profile.printingView = event.printingView;
+            profile.updatedAt = at;
+            return profile;
         }
-        case 'ScanQueued': requireValue(!state, 'Duplicate scan.'); return { ...common, kind: 'work', deckId: event.deckId, fileName: event.fileName, contentType: event.contentType, blobId: event.blobId, pipeline: event.pipeline, status: 'pending', completed: 0, total: 0, cardsAdded: 0, error: null };
+        case 'ScanQueued': requireValue(!state, 'Duplicate scan.'); return { id, deleted: false, createdAt: at, updatedAt: at, kind: 'work', deckId: event.deckId, fileName: event.fileName, contentType: event.contentType, blobId: event.blobId, pipeline: event.pipeline, status: 'pending', completed: 0, total: 0, cardsAdded: 0, error: null };
     }
     requireValue(state && !state.deleted, 'Event has no live aggregate.');
     const next = structuredClone(state);

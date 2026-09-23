@@ -20,7 +20,7 @@ export function tileStarts(length, size, overlap) {
 	const out = [];
 	for (let p = 0; p < length - size; p += size - overlap) out.push(p);
 	out.push(length - size);
-	return [...new Set(out)];
+	return Array.from(new Set(out));
 }
 /**
  * @typedef {Object} PhotoScanOptions
@@ -165,7 +165,8 @@ export async function scanPhoto(options) {
 				region,
 				ms: performance.now() - t,
 				items: items.map((item) => ({
-					...item,
+					text: item.text,
+					score: item.score,
 					poly: item.poly.map(
 						/**
 						 * @param {number[]} values

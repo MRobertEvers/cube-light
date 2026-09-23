@@ -7,7 +7,7 @@ const read = (f) => JSON.parse(fs.readFileSync(new URL(f, import.meta.url))),
   references = read("photo-results/references-v1.json");
 for (const threshold of [0.75, 0.8, 0.85])
   for (const gap of [0.08, 0.12, 0.15]) {
-    const candidates = [...base.candidates];
+    const candidates = base.candidates.slice();
     for (const row of references.outputs) {
       const [a, b] = row.candidates;
       if (!a || a.score < threshold || a.score - (b?.score || 0) < gap)
@@ -39,7 +39,7 @@ for (const threshold of [0.75, 0.8, 0.85])
         JSON.stringify(
           {
             scope: "Cached composite, not a fresh end-to-end run",
-            names: [...new Set(candidates.map((c) => c.name))].sort(),
+            names: Array.from(new Set(candidates.map((c) => c.name))).sort(),
             candidates,
             metrics,
             totalMs: null,

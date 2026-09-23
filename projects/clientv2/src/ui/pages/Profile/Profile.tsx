@@ -246,17 +246,17 @@ export function Profile() {
 									value={crop.zoom}
 									min={1}
 									max={3}
-									onChange={(zoom) => setCrop({ ...crop, zoom })}
+									onChange={(zoom) => setCrop({ x: crop.x, y: crop.y, zoom })}
 								/>
 								<CropControl
 									label="Move left / right"
 									value={crop.x}
-									onChange={(x) => setCrop({ ...crop, x })}
+									onChange={(x) => setCrop({ x, y: crop.y, zoom: crop.zoom })}
 								/>
 								<CropControl
 									label="Move up / down"
 									value={crop.y}
-									onChange={(y) => setCrop({ ...crop, y })}
+									onChange={(y) => setCrop({ x: crop.x, y, zoom: crop.zoom })}
 								/>
 								<button
 									type="button"

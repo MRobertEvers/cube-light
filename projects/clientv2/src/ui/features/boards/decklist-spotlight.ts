@@ -1,5 +1,8 @@
 import type { BannerBlend } from '../../../domain/appearance/banner-blend';
-import { type BannerCrop, DEFAULT_BANNER_CROP } from '../../../domain/appearance/banner-crop';
+import {
+	type BannerCrop,
+	DEFAULT_BANNER_CROP
+} from '../../../domain/appearance/banner-crop';
 import {
 	type DeckTopStyle,
 	deckTopBannerCard,

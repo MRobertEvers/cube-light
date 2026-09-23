@@ -16,6 +16,18 @@ export function boardOf(board: DeckBoard | string | undefined): {
 	return board === 'side' ? { board: 'side' } : {};
 }
 
+/** A card edit on `board`, leaving the main board implicit as `boardOf` does. */
+export function cardEdit(
+	uuid: string,
+	action: CardEdit['action'],
+	count: number,
+	board: DeckBoard | string | undefined
+): CardEdit {
+	const edit: CardEdit = { uuid, action, count };
+	if (board === 'side') edit.board = 'side';
+	return edit;
+}
+
 /** Card information: downloaded once, then answered from this device. */
 export class CardApi {
 	private readonly reader: LocalReader;
@@ -42,11 +54,12 @@ export class CardApi {
 
 	/** The printing a card name (and optional set) refers to. */
 	resolve(name: string, setCode?: string): Promise<{ uuid: string }> {
-		return this.reader.json({
+		const query: { type: 'card.resolve'; name: string; setCode?: string } = {
 			type: 'card.resolve',
-			name,
-			...(setCode ? { setCode } : {})
-		});
+			name
+		};
+		if (setCode) query.setCode = setCode;
+		return this.reader.json(query);
 	}
 
 	suggestions(stub: string): Promise<CardSuggestions> {
@@ -138,12 +151,7 @@ export class CardApi {
 		const edits: CardEdit[] = [];
 		for (const card of cards) {
 			const resolved = await this.resolve(card.name, card.setCode);
-			edits.push({
-				uuid: resolved.uuid,
-				action: 'add',
-				count: card.count,
-				...boardOf(card.board)
-			});
+			edits.push(cardEdit(resolved.uuid, 'add', card.count, card.board));
 		}
 		return edits;
 	}

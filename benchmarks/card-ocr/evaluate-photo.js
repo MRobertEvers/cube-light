@@ -18,7 +18,13 @@ export function evaluatePhoto(candidates, truth) {
     );
     if (card) {
       unmatched.delete(card.id);
-      hits.push({ ...card, text: candidate.text });
+      hits.push({
+        id: card.id,
+        name: card.name,
+        visibility: card.visibility,
+        box: card.box,
+        text: candidate.text,
+      });
     } else falsePositives.push(candidate);
   }
   const missing = truth.cards.filter((card) => unmatched.has(card.id));

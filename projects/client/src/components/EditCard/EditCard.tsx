@@ -41,7 +41,18 @@ export function EditCardModal(props: EditCardModalProps) {
 						onCountDown={() => setCount((c) => (c > 0 ? c - 1 : c))}
 						onCountUp={() => setCount((c) => c + 1)}
 					/>
-					<button onClick={() => onSubmit({ ...card, count: count })}>
+					<button
+						onClick={() =>
+							onSubmit({
+								name: card.name,
+								count: count,
+								image: card.image,
+								art: card.art,
+								types: card.types,
+								manaCost: card.manaCost
+							})
+						}
+					>
 						Ok
 					</button>
 					<button onClick={() => onCancel()}>Cancel</button>

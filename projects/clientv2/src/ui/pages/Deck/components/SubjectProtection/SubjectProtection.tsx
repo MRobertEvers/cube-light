@@ -141,7 +141,7 @@ export function SubjectProtection(props: Props) {
 			context.setLineDash([]);
 		}
 		for (const stroke of draft?.stroke
-			? [...current.strokes, draft.stroke]
+			? current.strokes.concat([draft.stroke])
 			: current.strokes) {
 			context.strokeStyle =
 				stroke.label === 'foreground'
@@ -200,7 +200,7 @@ export function SubjectProtection(props: Props) {
 	}
 	function commitRect(rect: BannerProtectRect) {
 		if (rect.width < 0.02 || rect.height < 0.02) return;
-		onChange({ ...current, source: src, rect });
+		onChange({ source: src, rect, strokes: current.strokes });
 	}
 
 	async function runPreview() {
@@ -218,9 +218,10 @@ export function SubjectProtection(props: Props) {
 				feather,
 				(progress) =>
 					setStatus((s) => ({
-						...s,
+						running: s.running,
 						message: progress.message,
-						fraction: progress.fraction
+						fraction: progress.fraction,
+						error: s.error
 					}))
 			));
 			setPreview({
@@ -332,7 +333,8 @@ export function SubjectProtection(props: Props) {
 						if (draft.origin) {
 							const [ox, oy] = draft.origin;
 							setDraft({
-								...draft,
+								stroke: draft.stroke,
+								origin: draft.origin,
 								rect: {
 									x: Math.min(ox, x),
 									y: Math.min(oy, y),
@@ -352,8 +354,9 @@ export function SubjectProtection(props: Props) {
 								return;
 							setDraft({
 								stroke: {
-									...draft.stroke,
-									points: [...points, x, y]
+									label: draft.stroke.label,
+									radius: draft.stroke.radius,
+									points: points.concat([x, y])
 								}
 							});
 						}
@@ -362,9 +365,9 @@ export function SubjectProtection(props: Props) {
 						if (draft?.rect && draft.origin) commitRect(draft.rect);
 						else if (draft?.stroke)
 							onChange({
-								...current,
 								source: src,
-								strokes: [...current.strokes, draft.stroke]
+								rect: current.rect,
+								strokes: current.strokes.concat([draft.stroke])
 							});
 						setDraft(null);
 					}}
@@ -398,8 +401,8 @@ export function SubjectProtection(props: Props) {
 					type="button"
 					onClick={() =>
 						onChange({
-							...current,
 							source: src,
+							rect: current.rect,
 							strokes: current.strokes.slice(0, -1)
 						})
 					}
@@ -411,8 +414,8 @@ export function SubjectProtection(props: Props) {
 					type="button"
 					onClick={() =>
 						onChange({
-							...current,
 							source: src,
+							rect: current.rect,
 							strokes: []
 						})
 					}

@@ -11,17 +11,17 @@ function isDefined<T>(s: T | undefined): s is T {
  *
  * Usage:
  *
- * scls(styles, 'anchor', success && 'success')
+ * scls(styles, ['anchor', success && 'success'])
  *
  * @param styles
- * @param cls
+ * @param classNames
  * @returns
  */
 export function scls(
 	styleMap: Record<string, string>,
-	...cls: Array<string | undefined | null | false>
+	classNames: (string | null | false | undefined)[]
 ): string {
-	return cls
+	return classNames
 		.filter(isString)
 		.map((c: string) => styleMap[c])
 		.filter(isDefined)
