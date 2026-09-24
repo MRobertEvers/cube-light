@@ -2,9 +2,15 @@ import type { DeckDetail } from '../models/deck';
 
 export type DeckTopStyle = 'card' | 'full-art';
 
-/** Decks saved before the full-art top existed may hold anything here. */
+/**
+ * The top the deck page shows. Decks saved before the full-art top existed may
+ * hold anything here, and a deck with no card art (an empty one) has nothing
+ * to show full-art, so both fall back to the card top.
+ */
 export function deckTopStyle(deck: DeckDetail): DeckTopStyle {
-	return deck.topStyle === 'full-art' ? 'full-art' : 'card';
+	return deck.topStyle === 'full-art' && !!deckTopBannerCard(deck)?.art
+		? 'full-art'
+		: 'card';
 }
 
 /** The chosen banner card, or else the first card with art. */

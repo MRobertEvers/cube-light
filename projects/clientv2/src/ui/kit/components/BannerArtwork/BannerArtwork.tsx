@@ -20,6 +20,17 @@ type Props = {
 	artwork?: ArtworkInfo | null;
 };
 
+/**
+ * Natural sizes of images this page has already loaded, so a remount (switching tabs,
+ * navigating back) shows the image straight away instead of fading it in over the preview.
+ */
+const loadedImages = new Map<string, { width: number; height: number }>();
+
+function recordLoaded(src: string, width: number, height: number) {
+	loadedImages.set(src, { width: width, height: height });
+	return { src: src, width: width, height: height };
+}
+
 export function BannerArtwork(props: Props) {
 	const { src, frame, onChange, label, allowLeftBleed = false, artwork } = props;
 	const viewport = useRef<HTMLDivElement>(null);
@@ -53,18 +64,20 @@ export function BannerArtwork(props: Props) {
 		const element = image.current;
 		if (!src || !element || !element.complete || !element.naturalWidth)
 			return;
-		setNatural({
-			src,
-			width: element.naturalWidth,
-			height: element.naturalHeight
-		});
+		setNatural(
+			recordLoaded(src, element.naturalWidth, element.naturalHeight)
+		);
 	}, [src]);
 
-	// Natural size is recorded once the image has loaded.
-	const loaded = !!src && natural.src === src;
+	// Natural size is recorded once the image has loaded, here or in an earlier mount.
+	const earlier = src && natural.src !== src ? loadedImages.get(src) : undefined;
+	const measured = earlier
+		? { src: src ?? '', width: earlier.width, height: earlier.height }
+		: natural;
+	const loaded = !!src && measured.src === src;
 	const known = artwork
 		? { src: src ?? '', width: artwork.width, height: artwork.height }
-		: natural;
+		: measured;
 	const preview = artwork?.preview ?? null;
 	const scale =
 		known.src === src &&
@@ -177,11 +190,13 @@ export function BannerArtwork(props: Props) {
 					alt=""
 					draggable={false}
 					onLoad={(event) =>
-						setNatural({
-							src: src ?? '',
-							width: event.currentTarget.naturalWidth,
-							height: event.currentTarget.naturalHeight
-						})
+						setNatural(
+							recordLoaded(
+								src ?? '',
+								event.currentTarget.naturalWidth,
+								event.currentTarget.naturalHeight
+							)
+						)
 					}
 					// Unplaced, the image would show at its natural size in the corner.
 					style={

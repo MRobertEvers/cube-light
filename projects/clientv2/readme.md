@@ -173,6 +173,11 @@ tools/local-dns/deploy.sh mrobertevers.com local.mrobertevers.com 10.0.0.1 ~/.co
 Certificates last 90 days, so this renews roughly every 60 days. An expired
 certificate is never served; the server falls back to plain HTTP instead.
 
+With a certificate, port 3000 still answers plain HTTP as well: the first byte of each
+connection tells a TLS handshake from an HTTP request (`tools/plain-http.mjs`). So
+`http://localhost:3000` and `http://<lan-ip>:3000` keep working alongside the HTTPS
+name, without a secure context.
+
 #### How a certificate is issued (DNS-01)
 
 Let's Encrypt must check for itself that you control the domain. With DNS-01 it

@@ -4,6 +4,7 @@ import { config } from '../vite.config.mts';
 import { loadAcmeConfig, loadDevCertificate } from './dev-certs.mjs';
 import { certificateDomains, ensureCertificate } from './letsencrypt.mjs';
 import { startRegistration } from './local-dns/register.mjs';
+import { acceptPlainHttp } from './plain-http.mjs';
 
 /** @param {string[]} args */
 async function main(args) {
@@ -60,11 +61,15 @@ async function main(args) {
 	}
 	if (command === 'preview') {
 		const server = await preview(options);
+		if (certificate !== null && server.httpServer) acceptPlainHttp(server.httpServer);
 		server.printUrls();
 		return;
 	}
 	if (command !== 'dev') throw new Error(`Unknown Vite command: ${command}`);
 	const server = await createServer(options);
+	// With a certificate the port speaks HTTPS; keep plain HTTP working on it too, for
+	// devices that reach the machine by an address the certificate does not name.
+	if (certificate !== null && server.httpServer) acceptPlainHttp(server.httpServer);
 	await server.listen();
 	server.printUrls();
 	// Tell local-dns this machine's name and LAN addresses, so phones reach it by name.

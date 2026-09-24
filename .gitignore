@@ -24,6 +24,7 @@
 # Data
 **/AllPrintings.*
 **/*.sqlite
+**/*.sqlite.bak*
 
 .DS_Store
 
@@ -44,3 +45,6 @@
 projects/torimtg-core/dist/
 projects/clientv2/test-results/
 projects/clientv2/playwright-report/
+
+# Playwright MCP session logs and snapshots
+/.playwright-mcp/
