@@ -78,8 +78,14 @@
 	line-height: 1.35;
 }
 
-.suggestions li:hover,
 .suggestions .active {
 	background: #f6ece9;
 	color: #743c39;
+}
+
+@media (hover: hover) {
+	.suggestions li:hover {
+		background: #f6ece9;
+		color: #743c39;
+	}
 }

@@ -2,11 +2,14 @@ import React from 'react';
 import { BannerArtwork } from '../../kit/components/BannerArtwork/BannerArtwork';
 import type { BannerCrop, BannerFrame } from '../../../domain/appearance/banner-crop';
 import type { BannerBlend } from '../../../domain/appearance/banner-blend';
+import type { ArtworkInfo } from '../../../domain/appearance/artwork';
 import { readableAccent } from '../../../domain/appearance/card-palette';
 import styles from './spotlight-card.module.css';
 
 export type SpotlightCardProps = {
 	art: string | null;
+	/** The server-measured sidecar of `art`: placed and previewed before it loads. */
+	artInfo?: ArtworkInfo | null;
 	name: string;
 	createdAt?: string;
 	updatedAt?: string;
@@ -24,6 +27,7 @@ export type SpotlightCardProps = {
 export function SpotlightCard(props: SpotlightCardProps) {
 	const {
 		art,
+		artInfo,
 		name,
 		createdAt,
 		updatedAt,
@@ -65,6 +69,7 @@ export function SpotlightCard(props: SpotlightCardProps) {
 							>
 								<BannerArtwork
 									src={art}
+									artwork={artInfo}
 									frame={crop.desktop}
 									onChange={
 										onCropChange
@@ -89,6 +94,7 @@ export function SpotlightCard(props: SpotlightCardProps) {
 							>
 								<BannerArtwork
 									src={art}
+									artwork={artInfo}
 									frame={crop.mobile}
 									onChange={
 										onCropChange

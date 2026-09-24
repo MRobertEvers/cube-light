@@ -1,14 +1,6 @@
 .header {
 	--collapse: 0;
-	position: sticky;
-	top: 0;
-	z-index: 50;
 	box-sizing: border-box;
-	height: var(--app-header-height);
-	padding: 0 8px 0 14px;
-	display: flex;
-	align-items: center;
-	gap: 10px;
 	color: var(--theme-text);
 	background-color: color-mix(
 		in srgb,
@@ -22,6 +14,21 @@
 			#e5e1df
 		);
 	box-shadow: 0 2px 12px rgba(38, 38, 38, calc(0.04 + var(--collapse) * 0.08));
+}
+
+.sticky {
+	position: sticky;
+	top: 0;
+	z-index: 50;
+}
+
+.bar {
+	box-sizing: border-box;
+	height: var(--app-header-height);
+	padding: 0 8px 0 14px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
 }
 
 .header a {
@@ -38,7 +45,7 @@
 }
 
 .site,
-.deck {
+.identity {
 	position: absolute;
 	inset: 0;
 	display: flex;
@@ -51,7 +58,7 @@
 	transform: translateY(calc(var(--collapse) * -14px));
 }
 
-.deck {
+.identity {
 	opacity: clamp(0, var(--collapse) * 2 - 1, 1);
 	transform: translateY(calc((1 - var(--collapse)) * 14px));
 }
@@ -72,16 +79,8 @@
 }
 
 /* A back button takes the brand name's room; the icon still links home. */
-.header:has([data-back-slot]:not(:empty)) .brand span {
+.bar:has([data-back-slot]:not(:empty)) .brand span {
 	display: none;
-}
-
-.navigation {
-	margin-left: auto;
-	display: flex;
-	gap: 14px;
-	font-size: 14px;
-	font-weight: 600;
 }
 
 .art {
@@ -109,74 +108,9 @@
 	color: var(--deck-banner-ink, inherit);
 }
 
-.menu {
-	position: relative;
-	flex: none;
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	opacity: clamp(0, var(--collapse) * 2 - 1, 1);
-}
-
-.menuButton {
-	display: grid;
-	place-items: center;
-	width: 40px;
-	height: 40px;
-	padding: 0;
-	border: 0;
-	border-radius: 8px;
-	background: none;
-	color: var(--deck-banner-ink, #47413f);
-	cursor: pointer;
-}
-
-.menuButton:focus-visible {
-	outline: 2px solid currentColor;
-}
-
-/* Three bars: the middle one is the element, the others its shadows. */
-.menuIcon {
-	width: 20px;
-	height: 2px;
-	border-radius: 1px;
-	background: currentColor;
-	box-shadow:
-		0 -6px 0 currentColor,
-		0 6px 0 currentColor;
-}
-
-.menuPanel {
-	position: absolute;
-	top: calc(100% + 8px);
-	right: 0;
-	min-width: 160px;
-	padding: 6px;
-	display: grid;
-	background: #fff;
-	border: 1px solid #e5e1df;
-	border-radius: 10px;
-	box-shadow: 0 12px 28px rgba(38, 38, 38, 0.16);
-	font-weight: 600;
-}
-
-.menuPanel a,
-.menuPanel button {
-	padding: 10px 12px;
-	border-radius: 6px;
-}
-
-.menuPanel a:hover,
-.menuPanel a:focus-visible,
-.menuPanel button:hover,
-.menuPanel button:focus-visible {
-	background: #f4f1ef;
-	color: #8e2524;
-}
-
 @media (prefers-reduced-motion: reduce) {
 	.site,
-	.deck {
+	.identity {
 		transform: none;
 	}
 }

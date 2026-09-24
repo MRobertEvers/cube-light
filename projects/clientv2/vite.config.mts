@@ -3,12 +3,13 @@ import { cp } from 'node:fs/promises';
 import path from 'node:path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { buildShellWorker } from './tools/shell-worker.mjs';
+import { buildShellWorker, serveShellWorker } from './tools/shell-worker.mjs';
 
 // tools/vite.mjs loads this named export through Vite's programmatic API.
 export const config = defineConfig({
 	plugins: [
 		react(),
+		serveShellWorker({ root: fileURLToPath(new URL('./', import.meta.url)) }),
 		{
 			name: 'copy-public-preserving-model-links',
 			closeBundle: async function () {
@@ -43,6 +44,11 @@ export const config = defineConfig({
 	},
 	build: {
 		outDir: 'dist',
-		copyPublicDir: false
+		copyPublicDir: false,
+		// Mana symbols stay separate fingerprinted files: cached for good, and not
+		// inlined into the bundle, since most pages show only a few of them.
+		assetsInlineLimit: function (file) {
+			return file.includes('/mana-symbols/') ? false : undefined;
+		}
 	}
 });

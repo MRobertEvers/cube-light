@@ -242,6 +242,7 @@ export function MobileDecklistBoard(props: MobileDecklistBoardProps) {
 				<div className={styles.spotlight}>
 					<SpotlightCard
 						art={banner.art}
+						artInfo={banner.artInfo}
 						name={banner.name}
 						crop={bannerCrop}
 						bannerBlend={bannerBlend}

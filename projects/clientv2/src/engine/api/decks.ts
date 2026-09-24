@@ -1,6 +1,8 @@
-import { normalizeTags, type CardEdit, type DomainCommand } from '@torimtg/core';
+import { imageRefOf, normalizeTags, type CardEdit, type DomainCommand } from '@torimtg/core';
 import type { ToriMTG } from '../core/types';
 import type { LocalReader } from '../core/local-reader';
+import { deckArtworkUrls, missingSidecars } from '../core/image-sidecars';
+import type { ArtworkSidecars } from '../jobs/artwork-sidecars';
 import { newId } from '../../domain/ids';
 import type { CardPalette } from '../../domain/appearance/card-palette';
 import type { BannerCrop } from '../../domain/appearance/banner-crop';
@@ -40,38 +42,59 @@ export class DeckApi {
 	private readonly tori: ToriMTG;
 	private readonly reader: LocalReader;
 	private readonly cards: CardApi;
+	private readonly sidecars: ArtworkSidecars;
 	/** Each deck's card steps commit one after another, in the order they were taken. */
 	private readonly stepQueues = new Map<string, Promise<unknown>>();
 
-	constructor(tori: ToriMTG, reader: LocalReader, cards: CardApi) {
+	constructor(tori: ToriMTG, reader: LocalReader, cards: CardApi, sidecars: ArtworkSidecars) {
 		this.tori = tori;
 		this.reader = reader;
 		this.cards = cards;
+		this.sidecars = sidecars;
 	}
 
 	/** Every deck; waits for the first download when nothing is on this device yet. */
 	async list(): Promise<Versioned<DeckSummaries>> {
 		const snapshot = await this.reader.available<DeckSummaries>({ type: 'decks' });
+		this.warmSidecars(snapshot.data || []);
 		return { value: snapshot.data || [], revision: snapshot.localRevision };
 	}
 
 	/** The decks saved on this device, without waiting for the server. Null before the first download. */
 	async listLocal(): Promise<Versioned<DeckSummaries> | null> {
 		const snapshot = await this.tori.queries.read<DeckSummaries>({ type: 'decks' });
-		return snapshot.presence === 'missing' ? null : { value: snapshot.data!, revision: snapshot.localRevision };
+		if (snapshot.presence === 'missing') return null;
+		this.warmSidecars(snapshot.data!);
+		return { value: snapshot.data!, revision: snapshot.localRevision };
 	}
 
-	/** One deck; waits for a download when it is not on this device yet. */
+	/**
+	 * One deck; waits for a download when it is not on this device yet. The sidecars of
+	 * the images it shows first are waited for too (briefly), so it paints complete.
+	 */
 	async get(deckId: string): Promise<Versioned<DeckDetail>> {
-		const snapshot = await this.reader.available<DeckDetail>({ type: 'deck', id: deckId });
+		let snapshot = await this.reader.available<DeckDetail>({ type: 'deck', id: deckId });
 		if (!snapshot.data) throw new Error('This deck was deleted or is not downloaded.');
-		return { value: snapshot.data, revision: snapshot.localRevision };
+		const missing = missingSidecars(deckArtworkUrls(snapshot.data), snapshot.data.artwork);
+		if (missing.length) {
+			await this.sidecars.fetch(missing);
+			const fresher = await this.tori.queries.read<DeckDetail>({ type: 'deck', id: deckId });
+			if (fresher.data) snapshot = fresher;
+		}
+		return { value: snapshot.data!, revision: snapshot.localRevision };
 	}
 
 	/** One deck as saved on this device, without waiting. `deleted` once the deck is gone for good. */
 	async getLocal(deckId: string): Promise<{ deck: DeckDetail | null; deleted: boolean; revision: number }> {
 		const snapshot = await this.tori.queries.read<DeckDetail>({ type: 'deck', id: deckId });
+		// An edit can change which images the deck shows first; their sidecars follow as a change.
+		if (snapshot.data) this.sidecars.request(missingSidecars(deckArtworkUrls(snapshot.data), snapshot.data.artwork));
 		return { deck: snapshot.data, deleted: !snapshot.data && snapshot.presence === 'complete', revision: snapshot.localRevision };
+	}
+
+	/** Downloads the sidecars of every deck's art in the background, so opening a deck needn't wait for them. */
+	private warmSidecars(decks: DeckSummaries): void {
+		this.sidecars.request(decks.flatMap((deck) => missingSidecars([deck.art], deck.artwork)));
 	}
 
 	/** Every saved edit to the deck, newest first. */
@@ -104,6 +127,9 @@ export class DeckApi {
 			bannerCardUuid: cardUuid
 		};
 		if (art) command.art = art;
+		// Measured before the switch, so the new banner paints placed and themed.
+		const ref = imageRefOf(art);
+		if (ref) await this.sidecars.fetch([ref]);
 		await this.tori.commands.execute(command);
 	}
 

@@ -44,9 +44,9 @@ import { useAppSelector } from '../../../redux/use-app-selector';
 import { closeAddCards, openAddCards } from '../../../redux/add-cards/addCardsSlice';
 import { selectAddCards } from '../../../redux/add-cards/add-cards.selectors';
 import { onAccent, readableAccent } from '../../../domain/appearance/card-palette';
-import { useCardPalette } from '../../kit/utils/use-card-palette';
 import { DeckFullArtTop } from '../../kit/components/DeckFullArtTop/DeckFullArtTop';
 import { DEFAULT_BANNER_CROP } from '../../../domain/appearance/banner-crop';
+import { artworkOf } from '../../../domain/appearance/artwork';
 import { deckTopBannerCard, deckTopStyle } from '../../../domain/appearance/deck-top-style';
 import { ImageCardImport } from 'src/ui/kit/components/ImageCardImport/ImageCardImport';
 import { useImageImportQueue } from 'src/ui/kit/utils/use-image-import-queue';
@@ -54,7 +54,7 @@ import { useWorkQueue } from 'src/ui/kit/utils/use-work-queue';
 import { useIsPhoneLayout } from '../../kit/hooks/useIsPhoneLayout';
 import { MobileDeckView } from './MobileDeckView';
 import { useHistoryModal } from '../../kit/hooks/useHistoryModal';
-import { useCloseOnEscape } from '../../kit/hooks/useCloseOnEscape';
+import { SmallInputModal } from '../../kit/components/SmallInputModal/SmallInputModal';
 import { DeleteDeckDialog } from './DeleteDeckDialog';
 
 type DeckModal =
@@ -154,8 +154,9 @@ export function Deck(props: DeckProps) {
 	const topStyle = data ? deckTopStyle(data) : 'card';
 	const visualization = deckPageVisualization(view, data?.boardVisualization);
 	const { layout, controls: Controls } = visualization;
-	const generatedPalette = useCardPalette(previewIcon);
-	const palette = data?.palette ?? generatedPalette;
+	// The server measured the icon's palette; it arrives with the deck, so the first paint is themed.
+	const palette =
+		data?.palette ?? artworkOf(data?.artwork, previewIcon)?.palette ?? null;
 	const paletteStyle = palette
 		? ({
 				'--deck-accent': palette.accent,
@@ -219,7 +220,6 @@ export function Deck(props: DeckProps) {
 		setDetailsDraft(null);
 		modalHistory.close();
 	}, [modalHistory.close]);
-	useCloseOnEscape(closeDeckDetails, showDeckDetailsModal && !isSaving);
 
 	/** Opens the card editor on every board's printings of the group's card. */
 	function editCard(group: DeckCardGroup) {
@@ -288,6 +288,9 @@ export function Deck(props: DeckProps) {
 		);
 	}
 
+	const headerArt =
+		topStyle === 'full-art' ? (topBannerCard?.art ?? null) : previewIcon;
+
 	const controls: BoardControlsProps = {
 		deck: data,
 		deckId,
@@ -322,11 +325,8 @@ export function Deck(props: DeckProps) {
 				<DeckHeader
 					backSlotRef={backSlotRef}
 					name={data.name}
-					art={
-						topStyle === 'full-art'
-							? (topBannerCard?.art ?? null)
-							: previewIcon
-					}
+					art={headerArt}
+					artInfo={artworkOf(data.artwork, headerArt)}
 					artFrame={bannerCrop.mobile}
 					banner={bannerElement}
 					style={paletteStyle}
@@ -364,12 +364,10 @@ export function Deck(props: DeckProps) {
 				</Modal>
 			) : showAddCardModal ? (
 				isPhoneLayout ? (
-					<Modal>
-						<AddCardSingleMobile
-							deckId={deckId}
-							onEvent={onAddCardEvent}
-						/>
-					</Modal>
+					<AddCardSingleMobile
+						deckId={deckId}
+						onEvent={onAddCardEvent}
+					/>
 				) : (
 					<Modal>
 						<AddCard deckId={deckId} onEvent={onAddCardEvent} />
@@ -380,56 +378,13 @@ export function Deck(props: DeckProps) {
 					<AddCards onClose={modalHistory.close} />
 				</Modal>
 			) : showDeckDetailsModal ? (
-				<Modal>
-					<section
-						className={styles['deck-details-modal']}
-						role="dialog"
-						aria-modal="true"
-						aria-labelledby="deck-details-title"
-					>
-						<h2 id="deck-details-title">Name and tags</h2>
-						<div className={styles['deck-details-fields']}>
-							<label htmlFor="edit-deck-name">Deck name</label>
-							<input
-								autoFocus
-								id="edit-deck-name"
-								value={name}
-								disabled={isSaving}
-								maxLength={1024}
-								onChange={(event) =>
-									setDetailsDraft({
-										deckId,
-										name: event.target.value,
-										tags
-									})
-								}
-								onKeyDown={(event) => {
-									if (event.key === 'Enter') void saveDetails();
-								}}
-							/>
-							<label htmlFor="edit-deck-tags">Tags</label>
-							<TagInput
-								id="edit-deck-tags"
-								tags={tags}
-								suggestions={tagSuggestions}
-								disabled={isSaving}
-								placeholder="Add a tag, e.g. Cube"
-								onChange={(next) =>
-									setDetailsDraft({ deckId, name, tags: next })
-								}
-								onSubmit={() => void saveDetails()}
-							/>
-							<p className={styles['field-hint']}>
-								Press Enter or comma after each tag. Tags put
-								this deck into groups on the decks page.
-							</p>
-						</div>
-						{saveError && (
-							<p className={styles['save-error']} role="alert">
-								{saveError}
-							</p>
-						)}
-						<div className={styles['deck-details-actions']}>
+				<SmallInputModal
+					title="Name and tags"
+					onClose={closeDeckDetails}
+					closeDisabled={isSaving}
+					busy={isSaving}
+					actions={
+						<>
 							<Button
 								onClick={closeDeckDetails}
 								disabled={isSaving}
@@ -437,6 +392,7 @@ export function Deck(props: DeckProps) {
 								Cancel
 							</Button>
 							<Button
+								variant="primary"
 								onClick={() => {
 									void saveDetails();
 								}}
@@ -444,17 +400,58 @@ export function Deck(props: DeckProps) {
 							>
 								{isSaving ? <SavingLabel /> : 'Save'}
 							</Button>
-						</div>
-					</section>
-				</Modal>
+						</>
+					}
+				>
+					<div className={styles['deck-details-fields']}>
+						<label htmlFor="edit-deck-name">Deck name</label>
+						<input
+							autoFocus
+							id="edit-deck-name"
+							value={name}
+							disabled={isSaving}
+							maxLength={1024}
+							enterKeyHint="done"
+							onChange={(event) =>
+								setDetailsDraft({
+									deckId,
+									name: event.target.value,
+									tags
+								})
+							}
+							onKeyDown={(event) => {
+								if (event.key === 'Enter') void saveDetails();
+							}}
+						/>
+						<label htmlFor="edit-deck-tags">Tags</label>
+						<TagInput
+							id="edit-deck-tags"
+							tags={tags}
+							suggestions={tagSuggestions}
+							disabled={isSaving}
+							placeholder="Add a tag, e.g. Cube"
+							onChange={(next) =>
+								setDetailsDraft({ deckId, name, tags: next })
+							}
+							onSubmit={() => void saveDetails()}
+						/>
+						<p className={styles['field-hint']}>
+							Press Enter or comma after each tag. Tags put this
+							deck into groups on the decks page.
+						</p>
+					</div>
+					{saveError && (
+						<p className={styles['save-error']} role="alert">
+							{saveError}
+						</p>
+					)}
+				</SmallInputModal>
 			) : showDeleteDeckModal && data ? (
-				<Modal>
-					<DeleteDeckDialog
-						deckName={data.name}
-						onCancel={modalHistory.close}
-						onDelete={deleteThisDeck}
-					/>
-				</Modal>
+				<DeleteDeckDialog
+					deckName={data.name}
+					onCancel={modalHistory.close}
+					onDelete={deleteThisDeck}
+				/>
 			) : undefined}
 			{isPhoneLayout ? (
 				<MobileDeckView
@@ -478,6 +475,7 @@ export function Deck(props: DeckProps) {
 						<DeckFullArtTop
 							ref={setBannerElement}
 							src={topBannerCard.art}
+							artInfo={artworkOf(data.artwork, topBannerCard.art)}
 							crop={bannerCrop}
 							name={data.name}
 							cardCount={data.deck.count}

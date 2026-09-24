@@ -2,6 +2,8 @@
 .scrim {
 	position: fixed;
 	inset: 0;
+	box-sizing: border-box;
+	padding: var(--visual-viewport-top, 0px) 0 var(--keyboard-inset, 0px);
 	z-index: 200;
 	display: flex;
 	justify-content: flex-end;
@@ -55,8 +57,10 @@
 	cursor: pointer;
 }
 
-.back:hover {
-	background: #f6ece9;
+@media (hover: hover) {
+	.back:hover {
+		background: #f6ece9;
+	}
 }
 
 .title {

@@ -44,8 +44,10 @@
 	cursor: default;
 }
 
-.suggestion:hover:not(:disabled) {
-	color: #4f2624;
+@media (hover: hover) {
+	.suggestion:hover:not(:disabled) {
+		color: #4f2624;
+	}
 }
 
 .line-number {

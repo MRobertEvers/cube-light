@@ -2,6 +2,8 @@ import { parseArgs } from 'node:util';
 import { build, createServer, preview } from 'vite';
 import { config } from '../vite.config.mts';
 import { loadAcmeConfig, loadDevCertificate } from './dev-certs.mjs';
+import { certificateDomains, ensureCertificate } from './letsencrypt.mjs';
+import { startRegistration } from './local-dns/register.mjs';
 
 /** @param {string[]} args */
 async function main(args) {
@@ -20,10 +22,13 @@ async function main(args) {
 	const { port, host, open, strictPort, mode } = values;
 	// Without a trusted certificate a LAN origin is not a secure context, so the
 	// browser withholds the install prompt and the offline shell worker.
+	if (command === 'dev' || command === 'preview') await ensureCertificate();
 	const certificate = await loadDevCertificate();
-	// A publicly trusted certificate is issued for a real domain, so that name
-	// has to be accepted alongside the mDNS one the config already allows.
+	// A publicly trusted certificate is issued for a real domain, so its names have to
+	// be accepted alongside the mDNS ones the config already allows. A leading dot
+	// matches the name and every subdomain, which also covers a `*.` wildcard.
 	const acme = await loadAcmeConfig();
+	const certificateHosts = acme ? certificateDomains(acme).map((name) => `.${name.replace(/^\*\./, '')}`) : [];
 	/** @param {typeof config.server} base */
 	function serverConfig(base) {
 		/** @type {Record<string, unknown>} */
@@ -36,7 +41,7 @@ async function main(args) {
 		if (open !== undefined) result.open = open;
 		if (strictPort !== undefined) result.strictPort = strictPort;
 		if (certificate !== null) result.https = certificate;
-		if (acme) result.allowedHosts = (config.server.allowedHosts || []).concat([`.${acme.domain}`]);
+		if (acme) result.allowedHosts = (config.server.allowedHosts || []).concat(certificateHosts);
 		return result;
 	}
 	/** @type {Record<string, unknown>} */
@@ -62,6 +67,9 @@ async function main(args) {
 	const server = await createServer(options);
 	await server.listen();
 	server.printUrls();
+	// Tell local-dns this machine's name and LAN addresses, so phones reach it by name.
+	if (acme && acme.localDns && acme.localDns.registry)
+		startRegistration({ registry: acme.localDns.registry, name: acme.localDns.name });
 	server.bindCLIShortcuts({ print: true });
 }
 

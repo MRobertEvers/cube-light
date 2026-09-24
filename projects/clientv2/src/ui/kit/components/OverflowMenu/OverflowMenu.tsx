@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 
+import { useHotkey, useHotkeyLayer } from '../../hotkeys/Hotkeys';
 import styles from './overflow-menu.module.css';
 
 type OverflowMenuProps = React.PropsWithChildren<{
@@ -62,18 +63,20 @@ export function OverflowMenu(props: OverflowMenuProps) {
 			)
 				setOpen(false);
 		}
-		function onKeyDown(event: KeyboardEvent) {
-			if (event.key !== 'Escape') return;
-			setOpen(false);
-			trigger.current?.focus();
-		}
 		window.addEventListener('pointerdown', onPointerDown);
-		window.addEventListener('keydown', onKeyDown);
 		return function () {
 			window.removeEventListener('pointerdown', onPointerDown);
-			window.removeEventListener('keydown', onKeyDown);
 		};
 	}, [open]);
+	const layer = useHotkeyLayer('menu', { elementRef: panel, enabled: open });
+	useHotkey(
+		'Escape',
+		() => {
+			setOpen(false);
+			trigger.current?.focus();
+		},
+		{ layer, enabled: open }
+	);
 
 	useEffect(() => {
 		if (disabled) setOpen(false);

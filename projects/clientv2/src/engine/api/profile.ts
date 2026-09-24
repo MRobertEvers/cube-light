@@ -1,5 +1,5 @@
 import type { ToriMTG } from '../core/types';
-import type { AuthUser, PrintingView, UserProfile } from '../../domain/models/session';
+import { portableProfile, type AuthUser, type PrintingView, type UserProfile } from '../../domain/models/session';
 import type { DeckGroup } from '../../domain/models/deck';
 import type { Versioned } from './versioned';
 
@@ -18,12 +18,12 @@ export class ProfileApi {
 			type: 'profile.artwork',
 			id: `profile_${user.id}`,
 			userId: user.id,
-			profile
+			profile: portableProfile(profile)
 		});
 		const saved = await this.tori.queries.read<{ profile: UserProfile | null }>({
 			type: 'profile'
 		});
-		return { id: user.id, username: user.username, profile: saved.data?.profile || null } as AuthUser;
+		return { id: user.id, username: user.username, profile: saved.data?.profile ? portableProfile(saved.data.profile) : null } as AuthUser;
 	}
 
 	/** The saved printing view, or null before one is saved. */

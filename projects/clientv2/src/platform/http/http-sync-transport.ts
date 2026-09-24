@@ -88,8 +88,16 @@ export class HttpSyncTransport implements SyncTransport {
             case 'card.names': path = `/suggest/card-names/${query.format}`; break;
             case 'blob': path = `/sync/v1/blobs/${encodeURIComponent(query.id)}`; break;
             case 'history': path = `/sync/v1/history/${encodeURIComponent(query.id)}`; break;
+            case 'image.meta': path = `/images/${query.variant}/${encodeURIComponent(query.id)}.json`; break;
         }
-        const response = await this.request(path);
+        let response: Response;
+        try { response = await this.request(path); }
+        catch (error) {
+            // No sidecar is an answer, not a failure: store it so the image is not asked about again.
+            if (query.type === 'image.meta' && error instanceof SyncTransportError && error.status === 404)
+                return { key: queryKey(query), body: new Blob([]), status: 404, contentType: 'application/json', validatedAt: new Date().toISOString() };
+            throw error;
+        }
         return { key: queryKey(query), body: await response.blob(), status: response.status, contentType: response.headers.get('Content-Type') || 'application/octet-stream', validatedAt: new Date().toISOString() };
     }
 

@@ -1,0 +1,24 @@
+[Unit]
+Description=local-dns: answers private device names for WireGuard peers, forwards the rest
+After=wg-quick@wg0.service local-dns-endpoints.service
+Requires=wg-quick@wg0.service
+Wants=local-dns-endpoints.service
+PartOf=wg-quick@wg0.service
+
+[Service]
+# ZONE, LISTEN, TUNNEL_SUBNET and UPSTREAM come from here; see deploy.sh.
+EnvironmentFile=/etc/local-dns/env
+ExecStart=/usr/local/bin/node /opt/local-dns/local-dns.mjs --zone ${ZONE} --listen ${LISTEN} --port 53 --no-mdns --hosts /etc/local-dns/hosts --upstream ${UPSTREAM} \
+    --registry-port 8053 --tunnel-subnet ${TUNNEL_SUBNET} --endpoints /run/local-dns/endpoints
+DynamicUser=yes
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target wg-quick@wg0.service

@@ -1,4 +1,5 @@
 import type { CardPalette } from '../appearance/card-palette';
+import type { DeckArtwork } from '../appearance/artwork';
 import type { BannerCrop } from '../appearance/banner-crop';
 import type { DeckTopStyle } from '../appearance/deck-top-style';
 import type { BannerBlend } from '../appearance/banner-blend';
@@ -39,6 +40,8 @@ export type DeckNote = {
 export type DeckDetail = {
 	name: string;
 	icon: string | null;
+	/** Server-measured sidecars for the icon, the banner card and the first card's art. */
+	artwork: DeckArtwork;
 	bannerCardUuid: string | null;
 	bannerCard: {
 		name: string;
@@ -67,6 +70,8 @@ export type DeckSummary = {
 	deckId: string;
 	name: string;
 	art: string | null;
+	/** The server-measured sidecar for `art`, once downloaded. */
+	artwork: DeckArtwork;
 	bannerBlend?: BannerBlend | null;
 	/** Every color in a main-board card's mana cost, in WUBRG order. */
 	colors: DeckColor[];

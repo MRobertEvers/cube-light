@@ -8,6 +8,7 @@ import { CardDatabase } from './database/cards/CardDatabase';
 import { createRoutes } from './routes/routes';
 import { CardImageService } from './images/card-images';
 import { FileImageCache } from './images/FileImageCache';
+import { NativeImageMeasurer } from './images/image-measurer';
 import { createKVStore } from './auth/kv-store';
 import { UserStore } from './auth/UserStore';
 
@@ -19,7 +20,8 @@ async function main() {
 	const cDb = new CardDatabase(CARD_DATABASE_PATH);
 	const db = await Database.Sqlite('database.sqlite');
 	const images = new CardImageService(
-		new FileImageCache(path.join(os.homedir(), 'Documents/mtg-card-images'))
+		new FileImageCache(path.join(os.homedir(), 'Documents/mtg-card-images')),
+		new NativeImageMeasurer()
 	);
 
 	const kv = createKVStore();

@@ -1,4 +1,5 @@
 import type { BannerBlend } from '../../../domain/appearance/banner-blend';
+import { type ArtworkInfo, artworkOf } from '../../../domain/appearance/artwork';
 import {
 	type BannerCrop,
 	DEFAULT_BANNER_CROP
@@ -12,7 +13,7 @@ import type { GroupedDeck } from '../../../domain/deck/grouping';
 
 /** The spotlight card the decklist boards show above their rows. */
 export type DecklistSpotlightProps = {
-	banner: { art: string | null; name: string } | null;
+	banner: { art: string | null; artInfo: ArtworkInfo | null; name: string } | null;
 	bannerCrop: BannerCrop;
 	bannerBlend?: BannerBlend | null;
 	/** A full-art top already shows the banner, so the spotlight is hidden. */
@@ -22,7 +23,9 @@ export type DecklistSpotlightProps = {
 export function decklistSpotlight(deck: GroupedDeck): DecklistSpotlightProps {
 	const banner = deckTopBannerCard(deck);
 	return {
-		banner: banner ? { art: banner.art, name: banner.name } : null,
+		banner: banner
+			? { art: banner.art, artInfo: artworkOf(deck.artwork, banner.art), name: banner.name }
+			: null,
 		bannerCrop: deck.bannerCrop ?? DEFAULT_BANNER_CROP,
 		bannerBlend: deck.bannerBlend,
 		topStyle: deckTopStyle(deck)

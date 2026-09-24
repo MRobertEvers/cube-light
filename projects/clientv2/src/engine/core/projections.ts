@@ -3,6 +3,7 @@ import type { DeckBoard, DeckState, EventEnvelope, Query, WorkState } from '@tor
 import type { Dataset } from './types';
 import { cardFields, identityOf, overviewOf, type CardCatalog } from './card-catalog';
 import type { BlobUrlResolver } from '../ports';
+import { artworkFor, deckArtworkUrls, type ImageSidecars } from './image-sidecars';
 import { manaCostColors } from '../../domain/deck/deck-colors';
 
 function art(deck: DeckState, cards: CardCatalog): string | null {
@@ -43,15 +44,22 @@ function blend(deck: DeckState, blobs: BlobUrlResolver): unknown {
     return { config: deck.bannerBlend.config, images: { desktop: blobs.url(deck.bannerBlend.images.desktop), mobile: blobs.url(deck.bannerBlend.images.mobile), tile: blobs.url(deck.bannerBlend.images.tile) } };
 }
 
-export function projectQuery(data: Dataset, cards: CardCatalog, blobs: BlobUrlResolver, query: Query): unknown {
+export function projectQuery(data: Dataset, cards: CardCatalog, sidecars: ImageSidecars, blobs: BlobUrlResolver, query: Query): unknown {
     const states = data.states.filter((state) => !state.deleted);
     switch (query.type) {
-        case 'decks': return states.filter((state): state is DeckState => state.kind === 'deck').map((deck) => ({ deckId: deck.id, name: deck.name, art: art(deck, cards), bannerBlend: blend(deck, blobs), colors: colors(deck, cards), tags: deck.tags ?? [], createdAt: deck.createdAt, updatedAt: deck.updatedAt }));
+        case 'decks': return states.filter((state): state is DeckState => state.kind === 'deck').map((deck) => {
+            const deckArt = art(deck, cards);
+            return { deckId: deck.id, name: deck.name, art: deckArt, artwork: artworkFor([deckArt], sidecars), bannerBlend: blend(deck, blobs), colors: colors(deck, cards), tags: deck.tags ?? [], createdAt: deck.createdAt, updatedAt: deck.updatedAt };
+        });
         case 'deck': {
             const deck = states.find((state) => state.id === query.id);
             if (deck?.kind !== 'deck') return null;
             const banner = identityOf(cards[deck.bannerCardUuid || '']);
-            return { name: deck.name, icon: art(deck, cards), bannerCardUuid: deck.bannerCardUuid, bannerCard: banner, palette: deck.palette, bannerCrop: deck.bannerCrop, bannerBlend: blend(deck, blobs), topStyle: deck.topStyle, boardVisualization: deck.boardVisualization ?? null, lastEdit: deck.updatedAt, cards: boardEntries(deck, 'main', cards), sideboard: boardEntries(deck, 'side', cards), notes: notes(deck), tags: deck.tags ?? [] };
+            const icon = art(deck, cards);
+            const main = boardEntries(deck, 'main', cards) as Array<{ art?: string | null }>;
+            // The sidecars of the images shown first travel with the deck, so its first paint is complete.
+            const artwork = artworkFor(deckArtworkUrls({ icon, bannerCard: banner, cards: main }), sidecars);
+            return { name: deck.name, icon, artwork, bannerCardUuid: deck.bannerCardUuid, bannerCard: banner, palette: deck.palette, bannerCrop: deck.bannerCrop, bannerBlend: blend(deck, blobs), topStyle: deck.topStyle, boardVisualization: deck.boardVisualization ?? null, lastEdit: deck.updatedAt, cards: main, sideboard: boardEntries(deck, 'side', cards), notes: notes(deck), tags: deck.tags ?? [] };
         }
         case 'collections': return states.filter((state) => state.kind === 'collection').map((state) => ({ collection_id: state.id, name: 'name' in state ? state.name : '' }));
         case 'locations': return states.filter((state) => state.kind === 'location').map((state) => ({ storage_location_id: state.id, name: 'name' in state ? state.name : '' }));

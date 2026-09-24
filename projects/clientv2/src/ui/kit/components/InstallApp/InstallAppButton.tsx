@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { usePwaInstall } from './PwaInstallProvider';
+import { useHotkey, useHotkeyLayer } from '../../hotkeys/Hotkeys';
 import styles from './install-app.module.css';
 
 export function InstallAppButton() {
@@ -10,14 +11,12 @@ export function InstallAppButton() {
 	useEffect(() => {
 		if (!instructionsOpen) return;
 		closeButton.current?.focus();
-		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === 'Escape') setInstructionsOpen(false);
-		}
-		window.addEventListener('keydown', closeOnEscape);
-		return function () {
-			window.removeEventListener('keydown', closeOnEscape);
-		};
 	}, [instructionsOpen]);
+	const layer = useHotkeyLayer('popover', { enabled: instructionsOpen });
+	useHotkey('Escape', () => setInstructionsOpen(false), {
+		layer,
+		enabled: instructionsOpen
+	});
 
 	if (!mode) return null;
 

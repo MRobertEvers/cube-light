@@ -235,9 +235,14 @@
 	color: #b42323;
 }
 
-.delete:hover,
 .delete:focus-visible {
 	background: #fff0ef;
+}
+
+@media (hover: hover) {
+	.delete:hover {
+		background: #fff0ef;
+	}
 }
 
 .empty {

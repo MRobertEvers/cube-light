@@ -82,8 +82,10 @@
 	cursor: default;
 }
 
-.group button:hover:not(:disabled) {
-	border-color: var(--deck-accent, #384e43);
+@media (hover: hover) {
+	.group button:hover:not(:disabled) {
+		border-color: var(--deck-accent, #384e43);
+	}
 }
 
 .group svg {

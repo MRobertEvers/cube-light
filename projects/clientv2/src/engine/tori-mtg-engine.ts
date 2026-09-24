@@ -12,6 +12,7 @@ import { SessionApi } from './api/session';
 import { SyncApi } from './api/sync';
 import { WorkApi } from './api/work';
 import { EngineEvents } from './events';
+import { ArtworkSidecars } from './jobs/artwork-sidecars';
 import { BannerBlending } from './jobs/banner-blending';
 import { DeferredWorkRunner } from './jobs/deferred-work-runner';
 import { ImageImportQueue } from './jobs/image-import-queue';
@@ -24,6 +25,7 @@ import type {
 	CardScanner,
 	Crypto,
 	DeviceProfile,
+	OfflineShell,
 	PageLifecycle,
 	SyncHost
 } from './ports';
@@ -54,6 +56,7 @@ export type ToriMTGEngine = {
 		| 'addCandidate' | 'dismiss' | 'retry' | 'remove'
 	>;
 	sync: Pick<SyncApi, 'pendingEdits' | 'keepMine' | 'useServer' | 'exportUnsynced' | 'retryNow'>;
+	offlineShell: Pick<OfflineShell, 'watch'>;
 	events: Pick<EngineEvents, 'subscribe'>;
 };
 
@@ -69,15 +72,16 @@ export type EnginePorts = {
 	cardScanner: CardScanner;
 	nameIndexBuilder: CardNameIndexBuilder;
 	cardListLinter: CardListLinter;
+	offlineShell: OfflineShell;
 };
 
 export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
-	const { store, crypto, syncHost, blobs, lifecycle, device, bannerRenderer, cardScanner, nameIndexBuilder, cardListLinter } = ports;
+	const { store, crypto, syncHost, blobs, lifecycle, device, bannerRenderer, cardScanner, nameIndexBuilder, cardListLinter, offlineShell } = ports;
 	const events = new EngineEvents();
 	const tori = createToriMTG(store, syncHost, blobs, lifecycle);
 	const reader = new LocalReader(tori);
 	const cards = new CardApi(reader, nameIndexBuilder, cardListLinter);
-	const decks = new DeckApi(tori, reader, cards);
+	const decks = new DeckApi(tori, reader, cards, new ArtworkSidecars(tori, reader));
 	const work = new WorkApi(tori, reader, cards, crypto);
 	const workQueue = new WorkQueue(work, events, lifecycle);
 	const imageImports = new ImageImportQueue(decks, cards, cardScanner, events);
@@ -92,6 +96,7 @@ export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
 		profile: new ProfileApi(tori),
 		scans: new ScansApi(workQueue, imageImports, runner, device),
 		sync: new SyncApi(tori),
+		offlineShell,
 		events
 	};
 }

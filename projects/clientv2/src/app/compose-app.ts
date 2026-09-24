@@ -22,7 +22,8 @@ import { startProjections } from '../redux/projections';
  * ports; Redux gets the engine; React gets only the store.
  */
 export function composeApp(): StoreType {
-	new ShellWorkerClient().start(import.meta.env.PROD);
+	const offlineShell = new ShellWorkerClient(import.meta.env.PROD);
+	offlineShell.start();
 	const crypto = new WebCrypto();
 	const localStore = new OutboxLocalStore(new IndexedDbDriver('torimtg-v1', indexedDB), crypto);
 	const transport = new HttpSyncTransport(API_URI, localStore);
@@ -38,7 +39,8 @@ export function composeApp(): StoreType {
 		bannerRenderer: new BannerBlendWorkerClient(),
 		cardScanner: new BrowserCardScanner(),
 		nameIndexBuilder: new WasmNameIndexBuilder(),
-		cardListLinter: new CardListLintWorkerClient()
+		cardListLinter: new CardListLintWorkerClient(),
+		offlineShell
 	});
 	const store = configureStore(engine);
 	startProjections(store.dispatch, engine.events);

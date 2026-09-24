@@ -24,6 +24,8 @@ import {
 import { DeckGroupDialog, type DeckGroupDraft } from './components/DeckGroupDialog';
 import { ImageCardImport } from 'src/ui/kit/components/ImageCardImport/ImageCardImport';
 import { useHistoryModal } from 'src/ui/kit/hooks/useHistoryModal';
+import { useIsPhoneLayout } from 'src/ui/kit/hooks/useIsPhoneLayout';
+import { CreateDeckChoice } from './components/CreateDeckChoice';
 
 import styles from './home.module.css';
 
@@ -51,6 +53,8 @@ function NewDeckIcon() {
 }
 
 type HomeModal =
+	/** Asks whether to start an empty deck or one from an image. */
+	| { type: 'create-choice' }
 	| { type: 'new-deck' }
 	| { type: 'image-import' }
 	/** Edits a deck group, or creates one when `groupId` is null. */
@@ -114,6 +118,7 @@ export function Home(props: HomeProps) {
 	const dispatch = useAppDispatch();
 	const modalHistory = useHistoryModal<HomeModal>('home');
 	const modal = modalHistory.value;
+	const isPhoneLayout = useIsPhoneLayout();
 	const data = useAppSelector(selectDecks);
 	const error = useAppSelector(selectDecksError);
 	const groups = useAppSelector(selectDeckGroups);
@@ -171,31 +176,45 @@ export function Home(props: HomeProps) {
 		modalHistory.open({ type: 'deck-group', groupId });
 	}
 
+	const createDeckItems = (
+		<>
+			<button
+				type="button"
+				onClick={() => modalHistory.open({ type: 'new-deck' })}
+			>
+				New deck
+			</button>
+			<button
+				type="button"
+				onClick={() => modalHistory.open({ type: 'image-import' })}
+			>
+				New deck from image
+			</button>
+		</>
+	);
+
 	return (
 		<Page
-			header={
-				<OverflowMenu
-					label="Create a deck"
-					icon={<NewDeckIcon />}
-					triggerClassName={styles['new-deck-trigger']}
-				>
-					<button
-						type="button"
-						onClick={() => modalHistory.open({ type: 'new-deck' })}
+			chrome={{
+				desktop: (
+					<OverflowMenu
+						label="Create a deck"
+						icon={<NewDeckIcon />}
+						triggerClassName={styles['new-deck-trigger']}
 					>
-						New deck
-					</button>
-					<button
-						type="button"
-						onClick={() =>
-							modalHistory.open({ type: 'image-import' })
-						}
-					>
-						New deck from image
-					</button>
-				</OverflowMenu>
-			}
+						{createDeckItems}
+					</OverflowMenu>
+				),
+				mobile: createDeckItems
+			}}
 		>
+			{modal?.type === 'create-choice' && (
+				<CreateDeckChoice
+					onNewDeck={() => modalHistory.open({ type: 'new-deck' })}
+					onImageImport={() => modalHistory.open({ type: 'image-import' })}
+					onClose={modalHistory.close}
+				/>
+			)}
 			{modal?.type === 'image-import' && (
 				<ImageCardImport
 					mode="create"
@@ -211,21 +230,19 @@ export function Home(props: HomeProps) {
 				/>
 			)}
 			{modal?.type === 'new-deck' && (
-				<Modal>
-					<NewDeckModal
-						onEvent={async (e: NewDeckModalEvent) => {
-							if (e.type === NewDeckModalEventType.CLOSE) {
-								modalHistory.close();
-							} else {
-								const deckId = await dispatch(createDeck(e.payload));
+				<NewDeckModal
+					onEvent={async (e: NewDeckModalEvent) => {
+						if (e.type === NewDeckModalEventType.CLOSE) {
+							modalHistory.close();
+						} else {
+							const deckId = await dispatch(createDeck(e.payload));
 
-								navigate(`/deck/${deckId}`, {
-									replace: true
-								});
-							}
-						}}
-					/>
-				</Modal>
+							navigate(`/deck/${deckId}`, {
+								replace: true
+							});
+						}
+					}}
+				/>
 			)}
 			{groupDialogOpen && modal?.type === 'deck-group' && (
 				<Modal fullScreenOnMobile>
@@ -343,6 +360,23 @@ export function Home(props: HomeProps) {
 					<DeckGrid decks={list.ungrouped} />
 				)}
 			</main>
+			{isPhoneLayout && (
+				<button
+					type="button"
+					className={styles['add-deck-button']}
+					aria-label="Create a deck"
+					onClick={() => modalHistory.open({ type: 'create-choice' })}
+				>
+					<svg
+						viewBox="0 0 24 24"
+						width="28"
+						height="28"
+						aria-hidden="true"
+					>
+						<path d="M12 5v14M5 12h14" />
+					</svg>
+				</button>
+			)}
 		</Page>
 	);
 }

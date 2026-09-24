@@ -4,6 +4,7 @@ import { DeckImageScanCard } from '../../../kit/components/ImageCardImport/DeckI
 import { DeckControlButtons } from '../../deck-chrome/DeckControlButtons';
 import { DeckStatsSummary } from '../../deck-chrome/DeckStatsSummary';
 import type { BoardControlsProps } from '../board.types';
+import { artworkOf } from '../../../../domain/appearance/artwork';
 
 import deckStyles from '../../../pages/Deck/deck.module.css';
 
@@ -31,6 +32,7 @@ export function DeckSidebarControls(props: BoardControlsProps) {
 				<DeckBannerCard
 					ref={onBannerElement}
 					src={previewIcon}
+					artInfo={artworkOf(deck.artwork, previewIcon)}
 					crop={bannerCrop}
 					name={deck.name}
 					cardCount={deck.deck.count}

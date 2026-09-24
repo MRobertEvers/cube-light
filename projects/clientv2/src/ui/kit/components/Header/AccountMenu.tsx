@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../Auth/AuthGate';
 import { UserBop } from '../UserBop/UserBop';
+import { useHotkey, useHotkeyLayer } from '../../hotkeys/Hotkeys';
 import styles from './account-menu.module.css';
 
 export function AccountMenu() {
@@ -14,16 +15,13 @@ export function AccountMenu() {
 		function closeOnPointer(event: PointerEvent) {
 			if (!menu.current?.contains(event.target as Node)) setOpen(false);
 		}
-		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === 'Escape') setOpen(false);
-		}
 		window.addEventListener('pointerdown', closeOnPointer);
-		window.addEventListener('keydown', closeOnEscape);
 		return function () {
 			window.removeEventListener('pointerdown', closeOnPointer);
-			window.removeEventListener('keydown', closeOnEscape);
 		};
 	}, [open]);
+	const layer = useHotkeyLayer('menu', { elementRef: menu, enabled: open });
+	useHotkey('Escape', () => setOpen(false), { layer, enabled: open });
 
 	return (
 		<div className={styles.menu} ref={menu}>

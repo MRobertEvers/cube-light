@@ -1,4 +1,6 @@
+import type { ImageMeta } from '@torimtg/core';
 import { ImageCache } from './ImageCache';
+import type { ImageMeasurer } from './image-measurer';
 
 export type ImageVariant = 'small' | 'normal' | 'large' | 'art_crop';
 
@@ -56,20 +58,29 @@ export function localDeckArtUrl(
 	}
 }
 
+/**
+ * Card images from Scryfall, stored once on disk. Each image is measured when it is
+ * stored, and the measurements are kept as a sidecar the client reads with a deck.
+ */
 export class CardImageService {
 	private readonly inFlight = new Map<string, Promise<Buffer | null>>();
+	private readonly measuring = new Map<string, Promise<ImageMeta | null>>();
+	private readonly cache: ImageCache;
+	private readonly measurer: ImageMeasurer;
 	private readonly fetchImage: typeof fetch;
 
 	constructor(
-		private readonly cache: ImageCache,
+		cache: ImageCache,
+		measurer: ImageMeasurer,
 		fetchImageArg?: typeof fetch
 	) {
-		const fetchImage = fetchImageArg === undefined ? fetch : fetchImageArg;
-		this.fetchImage = fetchImage;
+		this.cache = cache;
+		this.measurer = measurer;
+		this.fetchImage = fetchImageArg === undefined ? fetch : fetchImageArg;
 	}
 
 	async get(id: string, variant: ImageVariant): Promise<Buffer | null> {
-		const key = `${variant}/${id.toLowerCase()}.jpg`;
+		const key = `${variant}/${id.toLowerCase()}`;
 		const cached = await this.cache.get(key);
 		if (cached) return cached;
 
@@ -83,6 +94,45 @@ export class CardImageService {
 		} finally {
 			if (this.inFlight.get(key) === pending) this.inFlight.delete(key);
 		}
+	}
+
+	/**
+	 * The image's sidecar. Images stored before sidecars existed, or whose measuring
+	 * failed, are measured now. Null when there is no such image or it cannot be decoded.
+	 */
+	async meta(id: string, variant: ImageVariant): Promise<ImageMeta | null> {
+		const key = `${variant}/${id.toLowerCase()}`;
+		const stored = await this.cache.getMeta(key);
+		if (stored) return stored;
+		const image = await this.get(id, variant);
+		if (!image) return null;
+		return (await this.cache.getMeta(key)) ?? this.measure(key, id.toLowerCase(), variant, image);
+	}
+
+	private measure(
+		key: string,
+		id: string,
+		variant: ImageVariant,
+		image: Buffer
+	): Promise<ImageMeta | null> {
+		let pending = this.measuring.get(key);
+		if (!pending) {
+			pending = (async () => {
+				let meta: ImageMeta;
+				try {
+					meta = this.measurer.measure(image, { variant, id });
+				} catch (error) {
+					console.error(`Unable to measure card image ${key}`, error);
+					return null;
+				}
+				await this.cache.setMeta(key, meta);
+				return meta;
+			})().finally(() => {
+				this.measuring.delete(key);
+			});
+			this.measuring.set(key, pending);
+		}
+		return pending;
 	}
 
 	private async download(
@@ -112,6 +162,10 @@ export class CardImageService {
 		}
 		const image = Buffer.from(await response.arrayBuffer());
 		await this.cache.set(key, image);
+		// Measure while the image is at hand; a failure leaves it to be measured on request.
+		await this.measure(key, id, variant, image).catch((error) => {
+			console.error(`Unable to store the sidecar for ${key}`, error);
+		});
 		return image;
 	}
 }

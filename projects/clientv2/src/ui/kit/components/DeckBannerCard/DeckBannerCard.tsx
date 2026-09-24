@@ -1,11 +1,14 @@
 import React from 'react';
 import { BannerArtwork } from '../BannerArtwork/BannerArtwork';
+import type { ArtworkInfo } from '../../../../domain/appearance/artwork';
 import type { BannerCrop, BannerFrame } from '../../../../domain/appearance/banner-crop';
 import { toFriendlyDate } from '../../utils/to-friendly-date';
 import styles from './deck-banner-card.module.css';
 
 type Props = {
 	src: string | null;
+	/** The server-measured sidecar of `src`: placed and previewed before it loads. */
+	artInfo?: ArtworkInfo | null;
 	crop: BannerCrop;
 	name: string;
 	cardCount?: number;
@@ -19,6 +22,7 @@ type Props = {
 export function DeckBannerCard(props: Props) {
 	const {
 		src,
+		artInfo,
 		crop,
 		name,
 		cardCount,
@@ -34,6 +38,7 @@ export function DeckBannerCard(props: Props) {
 				<div className={styles.desktopArt}>
 					<BannerArtwork
 						src={src}
+						artwork={artInfo}
 						frame={crop.desktop}
 						onChange={
 							onCropChange
@@ -52,6 +57,7 @@ export function DeckBannerCard(props: Props) {
 				<div className={styles.mobileArt}>
 					<BannerArtwork
 						src={src}
+						artwork={artInfo}
 						frame={crop.mobile}
 						onChange={
 							onCropChange

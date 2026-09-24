@@ -87,10 +87,16 @@ const MANA_SYMBOL_FILES: Record<string, string> = {
 	'{D}': 'D.svg'
 };
 
+/**
+ * A symbol's URL. The build fingerprints every file this pattern can reach, so symbols
+ * are served under /assets/ with an immutable cache header and fetched only once; in
+ * development only the symbols on screen are requested.
+ */
 function symbolUrl(symbol: string) {
 	const filename = MANA_SYMBOL_FILES[symbol];
 	if (!filename) return null;
-	return `${import.meta.env.BASE_URL}mana-symbols/${filename}`;
+	return new URL(`../../../../assets/mana-symbols/${filename}`, import.meta.url)
+		.href;
 }
 
 type SymbolTextProps = {

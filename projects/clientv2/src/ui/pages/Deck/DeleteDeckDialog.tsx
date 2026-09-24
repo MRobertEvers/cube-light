@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '../../kit/components/Button/Button';
 import { Spinner } from '../../kit/components/Spinner/Spinner';
-import { useCloseOnEscape } from '../../kit/hooks/useCloseOnEscape';
+import { SmallInputModal } from '../../kit/components/SmallInputModal/SmallInputModal';
 
 import styles from './deck.module.css';
 
@@ -18,7 +18,6 @@ export function DeleteDeckDialog(props: DeleteDeckDialogProps) {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const nameMatches = typedName.trim() === deckName.trim();
-	useCloseOnEscape(onCancel, !isDeleting);
 
 	async function confirmDelete() {
 		if (!nameMatches || isDeleting) return;
@@ -33,13 +32,33 @@ export function DeleteDeckDialog(props: DeleteDeckDialogProps) {
 	}
 
 	return (
-		<section
-			className={styles['deck-details-modal']}
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="delete-deck-title"
+		<SmallInputModal
+			title="Delete deck"
+			onClose={onCancel}
+			closeDisabled={isDeleting}
+			onSubmit={() => void confirmDelete()}
+			busy={isDeleting}
+			actions={
+				<>
+					<Button onClick={onCancel} disabled={isDeleting}>
+						Cancel
+					</Button>
+					<Button
+						type="submit"
+						variant="danger"
+						disabled={!nameMatches || isDeleting}
+					>
+						{isDeleting ? (
+							<span className={styles['saving-label']}>
+								<Spinner /> Deleting…
+							</span>
+						) : (
+							'Delete deck'
+						)}
+					</Button>
+				</>
+			}
 		>
-			<h2 id="delete-deck-title">Delete deck</h2>
 			<p className={styles['delete-deck-warning']}>
 				This permanently deletes <strong>{deckName}</strong> and all of
 				its cards. Type the deck's name to confirm.
@@ -54,10 +73,8 @@ export function DeleteDeckDialog(props: DeleteDeckDialogProps) {
 					disabled={isDeleting}
 					autoComplete="off"
 					spellCheck={false}
+					enterKeyHint="done"
 					onChange={(event) => setTypedName(event.target.value)}
-					onKeyDown={(event) => {
-						if (event.key === 'Enter') void confirmDelete();
-					}}
 				/>
 			</div>
 			{error && (
@@ -65,24 +82,6 @@ export function DeleteDeckDialog(props: DeleteDeckDialogProps) {
 					{error}
 				</p>
 			)}
-			<div className={styles['deck-details-actions']}>
-				<Button onClick={onCancel} disabled={isDeleting}>
-					Cancel
-				</Button>
-				<Button
-					className={styles['delete-deck-button']}
-					onClick={() => void confirmDelete()}
-					disabled={!nameMatches || isDeleting}
-				>
-					{isDeleting ? (
-						<span className={styles['saving-label']}>
-							<Spinner /> Deleting…
-						</span>
-					) : (
-						'Delete deck'
-					)}
-				</Button>
-			</div>
-		</section>
+		</SmallInputModal>
 	);
 }

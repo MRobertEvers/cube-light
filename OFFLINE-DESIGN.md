@@ -1068,13 +1068,17 @@ API over HTTPS, preferably through one origin with `/api` reverse-proxied.
 `ShellWorker` (`src/workers/shell/`, built to `/sw.js` by `tools/shell-worker.mjs`)
 only serves files. It precaches the built HTML, JS, CSS, icons, and small WASM,
 answers same-origin navigations with the cached `index.html` so deep links open
-offline, and caches `/assets/` and `/mana-symbols/` files on first use. It ignores
+offline, and caches `/assets/` files (including the fingerprinted mana symbols) on first use. It ignores
 `/api/` entirely and holds no application data; IndexedDB holds structured state,
 durable commands, and saved blobs, which the page turns into object URLs.
 
-It registers only in production builds on a secure context (localhost or a
-trusted certificate). Where it cannot, the app behaves the same but needs the
-network to load. Development builds unregister any leftover worker.
+It registers on a secure context (localhost or a trusted certificate). Where it
+cannot, the app behaves the same but needs the network to load. The dev server
+serves it at `/sw.js` too, and development builds register it as
+`/sw.js?mode=development`: it then precaches nothing and goes network-first, so
+every edit shows at once and the last copy of each file serves when the dev server
+is down. Each dev server start drops what the previous one cached. The Profile
+page shows whether the worker is installed on this device.
 
 Downloading large OCR models/card packs is explicit, resumable, and size-aware.
 Do not include every model in the mandatory install transaction. Show offline

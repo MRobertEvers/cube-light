@@ -67,8 +67,10 @@
 	stroke-linecap: round;
 }
 
-.addCardButton:hover {
-	filter: brightness(1.08);
+@media (hover: hover) {
+	.addCardButton:hover {
+		filter: brightness(1.08);
+	}
 }
 
 .addCardButton:focus-visible {

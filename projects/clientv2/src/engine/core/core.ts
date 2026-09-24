@@ -19,6 +19,7 @@ import type {
 import type { BlobUrlResolver, PageLifecycle, SyncHost } from '../ports';
 import { outstanding, queryKey } from '../local-store/local-store';
 import { projectQuery } from './projections';
+import { buildImageSidecars, type ImageSidecars } from './image-sidecars';
 import {
 	detailsOf,
 	isCardSource,
@@ -93,6 +94,21 @@ export function createToriMTG(
 			});
 		}
 		return catalog.cards;
+	}
+	let sidecarCache: { key: string; sidecars: Promise<ImageSidecars> } | null = null;
+	function sidecarsOf(
+		active: AccountScope,
+		data: Dataset
+	): Promise<ImageSidecars> {
+		const key = `${active.partition}:${active.generation}:${data.meta.revision}`;
+		if (sidecarCache?.key !== key) {
+			const sidecars = buildImageSidecars(data);
+			sidecarCache = { key, sidecars };
+			sidecars.catch(() => {
+				if (sidecarCache?.sidecars === sidecars) sidecarCache = null;
+			});
+		}
+		return sidecarCache.sidecars;
 	}
 	async function read<T>(query: Query): Promise<LocalSnapshot<T>> {
 		const active = await scope();
@@ -174,7 +190,7 @@ export function createToriMTG(
 			}
 			presence = value ? 'complete' : 'missing';
 		} else {
-			value = projectQuery(data, cards, blobs, query);
+			value = projectQuery(data, cards, await sidecarsOf(active, data), blobs, query);
 			presence =
 				value === null
 					? 'missing'

@@ -90,17 +90,21 @@
 	);
 }
 
-.spotlight-card:hover {
-	box-shadow: 0 8px 22px rgba(var(--theme-dark-tuple), 0.14);
-	transform: translateY(-2px);
+@media (hover: hover) {
+	.spotlight-card:hover {
+		box-shadow: 0 8px 22px rgba(var(--theme-dark-tuple), 0.14);
+		transform: translateY(-2px);
+	}
 }
 
 .preview .spotlight-card {
 	cursor: default;
 }
-.preview .spotlight-card:hover {
-	box-shadow: 0 3px 10px rgba(var(--theme-dark-tuple), 0.07);
-	transform: none;
+@media (hover: hover) {
+	.preview .spotlight-card:hover {
+		box-shadow: 0 3px 10px rgba(var(--theme-dark-tuple), 0.07);
+		transform: none;
+	}
 }
 
 .spotlight-card h2 {

@@ -113,9 +113,23 @@ function exportPublicJwk(privateKey) {
     return { crv: jwk.crv, kty: jwk.kty, x: jwk.x, y: jwk.y };
 }
 
-/** Waits for a TXT record to be visible on the zone's own nameservers. */
-export async function awaitTxt(name, expected, { attempts = 40, delay = 5000, log = () => {} } = {}) {
-    const resolver = new Resolver();
+/**
+ * @typedef {Object} AwaitTxtOptions
+ * @property {number} [attempts] Checks before giving up; 40 by default.
+ * @property {number} [delay] Milliseconds between checks; 5000 by default.
+ * @property {(line: string) => void} [log]
+ */
+
+/**
+ * Waits for a TXT record to be visible on every one of the zone's own nameservers,
+ * asking each address separately so one lagging server cannot hide behind another.
+ * @param {string} name
+ * @param {string} expected
+ * @param {AwaitTxtOptions} [options]
+ * @returns {Promise<boolean>} Whether every nameserver showed it in time.
+ */
+export async function awaitTxt(name, expected, options) {
+    const { attempts = 40, delay = 5000, log = function () {} } = options === undefined ? {} : options;
     const parent = name.split('.').slice(-2).join('.');
     let servers = [];
     try {
@@ -123,22 +137,39 @@ export async function awaitTxt(name, expected, { attempts = 40, delay = 5000, lo
         const nameservers = await plain.resolveNs(parent);
         for (const host of nameservers) servers = servers.concat(await plain.resolve4(host).catch(() => []));
     } catch { /* Fall back to the system resolver. */ }
-    if (servers.length) resolver.setServers(servers);
+    const resolvers = servers.map((server) => {
+        const resolver = new Resolver();
+        resolver.setServers([server]);
+        return { server, resolver };
+    });
+    if (!resolvers.length) resolvers.push({ server: 'system resolver', resolver: new Resolver() });
     for (let attempt = 1; attempt <= attempts; attempt++) {
-        try {
-            const records = (await resolver.resolveTxt(name)).flat();
-            if (records.includes(expected)) return true;
-            log(`  ${name} has ${records.length ? records.join(', ') : 'no TXT record'} (attempt ${attempt}/${attempts})`);
-        } catch (error) {
-            log(`  ${name} not resolving yet (attempt ${attempt}/${attempts})`);
+        const missing = [];
+        for (const entry of resolvers) {
+            const records = await entry.resolver.resolveTxt(name).then((found) => found.flat(), () => []);
+            if (!records.includes(expected)) missing.push(entry.server);
         }
+        if (!missing.length) return true;
+        log(`  ${name} not on ${missing.join(', ')} yet (attempt ${attempt}/${attempts})`);
         await new Promise((resolve) => setTimeout(resolve, delay));
     }
     return false;
 }
 
-/** Polls an ACME resource until it leaves the pending state. */
-export async function settle(client, url, { attempts = 40, delay = 3000 } = {}) {
+/**
+ * @typedef {Object} SettleOptions
+ * @property {number} [attempts] Polls before giving up; 40 by default.
+ * @property {number} [delay] Milliseconds between polls; 3000 by default.
+ */
+
+/**
+ * Polls an ACME resource until it leaves the pending state.
+ * @param {AcmeClient} client
+ * @param {string} url
+ * @param {SettleOptions} [options]
+ */
+export async function settle(client, url, options) {
+    const { attempts = 40, delay = 3000 } = options === undefined ? {} : options;
     for (let attempt = 0; attempt < attempts; attempt++) {
         const resource = await client.fetchResource(url);
         if (resource.status !== 'pending' && resource.status !== 'processing') return resource;

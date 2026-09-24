@@ -23,8 +23,10 @@
 	color: var(--deck-on-accent, white);
 }
 
-.deck-view-switch a:hover {
-	text-decoration: underline;
+@media (hover: hover) {
+	.deck-view-switch a:hover {
+		text-decoration: underline;
+	}
 }
 
 .deck-controls {

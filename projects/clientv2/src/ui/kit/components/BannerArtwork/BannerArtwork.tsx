@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import {
 	BannerFrame,
 	MAX_MASKED_BANNER_X,
 	clamp
 } from '../../../../domain/appearance/banner-crop';
+import type { ArtworkInfo } from '../../../../domain/appearance/artwork';
 import styles from './banner-artwork.module.css';
 
 type Props = {
@@ -12,18 +13,25 @@ type Props = {
 	onChange?: (frame: BannerFrame) => void;
 	label?: string;
 	allowLeftBleed?: boolean;
+	/**
+	 * The image's server-measured sidecar, when there is one: its size places the image
+	 * before it loads, and its preview stands in (blurred) until it has.
+	 */
+	artwork?: ArtworkInfo | null;
 };
 
 export function BannerArtwork(props: Props) {
-	const { src, frame, onChange, label, allowLeftBleed = false } = props;
+	const { src, frame, onChange, label, allowLeftBleed = false, artwork } = props;
 	const viewport = useRef<HTMLDivElement>(null);
+	const image = useRef<HTMLImageElement>(null);
 	const pointer = useRef<{ x: number; y: number; frame: BannerFrame } | null>(
 		null
 	);
 	const [bounds, setBounds] = useState({ width: 0, height: 0 });
 	const [natural, setNatural] = useState({ src: '', width: 0, height: 0 });
 
-	useEffect(() => {
+	// Layout effects, so an image that is already loaded is placed before the first paint.
+	useLayoutEffect(() => {
 		const element = viewport.current;
 		if (!element) return;
 		const measuredElement = element;
@@ -41,19 +49,36 @@ export function BannerArtwork(props: Props) {
 		};
 	}, []);
 
+	useLayoutEffect(() => {
+		const element = image.current;
+		if (!src || !element || !element.complete || !element.naturalWidth)
+			return;
+		setNatural({
+			src,
+			width: element.naturalWidth,
+			height: element.naturalHeight
+		});
+	}, [src]);
+
+	// Natural size is recorded once the image has loaded.
+	const loaded = !!src && natural.src === src;
+	const known = artwork
+		? { src: src ?? '', width: artwork.width, height: artwork.height }
+		: natural;
+	const preview = artwork?.preview ?? null;
 	const scale =
-		natural.src === src &&
-		natural.width &&
-		natural.height &&
+		known.src === src &&
+		known.width &&
+		known.height &&
 		bounds.width &&
 		bounds.height
 			? Math.max(
-					bounds.width / natural.width,
-					bounds.height / natural.height
+					bounds.width / known.width,
+					bounds.height / known.height
 				) * frame.zoom
 			: 0;
-	const width = natural.width * scale;
-	const height = natural.height * scale;
+	const width = known.width * scale;
+	const height = known.height * scale;
 	const horizontalOverflow = Math.max(0, width - bounds.width);
 	const left =
 		-horizontalOverflow * Math.min(frame.x, 1) -
@@ -133,8 +158,21 @@ export function BannerArtwork(props: Props) {
 				pointer.current = null;
 			}}
 		>
+			{src && preview && scale ? (
+				// Placed exactly where the image will be, so the image replaces it in place.
+				<img
+					className={styles.preview}
+					src={preview}
+					alt=""
+					aria-hidden="true"
+					draggable={false}
+					style={{ width, height, left, top }}
+				/>
+			) : null}
 			{src && (
 				<img
+					ref={image}
+					className={preview && !loaded ? styles.pending : undefined}
 					src={src}
 					alt=""
 					draggable={false}
@@ -145,7 +183,12 @@ export function BannerArtwork(props: Props) {
 							height: event.currentTarget.naturalHeight
 						})
 					}
-					style={scale ? { width, height, left, top } : undefined}
+					// Unplaced, the image would show at its natural size in the corner.
+					style={
+						scale
+							? { width, height, left, top }
+							: { visibility: 'hidden' }
+					}
 				/>
 			)}
 		</div>

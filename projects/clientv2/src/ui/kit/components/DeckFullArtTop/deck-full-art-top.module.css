@@ -62,8 +62,10 @@
 	text-align: left;
 	cursor: pointer;
 }
-.titleButton:hover {
-	text-decoration: underline;
+@media (hover: hover) {
+	.titleButton:hover {
+		text-decoration: underline;
+	}
 }
 .cardCount {
 	padding: 4px 9px;

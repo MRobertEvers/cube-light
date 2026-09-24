@@ -21,10 +21,16 @@
 		border-color 0.15s;
 }
 
-.new-deck-trigger:hover,
 .new-deck-trigger[aria-expanded='true'] {
 	border-color: #bdb4af;
 	background: #f7f4f2;
+}
+
+@media (hover: hover) {
+	.new-deck-trigger:hover {
+		border-color: #bdb4af;
+		background: #f7f4f2;
+	}
 }
 
 .new-deck-trigger:focus-visible {
@@ -60,9 +66,11 @@
 		border-color 0.15s;
 }
 
-.new-group:hover:enabled {
-	border-color: #bdb4af;
-	background: #f7f4f2;
+@media (hover: hover) {
+	.new-group:hover:enabled {
+		border-color: #bdb4af;
+		background: #f7f4f2;
+	}
 }
 
 .new-group:disabled {
@@ -166,6 +174,45 @@
 
 @media (max-width: 680px) {
 	.home-container {
-		padding: 24px 14px;
+		/* Room below the last deck for the add-deck button. */
+		padding: 24px 14px 96px;
 	}
+}
+
+/* Matches the deck page's phone add-card button. */
+.add-deck-button {
+	position: fixed;
+	right: max(20px, env(safe-area-inset-right));
+	bottom: max(20px, env(safe-area-inset-bottom));
+	z-index: 40;
+	display: grid;
+	place-items: center;
+	width: 56px;
+	height: 56px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: #384e43;
+	color: white;
+	box-shadow: 0 8px 22px rgba(38, 38, 38, 0.3);
+	cursor: pointer;
+}
+
+.add-deck-button svg {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+}
+
+@media (hover: hover) {
+	.add-deck-button:hover {
+		filter: brightness(1.08);
+	}
+}
+
+.add-deck-button:focus-visible {
+	outline: 3px solid white;
+	outline-offset: 2px;
 }

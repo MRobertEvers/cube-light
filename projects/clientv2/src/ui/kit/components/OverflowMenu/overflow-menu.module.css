@@ -63,6 +63,12 @@
 	cursor: pointer;
 }
 
-.panel :where(button, a):where(:hover, :focus-visible) {
+.panel :where(button, a):focus-visible {
 	background: #f4f1ef;
+}
+
+@media (hover: hover) {
+	.panel :where(button, a):hover {
+		background: #f4f1ef;
+	}
 }

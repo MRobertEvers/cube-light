@@ -1,30 +1,74 @@
+/*
+ * The app's one button look: a white outlined button, a filled primary one in
+ * the deck's accent, and a danger one for destructive actions. Places that
+ * need a different size (steppers, control tiles) override it by class.
+ */
 .default-button {
-	border: 1px solid rgb(229, 229, 229);
-	min-width: 120px;
-	min-height: 32px;
-	font-family:
-		-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
-		sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-	font-weight: 600;
-	color: rgb(38, 38, 38);
-	font-size: 16px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	box-sizing: border-box;
+	min-height: 38px;
 	margin: auto;
-	border-radius: 4px;
-	transition: all 0.2s;
-	background-color: rgb(236, 236, 236);
+	padding: 0 16px;
+	border: 1px solid var(--deck-border, #ddd6d2);
+	border-radius: 8px;
+	background: white;
+	color: var(--deck-accent-text, #302b29);
+	font: inherit;
+	font-size: 15px;
+	font-weight: 650;
+	line-height: 1.2;
+	transition:
+		background-color 0.15s,
+		border-color 0.15s;
 }
 
 .default-button:enabled {
 	cursor: pointer;
-	background-color: white;
 }
 
-.default-button:hover:enabled {
-	border: 1px solid rgb(153, 153, 153);
-	background-color: rgb(243, 244, 246);
+.default-button:disabled {
+	opacity: 0.55;
+	cursor: default;
 }
 
-.default-button:focus:enabled {
-	outline: none;
-	border: 1px solid rgb(128, 128, 128);
+@media (hover: hover) {
+	.default-button:hover:enabled {
+		border-color: #bdb4af;
+		background-color: #f7f4f2;
+	}
+}
+
+.default-button:focus-visible {
+	outline: 3px solid rgba(166, 83, 80, 0.35);
+	outline-offset: 2px;
+}
+
+.primary {
+	border-color: var(--deck-accent, #8e2524);
+	background: var(--deck-accent, #8e2524);
+	color: var(--deck-on-accent, white);
+}
+
+@media (hover: hover) {
+	.primary:hover:enabled {
+		border-color: var(--deck-accent, #8e2524);
+		background: var(--deck-accent, #8e2524);
+		filter: brightness(1.08);
+	}
+}
+
+.danger {
+	border-color: #b42323;
+	background: #b42323;
+	color: white;
+}
+
+@media (hover: hover) {
+	.danger:hover:enabled {
+		border-color: #9a1d1d;
+		background: #9a1d1d;
+	}
 }

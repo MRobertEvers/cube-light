@@ -17,8 +17,10 @@
 	cursor: pointer;
 }
 
-.trigger:hover {
-	border-color: #d9ceca;
+@media (hover: hover) {
+	.trigger:hover {
+		border-color: #d9ceca;
+	}
 }
 
 .trigger:focus-visible {
@@ -69,11 +71,18 @@
 	cursor: pointer;
 }
 
-.panel a:hover,
 .panel a:focus-visible,
-.panel button:hover,
 .panel button:focus-visible {
 	background: #f6efed;
 	color: #8e2524;
 	outline: none;
+}
+
+@media (hover: hover) {
+	.panel a:hover,
+	.panel button:hover {
+		background: #f6efed;
+		color: #8e2524;
+		outline: none;
+	}
 }

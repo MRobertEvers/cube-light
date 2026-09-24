@@ -201,9 +201,14 @@
 	cursor: pointer;
 }
 
-.change-printing:hover:not(:disabled),
 .deck-row.replacing .change-printing {
 	background: #f6ece9;
+}
+
+@media (hover: hover) {
+	.change-printing:hover:not(:disabled) {
+		background: #f6ece9;
+	}
 }
 
 .change-printing:disabled {
@@ -234,8 +239,10 @@
 	cursor: pointer;
 }
 
-.stepper button:hover:not(:disabled) {
-	background: #f6ece9;
+@media (hover: hover) {
+	.stepper button:hover:not(:disabled) {
+		background: #f6ece9;
+	}
 }
 
 .stepper button:disabled {
@@ -432,8 +439,10 @@
 	transition: transform 120ms ease;
 }
 
-.tile:hover:not(:disabled) .tile-image img {
-	transform: translateY(-2px);
+@media (hover: hover) {
+	.tile:hover:not(:disabled) .tile-image img {
+		transform: translateY(-2px);
+	}
 }
 
 .in-deck .tile-image img {
@@ -677,8 +686,10 @@
 	color: var(--deck-accent, #7a3431);
 }
 
-.move-copy button:hover:not(:disabled) {
-	background: #f6ece9;
+@media (hover: hover) {
+	.move-copy button:hover:not(:disabled) {
+		background: #f6ece9;
+	}
 }
 
 .move-copy button:disabled {
@@ -706,8 +717,10 @@
 	white-space: nowrap;
 }
 
-.move-all button:hover:not(:disabled) {
-	background: #f6ece9;
+@media (hover: hover) {
+	.move-all button:hover:not(:disabled) {
+		background: #f6ece9;
+	}
 }
 
 .move-all button:disabled {

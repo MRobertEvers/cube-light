@@ -7,7 +7,7 @@ import { selectDeck, selectDeckError } from '../../../redux/decks/decks.selector
 import { useAppDispatch } from '../../../redux/use-app-dispatch';
 import { useAppSelector } from '../../../redux/use-app-selector';
 import { onAccent, readableAccent } from '../../../domain/appearance/card-palette';
-import { useCardPalette } from '../../kit/utils/use-card-palette';
+import { artworkOf } from '../../../domain/appearance/artwork';
 import { appearanceActions } from '../../../redux/appearance-settings/appearanceSettingsSlice';
 import { appearanceView, selectAppearanceSettings } from '../../../redux/appearance-settings/appearance-settings.selectors';
 import { BannerCardPickerModal } from './BannerCardPickerModal';
@@ -49,7 +49,7 @@ export function DeckSettingsPage(props: DeckSettingsPageProps) {
 	);
 	const appearance = useAppSelector(selectAppearanceSettings);
 	const showInitialLoading = !data && !loadError;
-	const generatedPalette = useCardPalette(data?.icon);
+	const generatedPalette = artworkOf(data?.artwork, data?.icon)?.palette ?? null;
 	const view = appearanceView(appearance, deckId, data, generatedPalette);
 	const { palette } = view;
 	const paletteStyle = {

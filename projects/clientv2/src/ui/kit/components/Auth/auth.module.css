@@ -103,8 +103,10 @@
 	width: 100%;
 }
 
-.submit:hover:enabled {
-	background: #7a1f1e;
+@media (hover: hover) {
+	.submit:hover:enabled {
+		background: #7a1f1e;
+	}
 }
 
 .submit:disabled {

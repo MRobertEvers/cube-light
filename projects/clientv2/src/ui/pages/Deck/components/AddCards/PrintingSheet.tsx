@@ -5,6 +5,7 @@ import { useAppDispatch } from 'src/redux/use-app-dispatch';
 import { readCardPrintings } from 'src/redux/cards/cards.thunks';
 import { PrintingPicker } from 'src/ui/kit/components/PrintingPicker/PrintingPicker';
 import { BackIcon } from 'src/ui/kit/components/BackLink/BackIcon';
+import { useVisualViewportFrame } from 'src/ui/kit/hooks/useVisualViewportFrame';
 import styles from './printing-sheet.module.css';
 
 export type PrintingSheetProps = {
@@ -24,6 +25,7 @@ export type PrintingSheetProps = {
 export function PrintingSheet(props: PrintingSheetProps) {
 	const { name, setCode, onPick, onClose } = props;
 	const dispatch = useAppDispatch();
+	useVisualViewportFrame();
 	const [printings, setPrintings] = useState<CardPrinting[]>([]);
 	const [status, setStatus] = useState<'loading' | 'ready' | 'failed'>(
 		'loading'

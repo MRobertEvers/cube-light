@@ -51,8 +51,10 @@
 	text-align: left;
 	cursor: pointer;
 }
-.titleButton:hover {
-	text-decoration: underline;
+@media (hover: hover) {
+	.titleButton:hover {
+		text-decoration: underline;
+	}
 }
 .cardCount {
 	color: var(--deck-on-surface, #6d6764);

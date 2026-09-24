@@ -2,6 +2,8 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { AlertIcon } from '../../../../kit/components/Icons/AlertIcon';
 import { EnterIcon } from '../../../../kit/components/Icons/EnterIcon';
 import { Spinner } from '../../../../kit/components/Spinner/Spinner';
+import { Button } from '../../../../kit/components/Button/Button';
+import { SmallInputModalMobile } from '../../../../kit/components/SmallInputModal/SmallInputModalMobile';
 import { Counter } from '../../../../kit/components/Counter/Counter';
 import { SuggestionInput } from '../../../../kit/components/SuggestionInput/SuggestionInput';
 import { useAsyncReducer } from '../../../../kit/hooks/useAsyncReducer';
@@ -33,7 +35,7 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 	const [keepAdding, setKeepAdding] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [status, setStatus] = useState<string | null>(null);
-	const form = useRef<HTMLFormElement>(null);
+	const form = useRef<HTMLElement>(null);
 	const input = useRef<HTMLInputElement>(null);
 	const focusSubmitAfterSelect = useRef(false);
 	const requestId = useRef(0);
@@ -75,7 +77,8 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 			if (failed) setError('Unable to search cards. Please try again.');
 			dispatch(
 				Actions.setViewIsDropDownVisible(
-					sorted.length > 0 && document.activeElement === input.current
+					sorted.length > 0 &&
+						document.activeElement === input.current
 				)
 			);
 		}
@@ -208,19 +211,15 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 	}
 
 	return (
-		<form
-			ref={form}
-			className={styles.dialog}
-			role="dialog"
-			aria-modal="true"
-			aria-busy={isSubmitting}
-			aria-labelledby="mobile-add-card-title"
-			onSubmit={(event) => {
-				event.preventDefault();
-				submitCard();
-			}}
+		<SmallInputModalMobile
+			title="Add a card"
+			closeLabel="Close add a card"
+			onClose={close}
+			closeDisabled={isSubmitting}
+			surfaceRef={form}
+			busy={isSubmitting}
+			onSubmit={submitCard}
 			onKeyDown={(event) => {
-				if (event.key === 'Escape' && !viewIsDropDownVisible) close();
 				if (event.key !== 'Tab') return;
 				const focusable = Array.from(
 					form.current?.querySelectorAll<HTMLElement>(
@@ -238,19 +237,18 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 					focusable[0]?.focus();
 				}
 			}}
+			actions={
+				<Button type="submit" variant="primary" disabled={!canSubmit}>
+					{isSubmitting ? (
+						<>
+							<Spinner /> Adding…
+						</>
+					) : (
+						'Add card'
+					)}
+				</Button>
+			}
 		>
-			<header className={styles.header}>
-				<h2 id="mobile-add-card-title">Add a card</h2>
-				<button
-					type="button"
-					className={styles.close}
-					aria-label="Close add a card"
-					disabled={isSubmitting}
-					onClick={close}
-				>
-					×
-				</button>
-			</header>
 			<div className={styles.field}>
 				<label htmlFor="mobile-add-card-name">Card name</label>
 				<SuggestionInput
@@ -330,19 +328,6 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 				/>
 				<span className={styles.switch} aria-hidden="true" />
 			</label>
-			<button
-				type="submit"
-				className={styles.submit}
-				disabled={!canSubmit}
-			>
-				{isSubmitting ? (
-					<>
-						<Spinner /> Adding…
-					</>
-				) : (
-					'Add card'
-				)}
-			</button>
-		</form>
+		</SmallInputModalMobile>
 	);
 }

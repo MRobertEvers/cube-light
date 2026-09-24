@@ -30,8 +30,10 @@
 	cursor: pointer;
 	box-shadow: 0 4px 16px rgba(38, 38, 38, 0.06);
 }
-.card:hover {
-	border-color: var(--deck-accent, #a65350);
+@media (hover: hover) {
+	.card:hover {
+		border-color: var(--deck-accent, #a65350);
+	}
 }
 .card:focus-visible {
 	outline: 2px solid var(--deck-accent, #a65350);
@@ -79,12 +81,19 @@
 	border: 1px solid #e5e1df;
 	border-radius: 8px;
 }
-.candidate:hover,
 .candidate:focus-within,
 .candidateSelected {
 	border-color: var(--deck-accent, #a65350);
 	background: rgba(166, 83, 80, 0.045);
 	outline: none;
+}
+
+@media (hover: hover) {
+	.candidate:hover {
+		border-color: var(--deck-accent, #a65350);
+		background: rgba(166, 83, 80, 0.045);
+		outline: none;
+	}
 }
 .candidate small {
 	display: block;
@@ -113,11 +122,18 @@
 	text-decoration-color: transparent;
 	text-underline-offset: 2px;
 }
-.candidate .nameButton:hover,
 .candidate .nameButton:focus-visible {
 	color: var(--deck-accent-text, #8e2524);
 	text-decoration-color: currentColor;
 	outline: none;
+}
+
+@media (hover: hover) {
+	.candidate .nameButton:hover {
+		color: var(--deck-accent-text, #8e2524);
+		text-decoration-color: currentColor;
+		outline: none;
+	}
 }
 .candidate button:disabled,
 .manual button:disabled {

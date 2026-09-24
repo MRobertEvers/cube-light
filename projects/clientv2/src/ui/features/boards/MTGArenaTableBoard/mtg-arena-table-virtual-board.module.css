@@ -70,9 +70,14 @@
 	aspect-ratio: 5 / 7;
 }
 
-.slot:hover,
 .slot:focus-within {
 	z-index: 3;
+}
+
+@media (hover: hover) {
+	.slot:hover {
+		z-index: 3;
+	}
 }
 
 /* Only the showing part of a card is its target; see TabletopCard. */

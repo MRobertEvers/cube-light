@@ -1,35 +1,38 @@
 import React from 'react';
 import { Header } from '../../kit/components/Header/Header';
-import { useIsPhoneLayout } from '../../kit/hooks/useIsPhoneLayout';
 import type { BannerFrame } from '../../../domain/appearance/banner-crop';
-import { MobileDeckHeader } from './components/MobileDeckHeader/MobileDeckHeader';
+import type { ArtworkInfo } from '../../../domain/appearance/artwork';
 import styles from './deck-header.module.css';
 
 type Props = {
 	backSlotRef: React.Ref<HTMLDivElement>;
 	name: string;
 	art: string | null;
+	artInfo: ArtworkInfo | null;
 	artFrame: BannerFrame;
 	banner: HTMLElement | null;
 	style?: React.CSSProperties;
 };
 
-/** The deck page's top bar: the site header, which phones swap for the deck's own. */
+/**
+ * The deck page's top bar: the site header showing the deck's name, which on phones
+ * turns into a compact banner for the deck as the deck's banner scrolls under it.
+ */
 export function DeckHeader(props: Props) {
-	const { backSlotRef, name, art, artFrame, banner, style } = props;
+	const { backSlotRef, name, art, artInfo, artFrame, banner, style } = props;
 
-	return useIsPhoneLayout() ? (
-		<MobileDeckHeader
+	return (
+		<Header
 			backSlotRef={backSlotRef}
-			name={name}
-			art={art}
-			artFrame={artFrame}
-			banner={banner}
+			identity={{
+				name: name,
+				art: art,
+				artInfo: artInfo,
+				artFrame: artFrame,
+				banner: banner
+			}}
 			style={style}
+			chrome={{ desktop: <span className={styles.name}>{name}</span> }}
 		/>
-	) : (
-		<Header backSlotRef={backSlotRef}>
-			<span className={styles.name}>{name}</span>
-		</Header>
 	);
 }

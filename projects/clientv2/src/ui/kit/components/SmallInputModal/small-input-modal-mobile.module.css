@@ -1,0 +1,127 @@
+.backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	overscroll-behavior: none;
+	/* Nothing to pan here; scrolling happens inside the dialog. */
+	touch-action: none;
+	background: rgba(27, 22, 21, 0.48);
+}
+
+/*
+ * Rests on the keyboard (or the bottom of the screen when it is closed) and
+ * never grows past the visible area, so the actions stay in reach.
+ */
+.sheet {
+	position: fixed;
+	right: 0;
+	bottom: var(--keyboard-inset, 0px);
+	left: 0;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	max-height: calc(
+		100% - var(--visual-viewport-top, 0px) - var(--keyboard-inset, 0px) -
+			24px
+	);
+	/* The home indicator only matters when the keyboard is not covering it. */
+	padding-bottom: max(
+		0px,
+		calc(env(safe-area-inset-bottom) - var(--keyboard-inset, 0px))
+	);
+	border-radius: 16px 16px 0 0;
+	background: white;
+	box-shadow: 0 -12px 40px rgba(34, 25, 23, 0.22);
+	animation: sheet-in 180ms ease-out;
+}
+
+/*
+ * Some keyboards float a transparent strip above the keys (iOS AutoFill and
+ * its hide-keyboard button) that counts as keyboard, so the page would show
+ * through between the sheet and the keys. Carry the sheet's white down
+ * behind the whole keyboard area instead.
+ */
+.sheet::after {
+	position: absolute;
+	top: 100%;
+	right: 0;
+	left: 0;
+	height: var(--keyboard-inset, 0px);
+	background: white;
+	content: '';
+	pointer-events: none;
+}
+
+@keyframes sheet-in {
+	from {
+		transform: translateY(24px);
+		opacity: 0;
+	}
+}
+
+.header {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 18px 18px 0;
+}
+
+.header h2 {
+	margin: 0;
+	font-size: 20px;
+	line-height: 1.25;
+}
+
+.close {
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: #f3efed;
+	color: #4e4744;
+	font: inherit;
+	font-size: 24px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.body {
+	min-height: 0;
+	padding: 14px 18px;
+	overflow: auto;
+	overscroll-behavior: contain;
+}
+
+/* Full-width buttons along the bottom edge, just above the keyboard. */
+.actions {
+	display: flex;
+	flex: none;
+	gap: 10px;
+	padding: 12px 18px;
+	border-top: 1px solid #eee8e5;
+}
+
+.sheet .actions > * {
+	flex: 1 1 0;
+	min-width: 0;
+	min-height: 44px;
+	margin: 0;
+}
+
+.close:focus-visible {
+	outline: 3px solid rgba(166, 83, 80, 0.35);
+	outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sheet {
+		animation: none;
+	}
+}

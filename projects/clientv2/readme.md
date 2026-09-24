@@ -13,6 +13,254 @@ npm run dev
 
 The development server runs on port 3000 on all interfaces, so it is reachable at `http://localhost:3000` and from the LAN at `http://<hostname>.local:3000`. Start the backend separately. API requests go to port 4040 on whichever host served the page; set `VITE_BACKEND_HOST_URI` before starting Vite to use another backend URL.
 
+### HTTPS on your network
+
+A plain-HTTP LAN address is not a secure context, so browsers there withhold the
+install prompt, the offline shell worker and `crypto.subtle`. To get a secure
+context on a phone, the dev server serves a publicly trusted Let's Encrypt
+certificate for `*.local.mrobertevers.com`, and each device is reached by a name
+under it, such as `matthew-mbp-m4.local.mrobertevers.com`.
+
+Those device names exist only in a small DNS server on the WireGuard host
+(`tools/local-dns/`). Public DNS never holds them, and because the certificate is a
+wildcard, Certificate Transparency logs record only `*.local.mrobertevers.com`.
+
+```text
+                         What is public                What stays private
+                  ┌───────────────────────────┐   ┌──────────────────────────────────┐
+                  │ Let's Encrypt certificate │   │ device names and their addresses │
+                  │   *.local.mrobertevers.com│   │   matthew-mbp-m4 → 10.0.0.2      │
+                  │ _acme-challenge.local TXT │   │   (answered only by local-dns)   │
+                  │   (about a minute, every  │   │                                  │
+                  │    ~60 days)              │   │ certs/dev-key.pem (dev machine)  │
+                  └───────────────────────────┘   └──────────────────────────────────┘
+```
+
+#### Opening the app from a phone
+
+```text
+  Phone (WireGuard up)         WireGuard hub (cloud VM)             Dev machine
+ ┌─────────────────────┐      ┌───────────────────────────┐      ┌──────────────────┐
+ │ https://matthew-mbp │1. DNS│ local-dns 10.0.0.1:53     │      │ npm run dev      │
+ │ -m4.local.mrobert…  │─────►│  matthew-mbp-m4.local.    │      │  Vite :3000      │
+ │ :3000               │      │   mrobertevers.com?       │      │  certs/dev.pem   │
+ │                     │      │  hosts file → 10.0.0.2    │      │  (*.local.       │
+ │                     │◄─────│  A 10.0.0.2, TTL 30       │      │   mrobertevers)  │
+ │                     │      │                           │      │                  │
+ │                     │2. HTTPS to 10.0.0.2:3000 ────────┼─────►│ tunnel 10.0.0.2  │
+ │                     │      │ (hub forwards peer ↔ peer)│      │                  │
+ │                     │3. certificate: trusted CA ✓  name matches *.local… ✓  key ✓│
+ └─────────────────────┘      └───────────────────────────┘      └──────────────────┘
+```
+
+That is the path away from home. When the phone and the Mac are both at home, local-dns
+answers the Mac's LAN address instead, and the connection goes straight across the
+Wi-Fi without leaving the house (next section).
+
+#### How local-dns answers
+
+Devices name themselves: `npm run dev` registers the machine with local-dns over the
+tunnel, and local-dns answers with its LAN address when the phone is at home and its
+tunnel address when it is not.
+
+```text
+ npm run dev (Mac)                                   local-dns on the hub
+   every 2 minutes, over the tunnel:
+   POST http://10.0.0.1:8053/register   ─────────►   registry (entries last 10 minutes)
+   {"name": "matthew-mbp-m4",                          matthew-mbp-m4
+    "lan": ["192.168.1.148"]}                            tunnel 10.0.0.2   ← from the TCP connection,
+                                                         LAN    192.168.1.148 not from the request
+```
+
+The registrant's identity is its tunnel address. WireGuard drops any packet whose
+source address is not in the sending peer's `AllowedIPs`, and a TCP connection
+cannot be completed from a spoofed address, so a registration from `10.0.0.2` came
+from that peer. A name belongs to one tunnel address until it expires, and a name in
+the hosts file can only be registered from the address listed there.
+
+To tell whether two devices are in the same place, local-dns compares the public
+address each tunnel comes from. `wg show` needs network-admin rights, so a small
+root helper (`wg-endpoints.sh`) writes `tunnel address → endpoint` to
+`/run/local-dns/endpoints` every 3 seconds, and local-dns only reads that file.
+
+```text
+ query from 10.0.0.10 (phone) for matthew-mbp-m4.local.mrobertevers.com
+     │
+     ▼
+ registered?  ──no──► hosts file ──► mDNS (home-LAN hosts only) ──► NXDOMAIN
+     │ yes                (tunnel address, TTL 30)
+     ▼
+ phone's tunnel comes from 136.34.76.29, Mac's from 136.34.76.29
+     │
+     ├── same public address (both at home)  ──► 192.168.1.148   straight across the Wi-Fi
+     └── different, or unknown (phone away)  ──► 10.0.0.2        through the hub
+                         TTL 10 s, so moving between Wi-Fi and cellular takes effect quickly
+```
+
+Names outside `.local.mrobertevers.com` are forwarded to `1.1.1.1`. WireGuard has no
+split DNS: while the tunnel is up, every lookup goes to the `DNS =` server in the
+client config, so local-dns must answer everything. AAAA and HTTPS queries for a
+device get an empty answer, so clients fall back to its A record.
+
+#### Where it runs
+
+The WireGuard server for `mrobertevers.com` is a cloud VM acting as a hub: every
+device is its own peer with one tunnel address, and no peer routes the home LAN.
+So device names map to tunnel addresses, which work at home and away alike, and
+local-dns answers from a hosts file (mDNS multicast cannot reach a cloud VM).
+
+```text
+                        WireGuard hub (cloud VM, wg0 10.0.0.1)
+                        local-dns on 10.0.0.1:53, hosts file:
+                          matthew-mbp-m4  10.0.0.2
+                                   ▲  │
+                        DNS query  │  │ A 10.0.0.2
+                                   │  ▼
+   phone 10.0.0.x ─────── tunnel ──┴──┴── tunnel ─────── matthew-mbp-m4 10.0.0.2
+          │                                                  ▲
+          └──── HTTPS to 10.0.0.2:3000, forwarded by the hub ─┘
+```
+
+The hosts file is a fallback for devices that do not register, such as ones that
+never run `npm run dev`; registrations take precedence while they are fresh.
+
+Each client's WireGuard config sends DNS to the hub and routes the tunnel subnet:
+
+```ini
+[Interface]
+Address = 10.0.0.5/32
+PrivateKey = …
+DNS = 10.0.0.1                  # local-dns; WireGuard sends every lookup here
+
+[Peer]
+Endpoint = mrobertevers.com:51820
+AllowedIPs = 10.0.0.0/24        # at least the tunnel subnet, so peers reach each other
+```
+
+On a Mac, `/etc/resolver/local.mrobertevers.com` containing `nameserver 10.0.0.1`
+sends only this zone to local-dns and leaves every other lookup alone.
+
+Install or update it with `tools/local-dns/deploy.sh`, which copies the scripts, the
+hosts file and the two systemd units (`local-dns` and `local-dns-endpoints`), then
+restarts them. local-dns listens only on the tunnel address, for DNS on port 53 and
+registrations on 8053, so neither is reachable from the internet. Keep the hosts
+file, which names your devices, outside the repository:
+
+```sh
+tools/local-dns/deploy.sh mrobertevers.com local.mrobertevers.com 10.0.0.1 ~/.config/local-dns/hosts
+```
+
+#### What `npm run dev` does first
+
+```text
+ npm run dev
+     │
+     ▼
+ certs/acme.config.json? ──no──► serve plain HTTP (as before)
+     │ yes
+     ▼
+ certs/dev.pem valid, trusted, covers the name,
+ and more than 30 days left? ──yes──► start Vite with HTTPS          (almost every run)
+     │ no
+     ▼
+ DNS provider automatic? ──no──► print "run npm run dev:cert:le", start with what exists
+     │ yes
+     ▼
+ issue a new certificate (about 1–2 minutes), then start Vite with HTTPS
+ (on failure: log it and start with the current certificate; the next run retries)
+```
+
+Certificates last 90 days, so this renews roughly every 60 days. An expired
+certificate is never served; the server falls back to plain HTTP instead.
+
+#### How a certificate is issued (DNS-01)
+
+Let's Encrypt must check for itself that you control the domain. With DNS-01 it
+looks up a TXT record the script publishes, which works even though the dev
+machine is unreachable from the internet.
+
+```text
+ letsencrypt.mjs        DnsProvider           Zone's nameservers         Let's Encrypt
+      │                 (GoDaddy API)         (ns33/ns34, anycast)        (several regions)
+      │── new order ───────────────────────────────────────────────────────────►│
+      │◄─ challenge token ──────────────────────────────────────────────────────│
+      │── setRecord(TXT _acme-challenge.local, token)►│                         │
+      │                        │── publish ──────────►│                         │
+      │── ask each nameserver until all have it ─────►│                         │
+      │── wait propagationSeconds (default 60) ──     │                         │
+      │── "ready, validate" ───────────────────────────────────────────────────►│
+      │                                               │◄── TXT lookups ─────────│
+      │◄─ valid ────────────────────────────────────────────────────────────────│
+      │── CSR, finalize, download ─────────────────────────────────────────────►│
+      │   write certs/dev.pem + certs/dev-key.pem                               │
+      │── removeRecord(TXT) ──►│                                                │
+```
+
+The wait exists because the nameservers are anycast: each address is served by
+many machines, and the script can only query the one nearest it. Let's Encrypt
+checks from several regions and needs most of them to see the record.
+
+```text
+                     DNS provider API
+                          │ write (instant)
+          ┌───────────────┼────────────────┐   copies spread
+          ▼               ▼                ▼   over seconds
+   nameserver copy A  nameserver copy B  nameserver copy C
+   (near this machine)  (other region)    (other region)
+          ▲               ▲                ▲
+     our check        Let's Encrypt    Let's Encrypt
+```
+
+If a validation fails, the "no such name" answer is cached for the zone's negative
+TTL (600 s at GoDaddy), so wait that long before retrying. Let's Encrypt also allows
+only five failed validations per name per hour.
+
+#### Pieces and configuration
+
+```text
+ tools/vite.mjs            starts Vite; calls ensureCertificate() for dev and preview
+ tools/letsencrypt.mjs     ensureCertificate() and issueCertificate(); CLI: npm run dev:cert:le
+ tools/acme.mjs            minimal ACME (RFC 8555) client and DNS propagation check
+ tools/dev-certs.mjs       loads certs/, reports days left / names / staging
+ tools/dns/provider.mjs    DnsProvider interface: setRecord, removeRecord, automatic
+      ├── dns/godaddy.mjs  GoDaddy Domains v3 API with a Personal Access Token
+      └── dns/manual.mjs   prints the record and waits for Enter
+ tools/local-dns/          the private DNS server (runs on the WireGuard host, not here)
+      ├── local-dns.mjs    UDP/TCP server, hosts file, forwarding; CLI
+      ├── registry.mjs     POST /register, name ownership, LAN-or-tunnel choice
+      ├── endpoints.mjs    reads /run/local-dns/endpoints
+      ├── wg-endpoints.sh  root helper that writes it
+      ├── mdns.mjs         asks <host>.local over multicast DNS
+      ├── dns-message.mjs  the DNS wire format it needs
+      ├── register.mjs     the client side; npm run dev uses it
+      └── deploy.sh, *.service
+```
+
+The certificate code depends only on `DnsProvider`; supporting another registrar
+means adding one file under `tools/dns/` and a case in `createDnsProvider`.
+
+`certs/` is git-ignored. `certs/acme.config.json`:
+
+```json
+{
+  "email": "you@example.com",
+  "domain": "*.local.example.com",
+  "dns": "godaddy",
+  "godaddyPatFile": "~/path/to/godaddy_dns_pat",
+  "localDns": { "registry": "http://10.0.0.1:8053" }
+}
+```
+
+Optional keys: `extraDomains` (more names on the same certificate), `zone` (when the
+registered domain is not the last two labels), `propagationSeconds`, `localDns.name` (the name to register; the machine's `.local`
+name by default; without `localDns`, `npm run dev` registers nothing). A wildcard
+covers one label: `*.local.example.com` covers `laptop.local.example.com`, not
+`local.example.com` or `a.b.local.example.com`. `GODADDY_PAT`
+in the environment overrides `godaddyPatFile`. The token needs only the
+`domains.dns:update` scope. With `"dns": "manual"`, run `npm run dev:cert:le` and
+add the record when asked. Without `--production` it uses Let's Encrypt's staging
+service, which is untrusted but has generous rate limits for testing.
+
 ## Import cards from a photo
 
 Use **Create a deck from image** or **Add cards in image**. The selector offers:

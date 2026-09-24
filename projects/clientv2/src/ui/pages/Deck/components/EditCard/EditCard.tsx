@@ -4,6 +4,7 @@ import { DeckCardEntry } from '../../../../../domain/models/deck';
 import { ManaCost, ManaText } from '../../../../kit/components/ManaCost/ManaCost';
 
 import { HeaderBackButton } from 'src/ui/kit/components/BackLink/BackLink';
+import { useCloseOnEscape } from 'src/ui/kit/hooks/useCloseOnEscape';
 import { HeaderBackSlot } from 'src/ui/kit/components/Header/HeaderBackSlot';
 import styles from './edit-card.module.css';
 
@@ -113,15 +114,7 @@ function CardText(props: { details: CardPreviewDetails }) {
 export function CardPreviewModal(props: CardPreviewModalProps) {
 	const { card, onClose } = props;
 
-	useEffect(() => {
-		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === 'Escape') onClose();
-		}
-		window.addEventListener('keydown', closeOnEscape);
-		return function () {
-			return window.removeEventListener('keydown', closeOnEscape);
-		};
-	}, [onClose]);
+	useCloseOnEscape(onClose);
 
 	if (!card) return null;
 

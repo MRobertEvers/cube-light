@@ -26,6 +26,13 @@
 	overflow-wrap: normal;
 }
 
+/* Keeps the mirror in step with the 16px touch size set in common.css. */
+@media (pointer: coarse) {
+	.backdrop {
+		font-size: 16px;
+	}
+}
+
 .input {
 	position: relative;
 	z-index: 1;
@@ -119,10 +126,16 @@
 	line-height: 1;
 }
 
-.marker:hover span,
 .marker[aria-expanded='true'] span {
 	background: #9d2525;
 	box-shadow: 0 0 0 3px rgba(196, 54, 54, 0.2);
+}
+
+@media (hover: hover) {
+	.marker:hover span {
+		background: #9d2525;
+		box-shadow: 0 0 0 3px rgba(196, 54, 54, 0.2);
+	}
 }
 
 .popover,
@@ -178,11 +191,18 @@
 	text-align: left;
 }
 
-.menu-tile:hover:not(:disabled),
 .menu-tile:focus-visible {
 	border-color: #c9a9a5;
 	background: #f6ece9;
 	outline: none;
+}
+
+@media (hover: hover) {
+	.menu-tile:hover:not(:disabled) {
+		border-color: #c9a9a5;
+		background: #f6ece9;
+		outline: none;
+	}
 }
 
 .menu-tile:disabled {
@@ -230,10 +250,16 @@
 	text-align: left;
 }
 
-.popover-options button:hover,
 .popover-options button:focus-visible {
 	background: #f6ece9;
 	outline: none;
+}
+
+@media (hover: hover) {
+	.popover-options button:hover {
+		background: #f6ece9;
+		outline: none;
+	}
 }
 
 .completions {
@@ -300,8 +326,10 @@
 	font-weight: 600;
 }
 
-.tab-hint:hover {
-	background: #faf6f4;
+@media (hover: hover) {
+	.tab-hint:hover {
+		background: #faf6f4;
+	}
 }
 
 @media (hover: none) {

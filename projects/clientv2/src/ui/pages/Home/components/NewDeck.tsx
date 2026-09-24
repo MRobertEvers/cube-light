@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from 'src/ui/kit/components/Button/Button';
-import { useCloseOnEscape } from 'src/ui/kit/hooks/useCloseOnEscape';
+import { SmallInputModal } from 'src/ui/kit/components/SmallInputModal/SmallInputModal';
 
 import styles from './new-deck.module.css';
 
@@ -24,50 +24,45 @@ export type NewDeckModalProps = {
 export function NewDeckModal(props: NewDeckModalProps) {
 	const { onEvent } = props;
 	const [name, setName] = useState('');
-	useCloseOnEscape(() => onEvent({ type: NewDeckModalEventType.CLOSE }));
+
+	function close() {
+		onEvent({ type: NewDeckModalEventType.CLOSE });
+	}
+
+	function submit() {
+		if (!name.trim()) return;
+		onEvent({ type: NewDeckModalEventType.SUBMIT, payload: name });
+	}
 
 	return (
-		<div
-			className={styles['container']}
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="new-deck-title"
+		<SmallInputModal
+			title="Create a deck"
+			onClose={close}
+			onSubmit={submit}
+			actions={
+				<>
+					<Button onClick={close}>Cancel</Button>
+					<Button
+						type="submit"
+						variant="primary"
+						disabled={!name.trim()}
+					>
+						Create
+					</Button>
+				</>
+			}
 		>
-			<div className={styles['contents']}>
-				<h2 id="new-deck-title">Create a deck</h2>
+			<div className={styles['field']}>
 				<label htmlFor="new-deck-name">Deck name</label>
 				<input
 					id="new-deck-name"
 					autoFocus
+					enterKeyHint="done"
 					placeholder="Give your deck a name"
 					value={name}
 					onChange={(e) => setName(e.target.value)}
 				/>
-				<div className={styles['body']}>
-					<div className={styles['group-counter-buttons']}>
-						<Button
-							disabled={!name.trim()}
-							onClick={() =>
-								onEvent({
-									type: NewDeckModalEventType.SUBMIT,
-									payload: name
-								})
-							}
-						>
-							Ok
-						</Button>
-						<Button
-							onClick={() =>
-								onEvent({
-									type: NewDeckModalEventType.CLOSE
-								})
-							}
-						>
-							Cancel
-						</Button>
-					</div>
-				</div>
 			</div>
-		</div>
+		</SmallInputModal>
 	);
 }

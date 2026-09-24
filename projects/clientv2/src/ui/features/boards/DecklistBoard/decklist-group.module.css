@@ -70,8 +70,10 @@
 	cursor: pointer;
 }
 
-.manage-row:hover {
-	text-decoration: underline;
+@media (hover: hover) {
+	.manage-row:hover {
+		text-decoration: underline;
+	}
 }
 
 .row:focus-visible,
@@ -98,8 +100,10 @@
 	white-space: nowrap;
 }
 
-.row:hover .name {
-	text-decoration: underline;
+@media (hover: hover) {
+	.row:hover .name {
+		text-decoration: underline;
+	}
 }
 
 .set-code {
@@ -186,8 +190,10 @@
 	letter-spacing: 0.03em;
 }
 
-.printing:hover .printing-code {
-	text-decoration: underline;
+@media (hover: hover) {
+	.printing:hover .printing-code {
+		text-decoration: underline;
+	}
 }
 
 .printing-count {
@@ -202,8 +208,10 @@
 		min-height: 48px;
 	}
 
-	.row:hover .name {
-		text-decoration: none;
+	@media (hover: hover) {
+		.row:hover .name {
+			text-decoration: none;
+		}
 	}
 
 	.print-count-label {

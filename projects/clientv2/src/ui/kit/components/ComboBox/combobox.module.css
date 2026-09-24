@@ -52,12 +52,20 @@
 	border-bottom: none;
 }
 
-.suggestions > li:hover,
 .suggestions > li:focus {
 	padding: 2px;
 	padding-left: 4px;
 	font-weight: bold;
 	outline: none;
+}
+
+@media (hover: hover) {
+	.suggestions > li:hover {
+		padding: 2px;
+		padding-left: 4px;
+		font-weight: bold;
+		outline: none;
+	}
 }
 
 .hidden {

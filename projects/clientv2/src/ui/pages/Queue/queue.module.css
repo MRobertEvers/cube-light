@@ -197,9 +197,11 @@
 	color: #5c626a;
 }
 
-.button:hover,
-.quiet:hover {
-	border-color: #a65350;
+@media (hover: hover) {
+	.button:hover,
+	.quiet:hover {
+		border-color: #a65350;
+	}
 }
 
 .button:focus-visible,

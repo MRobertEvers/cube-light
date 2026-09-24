@@ -133,9 +133,11 @@
 	color: #fff;
 }
 
-.modal-buttons .add-button:hover:enabled {
-	border-color: #6c3735;
-	background: #6c3735;
+@media (hover: hover) {
+	.modal-buttons .add-button:hover:enabled {
+		border-color: #6c3735;
+		background: #6c3735;
+	}
 }
 
 .modal-buttons .add-button:disabled {

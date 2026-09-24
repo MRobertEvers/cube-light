@@ -12,9 +12,11 @@
 	cursor: pointer;
 }
 
-.trigger:hover {
-	background: #f4f1ef;
-	color: #8e2524;
+@media (hover: hover) {
+	.trigger:hover {
+		background: #f4f1ef;
+		color: #8e2524;
+	}
 }
 
 .trigger:focus-visible {
@@ -97,8 +99,10 @@
 	cursor: pointer;
 }
 
-.close:hover {
-	background: #741d1c;
+@media (hover: hover) {
+	.close:hover {
+		background: #741d1c;
+	}
 }
 
 .close:focus-visible {

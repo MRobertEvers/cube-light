@@ -59,8 +59,10 @@
 	cursor: pointer;
 }
 
-.close:hover {
-	background: #e7e2df;
+@media (hover: hover) {
+	.close:hover {
+		background: #e7e2df;
+	}
 }
 .close:focus-visible {
 	outline: 2px solid var(--deck-accent, #7a3431);
@@ -89,10 +91,13 @@
 	);
 }
 
+/* Holds the card's shape before the image loads, so the text below doesn't jump. */
 .image-panel img {
 	display: block;
 	width: min(100%, 390px);
 	height: auto;
+	aspect-ratio: 0.716;
+	background: rgba(26, 22, 20, 0.08);
 	border-radius: 4.8% / 3.5%;
 	box-shadow: 0 16px 34px rgba(26, 22, 20, 0.28);
 }
@@ -192,8 +197,10 @@
 	font-size: 0.875rem;
 	cursor: pointer;
 }
-.formats-toggle:hover {
-	text-decoration: underline;
+@media (hover: hover) {
+	.formats-toggle:hover {
+		text-decoration: underline;
+	}
 }
 
 @media (max-width: 680px) {

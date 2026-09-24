@@ -59,9 +59,11 @@
 	cursor: pointer;
 }
 
-.chip button:hover:enabled {
-	background: #e2dbd8;
-	color: #26211f;
+@media (hover: hover) {
+	.chip button:hover:enabled {
+		background: #e2dbd8;
+		color: #26211f;
+	}
 }
 
 .chip button:focus-visible {

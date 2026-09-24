@@ -57,5 +57,34 @@ export function createRoutesImages(images: CardImageService): Router {
 		}
 	);
 
+	// The image's sidecar: its size and page palette, for the client to read with a deck.
+	app.get(
+		'/images/:variant/:id.json',
+		async (
+			req: Request<{ variant: string; id: string }>,
+			res: Response
+		) => {
+			res.setHeader('Cache-Control', 'no-store');
+			const { id, variant } = req.params;
+			if (!isImageVariant(variant) || !isScryfallId(id)) {
+				res.sendStatus(400);
+				return;
+			}
+			try {
+				const meta = await images.meta(id, variant);
+				if (!meta) {
+					res.sendStatus(404);
+					return;
+				}
+				// Sidecars change only when the measuring does, which bumps their version.
+				res.setHeader('Cache-Control', 'public, max-age=86400');
+				res.json(meta);
+			} catch (error) {
+				console.error('Unable to serve card image metadata', error);
+				res.sendStatus(502);
+			}
+		}
+	);
+
 	return app;
 }

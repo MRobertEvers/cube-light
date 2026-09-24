@@ -73,8 +73,10 @@
 	color: #b42323;
 }
 
-.actions .delete:hover:enabled {
-	background: #fbeeee;
+@media (hover: hover) {
+	.actions .delete:hover:enabled {
+		background: #fbeeee;
+	}
 }
 
 .body {
@@ -152,9 +154,11 @@
 	cursor: pointer;
 }
 
-.known-tags button:hover:enabled {
-	border-style: solid;
-	background: #f7f4f2;
+@media (hover: hover) {
+	.known-tags button:hover:enabled {
+		border-style: solid;
+		background: #f7f4f2;
+	}
 }
 
 .known-tags small {

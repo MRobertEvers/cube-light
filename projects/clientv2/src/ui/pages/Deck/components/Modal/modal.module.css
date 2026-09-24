@@ -1,12 +1,19 @@
+/*
+ * The backdrop covers the whole screen, including under a translucent phone
+ * keyboard; the insets from useVisualViewportFrame keep the content above it.
+ */
 .modal-container {
 	position: fixed;
 	inset: 0;
 	box-sizing: border-box;
 	display: flex;
 	z-index: 100;
-	padding: 20px;
+	padding: calc(20px + var(--visual-viewport-top, 0px)) 20px
+		calc(20px + var(--keyboard-inset, 0px));
 	overflow: hidden;
 	overscroll-behavior: none;
+	/* Nothing to pan here; scrolling happens inside the dialog. */
+	touch-action: none;
 	background: rgba(27, 22, 21, 0.48);
 	backdrop-filter: blur(3px);
 }
@@ -27,9 +34,7 @@
 
 @media (max-width: 680px) {
 	.mobile-full-screen {
-		height: 100vh;
-		height: 100dvh;
-		padding: 0;
+		padding: var(--visual-viewport-top, 0px) 0 var(--keyboard-inset, 0px);
 	}
 	.mobile-full-screen .modal-container-contents {
 		width: 100%;

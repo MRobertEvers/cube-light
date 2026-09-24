@@ -19,6 +19,7 @@ import type { CardImagePipeline } from '../domain/scans/image-scan-pipelines';
 import type { CardImageCandidate, ImageRegion } from '../domain/scans/scan-candidates';
 import type { TableName } from './local-store/schema';
 import type { CardListProblem } from '../domain/card-names/card-list-problem';
+import type { OfflineShellStatus } from '../domain/models/offline-shell';
 
 /**
  * Everything the ToriMTGEngine needs from outside itself. The engine imports only these
@@ -103,6 +104,12 @@ export interface PageLifecycle {
 export interface DeviceProfile {
 	/** Phones and tablets, where heavy image work is slow. */
 	isMobile(): boolean;
+}
+
+/** The service worker that caches the built app so it can start offline. */
+export interface OfflineShell {
+	/** Calls the listener with the current status and on every change. Returns a stop function. */
+	watch(listener: (status: OfflineShellStatus) => void): () => void;
 }
 
 // ── Off-thread work ──────────────────────────────────────────────────────────

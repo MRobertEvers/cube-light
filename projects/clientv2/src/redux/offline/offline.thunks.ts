@@ -1,4 +1,5 @@
 import type { PendingEdit } from '../../domain/models/pending-edit';
+import type { OfflineShellStatus } from '../../domain/models/offline-shell';
 import type { AppThunk } from '../thunk';
 
 /** Edits saved on this device that the server has not accepted yet. */
@@ -25,5 +26,12 @@ export function exportUnsyncedEdits(): AppThunk<Promise<Blob>> {
 export function retrySync(): AppThunk<Promise<void>> {
 	return function (_dispatch, _getState, engine) {
 		return engine.sync.retryNow();
+	};
+}
+
+/** Reports whether the app can start with no network here, now and on every change. Returns a stop function. */
+export function watchOfflineShell(listener: (status: OfflineShellStatus) => void): AppThunk<() => void> {
+	return function (_dispatch, _getState, engine) {
+		return engine.offlineShell.watch(listener);
 	};
 }

@@ -13,9 +13,14 @@
 	color: var(--deck-accent-text, #8e2524);
 }
 
-.link:hover span,
 .link:focus-visible span {
 	text-decoration: underline;
+}
+
+@media (hover: hover) {
+	.link:hover span {
+		text-decoration: underline;
+	}
 }
 
 .header-back {
@@ -34,9 +39,14 @@
 	cursor: pointer;
 }
 
-.header-back:hover,
 .header-back:focus-visible {
 	background: #f6ece9;
+}
+
+@media (hover: hover) {
+	.header-back:hover {
+		background: #f6ece9;
+	}
 }
 
 .visually-hidden {

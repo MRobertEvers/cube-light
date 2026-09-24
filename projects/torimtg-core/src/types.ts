@@ -139,7 +139,9 @@ export type ResourceQuery =
     | { type: 'card.resolve'; name: string; setCode?: string }
     | { type: 'card.suggestions'; stub: string }
     | { type: 'card.names'; format: 'all' | 'wasm' | 'index' }
-    | { type: 'blob'; id: string };
+    | { type: 'blob'; id: string }
+    /** The sidecar the server recorded for a stored card image (ImageMeta). */
+    | { type: 'image.meta'; variant: 'small' | 'normal' | 'large' | 'art_crop'; id: string };
 export type Query =
     | { type: 'decks' }
     | { type: 'deck'; id: string }

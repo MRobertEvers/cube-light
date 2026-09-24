@@ -10,6 +10,8 @@ import { Page } from '../../kit/components/Page/Page';
 import { PrintingPicker } from '../../kit/components/PrintingPicker/PrintingPicker';
 import { SuggestionInput } from '../../kit/components/SuggestionInput/SuggestionInput';
 import { UserBop } from '../../kit/components/UserBop/UserBop';
+import { OfflineShellStatusCard } from './OfflineShellStatusCard';
+import { SyncStatusCard } from './SyncStatusCard';
 import styles from './profile.module.css';
 
 const DEFAULT_CROP: ProfileCrop = { x: 0.5, y: 0.5, zoom: 1 };
@@ -271,6 +273,8 @@ export function Profile() {
 						)}
 					</section>
 				</div>
+				<SyncStatusCard />
+				<OfflineShellStatusCard />
 			</main>
 		</Page>
 	);

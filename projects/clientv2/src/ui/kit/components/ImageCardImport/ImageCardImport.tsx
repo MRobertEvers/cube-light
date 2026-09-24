@@ -3,7 +3,7 @@ import {
 	DEFAULT_IMAGE_PIPELINE,
 	type CardImagePipeline
 } from 'src/domain/scans/image-scan-pipelines';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppDispatch } from 'src/redux/use-app-dispatch';
 import { createDeck } from 'src/redux/decks/decks.thunks';
@@ -12,6 +12,8 @@ import { HeaderBackButton } from 'src/ui/kit/components/BackLink/BackLink';
 import { HeaderBackSlot } from 'src/ui/kit/components/Header/HeaderBackSlot';
 import { DeckControlIcon } from 'src/ui/kit/components/DeckControlIcons/DeckControlIcons';
 import { useDocumentScrollLock } from 'src/ui/kit/hooks/useDocumentScrollLock';
+import { useVisualViewportFrame } from 'src/ui/kit/hooks/useVisualViewportFrame';
+import { useHotkey, useHotkeyLayer } from 'src/ui/kit/hotkeys/Hotkeys';
 import styles from './image-card-import.module.css';
 
 type Props = {
@@ -25,6 +27,7 @@ export function ImageCardImport(props: Props) {
 	const { mode, deckId, onClose, onComplete } = props;
 	const dispatch = useAppDispatch();
 	useDocumentScrollLock();
+	useVisualViewportFrame();
 	const [pipeline, setPipeline] = useState<CardImagePipeline>(
 		DEFAULT_IMAGE_PIPELINE
 	);
@@ -47,15 +50,9 @@ export function ImageCardImport(props: Props) {
 			},
 		[previewUrl]
 	);
-	useEffect(() => {
-		function onKeyDown(event: KeyboardEvent) {
-			if (event.key === 'Escape' && !isStarting) onClose();
-		}
-		window.addEventListener('keydown', onKeyDown);
-		return function () {
-			return window.removeEventListener('keydown', onKeyDown);
-		};
-	}, [isStarting, onClose]);
+	const backdrop = useRef<HTMLDivElement>(null);
+	const layer = useHotkeyLayer('dialog', { elementRef: backdrop });
+	useHotkey('Escape', onClose, { layer, enabled: !isStarting });
 
 	function selectFile(selected: File | null) {
 		if (!selected) return;
@@ -95,7 +92,7 @@ export function ImageCardImport(props: Props) {
 	}
 
 	return createPortal(
-		<div className={styles.backdrop}>
+		<div ref={backdrop} className={styles.backdrop}>
 			<section
 				className={styles.panel}
 				role="dialog"

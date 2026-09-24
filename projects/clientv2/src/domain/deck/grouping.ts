@@ -31,6 +31,7 @@ export function groupDeck(data: DeckDetail): GroupedDeck {
 	const grouped: GroupedDeck = {
 		name: data.name,
 		icon: data.icon,
+		artwork: data.artwork,
 		bannerCardUuid: data.bannerCardUuid,
 		bannerCard: data.bannerCard,
 		palette: data.palette,

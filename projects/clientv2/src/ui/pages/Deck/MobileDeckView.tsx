@@ -2,6 +2,7 @@ import React from 'react';
 import type { DeckCardEntry } from '../../../domain/models/deck';
 import { DeckFullArtTop } from '../../kit/components/DeckFullArtTop/DeckFullArtTop';
 import type { DeckCardGroup } from '../../../domain/deck/group-deck-cards';
+import { artworkOf } from '../../../domain/appearance/artwork';
 import { BoardVisualizationReduxWidget } from '../../features/boards/BoardVisualizationReduxWidget';
 import type { BoardControlsProps } from '../../features/boards/board.types';
 import {
@@ -52,6 +53,7 @@ export function MobileDeckView(props: MobileDeckViewProps) {
 				<DeckFullArtTop
 					ref={onBannerElement}
 					src={topBannerCard.art}
+					artInfo={artworkOf(data.artwork, topBannerCard.art)}
 					crop={bannerCrop}
 					name={data.name}
 					cardCount={data.deck.count}

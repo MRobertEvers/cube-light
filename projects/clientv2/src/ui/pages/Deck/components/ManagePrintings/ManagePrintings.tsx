@@ -22,6 +22,7 @@ import {
 } from '../../../../../domain/deck/boards';
 
 import { HeaderBackButton } from 'src/ui/kit/components/BackLink/BackLink';
+import { useCloseOnEscape } from 'src/ui/kit/hooks/useCloseOnEscape';
 import { HeaderBackSlot } from 'src/ui/kit/components/Header/HeaderBackSlot';
 import styles from './manage-printings.module.css';
 
@@ -132,15 +133,7 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 		};
 	}, [dispatch, target.name]);
 
-	useEffect(() => {
-		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === 'Escape') onClose();
-		}
-		window.addEventListener('keydown', closeOnEscape);
-		return function () {
-			return window.removeEventListener('keydown', closeOnEscape);
-		};
-	}, [onClose]);
+	useCloseOnEscape(onClose);
 
 	// Keep rows already in the deck on their opening snapshot. The printings request
 	// returns richer labels and images, but must not rewrite text that is already shown.

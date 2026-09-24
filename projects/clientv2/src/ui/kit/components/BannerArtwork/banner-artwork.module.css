@@ -12,6 +12,23 @@
 	max-width: none;
 	user-select: none;
 	object-fit: cover;
+	transition: opacity 200ms ease-out;
+}
+
+/* The blurred stand-in under the image; the image covers it once loaded. */
+.preview {
+	pointer-events: none;
+}
+
+/* Over a preview, the image fades in once it has loaded instead of painting in rows. */
+.pending {
+	opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.viewport img {
+		transition: none;
+	}
 }
 
 .editable {

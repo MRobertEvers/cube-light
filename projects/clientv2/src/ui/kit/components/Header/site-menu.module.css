@@ -1,0 +1,84 @@
+.menu {
+	position: relative;
+	flex: none;
+	display: flex;
+	align-items: center;
+}
+
+.menuButton {
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	border: 0;
+	border-radius: 8px;
+	background: none;
+	color: var(--deck-banner-ink, #47413f);
+	cursor: pointer;
+}
+
+.menuButton:focus-visible {
+	outline: 2px solid currentColor;
+}
+
+/* Three bars: the middle one is the element, the others its shadows. */
+.menuIcon {
+	width: 20px;
+	height: 2px;
+	border-radius: 1px;
+	background: currentColor;
+	box-shadow:
+		0 -6px 0 currentColor,
+		0 6px 0 currentColor;
+}
+
+.menuPanel {
+	position: absolute;
+	z-index: 80;
+	top: calc(100% + 8px);
+	right: 0;
+	min-width: 160px;
+	padding: 6px;
+	display: grid;
+	background: #fff;
+	border: 1px solid #e5e1df;
+	border-radius: 10px;
+	box-shadow: 0 12px 28px rgba(38, 38, 38, 0.16);
+	font-weight: 600;
+}
+
+.menuPanel a,
+.menuPanel button {
+	padding: 10px 12px;
+	border: 0;
+	background: none;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	border-radius: 6px;
+	text-decoration: none;
+	color: #47413f;
+}
+
+.menuPanel a:focus-visible,
+.menuPanel button:focus-visible {
+	background: #f4f1ef;
+	color: #8e2524;
+}
+
+@media (hover: hover) {
+	.menuPanel a:hover,
+	.menuPanel button:hover {
+		background: #f4f1ef;
+		color: #8e2524;
+	}
+}
+
+/* The page's controls, set apart from the site links below. */
+.pageItems {
+	display: grid;
+	margin-bottom: 6px;
+	padding-bottom: 6px;
+	border-bottom: 1px solid #efebe9;
+}

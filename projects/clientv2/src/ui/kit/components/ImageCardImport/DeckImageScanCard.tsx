@@ -12,6 +12,7 @@ import { workProgress, workStatusText } from 'src/ui/kit/utils/work-status';
 import type { ImageRegion } from 'src/domain/scans/scan-candidates';
 import { LogoInkwellPulse } from 'src/ui/kit/components/LogoInkwellPulse/LogoInkwellPulse';
 import { useDocumentScrollLock } from 'src/ui/kit/hooks/useDocumentScrollLock';
+import { useHotkey, useHotkeyLayer } from 'src/ui/kit/hotkeys/Hotkeys';
 import modalStyles from './image-card-import.module.css';
 import styles from './deck-image-scan-card.module.css';
 
@@ -477,18 +478,13 @@ function ImageScanDetails(props: { task: ImageScanTask; onClose: () => void }) {
 	const dispatch = useAppDispatch();
 	useDocumentScrollLock();
 
-	useEffect(() => {
-		function onKeyDown(event: KeyboardEvent) {
-			if (event.key === 'Escape') onClose();
-		}
-		window.addEventListener('keydown', onKeyDown);
-		return function () {
-			return window.removeEventListener('keydown', onKeyDown);
-		};
-	}, [onClose]);
+	const backdrop = useRef<HTMLDivElement>(null);
+	const layer = useHotkeyLayer('dialog', { elementRef: backdrop });
+	useHotkey('Escape', onClose, { layer });
 
 	return createPortal(
 		<div
+			ref={backdrop}
 			className={`${modalStyles.backdrop} ${modalStyles.fullscreenMobile}`}
 		>
 			<section
