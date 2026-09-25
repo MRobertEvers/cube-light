@@ -7,6 +7,7 @@ import { HttpSyncTransport } from '../platform/http/http-sync-transport';
 import { InThreadSyncHost } from '../platform/sync/in-thread-sync-host';
 import { BrowserPageLifecycle } from '../platform/page-lifecycle';
 import { BrowserDevice } from '../platform/device';
+import { BrowserReachability } from '../platform/reachability';
 import { BrowserCardScanner } from '../platform/card-scanner/browser-card-scanner';
 import { WasmNameIndexBuilder } from '../platform/wasm/name-index-builder';
 import { API_URI } from '../platform/api-url';
@@ -15,6 +16,8 @@ import { CardListLintWorkerClient } from '../workers/card-list-lint/card-list-li
 import { ShellWorkerClient } from '../workers/shell/shell.client';
 import { configureStore, type StoreType } from '../redux/configure-store';
 import { startProjections } from '../redux/projections';
+import { loadConnectivity } from '../redux/connectivity/connectivity.thunks';
+import type { AppDispatch } from '../redux/use-app-dispatch';
 import type { BuildInfo } from '../domain/models/build-info';
 
 // Compiled in by tools/vite.mjs from tools/build-info.mjs.
@@ -30,7 +33,8 @@ export function composeApp(): StoreType {
 	offlineShell.start();
 	const crypto = new WebCrypto();
 	const localStore = new OutboxLocalStore(new IndexedDbDriver('torimtg-v1', indexedDB), crypto);
-	const transport = new HttpSyncTransport(API_URI, localStore);
+	const reachability = new BrowserReachability();
+	const transport = new HttpSyncTransport(API_URI, localStore, reachability);
 	const syncHost = new InThreadSyncHost(localStore, transport, crypto);
 	const blobs = new BlobUrls(localStore, syncHost.announce);
 	const engine = createToriMTGEngine({
@@ -44,9 +48,12 @@ export function composeApp(): StoreType {
 		cardScanner: new BrowserCardScanner(),
 		nameIndexBuilder: new WasmNameIndexBuilder(),
 		cardListLinter: new CardListLintWorkerClient(),
-		offlineShell
+		offlineShell,
+		reachability
 	});
 	const store = configureStore(engine);
-	startProjections(store.dispatch, engine.events);
+	const dispatch: AppDispatch = store.dispatch;
+	startProjections(dispatch, engine.events);
+	dispatch(loadConnectivity());
 	return store;
 }

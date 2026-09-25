@@ -1,16 +1,19 @@
 import type { AccountScope, CommandOutcome, CommandRequest, ResourceQuery, Session, StoredResource, SyncPage } from '@torimtg/core';
 import type { LocalBlob, ReplicaMeta } from '../../engine/core/types';
-import { SyncTransportError, type SyncTransport } from '../../engine/ports';
+import { SyncTransportError, type ReachabilityReport, type SyncTransport } from '../../engine/ports';
 import type { LocalStore } from '../../engine/core/types';
 import type { AuthSession } from '@torimtg/core';
 import { queryKey } from '../../engine/local-store/local-store';
+
+const GATEWAY_FAILURES = [502, 503, 504];
 
 /** Worker-only HTTP adapter. Retry policy and durable state belong to the coordinator. */
 export class HttpSyncTransport implements SyncTransport {
     private readonly base: string;
     private readonly authStore: LocalStore;
+    private readonly reachability: ReachabilityReport;
     private refreshing: Promise<void> | null = null;
-    constructor(base: string, authStore: LocalStore) { this.base = base.replace(/\/$/, ''); this.authStore = authStore; }
+    constructor(base: string, authStore: LocalStore, reachability: ReachabilityReport) { this.base = base.replace(/\/$/, ''); this.authStore = authStore; this.reachability = reachability; }
 
     private async request(path: string, options?: RequestInit, authenticateArg?: boolean): Promise<Response> {
         const authenticate = authenticateArg === undefined ? true : authenticateArg;
@@ -48,6 +51,9 @@ export class HttpSyncTransport implements SyncTransport {
                 if (credentials) headers.set('Authorization', `Bearer ${credentials.tokens.accessToken}`);
             }
             const response = await fetch(this.base + path, { method: options?.method, body: options?.body, headers, credentials: 'omit', signal: controller.signal, cache: 'no-store' });
+            // A proxy in front of the server (Vite's, or deploy/serve-client.mjs) answers 502 when it is down.
+            if (GATEWAY_FAILURES.includes(response.status)) this.reachability.unanswered();
+            else this.reachability.answered();
             if (!response.ok) {
                 const body = await response.clone().json().catch(() => null);
                 const retry = response.headers.get('Retry-After');
@@ -57,6 +63,7 @@ export class HttpSyncTransport implements SyncTransport {
             return response;
         } catch (error) {
             if (error instanceof SyncTransportError) throw error;
+            this.reachability.unanswered();
             throw new SyncTransportError('Server unavailable. Changes are saved on this device.', 0);
         } finally { clearTimeout(timeout); }
     }

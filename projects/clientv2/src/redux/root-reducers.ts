@@ -10,6 +10,7 @@ import { appearanceSettingsSlice } from './appearance-settings/appearanceSetting
 import { historyModalSlice } from './history-modal/historyModalSlice';
 import { arenaTableSlice } from './arena-table/arenaTableSlice';
 import { librarySlice } from './library/librarySlice';
+import { connectivitySlice } from './connectivity/connectivitySlice';
 
 /** Every slice the store starts with. RootState is derived from this map. */
 export const rootReducers = {
@@ -24,7 +25,8 @@ export const rootReducers = {
 	[appearanceSettingsSlice.name]: appearanceSettingsSlice.reducer,
 	[historyModalSlice.name]: historyModalSlice.reducer,
 	[arenaTableSlice.name]: arenaTableSlice.reducer,
-	[librarySlice.name]: librarySlice.reducer
+	[librarySlice.name]: librarySlice.reducer,
+	[connectivitySlice.name]: connectivitySlice.reducer
 };
 
 export type RootState = { [Slice in keyof typeof rootReducers]: ReturnType<(typeof rootReducers)[Slice]> };

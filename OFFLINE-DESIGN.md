@@ -1068,9 +1068,18 @@ API over HTTPS, preferably through one origin with `/api` reverse-proxied.
 `ShellWorker` (`src/workers/shell/`, built to `/sw.js` by `tools/shell-worker.mjs`)
 only serves files. It precaches the built HTML, JS, CSS, icons, and small WASM,
 answers same-origin navigations with the cached `index.html` so deep links open
-offline, and caches `/assets/` files (including the fingerprinted mana symbols) on first use. It ignores
-`/api/` entirely and holds no application data; IndexedDB holds structured state,
+offline, and caches `/assets/` files (including the fingerprinted mana symbols) on first use.
+Card images (`/api/images/<size>/<id>.jpg`: deck cards, banner art, the profile
+picture) never change, so it keeps the latest 2000 shown, cache-first. It ignores the
+rest of `/api/` and holds no application data; IndexedDB holds structured state,
 durable commands, and saved blobs, which the page turns into object URLs.
+
+The page knows whether the server can be reached (`Connectivity`): the transport
+reports every request, and a failure or a proxy's 502/503/504 means offline. While
+offline, sync retries every 20 seconds so the app notices the server's return.
+Views that need the server have separate offline components rather than flags, for
+example `CardPreviewerDesktopOnline` and `CardPreviewerDesktopOffline`, chosen by a
+Redux widget from `selectConnectivity`.
 
 It registers on a secure context (localhost or a trusted certificate). Where it
 cannot, the app behaves the same but needs the network to load. The dev server

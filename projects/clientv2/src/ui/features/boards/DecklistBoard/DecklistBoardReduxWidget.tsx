@@ -6,6 +6,7 @@ import { useBoardCardEvents } from '../use-board-card-events';
 import { useDeckBoardView } from '../use-deck-board-view';
 import { DecklistBoard } from './DecklistBoard';
 import { useAppSelector } from '../../../../redux/use-app-selector';
+import { useCardHoverPreview } from '../../CardPreviewer/use-card-hover-preview';
 
 /** DecklistBoard for a deck in the store. Renders nothing until the deck loads. */
 export function DecklistBoardReduxWidget(props: BoardReduxWidgetProps) {
@@ -15,11 +16,13 @@ export function DecklistBoardReduxWidget(props: BoardReduxWidgetProps) {
 		selectDeckCardAction(root, deckId)
 	);
 	const onCardEvent = useBoardCardEvents(props);
+	const HoverPreview = useCardHoverPreview();
 	if (!view) return null;
 	const spotlight = decklistSpotlight(view.deck);
 
 	return (
 		<DecklistBoard
+			HoverPreview={HoverPreview}
 			cards={view.cards}
 			annotations={view.annotations}
 			busyGroup={cardAction.busy}

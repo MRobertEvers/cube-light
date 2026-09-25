@@ -1,0 +1,331 @@
+/* ── Desktop dialog ───────────────────────────────────────────────────────── */
+
+.desktop,
+.desktop-offline {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	width: min(860px, calc(100vw - 40px));
+	max-height: calc(100dvh - 40px);
+	overflow: hidden;
+	border-radius: 16px;
+	background: white;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
+}
+
+.desktop-offline {
+	width: min(560px, calc(100vw - 40px));
+}
+
+.header,
+.mobile-header {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px 20px;
+	box-sizing: border-box;
+	height: var(--app-header-height);
+	padding: 6px 20px;
+	border-bottom: 1px solid var(--deck-border, #e5e1df);
+}
+
+.close {
+	flex: none;
+	width: 38px;
+	height: 38px;
+	border: 0;
+	border-radius: 50%;
+	background: #f1efee;
+	color: #383331;
+	font: 400 1.75rem/1 sans-serif;
+	cursor: pointer;
+}
+
+@media (hover: hover) {
+	.close:hover {
+		background: #e7e2df;
+	}
+}
+.close:focus-visible {
+	outline: 2px solid var(--deck-accent, #7a3431);
+	outline-offset: 2px;
+}
+
+.desktop-body,
+.desktop-offline-body {
+	display: flex;
+	min-height: 0;
+	overflow: auto;
+}
+
+.desktop-image,
+.mobile-image {
+	box-sizing: border-box;
+	display: flex;
+	justify-content: center;
+	min-height: 0;
+	background: linear-gradient(
+		145deg,
+		var(--deck-surface, #e9e5e2),
+		var(--deck-wash, #f8f6f5)
+	);
+}
+
+.desktop-image {
+	flex: 0 0 min(390px, 50%);
+	align-items: flex-start;
+	padding: 22px;
+	overflow: auto;
+}
+
+/* Holds the card's shape before the image loads, so the text below doesn't jump. */
+.desktop-image img,
+.mobile-image img {
+	display: block;
+	width: min(100%, 390px);
+	height: auto;
+	aspect-ratio: 0.716;
+	background: rgba(26, 22, 20, 0.08);
+	border-radius: 4.8% / 3.5%;
+	box-shadow: 0 16px 34px rgba(26, 22, 20, 0.28);
+}
+
+.desktop-details,
+.mobile-details {
+	flex: 1;
+	min-width: 0;
+	color: #2b2725;
+	line-height: 1.45;
+}
+
+.desktop-details {
+	padding: 20px 22px 24px;
+}
+
+/* ── Phone page ───────────────────────────────────────────────────────────── */
+
+.mobile {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	width: 100vw;
+	height: 100%;
+	overflow: hidden;
+	background: white;
+}
+
+.mobile-header {
+	gap: 8px;
+	padding: 6px 16px;
+}
+
+.mobile-body {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-height: 0;
+	overflow: auto;
+}
+
+.mobile-image {
+	flex: none;
+	align-items: center;
+	padding: 16px;
+}
+
+.mobile-image img {
+	width: min(66vw, 280px);
+}
+
+.mobile-details {
+	padding: 16px;
+	padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* ── Title and rules text ─────────────────────────────────────────────────── */
+
+.title {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+}
+
+.title h2 {
+	margin: 0;
+	overflow: hidden;
+	font-size: 1.2rem;
+	line-height: 1.2;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.title p {
+	margin: 2px 0 0;
+	overflow: hidden;
+	color: #6d6764;
+	font-size: 0.875rem;
+	text-overflow: ellipsis;
+	text-transform: uppercase;
+	white-space: nowrap;
+	letter-spacing: 0.05em;
+}
+
+.cost {
+	--mana-symbol-size: 0.72em;
+
+	display: inline-flex;
+	gap: 2px;
+	margin-left: 10px;
+	vertical-align: 0.15em;
+}
+
+.desktop-details > * + *,
+.mobile-details > * + * {
+	border-top: 1px solid var(--deck-border, #e5e1df);
+}
+
+.type {
+	margin: 0;
+	padding-bottom: 12px;
+	font-size: 1.1rem;
+}
+
+.rules {
+	padding: 12px 0;
+}
+.rules p {
+	margin: 0;
+}
+.rules p + p {
+	margin-top: 6px;
+}
+.rules .flavor {
+	margin-top: 10px;
+	color: #6d6764;
+	font-style: italic;
+}
+
+.rarity-row {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 0;
+	font-size: 1.05rem;
+}
+
+.credit {
+	margin: 0;
+	padding: 10px 0 12px;
+	color: #6d6764;
+	font-size: 0.875rem;
+	text-align: right;
+}
+
+.legalities {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 6px 24px;
+	margin: 0;
+	padding-top: 14px;
+	font-size: 0.875rem;
+}
+.legalities div {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+}
+.legalities dd {
+	margin: 0;
+}
+.legalities dd[data-status='not legal'] {
+	color: #9a928e;
+}
+.legalities dd[data-status='banned'] {
+	color: #a3302b;
+	font-weight: 600;
+}
+.legalities dd[data-status='restricted'] {
+	color: #9a6412;
+	font-weight: 600;
+}
+
+.formats-toggle {
+	margin-top: 8px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--deck-accent, #7a3431);
+	font: inherit;
+	font-size: 0.875rem;
+	cursor: pointer;
+}
+.desktop-details > .formats-toggle,
+.mobile-details > .formats-toggle {
+	border-top: 0;
+}
+@media (hover: hover) {
+	.formats-toggle:hover {
+		text-decoration: underline;
+	}
+}
+
+/* ── Hover preview ────────────────────────────────────────────────────────── */
+
+.hover-image {
+	display: block;
+	width: 100%;
+	height: auto;
+	border-radius: 14px;
+	box-shadow: 0 18px 48px rgba(24, 19, 17, 0.32);
+}
+
+.hover-text {
+	box-sizing: border-box;
+	padding: 14px 16px;
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 14px;
+	background: white;
+	box-shadow: 0 18px 48px rgba(24, 19, 17, 0.24);
+	color: #2b2725;
+	font-size: 0.875rem;
+	line-height: 1.45;
+}
+
+.hover-text p {
+	margin: 0;
+}
+
+.hover-name {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 1rem;
+	font-weight: 650;
+}
+
+.hover-name .cost {
+	flex: none;
+	margin-left: 0;
+}
+
+.hover-type {
+	margin-top: 2px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--deck-border, #e5e1df);
+	color: #5d5551;
+}
+
+.hover-rules {
+	padding-top: 8px;
+}
+
+.hover-rules p + p {
+	margin-top: 5px;
+}
+
+.hover-stats {
+	margin-top: 8px;
+	font-weight: 650;
+	text-align: right;
+}

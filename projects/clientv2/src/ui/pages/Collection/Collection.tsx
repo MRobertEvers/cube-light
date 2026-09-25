@@ -26,7 +26,7 @@ import {
 import { useAppDispatch } from 'src/redux/use-app-dispatch';
 import { useAppSelector } from 'src/redux/use-app-selector';
 import { Page } from '../../kit/components/Page/Page';
-import { CardPreviewModal } from '../Deck/components/EditCard';
+import { CardPreviewerReduxWidget } from '../../features/CardPreviewer/CardPreviewerReduxWidget';
 import { Modal } from '../Deck/components/Modal';
 import { CollectionDialog, type CollectionDraft } from '../Library/components/CollectionDialog';
 import { AddToCollectionDialog } from './components/AddToCollectionDialog';
@@ -158,7 +158,7 @@ export function Collection(props: { collectionId: string }) {
 			)}
 			{modal?.type === 'preview' && (
 				<Modal key={modal.card.uuid} extraWide fullScreenOnMobile>
-					<CardPreviewModal card={modal.card} onClose={modalHistory.close} />
+					<CardPreviewerReduxWidget card={modal.card} onClose={modalHistory.close} />
 				</Modal>
 			)}
 			{modal?.type === 'details' && (

@@ -9,7 +9,7 @@ import {
 	deckViewShowsBoard
 } from '../../features/boards/board-visualizations';
 import type { BoardControlsProps } from '../../features/boards/board.types';
-import { CardPreviewModal } from './components/EditCard';
+import { CardPreviewerReduxWidget } from '../../features/CardPreviewer/CardPreviewerReduxWidget';
 import { ManagePrintings } from './components/ManagePrintings';
 import { Modal } from './components/Modal';
 import { GroupedDeck } from '../../../domain/deck/grouping';
@@ -375,7 +375,7 @@ export function Deck(props: DeckProps) {
 				</Modal>
 			) : cardPreviewModal ? (
 				<Modal key={cardPreviewModal.uuid} extraWide fullScreenOnMobile>
-					<CardPreviewModal
+					<CardPreviewerReduxWidget
 						onClose={modalHistory.close}
 						card={cardPreviewModal}
 					/>

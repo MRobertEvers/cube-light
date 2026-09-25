@@ -1,17 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import type { CardPreviewDetails } from '../../../../../domain/models/card';
-import { DeckCardEntry } from '../../../../../domain/models/deck';
-import { ManaCost, ManaText } from '../../../../kit/components/ManaCost/ManaCost';
+import React, { useState } from 'react';
+import type { CardPreviewDetails } from '../../../domain/models/card';
+import { ManaText } from '../../kit/components/ManaCost/ManaCost';
 
-import { HeaderBackButton } from 'src/ui/kit/components/BackLink/BackLink';
-import { useCloseOnEscape } from 'src/ui/kit/hooks/useCloseOnEscape';
-import { HeaderBackSlot } from 'src/ui/kit/components/Header/HeaderBackSlot';
-import styles from './edit-card.module.css';
-
-export type CardPreviewModalProps = {
-	card: DeckCardEntry | null;
-	onClose: () => void;
-};
+import styles from './card-previewer.module.css';
 
 const FORMAT_NAMES: Record<string, string> = {
 	standard: 'Standard',
@@ -42,14 +33,19 @@ function capitalize(value: string) {
 	return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function CardText(props: { details: CardPreviewDetails }) {
-	const { details } = props;
+/** Power and toughness, or loyalty, or defense; null for cards with none. */
+export function cardStats(details: CardPreviewDetails): string | null {
+	return details.power != null && details.toughness != null
+		? `${details.power} / ${details.toughness}`
+		: (details.loyalty ?? details.defense);
+}
+
+/** A card's type line, rules and flavor text, stats, credit and format legality. */
+export function CardRulesText(props: { details: CardPreviewDetails; className: string }) {
+	const { details, className } = props;
 	const [showAllFormats, setShowAllFormats] = useState(false);
 
-	const stats =
-		details.power != null && details.toughness != null
-			? `${details.power} / ${details.toughness}`
-			: (details.loyalty ?? details.defense);
+	const stats = cardStats(details);
 	const formats = Object.keys(FORMAT_NAMES).filter(
 		(format) =>
 			showAllFormats ||
@@ -59,7 +55,7 @@ function CardText(props: { details: CardPreviewDetails }) {
 	);
 
 	return (
-		<div className={styles['details']}>
+		<div className={className}>
 			{details.type && <p className={styles['type']}>{details.type}</p>}
 			{(details.text || details.flavorText) && (
 				<div className={styles['rules']}>
@@ -107,64 +103,5 @@ function CardText(props: { details: CardPreviewDetails }) {
 				{showAllFormats ? 'Show Fewer Formats' : 'Show All Formats'}
 			</button>
 		</div>
-	);
-}
-
-/** A large image of one printing in the deck, with its rules text. Editing copies is ManagePrintings' job. */
-export function CardPreviewModal(props: CardPreviewModalProps) {
-	const { card, onClose } = props;
-
-	useCloseOnEscape(onClose);
-
-	if (!card) return null;
-
-	return (
-		<section
-			className={styles['container']}
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="card-modal-title"
-		>
-			<header className={styles['header']}>
-				<HeaderBackSlot>
-					{/* Phones fill the screen and close from here instead of ×. */}
-					<HeaderBackButton
-						inline
-						label="Close card preview"
-						onClick={onClose}
-					/>
-				</HeaderBackSlot>
-				<div className={styles['title']}>
-					<h2 id="card-modal-title">
-						{card.name}
-						{card.manaCost && (
-							<span className={styles['cost']}>
-								<ManaCost cost={card.manaCost} />
-							</span>
-						)}
-					</h2>
-					<p>
-						{card.count} × {card.setCode} printing
-					</p>
-				</div>
-				<button
-					className={styles['close']}
-					type="button"
-					aria-label="Close card preview"
-					onClick={onClose}
-				>
-					×
-				</button>
-			</header>
-			<div className={styles['body']}>
-				<div className={styles['image-panel']}>
-					<img
-						src={card.images?.normal ?? card.image}
-						alt={`${card.name}, ${card.setCode} printing`}
-					/>
-				</div>
-				<CardText key={card.uuid} details={card} />
-			</div>
-		</section>
 	);
 }

@@ -10,9 +10,15 @@
 
 /*
  * Rests on the keyboard (or the bottom of the screen when it is closed) and
- * never grows past the visible area, so the actions stay in reach.
+ * never grows past the visible area, so the actions stay in reach. It keeps
+ * a comfortable minimum height, except when the keyboard leaves less room
+ * than that, where it takes all of the visible area instead.
  */
 .sheet {
+	--sheet-room: calc(
+		100% - var(--visual-viewport-top, 0px) - var(--keyboard-inset, 0px) -
+			24px
+	);
 	position: fixed;
 	right: 0;
 	bottom: var(--keyboard-inset, 0px);
@@ -20,10 +26,8 @@
 	box-sizing: border-box;
 	display: flex;
 	flex-direction: column;
-	max-height: calc(
-		100% - var(--visual-viewport-top, 0px) - var(--keyboard-inset, 0px) -
-			24px
-	);
+	min-height: min(360px, var(--sheet-room));
+	max-height: var(--sheet-room);
 	/* The home indicator only matters when the keyboard is not covering it. */
 	padding-bottom: max(
 		0px,
@@ -93,6 +97,8 @@
 }
 
 .body {
+	/* Fills any room the minimum height adds, keeping the actions at the bottom. */
+	flex: 1 1 auto;
 	min-height: 0;
 	padding: 14px 18px;
 	overflow: auto;

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, type ComponentType } from 'react';
 import {
 	CardInteractionEvent,
 	CardInteractionEventType
@@ -9,6 +9,7 @@ import type { BoardGroups } from '../../../../domain/deck/grouping';
 import { DECK_BOARD_LABELS, DECK_BOARD_ORDER } from '../../../../domain/deck/boards';
 import type { BoardProps, BoardSection } from '../board.types';
 import type { DecklistSpotlightProps } from '../decklist-spotlight';
+import type { CardHoverPreviewProps } from '../../CardPreviewer/card-previewer.types';
 
 import styles from './decklist-board.module.css';
 import { SpotlightCard } from '../../SpotlightCard/SpotlightCard';
@@ -16,7 +17,11 @@ import { groupDeckCardsByName } from '../../../../domain/deck/group-deck-cards';
 
 export type DecklistCardInfo = DeckCardEntry;
 /** Each deck board is listed separately, in DECK_BOARD_ORDER. */
-export type DecklistBoardProps = BoardProps & DecklistSpotlightProps;
+export type DecklistBoardProps = BoardProps &
+	DecklistSpotlightProps & {
+		/** What shows beside the row under the pointer; the widget picks it for the connection. */
+		HoverPreview: ComponentType<CardHoverPreviewProps>;
+	};
 
 /** Names of the cards on a board that have more than one printing. */
 function multiPrintingNames(board: BoardGroups): string[] {
@@ -83,7 +88,7 @@ function hoverCardPosition(pointer: Point, viewport: Size) {
 
 /** The default deck view: rows by card type, with a card preview on hover. */
 export function DecklistBoard(props: DecklistBoardProps) {
-	const { cards, banner, bannerCrop, bannerBlend, topStyle, onCardEvent, annotations, sections = DECK_SECTIONS } =
+	const { cards, banner, bannerCrop, bannerBlend, topStyle, onCardEvent, annotations, sections = DECK_SECTIONS, HoverPreview } =
 		props;
 
 	const [expanded, setExpanded] = useState<ReadonlySet<string>>(
@@ -157,15 +162,7 @@ export function DecklistBoard(props: DecklistBoardProps) {
 					top: hover.top
 				}}
 			>
-				{imageSource && (
-					<img
-						src={
-							imageSource.card.images?.normal ??
-							imageSource.card.image
-						}
-						alt=""
-					/>
-				)}
+				{imageSource && <HoverPreview card={imageSource.card} />}
 			</div>
 			<div className={styles['decklist-container']}>
 				{banner && topStyle === 'card' && (

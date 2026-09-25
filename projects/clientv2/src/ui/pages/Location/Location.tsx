@@ -12,7 +12,7 @@ import { selectLocation, selectLocationError } from 'src/redux/library/library.s
 import { useAppDispatch } from 'src/redux/use-app-dispatch';
 import { useAppSelector } from 'src/redux/use-app-selector';
 import { Page } from '../../kit/components/Page/Page';
-import { CardPreviewModal } from '../Deck/components/EditCard';
+import { CardPreviewerReduxWidget } from '../../features/CardPreviewer/CardPreviewerReduxWidget';
 import { Modal } from '../Deck/components/Modal';
 import { LocationDialog, type LocationDraft } from '../Library/components/LocationDialog';
 
@@ -65,7 +65,7 @@ export function Location(props: { locationId: string }) {
 		<Page chrome={{ mobile: items }}>
 			{modal?.type === 'preview' && (
 				<Modal key={modal.card.uuid} extraWide fullScreenOnMobile>
-					<CardPreviewModal card={modal.card} onClose={modalHistory.close} />
+					<CardPreviewerReduxWidget card={modal.card} onClose={modalHistory.close} />
 				</Modal>
 			)}
 			{modal?.type === 'details' && (

@@ -1,3 +1,4 @@
+import { useCardHoverPreview } from '../CardPreviewer/use-card-hover-preview';
 import React, { useCallback, useMemo } from 'react';
 import { DecklistBoard } from '../boards/DecklistBoard/DecklistBoard';
 import { MobileDecklistBoard } from '../boards/MobileDecklistBoard/MobileDecklistBoard';
@@ -51,6 +52,7 @@ export function LocationBoardReduxWidget(props: LocationBoardReduxWidgetProps) {
 	const { locationId, collectionId, onViewCard, onOpenCollection } = props;
 	const dispatch = useAppDispatch();
 	const isPhoneLayout = useIsPhoneLayout();
+	const HoverPreview = useCardHoverPreview();
 	const location = useAppSelector((root) => selectLocation(root, locationId));
 	const cards = useMemo(
 		() => (location ? { main: groupBoardCards(locationCardsFrom(location, collectionId)), side: EMPTY_BOARD } : null),
@@ -102,6 +104,7 @@ export function LocationBoardReduxWidget(props: LocationBoardReduxWidgetProps) {
 		/>
 	) : (
 		<DecklistBoard
+			HoverPreview={HoverPreview}
 			cards={cards}
 			busyGroup={null}
 			onCardEvent={onCardEvent}

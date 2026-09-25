@@ -2,8 +2,9 @@
 
 /**
  * ShellWorker: the service worker that lets the app start with no network. It serves
- * the built HTML, JavaScript, CSS and static assets from Cache Storage and nothing
- * else: API requests, sync, and saved data never pass through it.
+ * the built HTML, JavaScript, CSS and static assets from Cache Storage, and card images
+ * (deck cards, banner art, the profile picture) once they have been shown. No other API
+ * request, sync, or saved data passes through it.
  *
  * It is built with a release (`npm run release`, or `npm run build` for a deployment) and
  * precaches that release. Pages load from the release unless the device is in
@@ -25,6 +26,10 @@ const SHELL_PREFIX = 'torimtg-shell-';
 const SHELL = `${SHELL_PREFIX}${__BUILD_ID__}`;
 const STATIC = 'torimtg-static-v1';
 const STATIC_LIMIT = 200;
+// Card images by Scryfall id and size. They never change, so the first copy serves for good.
+const IMAGES = 'torimtg-images-v1';
+const IMAGES_LIMIT = 2000;
+const CARD_IMAGE = /^\/api\/images\/[a-z_]+\/[0-9a-f-]+\.jpg$/i;
 // Written by ShellWorkerClient.setMode; holds 'development' or 'release'.
 const SETTINGS = 'torimtg-settings';
 const MODE_KEY = '/shell-mode';
@@ -48,7 +53,7 @@ worker.addEventListener('activate', (event) => {
 		const keys = await caches.keys();
 		const shells = keys.filter((key) => key.startsWith(SHELL_PREFIX) && key !== SHELL);
 		// Keep the previous shell for tabs still running it; drop older ones and anything else ours.
-		const keep = new Set([SHELL, STATIC, SETTINGS, shells[shells.length - 1]]);
+		const keep = new Set([SHELL, STATIC, IMAGES, SETTINGS, shells[shells.length - 1]]);
 		for (const key of keys) if (key.startsWith('torimtg-') && !keep.has(key)) await caches.delete(key);
 	})());
 });
@@ -57,7 +62,12 @@ worker.addEventListener('fetch', (event) => {
 	const request = event.request;
 	if (request.method !== 'GET') return;
 	const url = new URL(request.url);
-	if (url.origin !== worker.location.origin || url.pathname.startsWith('/api/')) return;
+	if (url.origin !== worker.location.origin) return;
+	if (CARD_IMAGE.test(url.pathname)) {
+		event.respondWith(cacheFirst(IMAGES, IMAGES_LIMIT, request));
+		return;
+	}
+	if (url.pathname.startsWith('/api/')) return;
 	if (request.mode === 'navigate') {
 		if (RELEASED) event.respondWith(page(request));
 		return;
@@ -65,18 +75,25 @@ worker.addEventListener('fetch', (event) => {
 	// Everything else a development page loads (/src/, /@vite/, /node_modules/) goes to the server.
 	if (!/^\/assets\//.test(url.pathname) && !/\.(png|ico|webmanifest)$/.test(url.pathname)) return;
 	event.respondWith((async function () {
-		const cached = await (await caches.open(SHELL)).match(request) || await caches.match(request);
-		if (cached) return cached;
-		const response = await fetch(request);
-		if (response.ok) {
-			const cache = await caches.open(STATIC);
-			await cache.put(request, response.clone());
-			const keys = await cache.keys();
-			for (const old of keys.slice(0, -STATIC_LIMIT)) await cache.delete(old);
-		}
-		return response;
+		// Any of our caches: a tab still on the previous build loads its chunks from the kept shell.
+		const cached = await caches.match(request);
+		return cached || cacheFirst(STATIC, STATIC_LIMIT, request);
 	})());
 });
+
+/** The cached copy, or the network's, kept for next time; the cache holds the latest `limit` files. */
+async function cacheFirst(name: string, limit: number, request: Request): Promise<Response> {
+	const cache = await caches.open(name);
+	const cached = await cache.match(request);
+	if (cached) return cached;
+	const response = await fetch(request);
+	if (response.ok) {
+		await cache.put(request, response.clone());
+		const keys = await cache.keys();
+		for (const old of keys.slice(0, -limit)) await cache.delete(old);
+	}
+	return response;
+}
 
 /** Every route is the same page: the development server's in development mode when it answers, else the release's. */
 async function page(request: Request): Promise<Response> {

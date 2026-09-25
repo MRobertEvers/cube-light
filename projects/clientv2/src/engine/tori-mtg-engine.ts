@@ -4,6 +4,7 @@ import { LocalReader } from './core/local-reader';
 import type { LocalStore, ToriMTG } from './core/types';
 import { BannersApi } from './api/banners';
 import { CardApi } from './api/cards';
+import { ConnectivityApi } from './api/connectivity';
 import { DeckApi } from './api/decks';
 import { LibraryApi } from './api/library';
 import { ProfileApi } from './api/profile';
@@ -27,6 +28,7 @@ import type {
 	DeviceProfile,
 	OfflineShell,
 	PageLifecycle,
+	Reachability,
 	SyncHost
 } from './ports';
 
@@ -64,6 +66,7 @@ export type ToriMTGEngine = {
 	>;
 	sync: Pick<SyncApi, 'pendingEdits' | 'keepMine' | 'useServer' | 'exportUnsynced' | 'retryNow'>;
 	offlineShell: Pick<OfflineShell, 'watch' | 'running' | 'installedRelease' | 'mode' | 'setMode'>;
+	connectivity: Pick<ConnectivityApi, 'current'>;
 	events: Pick<EngineEvents, 'subscribe'>;
 };
 
@@ -80,10 +83,11 @@ export type EnginePorts = {
 	nameIndexBuilder: CardNameIndexBuilder;
 	cardListLinter: CardListLinter;
 	offlineShell: OfflineShell;
+	reachability: Reachability;
 };
 
 export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
-	const { store, crypto, syncHost, blobs, lifecycle, device, bannerRenderer, cardScanner, nameIndexBuilder, cardListLinter, offlineShell } = ports;
+	const { store, crypto, syncHost, blobs, lifecycle, device, bannerRenderer, cardScanner, nameIndexBuilder, cardListLinter, offlineShell, reachability } = ports;
 	const events = new EngineEvents();
 	const tori = createToriMTG(store, syncHost, blobs, lifecycle);
 	const reader = new LocalReader(tori);
@@ -104,6 +108,7 @@ export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
 		scans: new ScansApi(workQueue, imageImports, runner, device),
 		sync: new SyncApi(tori),
 		offlineShell,
+		connectivity: new ConnectivityApi(reachability, syncHost, events),
 		events
 	};
 }

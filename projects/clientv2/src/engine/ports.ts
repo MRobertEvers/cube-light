@@ -21,6 +21,7 @@ import type { TableName } from './local-store/schema';
 import type { CardListProblem } from '../domain/card-names/card-list-problem';
 import type { OfflineShellStatus } from '../domain/models/offline-shell';
 import type { BuildInfo, ShellMode } from '../domain/models/build-info';
+import type { Connectivity } from '../domain/models/connectivity';
 
 /**
  * Everything the ToriMTGEngine needs from outside itself. The engine imports only these
@@ -73,6 +74,21 @@ export interface SyncTransport {
 	resource(query: ResourceQuery): Promise<StoredResource>;
 	upload(scope: AccountScope, blob: LocalBlob): Promise<number>;
 	authenticate(type: string, credentials?: { username: string; password: string }): Promise<AuthSession>;
+}
+
+/** Whether the server can be reached now. */
+export interface Reachability {
+	current(): Connectivity;
+	/** Calls the listener on every change. Returns a stop function. */
+	watch(listener: (connectivity: Connectivity) => void): () => void;
+}
+
+/** Told how each server request went, by the transport that makes it. */
+export interface ReachabilityReport {
+	/** The server answered, whatever the answer. */
+	answered(): void;
+	/** No answer: the request failed, timed out, or a proxy said the server is down. */
+	unanswered(): void;
 }
 
 /** A failed server request; status 0 means the server could not be reached. */

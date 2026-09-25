@@ -3,6 +3,7 @@ import type { AppDispatch } from './use-app-dispatch';
 import { offlineSlice } from './offline/offlineSlice';
 import { sessionSlice } from './session/sessionSlice';
 import { scansSlice } from './scans/scansSlice';
+import { connectivitySlice } from './connectivity/connectivitySlice';
 import { refreshLocalDecks } from './decks/decks.thunks';
 import { refreshLocalDeckGroups } from './deck-groups/deck-groups.thunks';
 import { refreshLocalLibrary } from './library/library.thunks';
@@ -43,6 +44,9 @@ export function startProjections(dispatch: AppDispatch, events: ToriMTGEngine['e
 				return;
 			case 'sync-status':
 				dispatch(offlineSlice.actions.received(event.status));
+				return;
+			case 'connectivity-changed':
+				dispatch(connectivitySlice.actions.changed(event.connectivity));
 				return;
 			case 'session-expired':
 				dispatch(sessionSlice.actions.expired());
