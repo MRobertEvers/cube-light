@@ -25,6 +25,7 @@
 **/AllPrintings.*
 **/CardPack.json.gz
 **/CardPack.info.json
+projects/server/src/assets/card-art
 **/*.sqlite
 **/*.sqlite.bak*
 

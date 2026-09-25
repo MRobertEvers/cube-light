@@ -12,6 +12,7 @@ import { SuggestionInput } from '../../kit/components/SuggestionInput/Suggestion
 import { UserBop } from '../../kit/components/UserBop/UserBop';
 import { OfflineShellStatusCard } from './OfflineShellStatusCard';
 import { OfflineCardDataCard } from './OfflineCardDataCard';
+import { OfflineCardArtCard } from './OfflineCardArtCard';
 import { SyncStatusCard } from './SyncStatusCard';
 import styles from './profile.module.css';
 
@@ -277,6 +278,7 @@ export function Profile() {
 				<SyncStatusCard />
 				<OfflineShellStatusCard />
 				<OfflineCardDataCard />
+				<OfflineCardArtCard />
 			</main>
 		</Page>
 	);

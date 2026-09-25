@@ -6,6 +6,7 @@ import { BannersApi } from './api/banners';
 import { CardApi } from './api/cards';
 import { CardPackApi } from './card-pack/card-pack-api';
 import { CardPackLibrary } from './card-pack/card-pack-library';
+import { CardArtApi } from './card-pack/card-art-api';
 import { ConnectivityApi } from './api/connectivity';
 import { DeckApi } from './api/decks';
 import { LibraryApi } from './api/library';
@@ -23,6 +24,7 @@ import { WorkQueue } from './jobs/work-queue';
 import type {
 	BannerRenderer,
 	BlobUrlResolver,
+	CardArtStore,
 	CardListLinter,
 	CardPackStore,
 	CardNameIndexBuilder,
@@ -71,6 +73,7 @@ export type ToriMTGEngine = {
 	offlineShell: Pick<OfflineShell, 'watch' | 'running' | 'installedRelease' | 'mode' | 'setMode'>;
 	connectivity: Pick<ConnectivityApi, 'current'>;
 	cardPack: Pick<CardPackApi, 'status' | 'install' | 'remove' | 'lookup'>;
+	cardArt: Pick<CardArtApi, 'status' | 'install' | 'remove' | 'markAsked'>;
 	events: Pick<EngineEvents, 'subscribe'>;
 };
 
@@ -89,10 +92,11 @@ export type EnginePorts = {
 	offlineShell: OfflineShell;
 	reachability: Reachability;
 	cardPack: CardPackStore;
+	cardArt: CardArtStore;
 };
 
 export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
-	const { store, crypto, syncHost, blobs, lifecycle, device, bannerRenderer, cardScanner, nameIndexBuilder, cardListLinter, offlineShell, reachability, cardPack } = ports;
+	const { store, crypto, syncHost, blobs, lifecycle, device, bannerRenderer, cardScanner, nameIndexBuilder, cardListLinter, offlineShell, reachability, cardPack, cardArt } = ports;
 	const events = new EngineEvents();
 	const packLibrary = new CardPackLibrary(cardPack);
 	const tori = createToriMTG(store, syncHost, blobs, lifecycle, packLibrary);
@@ -116,6 +120,7 @@ export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
 		offlineShell,
 		connectivity: new ConnectivityApi(reachability, syncHost, events),
 		cardPack: new CardPackApi(cardPack, packLibrary, cards),
+		cardArt: new CardArtApi(cardArt),
 		events
 	};
 }

@@ -1,0 +1,108 @@
+/* A card in the corner on wide screens and along the bottom on phones; it never blocks the page. */
+.offer {
+	position: fixed;
+	right: 20px;
+	bottom: 20px;
+	z-index: 90;
+	box-sizing: border-box;
+	width: min(380px, calc(100vw - 40px));
+	padding: 18px 20px;
+	border: 1px solid #e1dad7;
+	border-radius: 14px;
+	background: white;
+	box-shadow: 0 16px 44px rgba(34, 25, 23, 0.22);
+	color: #2b2725;
+	animation: offer-in 200ms ease-out;
+}
+
+.offer h2 {
+	margin: 0 0 6px;
+	font-size: 17px;
+}
+
+.offer p {
+	margin: 0;
+	color: #5d5551;
+	font-size: 14px;
+	line-height: 1.45;
+}
+
+.offer .progress {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 12px;
+}
+
+.bar {
+	display: block;
+	height: 6px;
+	overflow: hidden;
+	border-radius: 3px;
+	background: #efe9e6;
+}
+
+.bar span {
+	display: block;
+	height: 100%;
+	background: #8e2524;
+	transition: width 200ms ease;
+}
+
+.offer .error {
+	margin-top: 10px;
+	color: #a3302b;
+}
+
+.actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 14px;
+}
+
+.actions button {
+	min-height: 38px;
+	padding: 8px 14px;
+	border: 1px solid #cfc5c1;
+	border-radius: 8px;
+	background: white;
+	color: #5d5551;
+	font: inherit;
+	font-size: 14px;
+	font-weight: 650;
+	cursor: pointer;
+}
+
+.actions .primary {
+	border-color: #8e2524;
+	background: #8e2524;
+	color: white;
+}
+
+.actions button:disabled {
+	opacity: 0.55;
+	cursor: default;
+}
+
+@media (max-width: 680px) {
+	.offer {
+		right: 12px;
+		bottom: max(12px, env(safe-area-inset-bottom));
+		left: 12px;
+		width: auto;
+	}
+}
+
+@keyframes offer-in {
+	from {
+		transform: translateY(12px);
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.offer {
+		animation: none;
+	}
+}

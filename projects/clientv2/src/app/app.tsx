@@ -10,6 +10,7 @@ import {
 	watchWorkQueue
 } from '../redux/scans/scans.thunks';
 import { PwaInstallProvider } from '../ui/kit/components/InstallApp/PwaInstallProvider';
+import { OfflineArtOfferReduxWidget } from '../ui/features/offline-art/OfflineArtOfferReduxWidget';
 import { HotkeyRegistry } from '../ui/kit/hotkeys/hotkey-registry';
 import { HotkeysProvider } from '../ui/kit/hotkeys/Hotkeys';
 
@@ -62,6 +63,7 @@ function SignedInApp() {
 	return (
 		<div className={'application-container'}>
 			<Routes />
+			<OfflineArtOfferReduxWidget />
 		</div>
 	);
 }

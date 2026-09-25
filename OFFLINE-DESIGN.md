@@ -1104,6 +1104,13 @@ would online. Printings a deck or collection holds that no server response descr
 yet get the catalog shape `pack` (text, no images) until an `overview` or `details`
 arrives, so an offline-added card files under its real type and name.
 
+The offline card art pack (`projects/server/tools/scripts/card-images.py art-pack`) holds
+each card's default-printing art as a 160 px WebP, about 73 MB in 5 MB chunks, keyed by
+Scryfall id. Once the service worker is active the app offers it one time; Profile
+installs, updates and removes it. It lives in its own IndexedDB database
+(`torimtg-card-art`), and ShellWorker reads it to answer `/api/images/art_crop/<id>.jpg`
+when neither its cache nor the server can.
+
 Downloading large OCR models/card packs is explicit, resumable, and size-aware.
 Do not include every model in the mandatory install transaction. Show offline
 capability per pack; unavailable OCR/search data must be clear to the user.

@@ -6,7 +6,7 @@ import type {
 import type { BoardAnnotations, BoardCardKey, BoardProps, BoardSection } from '../board.types';
 import type { DecklistSpotlightProps } from '../decklist-spotlight';
 import { ManaCost } from '../../../kit/components/ManaCost/ManaCost';
-import { BoardChips, OwnershipBadge, OwnershipPips } from '../../../kit/components/OwnershipBadge/OwnershipBadge';
+import { BoardChips, OwnershipBadge } from '../../../kit/components/OwnershipBadge/OwnershipBadge';
 import { ownedNameKey } from '../../../../domain/library/ownership';
 import { OverflowMenu } from '../../../kit/components/OverflowMenu/OverflowMenu';
 import {
@@ -82,7 +82,6 @@ function MobileCardRow(props: MobileCardRowProps) {
 					<span className={styles.count}>{group.count}</span>
 					<span className={styles.name}>{group.name}</span>
 					<ManaCost cost={top.manaCost} />
-					{owned && <OwnershipPips row={owned} />}
 					{owned && owned.status !== 'owned' && <OwnershipBadge row={owned} compact />}
 					{group.printings.length === 1 ? (
 						<span className={styles.setCode}>({top.setCode})</span>

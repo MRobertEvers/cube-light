@@ -9,6 +9,8 @@ import { PathBuilder } from '../utils/PathBuilder';
 // Built by tools/scripts/refresh-mtgjson.py; copy-static links them into the build.
 const CARD_PACK_FILEPATH = nodePath.join(__dirname, '..', 'assets', 'CardPack.json.gz');
 const CARD_PACK_INFO_FILEPATH = nodePath.join(__dirname, '..', 'assets', 'CardPack.info.json');
+// Built by tools/scripts/card-images.py art-pack; copy-static links the folder into the build.
+const CARD_ART_DIRECTORY = nodePath.join(__dirname, '..', 'assets', 'card-art');
 
 export function createRoutesCards(
 	path: PathBuilder,
@@ -23,6 +25,25 @@ export function createRoutesCards(
 		res.type('application/gzip');
 		res.setHeader('Cache-Control', 'no-cache');
 		res.sendFile(CARD_PACK_FILEPATH, function (error) {
+			if (error && !res.headersSent) res.sendStatus(404);
+		});
+	});
+
+	// The offline card art pack: its index, then its chunks, which never change once named.
+	app.get(path.pathAt('/art/index'), (_req: Request, res: Response) => {
+		res.setHeader('Cache-Control', 'no-cache');
+		res.sendFile(nodePath.join(CARD_ART_DIRECTORY, 'CardArt.index.json'), { headers: { 'Content-Type': 'application/json' } }, function (error) {
+			if (error && !res.headersSent) res.sendStatus(404);
+		});
+	});
+	app.get(path.pathAt('/art/:file'), (req: Request<{ file: string }>, res: Response) => {
+		if (!/^CardArt-\d{2}\.bin$/.test(req.params.file)) {
+			res.sendStatus(400);
+			return;
+		}
+		res.type('application/octet-stream');
+		res.setHeader('Cache-Control', 'no-cache');
+		res.sendFile(nodePath.join(CARD_ART_DIRECTORY, req.params.file), function (error) {
 			if (error && !res.headersSent) res.sendStatus(404);
 		});
 	});

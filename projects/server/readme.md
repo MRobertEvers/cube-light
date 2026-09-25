@@ -66,6 +66,27 @@ from the installed database:
 python3 tools/scripts/refresh-mtgjson.py --pack-only
 ```
 
+## Card image mirror and offline card art
+
+`tools/scripts/card-images.py` mirrors Scryfall's card images and builds the offline card
+art pack. Scryfall publishes no image archives, only bulk card data with each image's URL,
+so `mirror` downloads its Default Cards bulk file (every printing) and then each image from
+Scryfall's CDN, 24 at a time (the CDN has no rate limit). It resumes where it stopped, and
+fetches each card's default printing first.
+
+```sh
+# Art crops (~10 GB) and full PNGs (~200 GB) of every printing, e.g. onto the NAS.
+python3 tools/scripts/card-images.py mirror --dest /Volumes/<share>/card-images --variants art_crop png
+
+# The offline art pack: each card's default-printing art at 160 px wide (WebP, ~73 MB for
+# 35,000 cards) in 5 MB chunks, written beside AllPrintings.sqlite and linked as src/assets/card-art.
+python3 tools/scripts/card-images.py art-pack --source /Volumes/<share>/card-images
+```
+
+The server serves the pack at `/cards/art/index` and `/cards/art/<chunk>`. Clients offer it
+once when the app installs, and Profile installs, updates or removes it; offline, the
+service worker answers `/images/art_crop/<id>.jpg` from it.
+
 ## Card images
 
 The server returns its own image URLs in card and deck responses. A request to

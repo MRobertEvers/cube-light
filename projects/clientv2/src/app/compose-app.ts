@@ -9,6 +9,7 @@ import { BrowserPageLifecycle } from '../platform/page-lifecycle';
 import { BrowserDevice } from '../platform/device';
 import { BrowserReachability } from '../platform/reachability';
 import { IndexedDbCardPackStore } from '../platform/card-pack/indexeddb-card-pack-store';
+import { IndexedDbCardArtStore } from '../platform/card-art/indexeddb-card-art-store';
 import { BrowserCardScanner } from '../platform/card-scanner/browser-card-scanner';
 import { WasmNameIndexBuilder } from '../platform/wasm/name-index-builder';
 import { API_URI } from '../platform/api-url';
@@ -51,7 +52,8 @@ export function composeApp(): StoreType {
 		cardListLinter: new CardListLintWorkerClient(),
 		offlineShell,
 		reachability,
-		cardPack: new IndexedDbCardPackStore(API_URI)
+		cardPack: new IndexedDbCardPackStore(API_URI),
+		cardArt: new IndexedDbCardArtStore(API_URI)
 	});
 	const store = configureStore(engine);
 	const dispatch: AppDispatch = store.dispatch;

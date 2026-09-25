@@ -4,7 +4,8 @@
  * ShellWorker: the service worker that lets the app start with no network. It serves
  * the built HTML, JavaScript, CSS and static assets from Cache Storage, and card images
  * (deck cards, banner art, the profile picture) once they have been shown. No other API
- * request, sync, or saved data passes through it.
+ * request, sync, or saved data passes through it. With the offline card art pack
+ * installed, card art it has never shown comes from the pack when the server cannot.
  *
  * It is built with a release (`npm run release`, or `npm run build` for a deployment) and
  * precaches that release. Pages load from the release unless the device is in
@@ -14,6 +15,8 @@
  * With no release built, the dev server serves it with nothing to precache, and every
  * request goes to the network.
  */
+
+import { readCardArt } from '../../platform/card-art/card-art-database';
 
 declare const __PRECACHE__: string[];
 declare const __SHELL_PAGE__: string;
@@ -64,7 +67,7 @@ worker.addEventListener('fetch', (event) => {
 	const url = new URL(request.url);
 	if (url.origin !== worker.location.origin) return;
 	if (CARD_IMAGE.test(url.pathname)) {
-		event.respondWith(cacheFirst(IMAGES, IMAGES_LIMIT, request));
+		event.respondWith(cardImage(request, url));
 		return;
 	}
 	if (url.pathname.startsWith('/api/')) return;
@@ -80,6 +83,29 @@ worker.addEventListener('fetch', (event) => {
 		return cached || cacheFirst(STATIC, STATIC_LIMIT, request);
 	})());
 });
+
+// Card art URLs: /api/images/art_crop/<scryfall id>.jpg, which the art pack is keyed by.
+const ART_CROP = /^\/api\/images\/art_crop\/([0-9a-f-]+)\.jpg$/i;
+
+/** A card image from the cache or the server; card art the server cannot give comes from the installed art pack. */
+async function cardImage(request: Request, url: URL): Promise<Response> {
+	try {
+		const response = await cacheFirst(IMAGES, IMAGES_LIMIT, request);
+		if (response.ok) return response;
+		return (await packedArt(url)) ?? response;
+	} catch (error) {
+		const art = await packedArt(url);
+		if (art) return art;
+		throw error;
+	}
+}
+
+async function packedArt(url: URL): Promise<Response | null> {
+	const match = ART_CROP.exec(url.pathname);
+	if (!match) return null;
+	const art = await readCardArt(match[1].toLowerCase()).catch(() => null);
+	return art ? new Response(art, { headers: { 'Content-Type': 'image/webp' } }) : null;
+}
 
 /** The cached copy, or the network's, kept for next time; the cache holds the latest `limit` files. */
 async function cacheFirst(name: string, limit: number, request: Request): Promise<Response> {

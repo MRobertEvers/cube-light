@@ -23,6 +23,7 @@ import type { OfflineShellStatus } from '../domain/models/offline-shell';
 import type { BuildInfo, ShellMode } from '../domain/models/build-info';
 import type { Connectivity } from '../domain/models/connectivity';
 import type { CardPackInfo, InstalledCardPack } from '../domain/models/card-pack';
+import type { CardArtInfo, InstalledCardArt } from '../domain/models/card-art';
 
 /**
  * Everything the ToriMTGEngine needs from outside itself. The engine imports only these
@@ -87,6 +88,20 @@ export interface CardPackStore {
 	remove(): Promise<void>;
 	/** The installed pack's JSON, decompressed; null when none is installed. */
 	read(): Promise<string | null>;
+}
+
+/** The offline card art pack: its download from the server and its storage on this device. */
+export interface CardArtStore {
+	/** The art the server offers; null when it cannot be reached or has none. */
+	offered(): Promise<CardArtInfo | null>;
+	installed(): Promise<InstalledCardArt | null>;
+	/** Downloads the offered art, keeping chunks already here, reporting bytes as they arrive. */
+	install(onProgress: (received: number, total: number) => void): Promise<InstalledCardArt>;
+	remove(): Promise<void>;
+	/** Whether this device was already asked if it wants the art. */
+	asked(): Promise<boolean>;
+	/** Records that this device was asked, whatever the answer. */
+	markAsked(): Promise<void>;
 }
 
 /** Whether the server can be reached now. */
