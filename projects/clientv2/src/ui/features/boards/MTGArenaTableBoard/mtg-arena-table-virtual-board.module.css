@@ -164,3 +164,39 @@
 		padding: 14px;
 	}
 }
+
+/* Ownership: a chip in the top-left corner; partial cards get a bar, missing ones a dashed frame. */
+.ownership {
+	position: absolute;
+	top: 4px;
+	left: 4px;
+	line-height: 0;
+	box-shadow: 0 2px 5px #0006;
+	border-radius: 999px;
+}
+
+.ownedBar {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	height: 4px;
+	overflow: hidden;
+	border-radius: 0 0 inherit inherit;
+	background: #f5ebd6;
+}
+
+.ownedBar i {
+	display: block;
+	height: 100%;
+	background: #b07a1e;
+}
+
+.missing {
+	outline: 2px dashed #e27b7b;
+	outline-offset: -2px;
+}
+
+.missing img {
+	opacity: 0.55;
+}

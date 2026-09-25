@@ -5,12 +5,13 @@ import { sessionSlice } from './session/sessionSlice';
 import { scansSlice } from './scans/scansSlice';
 import { refreshLocalDecks } from './decks/decks.thunks';
 import { refreshLocalDeckGroups } from './deck-groups/deck-groups.thunks';
+import { refreshLocalLibrary } from './library/library.thunks';
 
 export const ACCOUNT_RESET = 'torimtg/accountReset';
 
 /**
  * Keeps Redux in step with the engine: every engine event becomes an action. Change events
- * reread the deck list, the deck groups and every deck the store holds; changes that arrive during a reread
+ * reread the deck list, the deck groups, every deck the store holds and the library; changes that arrive during a reread
  * collapse into one more pass. Returns a function that stops listening.
  */
 export function startProjections(dispatch: AppDispatch, events: ToriMTGEngine['events']): () => void {
@@ -24,6 +25,7 @@ export function startProjections(dispatch: AppDispatch, events: ToriMTGEngine['e
 				dirty = false;
 				await dispatch(refreshLocalDecks());
 				await dispatch(refreshLocalDeckGroups());
+				await dispatch(refreshLocalLibrary());
 			}
 		} catch {
 			/* An account lock discards pending reads. */

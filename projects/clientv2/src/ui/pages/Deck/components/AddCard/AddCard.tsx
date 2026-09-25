@@ -14,6 +14,8 @@ import { searchCardNames } from 'src/redux/card-name-lookup/card-name-lookup.thu
 import { useAppDispatch } from 'src/redux/use-app-dispatch';
 import styles from './card-adder.module.css';
 import { DECK_BOARD_ORDER } from 'src/domain/deck/boards';
+import { ownedSummary, useCardSource, type CardSource } from './use-card-source';
+import { CardSourceSwitch, NoOwnedMatch, OwnedNote } from './CardSourceSwitch';
 
 const QUANTITY_LABELS = { main: 'Main deck', side: 'Sideboard' } as const;
 
@@ -38,6 +40,7 @@ export function AddCard(props: AddCardProps) {
 	const [isSearching, setIsSearching] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [state, dispatch] = useAsyncReducer(reducerAddCard, initialState);
+	const cardSource = useCardSource(deckId);
 	const {
 		suggestionsData: suggestions,
 		viewIsDropDownVisible,
@@ -62,7 +65,8 @@ export function AddCard(props: AddCardProps) {
 	}, []);
 
 	/** Shows the names matching `query`, unless the user has typed on since asking. */
-	function search(query: string, requestId: number) {
+	function search(query: string, requestId: number, sourceArg?: CardSource) {
+		const source = sourceArg === undefined ? cardSource.source : sourceArg;
 		function show(sorted: string[], failed: boolean) {
 			if (requestId !== requestIdRef.current || query !== queryRef.current)
 				return;
@@ -81,6 +85,11 @@ export function AddCard(props: AddCardProps) {
 				)
 			);
 		}
+		// The collection is searched here and now; every card goes through the name index.
+		if (source === 'collection') {
+			show(query.trim() ? cardSource.suggest(query) : [], false);
+			return;
+		}
 		storeDispatch(searchCardNames(query))
 			.unwrap()
 			.then(
@@ -89,11 +98,23 @@ export function AddCard(props: AddCardProps) {
 			);
 	}
 
+	/** Searches the other source for what is typed so far. */
+	function switchSource(source: CardSource) {
+		cardSource.setSource(source);
+		setError(null);
+		requestIdRef.current += 1;
+		if (!viewAddItemText.trim()) return;
+		queryRef.current = viewAddItemText;
+		setIsSearching(true);
+		search(viewAddItemText, requestIdRef.current, source);
+		addItemInputRef.current?.focus();
+	}
+
 	useEffect(() => {
 		if (warmedSuggestions.current) return;
 		warmedSuggestions.current = true;
-		// Loads the name index before the first keystroke.
-		search('', -1);
+		// Loads the name index before the first keystroke, in case the search moves to every card.
+		search('', -1, 'all');
 	}, []);
 	const exactMatch = suggestions.sorted.find(
 		(suggestion) =>
@@ -105,6 +126,13 @@ export function AddCard(props: AddCardProps) {
 			: null;
 	const canSubmit =
 		Boolean(resolvedCardName) && totalCount > 0 && !isSubmitting;
+	const owned = resolvedCardName ? cardSource.describe(resolvedCardName) : null;
+	const noOwnedMatch =
+		cardSource.source === 'collection' &&
+		!cardSource.loading &&
+		!isSearching &&
+		viewAddItemText.trim() !== '' &&
+		suggestions.sorted.length === 0;
 
 	// Tab-choosing a card jumps straight to the submit button once it re-renders enabled.
 	useEffect(() => {
@@ -148,7 +176,8 @@ export function AddCard(props: AddCardProps) {
 			addCardByName({
 				deckId,
 				cardName: resolvedCardName,
-				counts: viewAddItemCounts
+				counts: viewAddItemCounts,
+				printing: cardSource.printingFor(resolvedCardName)
 			})
 		)
 			.unwrap()
@@ -214,6 +243,11 @@ export function AddCard(props: AddCardProps) {
 				<p className={styles['intro']}>
 					Search for a card, then choose how many to add.
 				</p>
+				<CardSourceSwitch
+					source={cardSource.source}
+					onChange={switchSource}
+					disabled={isSubmitting}
+				/>
 				<div className={styles['field']}>
 					<label htmlFor="add-card-name">Card name</label>
 					<SuggestionInput
@@ -263,7 +297,11 @@ export function AddCard(props: AddCardProps) {
 								: undefined
 						}
 						tabBrowses
-						placeholder="Start typing a card name"
+						placeholder={
+							cardSource.source === 'collection'
+								? 'Search your collection'
+								: 'Start typing a card name'
+						}
 						indicator={
 							isSearching ? (
 								<Spinner />
@@ -279,8 +317,20 @@ export function AddCard(props: AddCardProps) {
 						aria-describedby={`${hintId}${error ? ` ${errorId}` : ''}`}
 						aria-invalid={Boolean(error)}
 					/>
+					<OwnedNote
+						summary={owned ? ownedSummary(owned, cardSource.deckNames) : null}
+						short={!!owned && owned.free < totalCount}
+					/>
+					{noOwnedMatch && (
+						<NoOwnedMatch
+							query={viewAddItemText}
+							onSearchAll={() => switchSource('all')}
+						/>
+					)}
 					<p id={hintId} className={styles['field-hint']}>
-						{isSearching
+						{cardSource.source === 'collection' && cardSource.loading
+							? 'Reading your collection…'
+							: isSearching
 							? 'Searching cards…'
 							: viewAddItemText && !resolvedCardName
 								? 'Choose a suggestion or enter an exact card name.'

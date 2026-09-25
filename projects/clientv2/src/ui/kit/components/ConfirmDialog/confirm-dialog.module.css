@@ -1,0 +1,20 @@
+.body {
+	color: #4a4542;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.body p {
+	margin: 0 0 10px;
+}
+
+.body ul {
+	margin: 0 0 10px;
+	padding-left: 20px;
+}
+
+.error {
+	margin: 10px 0 0;
+	color: #a12323;
+	font-size: 13px;
+}

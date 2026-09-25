@@ -7,6 +7,8 @@ import {
 } from '../../../../domain/deck/group-cube-tutor-cards';
 import { type DeckCardGroup, manaValue } from '../../../../domain/deck/group-deck-cards';
 import type { BoardGroups } from '../../../../domain/deck/grouping';
+import { OwnershipBadge } from '../../../kit/components/OwnershipBadge/OwnershipBadge';
+import { ownedNameKey, type RowOwnership } from '../../../../domain/library/ownership';
 import type { BoardProps } from '../board.types';
 import styles from './cube-tutor-board.module.css';
 
@@ -38,10 +40,11 @@ function CardRow(props: {
 	/** First card of a new mana value within its section. */
 	newTier: boolean;
 	busy: boolean;
+	owned?: RowOwnership;
 	onView: (group: DeckCardGroup) => void;
 	onPreview: (preview: Preview | null) => void;
 }) {
-	const { group, newTier, busy, onView, onPreview } = props;
+	const { group, newTier, busy, owned, onView, onPreview } = props;
 	const card = group.printings[0];
 	function show(event: React.SyntheticEvent<HTMLElement>) {
 		onPreview({ card, row: event.currentTarget.getBoundingClientRect() });
@@ -63,6 +66,7 @@ function CardRow(props: {
 					<span className={styles.count}>{group.count}</span>
 				)}
 				<span className={styles.name}>{group.name}</span>
+				{owned && <OwnershipBadge row={owned} compact />}
 			</button>
 		</li>
 	);
@@ -71,10 +75,11 @@ function CardRow(props: {
 function Column(props: {
 	column: CubeTutorColumn;
 	busyName: string | null;
+	ownership?: Record<string, RowOwnership>;
 	onView: (group: DeckCardGroup) => void;
 	onPreview: (preview: Preview | null) => void;
 }) {
-	const { column, busyName, onView, onPreview } = props;
+	const { column, busyName, ownership, onView, onPreview } = props;
 	return (
 		<section
 			className={styles.column}
@@ -102,6 +107,7 @@ function Column(props: {
 											manaValue(group.printings[0].manaCost)
 									}
 									busy={busyName === group.name}
+									owned={ownership?.[ownedNameKey(group.name)]}
 									onView={onView}
 									onPreview={onPreview}
 								/>
@@ -120,7 +126,7 @@ function Column(props: {
  * combination, and cards run by mana value. Hover a name to see the card.
  */
 export function CubeTutorBoard(props: BoardProps) {
-	const { cards, busyGroup, onCardEvent } = props;
+	const { cards, busyGroup, onCardEvent, annotations } = props;
 	const [preview, setPreview] = useState<Preview | null>(null);
 	const boards = useMemo(
 		() =>
@@ -156,6 +162,7 @@ export function CubeTutorBoard(props: BoardProps) {
 								busyName={
 									busyGroup?.board === board ? busyGroup.name : null
 								}
+								ownership={annotations?.ownership}
 								onView={(group) =>
 									onCardEvent({
 										type: 'view',

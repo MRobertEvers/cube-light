@@ -398,8 +398,8 @@ command union, event union, reducer, and checkpoint schema. Do not introduce
 | Aggregate | Example commands | Example accepted facts | Checkpoint state |
 | --- | --- | --- | --- |
 | Deck, including its card quantities | `CreateDeck`, `RenameDeck`, `AdjustCardQuantity`, `SetCardQuantity`, `ImportDeckCards`, `DeleteDeck` | `DeckCreated`, `DeckRenamed`, `CardQuantityAdjusted`, `DeckCardsImported`, `DeckDeleted` | Identity, metadata, appearance settings, card UUID-to-quantity map, deletion status |
-| Collection | `CreateCollection`, `RenameCollection` | `CollectionCreated`, `CollectionRenamed` | Identity, name, defined membership fields |
-| Storage location | `CreateStorageLocation`, `RenameStorageLocation` | `StorageLocationCreated`, `StorageLocationRenamed` | Identity, name, defined location fields |
+| Collection | `collection.create`, `collection.rename`, `collection.role`, `collection.cards`, `collection.place`, `collection.delete` | `CollectionCreated`, `CollectionRenamed`, `CollectionRoleSet`, `CollectionCardsAdjusted`, `CollectionCardsPlaced`, `CollectionDeleted` | Identity, name, role (owned or wanted), card UUID-to-quantity map, placements (UUID → location → copies), deletion status |
+| Storage location | `location.create`, `location.rename`, `location.describe`, `location.delete` | `StorageLocationCreated`, `StorageLocationRenamed`, `StorageLocationDescribed`, `StorageLocationDeleted` | Identity, name, description, deletion status |
 | User profile/preferences | `SetProfileArtwork`, `SetPrintingView` | `ProfileArtworkSelected`, `PrintingViewPreferenceSet` | Explicit artwork/crop fields and named preferences |
 | Work item | `QueueScan`, `CompleteScan`, `CancelScan` | `ScanQueued`, `ScanCompleted`, `ScanCancelled` | Input blob references, status, result references |
 

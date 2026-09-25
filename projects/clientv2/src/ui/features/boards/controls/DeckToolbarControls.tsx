@@ -5,6 +5,7 @@ import { toFriendlyDate } from '../../../kit/utils/to-friendly-date';
 import { DeckControlIcon } from '../../../kit/components/DeckControlIcons/DeckControlIcons';
 import { DeckViewSwitch } from '../../deck-chrome/DeckViewSwitch';
 import type { BoardControlsProps } from '../board.types';
+import { DeckOwnershipSummary } from '../../deck-chrome/DeckOwnershipSummary';
 
 import deckStyles from '../../../pages/Deck/deck.module.css';
 import styles from './deck-toolbar-controls.module.css';
@@ -24,7 +25,11 @@ export function DeckToolbarControls(props: BoardControlsProps) {
 		onAddCards,
 		onImportImage,
 		onEditName,
-		onDeleteDeck
+		onDeleteDeck,
+		ownership,
+		ownershipFilter,
+		onOwnershipFilter,
+		onAddMissing
 	} = props;
 	const navigate = useNavigate();
 	const sideCount = deck.boards.side.count;
@@ -97,6 +102,13 @@ export function DeckToolbarControls(props: BoardControlsProps) {
 				</div>
 			</div>
 			<DeckImageScanCard deckId={deckId} />
+			<DeckOwnershipSummary
+				summary={ownership}
+				filter={ownershipFilter}
+				onFilter={onOwnershipFilter}
+				onAddMissing={onAddMissing}
+				compact
+			/>
 			{errors.map((error) => (
 				<p key={error} className={deckStyles['save-error']} role="alert">
 					{error}

@@ -165,3 +165,10 @@
 		justify-content: center;
 	}
 }
+
+.owned {
+	margin: 4px 0 0;
+	color: #2f6f5e;
+	font-size: 12px;
+	line-height: 1.4;
+}

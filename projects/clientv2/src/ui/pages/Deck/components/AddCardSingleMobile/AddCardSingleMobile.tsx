@@ -17,6 +17,8 @@ import {
 } from '../AddCard/add-card-state';
 import { DECK_BOARD_ORDER } from '../../../../../domain/deck/boards';
 import { AddCardEventType, type AddCardEvent } from '../AddCard/AddCard';
+import { ownedSummary, useCardSource, type CardSource } from '../AddCard/use-card-source';
+import { CardSourceSwitch, NoOwnedMatch, OwnedNote } from '../AddCard/CardSourceSwitch';
 
 import styles from './add-card-single-mobile.module.css';
 
@@ -30,6 +32,7 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 	const { deckId, onEvent } = props;
 	const storeDispatch = useAppDispatch();
 	const [state, dispatch] = useAsyncReducer(reducerAddCard, initialState);
+	const cardSource = useCardSource(deckId);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isSearching, setIsSearching] = useState(false);
 	const [keepAdding, setKeepAdding] = useState(false);
@@ -64,7 +67,8 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 	}, []);
 
 	/** Shows the names matching `nextQuery`, unless the user has typed on since asking. */
-	function search(nextQuery: string, id: number) {
+	function search(nextQuery: string, id: number, sourceArg?: CardSource) {
+		const source = sourceArg === undefined ? cardSource.source : sourceArg;
 		function show(sorted: string[], failed: boolean) {
 			if (id !== requestId.current || nextQuery !== query.current) return;
 			dispatch(
@@ -82,12 +86,29 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 				)
 			);
 		}
+		// The collection is searched here and now; every card goes through the name index.
+		if (source === 'collection') {
+			show(nextQuery.trim() ? cardSource.suggest(nextQuery) : [], false);
+			return;
+		}
 		storeDispatch(searchCardNames(nextQuery))
 			.unwrap()
 			.then(
 				(sorted) => show(sorted, false),
 				() => show([], true)
 			);
+	}
+
+	/** Searches the other source for what is typed so far. */
+	function switchSource(source: CardSource) {
+		cardSource.setSource(source);
+		setError(null);
+		requestId.current += 1;
+		if (!viewAddItemText.trim()) return;
+		query.current = viewAddItemText;
+		setIsSearching(true);
+		search(viewAddItemText, requestId.current, source);
+		input.current?.focus();
 	}
 
 	/** After a card is saved: close, or clear the form for the next card. */
@@ -116,8 +137,8 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 	useEffect(() => {
 		if (warmedSuggestions.current) return;
 		warmedSuggestions.current = true;
-		// Loads the name index before the first keystroke.
-		search('', -1);
+		// Loads the name index before the first keystroke, in case the search moves to every card.
+		search('', -1, 'all');
 	}, []);
 	const exactMatch = suggestions.sorted.find(
 		(suggestion) =>
@@ -129,6 +150,13 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 			: null;
 	const canSubmit =
 		Boolean(resolvedCardName) && totalCount > 0 && !isSubmitting;
+	const owned = resolvedCardName ? cardSource.describe(resolvedCardName) : null;
+	const noOwnedMatch =
+		cardSource.source === 'collection' &&
+		!cardSource.loading &&
+		!isSearching &&
+		viewAddItemText.trim() !== '' &&
+		suggestions.sorted.length === 0;
 
 	function close() {
 		if (!isSubmitting) onEvent({ type: AddCardEventType.CLOSE });
@@ -200,7 +228,8 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 			addCardByName({
 				deckId,
 				cardName: resolvedCardName,
-				counts: viewAddItemCounts
+				counts: viewAddItemCounts,
+				printing: cardSource.printingFor(resolvedCardName)
 			})
 		)
 			.unwrap()
@@ -249,6 +278,12 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 				</Button>
 			}
 		>
+			<CardSourceSwitch
+				source={cardSource.source}
+				onChange={switchSource}
+				disabled={isSubmitting}
+				wide
+			/>
 			<div className={styles.field}>
 				<label htmlFor="mobile-add-card-name">Card name</label>
 				<SuggestionInput
@@ -272,7 +307,7 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 							? suggestions.sorted[0]
 							: undefined
 					}
-					placeholder="Card name"
+					placeholder={cardSource.source === 'collection' ? 'Search your collection' : 'Card name'}
 					disabled={isSubmitting}
 					indicator={
 						isSearching ? (
@@ -291,6 +326,13 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 					}
 					aria-invalid={Boolean(error)}
 				/>
+				<OwnedNote
+					summary={owned ? ownedSummary(owned, cardSource.deckNames) : null}
+					short={!!owned && owned.free < totalCount}
+				/>
+				{noOwnedMatch && (
+					<NoOwnedMatch query={viewAddItemText} onSearchAll={() => switchSource('all')} />
+				)}
 				{error && (
 					<p id={errorId} className={styles.error} role="alert">
 						{error}

@@ -1,0 +1,64 @@
+.field {
+	margin: 0 0 16px;
+}
+
+.field label {
+	display: block;
+	margin-bottom: 8px;
+	font-size: 14px;
+	font-weight: 650;
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 0 0 16px;
+}
+
+.rowLabel {
+	font-size: 14px;
+	font-weight: 650;
+}
+
+.check {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 14px;
+}
+
+.textarea {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 10px;
+	border: 1px solid #ddd6d2;
+	border-radius: 8px;
+	font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+	resize: vertical;
+}
+
+.textarea:focus-visible {
+	outline: 2px solid #a65350;
+	outline-offset: 1px;
+}
+
+.hint {
+	margin: 10px 0 0;
+	color: #6e6461;
+	font-size: 12.5px;
+	line-height: 1.4;
+}
+
+.status {
+	margin: 10px 0 0;
+	color: #2f6f5e;
+	font-size: 13px;
+}
+
+.error {
+	margin: 10px 0 0;
+	color: #a12323;
+	font-size: 13px;
+}

@@ -1,0 +1,72 @@
+.switch {
+	display: inline-flex;
+	overflow: hidden;
+	margin-bottom: 16px;
+	border: 1px solid #ddd6d2;
+	border-radius: 8px;
+}
+
+.wide {
+	display: flex;
+	margin-bottom: 12px;
+}
+
+.wide button {
+	flex: 1;
+}
+
+.switch button {
+	margin: 0;
+	padding: 6px 12px;
+	border: 0;
+	background: white;
+	color: #4a4542;
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.switch button + button {
+	border-left: 1px solid #ddd6d2;
+}
+
+.switch button[aria-pressed='true'] {
+	background: #384e43;
+	color: white;
+	font-weight: 600;
+}
+
+.switch button:focus-visible {
+	outline: 2px solid #a65350;
+	outline-offset: -2px;
+}
+
+.note {
+	margin: 8px 0 0;
+	color: #2f6f5e;
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.short {
+	color: #8a5c10;
+}
+
+.noMatch {
+	margin: 8px 0 0;
+	color: #6e6461;
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.noMatch button {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: #a65350;
+	font: inherit;
+	font-weight: 600;
+	text-decoration: underline;
+	cursor: pointer;
+}

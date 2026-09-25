@@ -245,12 +245,14 @@ export class OutboxLocalStore implements LocalStore {
         if (command.type.startsWith('profile.') && command.id !== `profile_${scope.accountId}`) throw new Error('Cannot edit another account.');
         const base = await tables.get<StoredReplica>('base', [scope.partition, command.id]);
         const previous = (await tables.all<Intent>('outbox', scope.partition)).filter((intent) => outstanding(intent) && intent.command.id === command.id).sort((a, b) => b.sequence - a.sequence)[0];
-        // Card edits made while the deck's last edit still waits to be sent join it, so a burst
+        // Card edits made while the deck's (or collection's) last edit still waits to be sent join it, so a burst
         // of steps travels as one request. Edits apply in order, so joining them keeps the result.
         // A scan completed into the deck since then keeps the edits apart, so they stay in order.
         const overtaken = previous && allIntents.some((intent) => outstanding(intent) && intent.sequence > previous.sequence && intent.command.type === 'work.complete' && intent.command.deckId === command.id);
-        if (command.type === 'deck.cards' && previous?.command.type === 'deck.cards' && previous.status === 'queued' && !previous.prepared && !overtaken && previous.command.edits.length + command.edits.length <= 2000) {
-            const joined: DomainCommand = { type: previous.command.type, id: previous.command.id, edits: previous.command.edits.concat(command.edits) };
+        const earlier = previous?.command;
+        if ((command.type === 'deck.cards' || command.type === 'collection.cards') && (earlier?.type === 'deck.cards' || earlier?.type === 'collection.cards') && earlier.type === command.type && previous.status === 'queued' && !previous.prepared && !overtaken && earlier.edits.length + command.edits.length <= 2000) {
+            const edits = earlier.edits.concat(command.edits);
+            const joined: DomainCommand = earlier.type === 'deck.cards' ? { type: 'deck.cards', id: earlier.id, edits } : { type: 'collection.cards', id: earlier.id, edits };
             const state = await projectedBefore(tables, scope.partition, previous);
             previous.command = joined;
             await journal(tables, meta, previous.operationId, { type: 'IntentAmended', command: joined, events: decide(state, joined) });

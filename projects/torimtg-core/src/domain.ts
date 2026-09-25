@@ -1,10 +1,12 @@
 import { DomainError } from './types.js';
-import type { AggregateState, CardQuantityChange, DomainCommand, DomainEvent, DeckBoard, DeckGroup, DeckState, ProfileState, WorkState, Crop } from './types.js';
+import type { AggregateState, CardEdit, CardQuantityChange, CollectionState, DomainCommand, DomainEvent, DeckBoard, DeckGroup, DeckState, LocationState, PlacementMove, ProfileState, WorkState, Crop } from './types.js';
 
 export const MAX_DECK_TAGS = 32;
 export const MAX_TAG_LENGTH = 40;
 export const MAX_DECK_GROUPS = 50;
 export const MAX_GROUP_NAME_LENGTH = 80;
+export const MAX_CARD_EDITS = 2000;
+export const MAX_LOCATION_DESCRIPTION_LENGTH = 500;
 
 /** A tag as it is stored: trimmed, with runs of whitespace collapsed to one space. */
 export function normalizeTag(tag: string): string {
@@ -43,6 +45,23 @@ export function boardCards(deck: DeckState, board: DeckBoard): Record<string, nu
     return board === 'side' ? deck.sideboard || {} : deck.cards;
 }
 
+/** The copies a collection holds, by printing UUID. */
+export function collectionCards(collection: CollectionState): Record<string, number> {
+    return collection.cards || {};
+}
+
+/** Copies of a printing kept in any location. */
+export function placedCount(collection: CollectionState, uuid: string): number {
+    const byLocation = collection.stored?.[uuid];
+    if (!byLocation) return 0;
+    return Object.values(byLocation).reduce((total, count) => total + count, 0);
+}
+
+/** Copies of a printing held but not kept in any location. */
+export function unplacedCount(collection: CollectionState, uuid: string): number {
+    return Math.max(0, (collectionCards(collection)[uuid] || 0) - placedCount(collection, uuid));
+}
+
 function requireValue(condition: unknown, message: string): asserts condition {
     if (!condition) throw new DomainError(message);
 }
@@ -71,6 +90,80 @@ function validDeckGroups(value: unknown): asserts value is DeckGroup[] {
         requireValue(normalizeTags(group.tags).length > 0, 'Choose at least one tag for each group.');
         requireValue(group.match === 'any' || group.match === 'all', 'Invalid group match.');
     }
+}
+
+function validCardEdit(edit: CardEdit): void {
+    requireValue(edit && typeof edit.uuid === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(edit.uuid) && !['__proto__', 'constructor', 'prototype'].includes(edit.uuid), 'Invalid card ID.');
+    requireValue(['add', 'remove', 'set'].includes(edit.action) && Number.isSafeInteger(edit.count) && edit.count >= 0 && edit.count <= 1000000, 'Invalid card quantity.');
+}
+
+/** Applies one edit to a quantity table in place. */
+function applyCardEdit(cards: Record<string, number>, edit: CardEdit): void {
+    const previous = cards[edit.uuid] || 0;
+    const resulting = edit.action === 'set' ? edit.count : edit.action === 'add' ? previous + edit.count : Math.max(0, previous - edit.count);
+    requireValue(Number.isSafeInteger(resulting) && resulting <= 1000000, 'Card quantity is too large.');
+    cards[edit.uuid] = resulting;
+}
+
+/** The changes between two quantity tables, sorted by UUID. */
+function quantityChanges(before: Record<string, number>, after: Record<string, number>): CardQuantityChange[] {
+    return Object.keys(after).filter((key) => (before[key] || 0) !== after[key]).sort().map((uuid) => {
+        const previous = before[uuid] || 0;
+        return { uuid, previous, delta: after[uuid] - previous, resulting: after[uuid] };
+    });
+}
+
+function validPlacementMove(move: PlacementMove): void {
+    requireValue(move && typeof move.uuid === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(move.uuid) && !['__proto__', 'constructor', 'prototype'].includes(move.uuid), 'Invalid card ID.');
+    requireValue(move.from === null || isPublicId(move.from, 'location'), 'Invalid storage location.');
+    requireValue(move.to === null || isPublicId(move.to, 'location'), 'Invalid storage location.');
+    requireValue(move.from !== move.to, 'Choose a different storage location.');
+    requireValue(Number.isSafeInteger(move.count) && move.count >= 1 && move.count <= 1000000, 'Invalid card quantity.');
+}
+
+/** Applies placement moves to a copy of a collection, checking each one has the copies it moves. */
+function placeCards(collection: CollectionState, moves: readonly PlacementMove[]): CollectionState {
+    const next = structuredClone(collection);
+    for (const move of moves) {
+        validPlacementMove(move);
+        const stored = (next.stored ||= {});
+        const byLocation = (stored[move.uuid] ||= {});
+        const available = move.from === null ? unplacedCount(next, move.uuid) : byLocation[move.from] || 0;
+        requireValue(available >= move.count, 'There are not enough copies to move.');
+        if (move.from !== null) {
+            byLocation[move.from] -= move.count;
+            if (!byLocation[move.from]) delete byLocation[move.from];
+        }
+        if (move.to !== null) byLocation[move.to] = (byLocation[move.to] || 0) + move.count;
+        // Nothing placed is stored as absent so the collection hashes like one that never placed anything.
+        if (!Object.keys(byLocation).length) delete stored[move.uuid];
+        if (!Object.keys(stored).length) delete next.stored;
+    }
+    return next;
+}
+
+/**
+ * Moves copies back to the unplaced pool wherever the new quantities hold fewer copies than are placed.
+ * Takes from the location keeping the most copies first; ties go to the lower location ID.
+ */
+function trimPlacements(collection: CollectionState, after: Record<string, number>): PlacementMove[] {
+    const moves: PlacementMove[] = [];
+    for (const uuid of Object.keys(collection.stored || {}).sort()) {
+        let surplus = placedCount(collection, uuid) - (after[uuid] || 0);
+        const byLocation = collection.stored![uuid];
+        const order = Object.keys(byLocation).sort((a, b) => byLocation[b] - byLocation[a] || (a < b ? -1 : a > b ? 1 : 0));
+        for (const location of order) {
+            if (surplus <= 0) break;
+            const count = Math.min(surplus, byLocation[location]);
+            moves.push({ uuid, from: location, to: null, count });
+            surplus -= count;
+        }
+    }
+    return moves;
+}
+
+function validDescription(value: unknown): asserts value is string | undefined {
+    requireValue(value === undefined || (typeof value === 'string' && value.length <= MAX_LOCATION_DESCRIPTION_LENGTH), `Enter a description of at most ${MAX_LOCATION_DESCRIPTION_LENGTH} characters.`);
 }
 
 function validCrop(crop: Crop, maxXArg?: number): boolean {
@@ -106,29 +199,19 @@ export function decide(state: AggregateState | null, command: DomainCommand): Do
             return [changed];
         }
         case 'deck.cards': {
-            requireValue(Array.isArray(command.edits) && command.edits.length <= 2000, 'An edit may contain at most 2000 card changes.');
+            requireValue(Array.isArray(command.edits) && command.edits.length <= MAX_CARD_EDITS, `An edit may contain at most ${MAX_CARD_EDITS} card changes.`);
             const deck = state as DeckState;
             const after: Record<DeckBoard, Record<string, number>> = { main: Object.fromEntries(Object.entries(deck.cards)), side: Object.fromEntries(Object.entries(boardCards(deck, 'side'))) };
             for (const edit of command.edits) {
-                requireValue(edit && typeof edit.uuid === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(edit.uuid) && !['__proto__', 'constructor', 'prototype'].includes(edit.uuid), 'Invalid card ID.');
-                requireValue(['add', 'remove', 'set'].includes(edit.action) && Number.isSafeInteger(edit.count) && edit.count >= 0 && edit.count <= 1000000, 'Invalid card quantity.');
+                validCardEdit(edit);
                 requireValue(edit.board === undefined || edit.board === 'main' || edit.board === 'side', 'Invalid deck board.');
-                const cards = after[edit.board || 'main'];
-                const previous = cards[edit.uuid] || 0;
-                const resulting = edit.action === 'set' ? edit.count : edit.action === 'add' ? previous + edit.count : Math.max(0, previous - edit.count);
-                requireValue(Number.isSafeInteger(resulting) && resulting <= 1000000, 'Card quantity is too large.');
-                cards[edit.uuid] = resulting;
+                applyCardEdit(after[edit.board || 'main'], edit);
             }
             // Main-board changes come first and carry no board, matching events recorded before boards existed.
-            const changes: CardQuantityChange[] = [];
-            for (const board of ['main', 'side'] as const) {
-                const before = boardCards(deck, board);
-                for (const uuid of Object.keys(after[board]).filter((key) => (before[key] || 0) !== after[board][key]).sort()) {
-                    const previous = before[uuid] || 0;
-                    const change: CardQuantityChange = { uuid, previous, delta: after[board][uuid] - previous, resulting: after[board][uuid] };
-                    if (board === 'side') change.board = board;
-                    changes.push(change);
-                }
+            const changes: CardQuantityChange[] = quantityChanges(deck.cards, after.main);
+            for (const change of quantityChanges(boardCards(deck, 'side'), after.side)) {
+                change.board = 'side';
+                changes.push(change);
             }
             return changes.length ? [{ type: 'CardQuantitiesAdjusted', changes }] : [];
         }
@@ -175,6 +258,46 @@ export function decide(state: AggregateState | null, command: DomainCommand): Do
         case 'location.create': validName(command.name); return [{ type: 'StorageLocationCreated', name: command.name.trim() }];
         case 'collection.rename': validName(command.name); return [{ type: 'CollectionRenamed', name: command.name.trim() }];
         case 'location.rename': validName(command.name); return [{ type: 'StorageLocationRenamed', name: command.name.trim() }];
+        case 'collection.role':
+            requireValue(command.role === 'owned' || command.role === 'wanted', 'Invalid collection role.');
+            return ((state as CollectionState).role || 'owned') === command.role ? [] : [{ type: 'CollectionRoleSet', role: command.role }];
+        case 'collection.cards': {
+            requireValue(Array.isArray(command.edits) && command.edits.length <= MAX_CARD_EDITS, `An edit may contain at most ${MAX_CARD_EDITS} card changes.`);
+            const collection = state as CollectionState;
+            const before = collectionCards(collection);
+            const after = Object.fromEntries(Object.entries(before));
+            for (const edit of command.edits) {
+                validCardEdit(edit);
+                requireValue(edit.board === undefined, 'A collection has no boards.');
+                applyCardEdit(after, edit);
+            }
+            const changes = quantityChanges(before, after);
+            if (!changes.length) return [];
+            // Copies leave their locations before they leave the collection, so no event leaves more placed than held.
+            const trim = trimPlacements(collection, after);
+            const events: DomainEvent[] = trim.length ? [{ type: 'CollectionCardsPlaced', moves: trim }] : [];
+            events.push({ type: 'CollectionCardsAdjusted', changes });
+            return events;
+        }
+        case 'collection.place': {
+            requireValue(Array.isArray(command.moves) && command.moves.length > 0 && command.moves.length <= MAX_CARD_EDITS, `A move may contain 1-${MAX_CARD_EDITS} changes.`);
+            const moves = command.moves.map((move) => ({ uuid: move.uuid, from: move.from, to: move.to, count: move.count }));
+            placeCards(state as CollectionState, moves);
+            return [{ type: 'CollectionCardsPlaced', moves }];
+        }
+        case 'collection.delete': return [{ type: 'CollectionDeleted' }];
+        case 'location.describe': {
+            validName(command.name);
+            validDescription(command.description);
+            const location = state as LocationState;
+            const name = command.name.trim();
+            const description = command.description === undefined ? undefined : command.description.trim() || undefined;
+            if (location.name === name && location.description === description) return [];
+            const described: Extract<DomainEvent, { type: 'StorageLocationDescribed' }> = { type: 'StorageLocationDescribed', name };
+            if (description !== undefined) described.description = description;
+            return [described];
+        }
+        case 'location.delete': return [{ type: 'StorageLocationDeleted' }];
         case 'profile.artwork': {
             requireValue(Number.isSafeInteger(command.userId) && command.userId > 0 && command.id === `profile_${command.userId}`, 'Invalid profile identity.');
             const profile = command.profile;
@@ -258,8 +381,41 @@ export function applyEvent(state: AggregateState | null, event: DomainEvent, id:
             case 'DeckDeleted': next.deleted = true; return next;
         }
     }
-    if (next.kind === 'collection' && event.type === 'CollectionRenamed') { next.name = event.name; return next; }
-    if (next.kind === 'location' && event.type === 'StorageLocationRenamed') { next.name = event.name; return next; }
+    if (next.kind === 'collection') {
+        switch (event.type) {
+            case 'CollectionRenamed': next.name = event.name; return next;
+            // Owned is stored as absent so the collection hashes like one made before roles existed.
+            case 'CollectionRoleSet': if (event.role === 'owned') delete next.role; else next.role = event.role; return next;
+            case 'CollectionCardsAdjusted': {
+                const cards = (next.cards ||= {});
+                for (const change of event.changes) {
+                    requireValue(change.board === undefined, 'A collection has no boards.');
+                    requireValue((cards[change.uuid] || 0) === change.previous && change.previous + change.delta === change.resulting && Number.isSafeInteger(change.resulting) && change.resulting >= 0, 'Card ledger does not balance.');
+                    if (change.resulting) cards[change.uuid] = change.resulting; else delete cards[change.uuid];
+                    requireValue(placedCount(next, change.uuid) <= change.resulting, 'More copies are placed than held.');
+                }
+                // An empty collection is stored without cards so it hashes like one that never had any.
+                if (!Object.keys(cards).length) delete next.cards;
+                return next;
+            }
+            case 'CollectionCardsPlaced': {
+                const placed = placeCards(next, event.moves);
+                placed.updatedAt = at;
+                return placed;
+            }
+            case 'CollectionDeleted': next.deleted = true; return next;
+        }
+    }
+    if (next.kind === 'location') {
+        switch (event.type) {
+            case 'StorageLocationRenamed': next.name = event.name; return next;
+            case 'StorageLocationDescribed':
+                next.name = event.name;
+                if (event.description === undefined) delete next.description; else next.description = event.description;
+                return next;
+            case 'StorageLocationDeleted': next.deleted = true; return next;
+        }
+    }
     if (next.kind === 'work') {
         switch (event.type) {
             case 'ScanStarted': next.status = 'running'; return next;

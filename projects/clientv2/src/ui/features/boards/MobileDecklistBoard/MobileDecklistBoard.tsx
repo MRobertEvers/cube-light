@@ -3,9 +3,11 @@ import type {
 	DeckBoard,
 	DeckCardEntry
 } from '../../../../domain/models/deck';
-import type { BoardCardKey, BoardProps } from '../board.types';
+import type { BoardAnnotations, BoardCardKey, BoardProps, BoardSection } from '../board.types';
 import type { DecklistSpotlightProps } from '../decklist-spotlight';
 import { ManaCost } from '../../../kit/components/ManaCost/ManaCost';
+import { BoardChips, OwnershipBadge, OwnershipPips } from '../../../kit/components/OwnershipBadge/OwnershipBadge';
+import { ownedNameKey } from '../../../../domain/library/ownership';
 import { OverflowMenu } from '../../../kit/components/OverflowMenu/OverflowMenu';
 import {
 	DeckCardGroup,
@@ -27,6 +29,10 @@ export type MobileDecklistBoardProps = BoardProps & DecklistSpotlightProps;
 
 type MobileCardActions = {
 	busyGroup: BoardCardKey | null;
+	annotations?: BoardAnnotations;
+	/** The move action's menu text; moving to the other deck board by default. */
+	moveLabel?: string;
+	deleteLabel?: string;
 	onEdit: (group: DeckCardGroup) => void;
 	onView: (card: DeckCardEntry, group: DeckCardGroup) => void;
 	onDelete: (group: DeckCardGroup) => void;
@@ -38,13 +44,16 @@ type MobileCardRowProps = MobileCardActions & {
 	group: DeckCardGroup;
 };
 
+const MOBILE_DECK_SECTIONS: readonly BoardSection[] = DECK_BOARD_ORDER.map((board) => ({ board, label: DECK_BOARD_LABELS[board] }));
+
 function thumbnailOf(card: DeckCardEntry) {
 	return card.images?.small ?? card.image;
 }
 
 function MobileCardRow(props: MobileCardRowProps) {
-	const { group, busyGroup, onEdit, onView, onDelete, onMove } = props;
+	const { group, busyGroup, annotations, moveLabel, deleteLabel, onEdit, onView, onDelete, onMove } = props;
 	const [top] = group.printings;
+	const owned = annotations?.ownership?.[ownedNameKey(group.name)];
 	const [expanded, setExpanded] = useState(false);
 	const deleting =
 		busyGroup?.board === group.board && busyGroup.name === group.name;
@@ -73,6 +82,8 @@ function MobileCardRow(props: MobileCardRowProps) {
 					<span className={styles.count}>{group.count}</span>
 					<span className={styles.name}>{group.name}</span>
 					<ManaCost cost={top.manaCost} />
+					{owned && <OwnershipPips row={owned} />}
+					{owned && owned.status !== 'owned' && <OwnershipBadge row={owned} compact />}
 					{group.printings.length === 1 ? (
 						<span className={styles.setCode}>({top.setCode})</span>
 					) : (
@@ -116,17 +127,22 @@ function MobileCardRow(props: MobileCardRowProps) {
 						View
 					</button>
 					<button type="button" onClick={() => onMove(group)}>
-						{moveToBoardLabel(group.board)}
+						{moveLabel ?? moveToBoardLabel(group.board)}
 					</button>
 					<button
 						type="button"
 						className={styles.delete}
 						onClick={() => onDelete(group)}
 					>
-						Delete
+						{deleteLabel ?? 'Delete'}
 					</button>
 				</OverflowMenu>
 			</div>
+			{group.printings.length === 1 && annotations?.printingChips?.[top.uuid] && (
+				<div className={styles.chipLine}>
+					<BoardChips chips={annotations.printingChips[top.uuid]} />
+				</div>
+			)}
 			{expanded && group.printings.length > 1 && (
 				<ul
 					id={printingsId}
@@ -142,6 +158,7 @@ function MobileCardRow(props: MobileCardRowProps) {
 									loading="lazy"
 								/>
 								<span>{card.setCode}</span>
+								<BoardChips chips={annotations?.printingChips?.[card.uuid]} />
 								<ManaCost cost={card.manaCost} />
 								<strong>×{card.count}</strong>
 							</button>
@@ -155,12 +172,14 @@ function MobileCardRow(props: MobileCardRowProps) {
 
 type MobileDecklistSectionProps = MobileCardActions & {
 	board: DeckBoard;
+	label: string;
+	empty?: string;
 	deck: BoardGroups;
 };
 
 /** One board of a deck: its heading and card-type sections, lands last. */
 function MobileDecklistSection(props: MobileDecklistSectionProps) {
-	const { board, deck, busyGroup, onEdit, onView, onDelete, onMove } = props;
+	const { board, label, empty, deck, busyGroup, annotations, moveLabel, deleteLabel, onEdit, onView, onDelete, onMove } = props;
 	const headingId = `mobile-decklist-board-${board}`;
 	const categories = useMemo(
 		() =>
@@ -185,14 +204,14 @@ function MobileDecklistSection(props: MobileDecklistSectionProps) {
 			data-board={board}
 		>
 			<h2 id={headingId} className={styles.boardHeader}>
-				{DECK_BOARD_LABELS[board]}
+				{label}
 				<span className={styles.boardCount}>{deck.count}</span>
 			</h2>
 			{deck.count === 0 && (
 				<p className={styles.boardEmpty}>
-					{board === 'side'
+					{empty ?? (board === 'side'
 						? 'No sideboard cards yet. Use a card’s actions menu to move it here, or paste a list with a Sideboard section.'
-						: 'No cards in the main board yet.'}
+						: 'No cards in the main board yet.')}
 				</p>
 			)}
 			{categories.map((item) => (
@@ -204,6 +223,9 @@ function MobileDecklistSection(props: MobileDecklistSectionProps) {
 								key={group.name}
 								group={group}
 								busyGroup={busyGroup}
+								annotations={annotations}
+								moveLabel={moveLabel}
+								deleteLabel={deleteLabel}
 								onEdit={onEdit}
 								onView={onView}
 								onDelete={onDelete}
@@ -226,10 +248,17 @@ export function MobileDecklistBoard(props: MobileDecklistBoardProps) {
 		banner,
 		bannerCrop,
 		bannerBlend,
-		topStyle
+		topStyle,
+		annotations,
+		moveLabel,
+		deleteLabel,
+		sections = MOBILE_DECK_SECTIONS
 	} = props;
 	const rowProps: MobileCardActions = {
 		busyGroup,
+		annotations,
+		moveLabel,
+		deleteLabel,
 		onEdit: (group) => onCardEvent({ type: 'edit', group }),
 		onView: (card, group) => onCardEvent({ type: 'view', card, group }),
 		onDelete: (group) => onCardEvent({ type: 'delete', group }),
@@ -250,12 +279,17 @@ export function MobileDecklistBoard(props: MobileDecklistBoardProps) {
 					/>
 				</div>
 			)}
-			{DECK_BOARD_ORDER.map((board) => (
+			{sections.map((section) => (
 				<MobileDecklistSection
-					key={board}
-					board={board}
-					deck={cards[board]}
+					key={section.board}
+					board={section.board}
+					label={section.label}
+					empty={section.empty}
+					deck={cards[section.board]}
 					busyGroup={rowProps.busyGroup}
+					annotations={rowProps.annotations}
+					moveLabel={rowProps.moveLabel}
+					deleteLabel={rowProps.deleteLabel}
 					onEdit={rowProps.onEdit}
 					onView={rowProps.onView}
 					onDelete={rowProps.onDelete}

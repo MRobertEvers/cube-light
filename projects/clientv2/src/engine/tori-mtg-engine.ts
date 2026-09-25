@@ -48,7 +48,14 @@ export type ToriMTGEngine = {
 		CardApi,
 		'details' | 'printings' | 'allNames' | 'prepareNameSearch' | 'suggestNames' | 'prepareListChecks' | 'checkList' | 'completeName'
 	>;
-	library: Pick<LibraryApi, 'collections' | 'storageLocations' | 'createCollection' | 'createStorageLocation'>;
+	library: Pick<
+		LibraryApi,
+		| 'overview' | 'overviewLocal' | 'getCollection' | 'getCollectionLocal' | 'getLocation' | 'getLocationLocal'
+		| 'createCollection' | 'renameCollection' | 'setCollectionRole' | 'deleteCollection'
+		| 'createStorageLocation' | 'describeStorageLocation' | 'deleteStorageLocation'
+		| 'addCardByName' | 'addCards' | 'importList' | 'removeCards' | 'moveCards' | 'placeCards'
+		| 'addMissingFromDeck' | 'applyCardSteps'
+	>;
 	profile: Pick<ProfileApi, 'setArtwork' | 'printingView' | 'setPrintingView' | 'deckGroups' | 'setDeckGroups'>;
 	scans: Pick<
 		ScansApi,
@@ -92,7 +99,7 @@ export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
 		decks,
 		banners: new BannersApi(decks, new BannerBlending(bannerRenderer, decks), device),
 		cards,
-		library: new LibraryApi(tori, reader),
+		library: new LibraryApi(tori, reader, cards),
 		profile: new ProfileApi(tori),
 		scans: new ScansApi(workQueue, imageImports, runner, device),
 		sync: new SyncApi(tori),

@@ -1,0 +1,67 @@
+.chip {
+	flex: none;
+	display: inline-block;
+	padding: 1px 7px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 16px;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Status colors stay apart from each deck's accent, so they read the same on every deck. */
+.owned {
+	background: #e3efea;
+	color: #2f6f5e;
+}
+
+.partial {
+	background: #f5ebd6;
+	color: #8a5c10;
+}
+
+.missing {
+	background: #f6e1e1;
+	color: #a23b3b;
+}
+
+.neutral {
+	background: #f1ecea;
+	color: #5c5552;
+	font-weight: 600;
+}
+
+.chips {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	min-width: 0;
+}
+
+.pips {
+	flex: none;
+	display: inline-flex;
+	gap: 2px;
+}
+
+.pips i {
+	display: inline-block;
+	width: 7px;
+	height: 7px;
+	border: 1px solid #c9c1bd;
+	border-radius: 2px;
+}
+
+.pips i.filled {
+	border-color: #2f6f5e;
+	background: #2f6f5e;
+}
+
+.pipCount {
+	flex: none;
+	color: #6d6764;
+	font-size: 11px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}

@@ -15,7 +15,7 @@ export type MobileMTGArenaTableBoardProps = BoardProps & {
  * search splits it into two virtual boards, the cards it finds on top.
  */
 export function MobileMTGArenaTableBoard(props: MobileMTGArenaTableBoardProps) {
-	const { cards, onCardEvent, search, onSearchChange } = props;
+	const { cards, onCardEvent, search, onSearchChange, annotations } = props;
 	const { search: parsed, matching, others } = useMemo(
 		() => splitArenaTable(cards, search),
 		[cards, search]
@@ -70,6 +70,7 @@ export function MobileMTGArenaTableBoard(props: MobileMTGArenaTableBoardProps) {
 						showLabel
 						emptyText="No cards match this search."
 						onCardEvent={onCardEvent}
+						annotations={annotations}
 					/>
 					<MobileMTGArenaTableVirtualBoard
 						groups={others}
@@ -77,6 +78,7 @@ export function MobileMTGArenaTableBoard(props: MobileMTGArenaTableBoardProps) {
 						showLabel
 						emptyText="Every card matches this search."
 						onCardEvent={onCardEvent}
+						annotations={annotations}
 					/>
 				</>
 			) : (
@@ -86,6 +88,7 @@ export function MobileMTGArenaTableBoard(props: MobileMTGArenaTableBoardProps) {
 					showLabel={false}
 					emptyText="This deck is empty. Add cards to start your tabletop."
 					onCardEvent={onCardEvent}
+						annotations={annotations}
 				/>
 			)}
 		</section>

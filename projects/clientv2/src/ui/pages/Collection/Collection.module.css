@@ -1,7 +1,163 @@
-.list-table {
-	width: 100%;
+.container {
+	max-width: var(--max-width);
+	margin: 0 auto;
+	padding: 20px 20px 48px;
 }
 
-.list-table th {
-	text-align: left;
+.message {
+	padding: 32px 20px;
+}
+
+/* Name, counts and actions stay in reach while a long collection scrolls. */
+.header {
+	position: sticky;
+	top: var(--app-header-height);
+	z-index: 5;
+	display: grid;
+	gap: 10px;
+	margin: 0 -20px 16px;
+	padding: 10px 20px 12px;
+	border-bottom: 1px solid #eee7e4;
+	background: var(--theme-light);
+}
+
+.headerTop {
+	font-size: 14px;
+}
+
+.identity {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 12px;
+}
+
+.identity h1 {
+	margin: 0;
+	font-size: 26px;
+	letter-spacing: -0.03em;
+}
+
+.owned,
+.wanted {
+	padding: 1px 8px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.owned {
+	background: #e3efea;
+	color: #2f6f5e;
+}
+
+.wanted {
+	background: #f5ebd6;
+	color: #8a5c10;
+}
+
+.stats {
+	color: #736c68;
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+}
+
+.unplaced {
+	color: #8a5c10;
+	font-weight: 600;
+}
+
+.actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-left: auto;
+}
+
+.primary,
+.secondary {
+	height: 36px;
+	margin: 0;
+	padding: 0 14px;
+	border-radius: 9px;
+	font: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.primary {
+	border: 1px solid #384e43;
+	background: #384e43;
+	color: white;
+}
+
+.secondary {
+	border: 1px solid #ddd6d2;
+	background: white;
+	color: #4a4542;
+}
+
+.primary:focus-visible,
+.secondary:focus-visible,
+.chips button:focus-visible {
+	outline: 2px solid #a65350;
+	outline-offset: 2px;
+}
+
+.danger {
+	color: #a12323;
+}
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.chips button {
+	margin: 0;
+	padding: 3px 10px;
+	border: 1px solid #ddd6d2;
+	border-radius: 999px;
+	background: white;
+	color: #4a4542;
+	font: inherit;
+	font-size: 12.5px;
+	cursor: pointer;
+}
+
+.chips button span {
+	color: #8a8380;
+	font-variant-numeric: tabular-nums;
+}
+
+.chips button[aria-pressed='true'] {
+	border-color: #2b2624;
+	background: #2b2624;
+	color: white;
+}
+
+.chips button[aria-pressed='true'] span {
+	color: #d8d2cf;
+}
+
+@media (max-width: 680px) {
+	.container {
+		padding: 8px 14px 48px;
+	}
+
+	.header {
+		margin: 0 -14px 12px;
+		padding: 8px 14px 10px;
+	}
+
+	/* Phones reach adding and the collection's actions through the top bar's menu. */
+	.actions {
+		display: none;
+	}
+
+	.identity h1 {
+		font-size: 22px;
+	}
 }

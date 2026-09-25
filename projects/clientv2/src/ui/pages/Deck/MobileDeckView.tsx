@@ -80,12 +80,17 @@ export function MobileDeckView(props: MobileDeckViewProps) {
 					onImportImage={controls.onImportImage}
 					onEditName={controls.onEditName}
 					onDeleteDeck={controls.onDeleteDeck}
+					ownership={controls.ownership}
+					ownershipFilter={controls.ownershipFilter}
+					onOwnershipFilter={controls.onOwnershipFilter}
+					onAddMissing={controls.onAddMissing}
 				/>
 				{deckViewShowsBoard(view) ? (
 					<div className={styles.board}>
 						<BoardVisualizationReduxWidget
 							visualization={visualization.id}
 							deckId={deckId}
+							ownershipFilter={controls.ownershipFilter}
 							onViewCard={onViewCard}
 							onEditCard={onEditCard}
 						/>

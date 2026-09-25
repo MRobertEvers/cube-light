@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import type { DeckCardGroup } from '../../../../domain/deck/group-deck-cards';
 import { groupTabletopColumns } from '../../../../domain/deck/group-tabletop-cards';
-import type { BoardProps } from '../board.types';
+import type { BoardAnnotations, BoardProps } from '../board.types';
+import { OwnershipBadge } from '../../../kit/components/OwnershipBadge/OwnershipBadge';
+import { ownedNameKey } from '../../../../domain/library/ownership';
 import styles from './mobile-mtg-arena-table-board.module.css';
 
 export type MobileMTGArenaTableVirtualBoardProps = {
@@ -11,20 +13,23 @@ export type MobileMTGArenaTableVirtualBoardProps = {
 	showLabel: boolean;
 	emptyText: string;
 	onCardEvent: BoardProps['onCardEvent'];
+	annotations?: BoardAnnotations;
 };
 
 function TabletopCard(props: {
 	group: DeckCardGroup;
 	onCardEvent: BoardProps['onCardEvent'];
+	annotations?: BoardAnnotations;
 }) {
-	const { group, onCardEvent } = props;
+	const { group, onCardEvent, annotations } = props;
+	const owned = annotations?.ownership?.[ownedNameKey(group.name)];
 	const card = group.printings[0];
 	const source = card.images?.normal || card.image;
 	const [failedSource, setFailedSource] = useState<string | null>(null);
 	return (
 		<button
 			type="button"
-			className={styles.card}
+			className={owned?.status === 'missing' ? `${styles.card} ${styles.missing}` : styles.card}
 			aria-label={`Open ${group.name}, ${group.count} ${group.count === 1 ? 'copy' : 'copies'}`}
 			onClick={() => onCardEvent({ type: 'view', card, group })}
 		>
@@ -39,6 +44,16 @@ function TabletopCard(props: {
 			) : (
 				<span className={styles.fallback}>{group.name}</span>
 			)}
+			{owned && (
+				<span className={styles.ownership}>
+					<OwnershipBadge row={owned} compact />
+				</span>
+			)}
+			{owned?.status === 'partial' && (
+				<span className={styles.ownedBar} aria-hidden="true">
+					<i style={{ width: `${Math.round((owned.owned / owned.need) * 100)}%` }} />
+				</span>
+			)}
 			{group.count > 1 && (
 				<span className={styles.quantity} aria-hidden="true">
 					×{group.count}
@@ -52,7 +67,7 @@ function TabletopCard(props: {
 export function MobileMTGArenaTableVirtualBoard(
 	props: MobileMTGArenaTableVirtualBoardProps
 ) {
-	const { groups, label, showLabel, emptyText, onCardEvent } = props;
+	const { groups, label, showLabel, emptyText, onCardEvent, annotations } = props;
 	const rows = useMemo(() => groupTabletopColumns(groups), [groups]);
 	const count = groups.reduce((total, group) => total + group.count, 0);
 	return (
@@ -82,6 +97,7 @@ export function MobileMTGArenaTableVirtualBoard(
 									<TabletopCard
 										group={group}
 										onCardEvent={onCardEvent}
+										annotations={annotations}
 									/>
 								</li>
 							))}

@@ -202,13 +202,17 @@ export class DeckApi {
 		await this.tori.commands.execute({ type: 'deck.noteDelete', id: deckId, noteId });
 	}
 
-	/** Adds copies of a named card to each board in `counts`, as one edit. */
+	/**
+	 * Adds copies of a named card to each board in `counts`, as one edit. `printing` picks the
+	 * printing, such as the one the collection holds; otherwise the card's first printing is used.
+	 */
 	async addCardByName(
 		deckId: string,
 		cardName: string,
-		counts: Partial<Record<DeckBoard, number>>
+		counts: Partial<Record<DeckBoard, number>>,
+		printing?: string
 	): Promise<void> {
-		const { uuid } = await this.cards.resolve(cardName);
+		const { uuid } = printing === undefined ? await this.cards.resolve(cardName) : await this.cards.details(printing);
 		const edits: CardEdit[] = Object.entries(counts)
 			.filter((entry) => entry[1] > 0)
 			.map((entry) => cardEdit(uuid, 'add', entry[1], entry[0]));

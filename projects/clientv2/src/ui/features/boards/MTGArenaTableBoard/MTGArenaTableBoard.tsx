@@ -17,7 +17,7 @@ export type MTGArenaTableBoardProps = BoardProps & {
  * finds on top, everything else below.
  */
 export function MTGArenaTableBoard(props: MTGArenaTableBoardProps) {
-	const { cards, onCardEvent, search, onSearchChange } = props;
+	const { cards, onCardEvent, search, onSearchChange, annotations } = props;
 	const { search: parsed, matching, others } = useMemo(
 		() => splitArenaTable(cards, search),
 		[cards, search]
@@ -83,6 +83,7 @@ export function MTGArenaTableBoard(props: MTGArenaTableBoardProps) {
 						cardWidth={cardSize}
 						emptyText="No cards match this search."
 						onCardEvent={onCardEvent}
+						annotations={annotations}
 					/>
 					<MTGArenaTableVirtualBoard
 						groups={others}
@@ -91,6 +92,7 @@ export function MTGArenaTableBoard(props: MTGArenaTableBoardProps) {
 						cardWidth={cardSize}
 						emptyText="Every card matches this search."
 						onCardEvent={onCardEvent}
+						annotations={annotations}
 					/>
 				</>
 			) : (
@@ -101,6 +103,7 @@ export function MTGArenaTableBoard(props: MTGArenaTableBoardProps) {
 					cardWidth={cardSize}
 					emptyText="This deck is empty. Add cards to start your tabletop."
 					onCardEvent={onCardEvent}
+						annotations={annotations}
 				/>
 			)}
 		</section>

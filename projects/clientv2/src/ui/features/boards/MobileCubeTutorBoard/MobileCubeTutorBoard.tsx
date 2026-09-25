@@ -16,7 +16,9 @@ import {
 } from '../../../../domain/deck/group-cube-tutor-cards';
 import { type DeckCardGroup, manaValue } from '../../../../domain/deck/group-deck-cards';
 import type { BoardGroups } from '../../../../domain/deck/grouping';
-import type { BoardCardKey, BoardProps } from '../board.types';
+import { OwnershipBadge } from '../../../kit/components/OwnershipBadge/OwnershipBadge';
+import { ownedNameKey } from '../../../../domain/library/ownership';
+import type { BoardAnnotations, BoardCardKey, BoardProps } from '../board.types';
 import styles from './mobile-cube-tutor-board.module.css';
 
 export type MobileCubeTutorBoardProps = BoardProps;
@@ -30,9 +32,11 @@ function CardRow(props: {
 	/** First card of a new mana value within its section. */
 	newTier: boolean;
 	busyGroup: BoardCardKey | null;
+	annotations?: BoardAnnotations;
 	onCardEvent: BoardProps['onCardEvent'];
 }) {
-	const { group, newTier, busyGroup, onCardEvent } = props;
+	const { group, newTier, busyGroup, annotations, onCardEvent } = props;
+	const owned = annotations?.ownership?.[ownedNameKey(group.name)];
 	const card = group.printings[0];
 	const busy =
 		busyGroup?.board === group.board && busyGroup.name === group.name;
@@ -48,6 +52,7 @@ function CardRow(props: {
 				>
 					<span className={styles.count}>{group.count}</span>
 					<span className={styles.name}>{group.name}</span>
+					{owned && <OwnershipBadge row={owned} compact />}
 					<ManaCost cost={card.manaCost} />
 				</button>
 				<OverflowMenu label={`Actions for ${group.name}`} disabled={busy}>
@@ -82,7 +87,7 @@ function CardRow(props: {
  * Tap a card for details; its menu edits, moves or deletes it.
  */
 export function MobileCubeTutorBoard(props: MobileCubeTutorBoardProps) {
-	const { cards, busyGroup, onCardEvent } = props;
+	const { cards, busyGroup, onCardEvent, annotations } = props;
 	const boards = useMemo(
 		() =>
 			DECK_BOARD_ORDER.map((board) => ({
@@ -179,6 +184,7 @@ export function MobileCubeTutorBoard(props: MobileCubeTutorBoardProps) {
 												)
 										}
 										busyGroup={busyGroup}
+										annotations={annotations}
 										onCardEvent={onCardEvent}
 									/>
 								);

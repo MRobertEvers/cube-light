@@ -24,6 +24,10 @@ import {
 import { HeaderBackButton } from 'src/ui/kit/components/BackLink/BackLink';
 import { useCloseOnEscape } from 'src/ui/kit/hooks/useCloseOnEscape';
 import { HeaderBackSlot } from 'src/ui/kit/components/Header/HeaderBackSlot';
+import { BoardChips } from 'src/ui/kit/components/OwnershipBadge/OwnershipBadge';
+import { selectOwnership } from 'src/redux/library/library.selectors';
+import { useAppSelector } from 'src/redux/use-app-selector';
+
 import styles from './manage-printings.module.css';
 
 const SHORT_BOARD_LABELS: Record<DeckBoard, string> = {
@@ -82,6 +86,11 @@ let nextPendingId = 0;
 export function ManagePrintings(props: ManagePrintingsProps) {
 	const { target, cards, onSteps, onClose } = props;
 	const dispatch = useAppDispatch();
+	const ownership = useAppSelector(selectOwnership);
+	/** Copies of a printing the owned collections hold. */
+	function ownedOf(uuid: string): number {
+		return ownership?.byUuid[uuid]?.owned ?? 0;
+	}
 	const initial = useMemo(() => printingCounts(target.printings), [target]);
 	const saved = useMemo(() => printingCounts(cards), [cards]);
 	const [pending, setPending] = useState<PendingSteps[]>([]);
@@ -170,7 +179,9 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 		return printings
 			.toSorted(
 				(a, b) =>
-					Number(initial.has(b.uuid)) - Number(initial.has(a.uuid))
+					Number(initial.has(b.uuid)) - Number(initial.has(a.uuid)) ||
+					(ownership?.byUuid[b.uuid]?.owned ?? 0) -
+						(ownership?.byUuid[a.uuid]?.owned ?? 0)
 			)
 			.filter(
 				(printing) => !!printing.image || initial.has(printing.uuid)
@@ -181,7 +192,7 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 					printing.setCode.toLowerCase().includes(needle) ||
 					!!printing.setName?.toLowerCase().includes(needle)
 			);
-	}, [printings, query, initial]);
+	}, [printings, query, initial, ownership]);
 
 	function countsOf(uuid: string): BoardCounts {
 		return countsIn(counts, uuid);
@@ -378,6 +389,13 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 										<span className={styles['set-code']}>
 											{setName}
 										</span>
+										<BoardChips
+											chips={
+												ownedOf(uuid) > 0
+													? [{ label: `own ${ownedOf(uuid)}`, tone: 'owned' }]
+													: undefined
+											}
+										/>
 									</div>
 									<button
 										type="button"
@@ -670,6 +688,19 @@ export function ManagePrintings(props: ManagePrintingsProps) {
 												className={styles['tile-code']}
 											>
 												{printing.setCode}
+												{ownedOf(choice.uuid) > 0 && (
+													<>
+														{' '}
+														<BoardChips
+															chips={[
+																{
+																	label: `own ${ownedOf(choice.uuid)}`,
+																	tone: 'owned'
+																}
+															]}
+														/>
+													</>
+												)}
 											</span>
 											<span
 												className={styles['tile-name']}

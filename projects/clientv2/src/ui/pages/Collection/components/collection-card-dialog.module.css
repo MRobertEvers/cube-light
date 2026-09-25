@@ -1,0 +1,189 @@
+.dialog {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	width: min(560px, calc(100vw - 32px));
+	max-height: calc(100vh - 64px);
+	overflow: auto;
+	border: 1px solid #eee7e4;
+	border-radius: 16px;
+	background: #fff;
+	box-shadow: 0 24px 64px rgba(34, 25, 23, 0.24);
+}
+
+/* Save stays reachable while a long list of printings scrolls. */
+.topBar {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 8px;
+	box-sizing: border-box;
+	min-height: var(--app-header-height);
+	padding: 0 16px 0 24px;
+	border-bottom: 1px solid #eee7e4;
+	background: #fff;
+}
+
+.topBar h2 {
+	flex: 1;
+	min-width: 0;
+	margin: 0;
+	overflow: hidden;
+	font-size: 20px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.actions {
+	display: flex;
+	flex: none;
+	gap: 8px;
+}
+
+.primary,
+.secondary {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 36px;
+	margin: 0;
+	padding: 0 14px;
+	border-radius: 9px;
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.primary {
+	border: 1px solid #384e43;
+	background: #384e43;
+	color: white;
+}
+
+.secondary {
+	border: 1px solid #ddd6d2;
+	background: white;
+	color: #4a4542;
+}
+
+.primary:disabled,
+.secondary:disabled {
+	cursor: default;
+	opacity: 0.6;
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+	outline: 2px solid #a65350;
+	outline-offset: 2px;
+}
+
+.body {
+	display: grid;
+	gap: 14px;
+	padding: 16px 24px 24px;
+}
+
+.printing {
+	padding: 12px;
+	border: 1px solid #eee7e4;
+	border-radius: 12px;
+}
+
+.printingHead {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.printingHead img {
+	flex: none;
+	width: 40px;
+	height: 56px;
+	border-radius: 4px;
+	background: #ddd8d5;
+	object-fit: cover;
+}
+
+.printingText {
+	display: grid;
+	flex: 1;
+	min-width: 0;
+	font-size: 13px;
+}
+
+.printingText span {
+	color: #736c68;
+}
+
+.place {
+	margin-top: 12px;
+	padding-top: 10px;
+	border-top: 1px solid #f0ecea;
+}
+
+.place h3 {
+	margin: 0 0 6px;
+	color: #736c68;
+	font-size: 12px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.placeRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-height: 40px;
+	font-size: 14px;
+}
+
+.remainder {
+	color: #736c68;
+	font-variant-numeric: tabular-nums;
+}
+
+.remainder span:last-child {
+	min-width: 40px;
+	text-align: center;
+}
+
+.hint {
+	margin: 0;
+	color: #736c68;
+	font-size: 13px;
+}
+
+.error {
+	margin: 0;
+	color: #a12323;
+	font-size: 13px;
+}
+
+/* Phones fill the screen and close from the back chevron, so Cancel hides. */
+@media (max-width: 680px) {
+	.dialog {
+		width: 100%;
+		max-height: none;
+		height: 100%;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	.topBar {
+		padding: 0 12px 0 4px;
+	}
+
+	.secondary {
+		display: none;
+	}
+
+	.body {
+		padding: 14px;
+	}
+}

@@ -20,6 +20,10 @@ export function MobileCubeTutorBoardControls(props: BoardControlsProps) {
 			onImportImage={props.onImportImage}
 			onEditName={props.onEditName}
 			onDeleteDeck={props.onDeleteDeck}
+			ownership={props.ownership}
+			ownershipFilter={props.ownershipFilter}
+			onOwnershipFilter={props.onOwnershipFilter}
+			onAddMissing={props.onAddMissing}
 		/>
 	);
 }

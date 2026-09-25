@@ -136,3 +136,38 @@ test('principal token generation revokes all devices without rewriting individua
         assert.equal(db.tokens.access(`${header}.${Buffer.from(JSON.stringify(forged)).toString('base64url')}.${signature}`), null);
     });
 });
+
+test('collections hold cards and placements that commit, replay, and trim together', async () => {
+    await fixture(async (db) => {
+        const id = 'collection_abcdefghijklmnop';
+        const box = 'location_abcdefghijklmnop';
+        db.sync.commit(envelope(db.sync, { type: 'location.create', id: box, name: 'Long box A' }, 0), 1);
+        db.sync.commit(envelope(db.sync, { type: 'collection.create', id, name: 'Binder' }, 0), 1);
+        assert.equal(db.sync.commit(envelope(db.sync, { type: 'collection.cards', id, edits: [{ uuid: 'card-a', action: 'add', count: 3 }] }, 1), 1).status, 'accepted');
+        assert.equal(db.sync.commit(envelope(db.sync, { type: 'collection.place', id, moves: [{ uuid: 'card-a', from: null, to: box, count: 3 }] }, 2), 1).status, 'accepted');
+        const trimmed = db.sync.commit(envelope(db.sync, { type: 'collection.cards', id, edits: [{ uuid: 'card-a', action: 'remove', count: 1 }] }, 3), 1);
+        assert.equal(trimmed.status, 'accepted');
+        const state = db.sync.readState(id);
+        assert.deepEqual(state.cards, { 'card-a': 2 });
+        assert.deepEqual(state.stored, { 'card-a': { [box]: 2 } });
+        assert.equal(db.sync.history(id).length, 5);
+        const overdraw = db.sync.commit(envelope(db.sync, { type: 'collection.place', id, moves: [{ uuid: 'card-a', from: null, to: box, count: 1 }] }, 5), 1);
+        assert.equal(overdraw.status, 'rejected');
+    });
+});
+
+test('legacy collection cards are filed into their collections and locations once', async () => {
+    await fixture(async (db) => {
+        const sql = db.sync.database;
+        await sql.run("INSERT INTO Collections(CollectionId, PublicId, Name, CreatedAt, UpdatedAt) VALUES (7, 'collection_legacylegacyleg1', 'Old binder', '2026-01-01', '2026-01-01')");
+        await sql.run("INSERT INTO StorageLocations(StorageLocationId, PublicId, Name, CreatedAt, UpdatedAt) VALUES (3, 'location_legacylegacylega', 'Old shelf', '2026-01-01', '2026-01-01')");
+        await sql.run("INSERT INTO Collection_Cards(StorageLocationId, CollectionId, Uuid, Count, CreatedAt, UpdatedAt) VALUES (3, 7, 'card-a', 2, '2026-01-01', '2026-01-01'), (NULL, 7, 'card-a', 1, '2026-01-01', '2026-01-01'), (NULL, 7, 'card-b', 4, '2026-01-01', '2026-01-01')");
+        await sql.run("DELETE FROM SyncMeta WHERE Key IN ('legacy-imported', 'legacy-collection-cards-imported')");
+        await db.sync.initialize();
+        await db.sync.initialize();
+        const state = db.sync.readState('collection_legacylegacyleg1');
+        assert.deepEqual(state.cards, { 'card-a': 3, 'card-b': 4 });
+        assert.deepEqual(state.stored, { 'card-a': { location_legacylegacylega: 2 } });
+        assert.equal(db.sync.readState('location_legacylegacylega').name, 'Old shelf');
+    });
+});

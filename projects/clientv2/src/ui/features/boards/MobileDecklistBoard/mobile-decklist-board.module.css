@@ -242,3 +242,8 @@
 	color: #6d6764;
 	font-size: 13px;
 }
+
+/* Chips under a single-printing row, such as where its copies are kept. */
+.chipLine {
+	padding: 0 12px 8px 40px;
+}

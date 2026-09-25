@@ -4,6 +4,7 @@ import { DeckImageScanCard } from '../../../kit/components/ImageCardImport/DeckI
 import { DeckControlButtons } from '../../deck-chrome/DeckControlButtons';
 import { DeckStatsSummary } from '../../deck-chrome/DeckStatsSummary';
 import type { BoardControlsProps } from '../board.types';
+import { DeckOwnershipSummary } from '../../deck-chrome/DeckOwnershipSummary';
 import { artworkOf } from '../../../../domain/appearance/artwork';
 
 import deckStyles from '../../../pages/Deck/deck.module.css';
@@ -24,7 +25,11 @@ export function DeckSidebarControls(props: BoardControlsProps) {
 		onAddCards,
 		onImportImage,
 		onEditName,
-		onDeleteDeck
+		onDeleteDeck,
+		ownership,
+		ownershipFilter,
+		onOwnershipFilter,
+		onAddMissing
 	} = props;
 	return (
 		<>
@@ -56,6 +61,12 @@ export function DeckSidebarControls(props: BoardControlsProps) {
 				</p>
 			))}
 			<DeckStatsSummary deck={deck} />
+			<DeckOwnershipSummary
+				summary={ownership}
+				filter={ownershipFilter}
+				onFilter={onOwnershipFilter}
+				onAddMissing={onAddMissing}
+			/>
 		</>
 	);
 }

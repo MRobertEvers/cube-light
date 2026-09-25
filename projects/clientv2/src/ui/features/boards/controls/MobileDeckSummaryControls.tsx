@@ -4,6 +4,7 @@ import { DeckImageScanCard } from '../../../kit/components/ImageCardImport/DeckI
 import { MobileDeckControls } from '../../deck-chrome/MobileDeckControls';
 import { DeckStatsSummary } from '../../deck-chrome/DeckStatsSummary';
 import type { BoardControlsProps } from '../board.types';
+import { DeckOwnershipSummary } from '../../deck-chrome/DeckOwnershipSummary';
 import { artworkOf } from '../../../../domain/appearance/artwork';
 
 import mobileStyles from '../../../pages/Deck/mobile-deck-view.module.css';
@@ -24,7 +25,11 @@ export function MobileDeckSummaryControls(props: BoardControlsProps) {
 		onAddCards,
 		onImportImage,
 		onEditName,
-		onDeleteDeck
+		onDeleteDeck,
+		ownership,
+		ownershipFilter,
+		onOwnershipFilter,
+		onAddMissing
 	} = props;
 	return (
 		<>
@@ -53,6 +58,12 @@ export function MobileDeckSummaryControls(props: BoardControlsProps) {
 				/>
 				<DeckImageScanCard deckId={deckId} />
 				<DeckStatsSummary deck={deck} />
+				<DeckOwnershipSummary
+					summary={ownership}
+					filter={ownershipFilter}
+					onFilter={onOwnershipFilter}
+					onAddMissing={onAddMissing}
+				/>
 			</div>
 			{errors.map((error) => (
 				<p

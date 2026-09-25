@@ -15,6 +15,9 @@ import {
 	locateCardName,
 	parseCardList
 } from 'src/domain/card-names/parse-card-list';
+import { ownedNameKey } from 'src/domain/library/ownership';
+import type { Ownership } from 'src/domain/models/library';
+import { selectOwnership } from 'src/redux/library/library.selectors';
 import type { CardListProblem } from 'src/domain/card-names/card-list-problem';
 import adderStyles from '../AddCard/card-adder.module.css';
 import styles from './add-cards.module.css';
@@ -36,6 +39,27 @@ type Issue = {
 	stale?: boolean;
 };
 
+/** How much of a pasted list the owned collections cover, by card name. */
+function listOwnership(cards: ReadonlyArray<{ name: string; count: number }>, ownership: Ownership) {
+	const needs = new Map<string, { name: string; need: number }>();
+	for (const card of cards) {
+		const key = ownedNameKey(card.name);
+		const entry = needs.get(key);
+		if (entry) entry.need += card.count;
+		else needs.set(key, { name: card.name, need: card.count });
+	}
+	let owned = 0;
+	let total = 0;
+	const missing: string[] = [];
+	for (const entry of needs.entries()) {
+		const held = ownership.byName[entry[0]]?.owned ?? 0;
+		total += entry[1].need;
+		owned += Math.min(held, entry[1].need);
+		if (held < entry[1].need) missing.push(entry[1].name);
+	}
+	return { owned, total, missing };
+}
+
 export function AddCards(props: { onClose?: () => void }) {
 	const { onClose: onHistoryClose } = props;
 	const dispatch = useAppDispatch();
@@ -54,6 +78,11 @@ export function AddCards(props: { onClose?: () => void }) {
 	const [typingLine, setTypingLine] = useState<number | null>(null);
 
 	const parsed = useMemo(() => parseCardList(text, board), [text, board]);
+	const ownership = useAppSelector(selectOwnership);
+	const owned = useMemo(
+		() => (ownership && parsed.cards.length ? listOwnership(parsed.cards, ownership) : null),
+		[ownership, parsed.cards]
+	);
 	const boardHintId = useId();
 	const total = parsed.cards.reduce((sum, card) => sum + card.count, 0);
 	const sideTotal = parsed.cards
@@ -310,6 +339,16 @@ export function AddCards(props: { onClose?: () => void }) {
 							? 'Press Ctrl+Enter or ⌘+Enter to add.'
 							: `${total} ${total === 1 ? 'card' : 'cards'} (${uniqueNames} unique${printingCount > uniqueNames ? `, ${printingCount} printings` : ''}${sideTotal > 0 ? `, ${sideTotal} in sideboard` : ''}) ready to add.`}
 					</p>
+					{owned && (
+						<p className={styles['owned']}>
+							<strong>
+								{owned.owned} of {owned.total}
+							</strong>{' '}
+							in your collections
+							{owned.missing.length > 0 &&
+								` · missing ${owned.missing.slice(0, 3).join(', ')}${owned.missing.length > 3 ? ` and ${owned.missing.length - 3} more` : ''}`}
+						</p>
+					)}
 					{/* Always rendered at a fixed height, so issues coming and going don't move the dialog. */}
 					<ul
 						className={styles['issues']}

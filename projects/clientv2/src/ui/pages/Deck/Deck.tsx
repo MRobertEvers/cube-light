@@ -56,6 +56,10 @@ import { MobileDeckView } from './MobileDeckView';
 import { useHistoryModal } from '../../kit/hooks/useHistoryModal';
 import { SmallInputModal } from '../../kit/components/SmallInputModal/SmallInputModal';
 import { DeleteDeckDialog } from './DeleteDeckDialog';
+import { AddMissingDialog } from './components/AddMissingDialog/AddMissingDialog';
+import { loadLibrary } from '../../../redux/library/library.thunks';
+import { selectDeckOwnership } from '../../../redux/library/library.selectors';
+import type { OwnershipFilter } from '../../../domain/library/ownership';
 
 type DeckModal =
 	| { type: 'manage-printings'; target: DeckCardEditTarget }
@@ -64,7 +68,9 @@ type DeckModal =
 	| { type: 'add-cards' }
 	| { type: 'image-import' }
 	| { type: 'deck-details' }
-	| { type: 'delete-deck' };
+	| { type: 'delete-deck' }
+	/** Chooses the wanted collection to add the cards the deck lacks to. */
+	| { type: 'add-missing' };
 
 function SavingLabel() {
 	return (
@@ -111,6 +117,8 @@ export function Deck(props: DeckProps) {
 	const [bannerElement, setBannerElement] = useState<HTMLElement | null>(
 		null
 	);
+	const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>('all');
+	const ownership = useAppSelector((root) => selectDeckOwnership(root, deckId));
 	const addCards = useAppSelector(selectAddCards);
 	const modal = modalHistory.value;
 	// Printings are serialized as a snapshot so Back/Forward cannot replace the
@@ -123,6 +131,7 @@ export function Deck(props: DeckProps) {
 	const showImageImportModal = modal?.type === 'image-import';
 	const showDeckDetailsModal = modal?.type === 'deck-details';
 	const showDeleteDeckModal = modal?.type === 'delete-deck';
+	const showAddMissingModal = modal?.type === 'add-missing';
 	const scanTasks = useImageImportQueue();
 	const addedFromScans = scanTasks
 		.filter((task) => task.deckId === deckId)
@@ -188,6 +197,11 @@ export function Deck(props: DeckProps) {
 			storeDispatch(setInitialDeck({ deckId, data: initialDeckData }));
 		void refreshDeck();
 	}, [deckId, initialDeckData, refreshDeck, storeDispatch]);
+
+	// Which cards are owned comes from the library, read once for every deck.
+	useEffect(() => {
+		void storeDispatch(loadLibrary());
+	}, [storeDispatch]);
 
 	useLayoutEffect(() => {
 		if (
@@ -316,7 +330,11 @@ export function Deck(props: DeckProps) {
 			setSaveError(null);
 			modalHistory.open({ type: 'deck-details' });
 		},
-		onDeleteDeck: () => modalHistory.open({ type: 'delete-deck' })
+		onDeleteDeck: () => modalHistory.open({ type: 'delete-deck' }),
+		ownership: ownership?.summary ?? null,
+		ownershipFilter,
+		onOwnershipFilter: setOwnershipFilter,
+		onAddMissing: () => modalHistory.open({ type: 'add-missing' })
 	};
 
 	return (
@@ -446,6 +464,13 @@ export function Deck(props: DeckProps) {
 						</p>
 					)}
 				</SmallInputModal>
+			) : showAddMissingModal && data ? (
+				<AddMissingDialog
+					deckId={deckId}
+					deckName={data.name}
+					missingCopies={ownership?.summary.missingCopies ?? 0}
+					onClose={modalHistory.close}
+				/>
 			) : showDeleteDeckModal && data ? (
 				<DeleteDeckDialog
 					deckName={data.name}
@@ -517,12 +542,17 @@ export function Deck(props: DeckProps) {
 								onImportImage={controls.onImportImage}
 								onEditName={controls.onEditName}
 								onDeleteDeck={controls.onDeleteDeck}
+								ownership={controls.ownership}
+								ownershipFilter={controls.ownershipFilter}
+								onOwnershipFilter={controls.onOwnershipFilter}
+								onAddMissing={controls.onAddMissing}
 							/>
 						</div>
 						{deckViewShowsBoard(view) ? (
 							<BoardVisualizationReduxWidget
 								visualization={visualization.id}
 								deckId={deckId}
+								ownershipFilter={ownershipFilter}
 								onViewCard={openCard}
 								onEditCard={editCard}
 							/>

@@ -14,8 +14,8 @@ export function SiteNavLinks(props: { onNavigate?: () => void }) {
 			<Link to="/" onClick={onNavigate}>
 				Decks
 			</Link>
-			<Link to="/collection" onClick={onNavigate}>
-				Collection
+			<Link to="/library" onClick={onNavigate}>
+				Library
 			</Link>
 			{/* Only there while something is queued; the page itself is always at /queue. */}
 			{work.total > 0 && (

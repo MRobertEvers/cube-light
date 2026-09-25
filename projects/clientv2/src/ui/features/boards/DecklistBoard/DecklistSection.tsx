@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import type { DeckBoard } from '../../../../domain/models/deck';
 import type { BoardGroups } from '../../../../domain/deck/grouping';
-import { DECK_BOARD_LABELS } from '../../../../domain/deck/boards';
+import type { BoardAnnotations } from '../board.types';
 import { CardInteractionEvent, DecklistGroup } from './DecklistGroup';
 
 import styles from './decklist-board.module.css';
@@ -13,7 +13,11 @@ export function expandedRowKey(board: DeckBoard, name: string): string {
 
 export type DecklistSectionProps = {
 	board: DeckBoard;
+	label: string;
+	/** What to say while the board is empty; a deck's own hint by default. */
+	empty?: string;
 	deck: BoardGroups;
+	annotations?: BoardAnnotations;
 	/** Takes keys from expandedRowKey. */
 	isExpanded: (key: string) => boolean;
 	onToggle: (key: string) => void;
@@ -22,7 +26,7 @@ export type DecklistSectionProps = {
 
 /** One board of a deck: its heading and card-type groups, spells before lands. */
 export function DecklistSection(props: DecklistSectionProps) {
-	const { board, deck, isExpanded, onToggle, onCardEvent } = props;
+	const { board, label, empty, deck, annotations, isExpanded, onToggle, onCardEvent } = props;
 	const headingId = `decklist-board-${board}`;
 	const categories = Object.keys(deck.cardCategories);
 	const groupsWhere = (lands: boolean) =>
@@ -45,25 +49,27 @@ export function DecklistSection(props: DecklistSectionProps) {
 			data-board={board}
 		>
 			<h2 id={headingId} className={styles['board-header']}>
-				{DECK_BOARD_LABELS[board]}
+				{label}
 				<span className={styles['board-count']}>{deck.count}</span>
 			</h2>
 			{deck.count === 0 ? (
 				<p className={styles['board-empty']}>
-					{board === 'side'
+					{empty ?? (board === 'side'
 						? 'No sideboard cards yet. Use a card’s Edit button to move it here, or paste a list with a Sideboard section.'
-						: 'No cards in the main board yet.'}
+						: 'No cards in the main board yet.')}
 				</p>
 			) : (
 				<div className={styles['deck-list']}>
 					<DecklistGroup
 						groups={groupsWhere(false)}
+						annotations={annotations}
 						isExpanded={isRowExpanded}
 						onToggle={onRowToggle}
 						onCardEvent={onCardEvent}
 					/>
 					<DecklistGroup
 						groups={groupsWhere(true)}
+						annotations={annotations}
 						isExpanded={isRowExpanded}
 						onToggle={onRowToggle}
 						onCardEvent={onCardEvent}

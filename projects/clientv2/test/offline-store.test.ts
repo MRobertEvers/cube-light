@@ -182,3 +182,23 @@ test('a catalog described under older card rules bootstraps again and asks for s
     assert.equal(data.meta.syncRequested, false);
     store.close();
 });
+
+test('collection card edits join the edit still waiting to be sent', async () => {
+    const { store, scope } = await fixture();
+    const id = 'collection_abcdefghijklmnop';
+    const create = await store.commit(scope, { type: 'collection.create', id, name: 'Binder' });
+    const lease = (await store.acquire(scope, 'worker-one'))!;
+    await store.prepare(lease);
+    await store.settle(lease, { operationId: create.operationId, status: 'accepted', replicas: [await replica(id, create.operationId, { type: 'CollectionCreated', name: 'Binder' })], events: [], revisions: { [id]: 1 } });
+    const first = await store.commit(scope, { type: 'collection.cards', id, edits: [{ uuid: 'card-a', count: 2, action: 'add' }] });
+    const second = await store.commit(scope, { type: 'collection.cards', id, edits: [{ uuid: 'card-b', count: 1, action: 'add' }] });
+    assert.equal(second.operationId, first.operationId);
+    const place = await store.commit(scope, { type: 'collection.place', id, moves: [{ uuid: 'card-a', from: null, to: 'location_aaaaaaaaaaaaaaaa', count: 2 }] });
+    assert.notEqual(place.operationId, first.operationId);
+    const third = await store.commit(scope, { type: 'collection.cards', id, edits: [{ uuid: 'card-a', count: 1, action: 'remove' }] });
+    assert.notEqual(third.operationId, first.operationId, 'an edit after a placement keeps its place in line');
+    const collection = (await store.dataset(scope)).states[0] as any;
+    assert.deepEqual(collection.cards, { 'card-a': 1, 'card-b': 1 });
+    assert.deepEqual(collection.stored, { 'card-a': { location_aaaaaaaaaaaaaaaa: 1 } });
+    store.close();
+});

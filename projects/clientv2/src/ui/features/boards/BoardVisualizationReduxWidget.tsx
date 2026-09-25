@@ -15,7 +15,7 @@ type BoardVisualizationReduxWidgetProps = BoardReduxWidgetProps & {
 export function BoardVisualizationReduxWidget(
 	props: BoardVisualizationReduxWidgetProps
 ) {
-	const { visualization, deckId, onViewCard, onEditCard } = props;
+	const { visualization, deckId, ownershipFilter, onViewCard, onEditCard } = props;
 	const saved = useAppSelector(
 		(root) =>
 			selectDeck(root, deckId)?.boardVisualization
@@ -24,6 +24,6 @@ export function BoardVisualizationReduxWidget(
 	const pair = boardVisualizationOf(visualization ?? saved);
 	const Board = isPhoneLayout ? pair.mobileBoard : pair.board;
 	return (
-		<Board deckId={deckId} onViewCard={onViewCard} onEditCard={onEditCard} />
+		<Board deckId={deckId} ownershipFilter={ownershipFilter} onViewCard={onViewCard} onEditCard={onEditCard} />
 	);
 }

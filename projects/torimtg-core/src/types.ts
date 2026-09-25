@@ -46,7 +46,29 @@ export type DeckState = CommonState & {
     /** Labels for sorting decks into groups, in the order given. Absent while the deck has none, so older states hash the same. */
     tags?: string[];
 };
-export type NamedState = CommonState & { kind: 'collection' | 'location'; name: string };
+/** Whether a collection lists cards someone has or cards someone is after. Only owned collections count as having a card. */
+export type CollectionRole = 'owned' | 'wanted';
+export const COLLECTION_ROLES: readonly CollectionRole[] = ['owned', 'wanted'];
+/** Where a collection's copies are kept: printing UUID → location ID → copies kept there. Copies not listed are unplaced. */
+export type Placements = Record<string, Record<string, number>>;
+/** Moves copies of one printing between locations. `null` is the unplaced pool. */
+export type PlacementMove = { uuid: string; from: string | null; to: string | null; count: number };
+export type CollectionState = CommonState & {
+    kind: 'collection'; name: string;
+    /** Absent means owned, so older states hash the same. */
+    role?: CollectionRole;
+    /** Copies by printing UUID. Absent while the collection is empty, so older states hash the same. */
+    cards?: Record<string, number>;
+    /** Where copies are kept. Absent while nothing is placed, so older states hash the same. */
+    stored?: Placements;
+};
+export type LocationState = CommonState & {
+    kind: 'location'; name: string;
+    /** Free text saying where to find it. Absent while empty, so older states hash the same. */
+    description?: string;
+};
+/** The state a legacy collection or storage location was imported with. */
+export type NamedState = CollectionState | LocationState;
 export type ProfileState = CommonState & {
     kind: 'profile'; userId: number; profile: Profile | null; printingView: 'compact' | 'grid';
     /** How the deck list is grouped, in display order. Absent while there are none, so older states hash the same. */
@@ -57,7 +79,7 @@ export type WorkState = CommonState & {
     pipeline: 'card-aware' | 'paddle-only'; status: 'pending' | 'running' | 'completed' | 'failed';
     completed: number; total: number; cardsAdded: number; error: string | null;
 };
-export type AggregateState = DeckState | NamedState | ProfileState | WorkState;
+export type AggregateState = DeckState | CollectionState | LocationState | ProfileState | WorkState;
 
 export type DomainCommand =
     | { type: 'deck.create'; id: string; name: string }
@@ -74,6 +96,12 @@ export type DomainCommand =
     | { type: 'deck.delete'; id: string }
     | { type: 'collection.create' | 'location.create'; id: string; name: string }
     | { type: 'collection.rename' | 'location.rename'; id: string; name: string }
+    | { type: 'collection.role'; id: string; role: CollectionRole }
+    /** Edits never name a board: a collection has one list. */
+    | { type: 'collection.cards'; id: string; edits: CardEdit[] }
+    | { type: 'collection.place'; id: string; moves: PlacementMove[] }
+    | { type: 'collection.delete' | 'location.delete'; id: string }
+    | { type: 'location.describe'; id: string; name: string; description?: string }
     | { type: 'profile.artwork'; id: string; userId: number; profile: Profile }
     | { type: 'profile.printingView'; id: string; userId: number; printingView: 'compact' | 'grid' }
     | { type: 'profile.deckGroups'; id: string; userId: number; deckGroups: DeckGroup[] }
@@ -100,6 +128,12 @@ export type DomainEvent =
     | { type: 'DeckDeleted' }
     | { type: 'CollectionCreated' | 'StorageLocationCreated'; name: string }
     | { type: 'CollectionRenamed' | 'StorageLocationRenamed'; name: string }
+    | { type: 'CollectionRoleSet'; role: CollectionRole }
+    /** Never carries `board`. */
+    | { type: 'CollectionCardsAdjusted'; changes: CardQuantityChange[] }
+    | { type: 'CollectionCardsPlaced'; moves: PlacementMove[] }
+    | { type: 'CollectionDeleted' | 'StorageLocationDeleted' }
+    | { type: 'StorageLocationDescribed'; name: string; description?: string }
     | { type: 'ProfileArtworkSelected'; userId: number; profile: Profile }
     | { type: 'PrintingViewPreferenceSet'; userId: number; printingView: 'compact' | 'grid' }
     | { type: 'DeckGroupsSet'; userId: number; deckGroups: DeckGroup[] }
@@ -151,7 +185,8 @@ export type Query =
     | { type: 'decks' }
     | { type: 'deck'; id: string }
     | { type: 'history'; id: string }
-    | { type: 'collections' | 'locations' | 'work' | 'profile' }
+    | { type: 'collections' | 'locations' | 'work' | 'profile' | 'ownership' }
+    | { type: 'collection' | 'location'; id: string }
     | { type: 'resource'; resource: ResourceQuery };
 export type SyncPage = {
     protocolVersion: 1; serverInstanceId: string; replicas: Replica[];

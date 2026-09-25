@@ -54,16 +54,16 @@ export const deleteDeckCardGroup = createAppThunk(
 	{ condition: isDeckCardActionIdle }
 );
 
-/** Adds copies of a named card to each board in `counts`, as one edit. */
+/** Adds copies of a named card to each board in `counts`, as one edit, in `printing` when given. */
 export const addCardByName = createAppThunk(
 	'decks/addCardByName',
 	async function (
-		input: { deckId: string; cardName: string; counts: Record<DeckBoard, number> },
+		input: { deckId: string; cardName: string; counts: Record<DeckBoard, number>; printing?: string },
 		api
 	) {
-		const { deckId, cardName, counts } = input;
+		const { deckId, cardName, counts, printing } = input;
 		const { decks } = api.extra;
-		await decks.addCardByName(deckId, cardName, counts);
+		await decks.addCardByName(deckId, cardName, counts, printing);
 	}
 );
 

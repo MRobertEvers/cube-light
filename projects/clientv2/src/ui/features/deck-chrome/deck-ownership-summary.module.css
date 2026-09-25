@@ -1,0 +1,79 @@
+.summary {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	margin: 12px 0;
+	padding: 10px 12px;
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 10px;
+	background: white;
+	font-size: 13px;
+}
+
+.compact {
+	margin: 0;
+	padding: 6px 10px;
+}
+
+.totals {
+	flex: 1 1 auto;
+	margin: 0;
+	font-variant-numeric: tabular-nums;
+}
+
+.detail {
+	color: #6d6764;
+}
+
+.filters {
+	display: inline-flex;
+	overflow: hidden;
+	border: 1px solid #ddd6d2;
+	border-radius: 8px;
+}
+
+.filters button {
+	margin: 0;
+	padding: 4px 10px;
+	border: 0;
+	background: white;
+	color: #4a4542;
+	font: inherit;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.filters button + button {
+	border-left: 1px solid #ddd6d2;
+}
+
+.filters button[aria-pressed='true'] {
+	background: #384e43;
+	color: white;
+	font-weight: 600;
+}
+
+.addMissing {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--deck-accent-text, #6f2525);
+	font: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+@media (hover: hover) {
+	.addMissing:hover {
+		text-decoration: underline;
+	}
+}
+
+.filters button:focus-visible,
+.addMissing:focus-visible {
+	outline: 2px solid var(--deck-accent, #7a3431);
+	outline-offset: 2px;
+}

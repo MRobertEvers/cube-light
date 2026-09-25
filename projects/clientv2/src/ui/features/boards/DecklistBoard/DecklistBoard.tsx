@@ -6,8 +6,8 @@ import {
 import { DecklistSection, expandedRowKey } from './DecklistSection';
 import type { DeckBoard, DeckCardEntry } from '../../../../domain/models/deck';
 import type { BoardGroups } from '../../../../domain/deck/grouping';
-import { DECK_BOARD_ORDER } from '../../../../domain/deck/boards';
-import type { BoardProps } from '../board.types';
+import { DECK_BOARD_LABELS, DECK_BOARD_ORDER } from '../../../../domain/deck/boards';
+import type { BoardProps, BoardSection } from '../board.types';
 import type { DecklistSpotlightProps } from '../decklist-spotlight';
 
 import styles from './decklist-board.module.css';
@@ -29,9 +29,11 @@ function multiPrintingNames(board: BoardGroups): string[] {
 		.map((group) => group.name);
 }
 
-/** Keys of the rows that can expand, the ones with more than one printing, in every board. */
-function expandableRowKeys(cards: Record<DeckBoard, BoardGroups>): string[] {
-	return DECK_BOARD_ORDER.flatMap((board) =>
+const DECK_SECTIONS: readonly BoardSection[] = DECK_BOARD_ORDER.map((board) => ({ board, label: DECK_BOARD_LABELS[board] }));
+
+/** Keys of the rows that can expand, the ones with more than one printing, in every listed board. */
+function expandableRowKeys(cards: Record<DeckBoard, BoardGroups>, boards: readonly DeckBoard[]): string[] {
+	return boards.flatMap((board) =>
 		multiPrintingNames(cards[board]).map((name) =>
 			expandedRowKey(board, name)
 		)
@@ -81,14 +83,17 @@ function hoverCardPosition(pointer: Point, viewport: Size) {
 
 /** The default deck view: rows by card type, with a card preview on hover. */
 export function DecklistBoard(props: DecklistBoardProps) {
-	const { cards, banner, bannerCrop, bannerBlend, topStyle, onCardEvent } =
+	const { cards, banner, bannerCrop, bannerBlend, topStyle, onCardEvent, annotations, sections = DECK_SECTIONS } =
 		props;
 
 	const [expanded, setExpanded] = useState<ReadonlySet<string>>(
 		() => new Set()
 	);
 
-	const expandableKeys = useMemo(() => expandableRowKeys(cards), [cards]);
+	const expandableKeys = useMemo(
+		() => expandableRowKeys(cards, sections.map((section) => section.board)),
+		[cards, sections]
+	);
 
 	const allExpanded =
 		expandableKeys.length > 0 &&
@@ -201,11 +206,14 @@ export function DecklistBoard(props: DecklistBoardProps) {
 						</div>
 					</div>
 				)}
-				{DECK_BOARD_ORDER.map((board) => (
+				{sections.map((section) => (
 					<DecklistSection
-						key={board}
-						board={board}
-						deck={cards[board]}
+						key={section.board}
+						board={section.board}
+						label={section.label}
+						empty={section.empty}
+						deck={cards[section.board]}
+						annotations={annotations}
 						isExpanded={isExpanded}
 						onToggle={onToggle}
 						onCardEvent={onRowEvent}

@@ -200,7 +200,7 @@ export function createToriMTG(
 							? 'partial'
 							: 'missing';
 			if (
-				query.type === 'deck' &&
+				(query.type === 'deck' || query.type === 'collection' || query.type === 'location') &&
 				data.states.some(
 					(state) => state.id === query.id && state.deleted
 				)

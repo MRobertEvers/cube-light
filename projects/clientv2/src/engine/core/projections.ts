@@ -1,17 +1,24 @@
 import { boardCards } from '@torimtg/core';
-import type { DeckBoard, DeckState, EventEnvelope, Query, WorkState } from '@torimtg/core';
+import type { AggregateState, CollectionState, DeckBoard, DeckState, EventEnvelope, LocationState, Placements, Query, WorkState } from '@torimtg/core';
 import type { Dataset } from './types';
 import { cardFields, identityOf, overviewOf, type CardCatalog } from './card-catalog';
 import type { BlobUrlResolver } from '../ports';
 import { artworkFor, deckArtworkUrls, type ImageSidecars } from './image-sidecars';
 import { manaCostColors } from '../../domain/deck/deck-colors';
+import { ownedNameKey } from '../../domain/library/ownership';
+import type { OwnedPrinting, Ownership } from '../../domain/models/library';
 
 function art(deck: DeckState, cards: CardCatalog): string | null {
     return deck.art || identityOf(cards[deck.bannerCardUuid || ''])?.art || identityOf(cards[Object.keys(deck.cards)[0]])?.art || null;
 }
 
 function boardEntries(deck: DeckState, board: DeckBoard, cards: CardCatalog): unknown[] {
-    return Object.entries(boardCards(deck, board)).map((entry) => {
+    return quantityEntries(boardCards(deck, board), board, cards);
+}
+
+/** One deck-style entry per printing in `quantities`, filed under `board`. */
+function quantityEntries(quantities: Record<string, number>, board: DeckBoard, cards: CardCatalog): unknown[] {
+    return Object.entries(quantities).map((entry) => {
         const [uuid, count] = entry;
         const overview = overviewOf(cards[uuid]);
         if (overview) {
@@ -61,8 +68,25 @@ export function projectQuery(data: Dataset, cards: CardCatalog, sidecars: ImageS
             const artwork = artworkFor(deckArtworkUrls({ icon, bannerCard: banner, cards: main }), sidecars);
             return { name: deck.name, icon, artwork, bannerCardUuid: deck.bannerCardUuid, bannerCard: banner, palette: deck.palette, bannerCrop: deck.bannerCrop, bannerBlend: blend(deck, blobs), topStyle: deck.topStyle, boardVisualization: deck.boardVisualization ?? null, lastEdit: deck.updatedAt, cards: main, sideboard: boardEntries(deck, 'side', cards), notes: notes(deck), tags: deck.tags ?? [] };
         }
-        case 'collections': return states.filter((state) => state.kind === 'collection').map((state) => ({ collection_id: state.id, name: 'name' in state ? state.name : '' }));
-        case 'locations': return states.filter((state) => state.kind === 'location').map((state) => ({ storage_location_id: state.id, name: 'name' in state ? state.name : '' }));
+        case 'collections': {
+            const locations = liveLocations(states);
+            return collectionsIn(states).map((collection) => collectionSummary(collection, locations, cards));
+        }
+        case 'collection': {
+            const collection = states.find((state) => state.id === query.id);
+            if (collection?.kind !== 'collection') return null;
+            return collectionDetail(collection, liveLocations(states), cards);
+        }
+        case 'locations': {
+            const collections = collectionsIn(states);
+            return states.filter((state): state is LocationState => state.kind === 'location').map((location) => locationSummary(location, collections));
+        }
+        case 'location': {
+            const location = states.find((state) => state.id === query.id);
+            if (location?.kind !== 'location') return null;
+            return locationDetail(location, collectionsIn(states), cards);
+        }
+        case 'ownership': return ownership(states, cards);
         case 'profile': return states.find((state) => state.kind === 'profile') || null;
         case 'work': return { items: states.filter((state): state is WorkState => state.kind === 'work').map((item) => {
             const deck = states.find((state) => state.id === item.deckId);
@@ -74,6 +98,145 @@ export function projectQuery(data: Dataset, cards: CardCatalog, sidecars: ImageS
         }
         case 'resource': return null;
     }
+}
+
+function collectionsIn(states: AggregateState[]): CollectionState[] {
+    return states.filter((state): state is CollectionState => state.kind === 'collection');
+}
+
+function liveLocations(states: AggregateState[]): Set<string> {
+    return new Set(states.filter((state) => state.kind === 'location').map((state) => state.id));
+}
+
+function sumOf(values: Iterable<number>): number {
+    let total = 0;
+    for (const value of values) total += value;
+    return total;
+}
+
+/** Placements in locations that still exist; the rest count as unplaced. */
+function livePlacements(collection: CollectionState, locations: Set<string>): { stored: Placements; orphaned: Record<string, number> } {
+    const stored: Placements = {};
+    const orphaned: Record<string, number> = {};
+    for (const entry of Object.entries(collection.stored || {})) {
+        const uuid = entry[0];
+        for (const placed of Object.entries(entry[1])) {
+            if (locations.has(placed[0])) (stored[uuid] ||= {})[placed[0]] = placed[1];
+            else orphaned[uuid] = (orphaned[uuid] || 0) + placed[1];
+        }
+    }
+    return { stored, orphaned };
+}
+
+function unplacedIn(collection: CollectionState, stored: Placements): number {
+    return sumOf(Object.entries(collection.cards || {}).map((entry) => Math.max(0, entry[1] - sumOf(Object.values(stored[entry[0]] || {})))));
+}
+
+function collectionSummary(collection: CollectionState, locations: Set<string>, cards: CardCatalog): unknown {
+    const held = collection.cards || {};
+    const uuids = Object.keys(held);
+    const names = new Set(uuids.map((uuid) => identityOf(cards[uuid])?.name).filter((name): name is string => !!name));
+    const mostHeld = uuids.slice().sort((a, b) => held[b] - held[a] || (a < b ? -1 : 1)).find((uuid) => identityOf(cards[uuid])?.art);
+    return {
+        collectionId: collection.id, name: collection.name, role: collection.role || 'owned',
+        copies: sumOf(Object.values(held)), names: names.size, unplaced: unplacedIn(collection, livePlacements(collection, locations).stored),
+        colors: manaCostColors(uuids.map((uuid) => overviewOf(cards[uuid])?.manaCost ?? '')),
+        art: mostHeld ? identityOf(cards[mostHeld])?.art ?? null : null,
+        createdAt: collection.createdAt, updatedAt: collection.updatedAt
+    };
+}
+
+function collectionDetail(collection: CollectionState, locations: Set<string>, cards: CardCatalog): unknown {
+    const placements = livePlacements(collection, locations);
+    return {
+        collectionId: collection.id, name: collection.name, role: collection.role || 'owned',
+        cards: quantityEntries(collection.cards || {}, 'main', cards), stored: placements.stored,
+        copies: sumOf(Object.values(collection.cards || {})), unplaced: unplacedIn(collection, placements.stored),
+        orphaned: placements.orphaned, updatedAt: collection.updatedAt
+    };
+}
+
+/** Copies each collection keeps in `locationId`: collection ID → UUID → copies. */
+function keptIn(locationId: string, collections: CollectionState[]): Map<CollectionState, Record<string, number>> {
+    const kept = new Map<CollectionState, Record<string, number>>();
+    for (const collection of collections) {
+        const here: Record<string, number> = {};
+        for (const entry of Object.entries(collection.stored || {})) if (entry[1][locationId]) here[entry[0]] = entry[1][locationId];
+        if (Object.keys(here).length) kept.set(collection, here);
+    }
+    return kept;
+}
+
+function locationSummary(location: LocationState, collections: CollectionState[]): unknown {
+    const kept = keptIn(location.id, collections);
+    return {
+        locationId: location.id, name: location.name, description: location.description ?? null,
+        copies: sumOf(Array.from(kept.values()).map((here) => sumOf(Object.values(here)))),
+        collections: Array.from(kept.keys()).map((collection) => ({ collectionId: collection.id, name: collection.name }))
+    };
+}
+
+function locationDetail(location: LocationState, collections: CollectionState[], cards: CardCatalog): unknown {
+    const merged: Record<string, number> = {};
+    const sources: Record<string, Record<string, number>> = {};
+    const names: Record<string, string> = {};
+    for (const entry of keptIn(location.id, collections)) {
+        names[entry[0].id] = entry[0].name;
+        for (const held of Object.entries(entry[1])) {
+            merged[held[0]] = (merged[held[0]] || 0) + held[1];
+            (sources[held[0]] ||= {})[entry[0].id] = held[1];
+        }
+    }
+    return { locationId: location.id, name: location.name, description: location.description ?? null, cards: quantityEntries(merged, 'main', cards), sources, collections: names, copies: sumOf(Object.values(merged)) };
+}
+
+/**
+ * Every card across collections and decks. Printings this device has not described yet are
+ * kept by UUID but left out of the names, until the catalog describes them.
+ */
+function ownership(states: AggregateState[], cards: CardCatalog): Ownership {
+    const locations = liveLocations(states);
+    const byUuid: Record<string, OwnedPrinting> = {};
+    for (const collection of collectionsIn(states)) {
+        const wanted = collection.role === 'wanted';
+        const stored = livePlacements(collection, locations).stored;
+        for (const entry of Object.entries(collection.cards || {})) {
+            const uuid = entry[0];
+            const identity = identityOf(cards[uuid]);
+            const printing = byUuid[uuid] ||= { uuid, name: identity?.name ?? '', setCode: identity?.setCode ?? '', owned: 0, wanted: 0, byCollection: {}, byLocation: {} };
+            if (wanted) { printing.wanted += entry[1]; continue; }
+            printing.owned += entry[1];
+            printing.byCollection[collection.id] = (printing.byCollection[collection.id] || 0) + entry[1];
+            let placed = 0;
+            for (const kept of Object.entries(stored[uuid] || {})) {
+                printing.byLocation[kept[0]] = (printing.byLocation[kept[0]] || 0) + kept[1];
+                placed += kept[1];
+            }
+            if (entry[1] > placed) printing.byLocation[''] = (printing.byLocation[''] || 0) + entry[1] - placed;
+        }
+    }
+    const byName: Ownership['byName'] = {};
+    function nameEntry(name: string) {
+        return byName[ownedNameKey(name)] ||= { name, owned: 0, wanted: 0, uuids: [], inDecks: {} };
+    }
+    for (const printing of Object.values(byUuid)) {
+        if (!printing.name) continue;
+        const entry = nameEntry(printing.name);
+        entry.owned += printing.owned;
+        entry.wanted += printing.wanted;
+        if (printing.owned > 0) entry.uuids.push(printing.uuid);
+    }
+    for (const entry of Object.values(byName)) entry.uuids.sort((a, b) => byUuid[b].owned - byUuid[a].owned || (a < b ? -1 : 1));
+    for (const deck of states) {
+        if (deck.kind !== 'deck') continue;
+        for (const board of ['main', 'side'] as const) for (const held of Object.entries(boardCards(deck, board))) {
+            const name = identityOf(cards[held[0]])?.name;
+            if (!name) continue;
+            const entry = nameEntry(name);
+            entry.inDecks[deck.id] = (entry.inDecks[deck.id] || 0) + held[1];
+        }
+    }
+    return { byUuid, byName };
 }
 
 function historyEntry(envelope: EventEnvelope, cards: CardCatalog): unknown {

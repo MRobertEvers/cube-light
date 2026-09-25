@@ -126,3 +126,84 @@ test('deck groups live on the profile and match decks by any or all of their tag
     assert.equal(deckInGroup(['CUBE', 'Vintage'], { tags: ['cube', 'vintage'], match: 'all' }), true);
     assert.equal(deckInGroup(undefined, { tags: ['cube'], match: 'any' }), false);
 });
+
+const collectionId = 'collection_abcdefghijklmnop';
+const boxA = 'location_aaaaaaaaaaaaaaaa';
+const boxB = 'location_bbbbbbbbbbbbbbbb';
+
+function run(state, command) {
+    return decide(state, command).reduce((current, event) => applyEvent(current, event, command.id, at), state);
+}
+
+test('a new collection hashes like one created before collections held cards', () => {
+    const state = applyEvent(null, { type: 'CollectionCreated', name: 'Binder' }, collectionId, at);
+    assert.equal(canonicalJson(state), canonicalJson({ id: collectionId, deleted: false, createdAt: at, updatedAt: at, kind: 'collection', name: 'Binder' }));
+});
+
+test('a collection role is stored only while wanted', () => {
+    let state = applyEvent(null, { type: 'CollectionCreated', name: 'Wishlist' }, collectionId, at);
+    assert.deepEqual(decide(state, { type: 'collection.role', id: collectionId, role: 'owned' }), []);
+    state = run(state, { type: 'collection.role', id: collectionId, role: 'wanted' });
+    assert.equal(state.role, 'wanted');
+    state = run(state, { type: 'collection.role', id: collectionId, role: 'owned' });
+    assert.equal('role' in state, false);
+    assert.throws(() => decide(state, { type: 'collection.role', id: collectionId, role: 'borrowed' }), /role/);
+});
+
+test('collection card edits balance and drop the table when emptied', () => {
+    let state = applyEvent(null, { type: 'CollectionCreated', name: 'Binder' }, collectionId, at);
+    state = run(state, { type: 'collection.cards', id: collectionId, edits: [{ uuid: 'bolt', action: 'add', count: 3 }] });
+    assert.deepEqual(state.cards, { bolt: 3 });
+    const [event] = decide(state, { type: 'collection.cards', id: collectionId, edits: [{ uuid: 'bolt', action: 'set', count: 0 }] });
+    assert.deepEqual(event, { type: 'CollectionCardsAdjusted', changes: [{ uuid: 'bolt', previous: 3, delta: -3, resulting: 0 }] });
+    state = applyEvent(state, event, collectionId, at);
+    assert.equal('cards' in state, false);
+    assert.throws(() => applyEvent(state, event, collectionId, at), /balance/);
+    assert.throws(() => decide(state, { type: 'collection.cards', id: collectionId, edits: [{ uuid: 'bolt', action: 'add', count: 1, board: 'main' }] }), /boards/);
+});
+
+test('placing copies moves them between locations and never places more than held', () => {
+    let state = applyEvent(null, { type: 'CollectionCreated', name: 'Binder' }, collectionId, at);
+    state = run(state, { type: 'collection.cards', id: collectionId, edits: [{ uuid: 'bolt', action: 'add', count: 4 }] });
+    state = run(state, { type: 'collection.place', id: collectionId, moves: [{ uuid: 'bolt', from: null, to: boxA, count: 3 }] });
+    assert.deepEqual(state.stored, { bolt: { [boxA]: 3 } });
+    state = run(state, { type: 'collection.place', id: collectionId, moves: [{ uuid: 'bolt', from: boxA, to: boxB, count: 1 }] });
+    assert.deepEqual(state.stored, { bolt: { [boxA]: 2, [boxB]: 1 } });
+    assert.throws(() => decide(state, { type: 'collection.place', id: collectionId, moves: [{ uuid: 'bolt', from: null, to: boxA, count: 2 }] }), /enough/);
+    assert.throws(() => decide(state, { type: 'collection.place', id: collectionId, moves: [{ uuid: 'bolt', from: boxA, to: boxA, count: 1 }] }), /different/);
+    assert.throws(() => decide(state, { type: 'collection.place', id: collectionId, moves: [{ uuid: 'bolt', from: null, to: 'deck_aaaaaaaaaaaaaaaa', count: 1 }] }), /location/);
+    state = run(state, { type: 'collection.place', id: collectionId, moves: [{ uuid: 'bolt', from: boxA, to: null, count: 2 }, { uuid: 'bolt', from: boxB, to: null, count: 1 }] });
+    assert.equal('stored' in state, false, 'nothing placed is stored as absent');
+});
+
+test('removing copies below the placed count unplaces them from the fullest location first', () => {
+    let state = applyEvent(null, { type: 'CollectionCreated', name: 'Binder' }, collectionId, at);
+    state = run(state, { type: 'collection.cards', id: collectionId, edits: [{ uuid: 'bolt', action: 'add', count: 5 }] });
+    state = run(state, { type: 'collection.place', id: collectionId, moves: [{ uuid: 'bolt', from: null, to: boxA, count: 2 }, { uuid: 'bolt', from: null, to: boxB, count: 2 }] });
+    const events = decide(state, { type: 'collection.cards', id: collectionId, edits: [{ uuid: 'bolt', action: 'set', count: 1 }] });
+    assert.deepEqual(events.map((event) => event.type), ['CollectionCardsPlaced', 'CollectionCardsAdjusted']);
+    assert.deepEqual(events[0].moves, [{ uuid: 'bolt', from: boxA, to: null, count: 2 }, { uuid: 'bolt', from: boxB, to: null, count: 1 }]);
+    state = events.reduce((current, event) => applyEvent(current, event, collectionId, at), state);
+    assert.deepEqual(state.cards, { bolt: 1 });
+    assert.deepEqual(state.stored, { bolt: { [boxB]: 1 } });
+    assert.throws(() => applyEvent(state, { type: 'CollectionCardsAdjusted', changes: [{ uuid: 'bolt', previous: 1, delta: -1, resulting: 0 }] }, collectionId, at), /placed/);
+});
+
+test('storage locations keep a description only while one is given', () => {
+    const locationId = boxA;
+    let state = applyEvent(null, { type: 'StorageLocationCreated', name: 'Long box A' }, locationId, at);
+    state = run(state, { type: 'location.describe', id: locationId, name: 'Long box A', description: 'Closet, top shelf' });
+    assert.equal(state.description, 'Closet, top shelf');
+    assert.deepEqual(decide(state, { type: 'location.describe', id: locationId, name: 'Long box A', description: 'Closet, top shelf' }), []);
+    state = run(state, { type: 'location.describe', id: locationId, name: 'Box A', description: '  ' });
+    assert.equal(state.name, 'Box A');
+    assert.equal('description' in state, false);
+});
+
+test('deleted collections and locations reject further commands', () => {
+    const collection = run(applyEvent(null, { type: 'CollectionCreated', name: 'Binder' }, collectionId, at), { type: 'collection.delete', id: collectionId });
+    assert.equal(collection.deleted, true);
+    assert.throws(() => decide(collection, { type: 'collection.cards', id: collectionId, edits: [] }), /deleted/);
+    const location = run(applyEvent(null, { type: 'StorageLocationCreated', name: 'Box' }, boxA, at), { type: 'location.delete', id: boxA });
+    assert.throws(() => decide(location, { type: 'location.rename', id: boxA, name: 'Other' }), /deleted/);
+});

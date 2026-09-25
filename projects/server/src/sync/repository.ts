@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'crypto';
-import { applyEvent, canonicalJson, decide, CHECKPOINT_AGE_MS, CHECKPOINT_EVENTS, DomainError } from '@torimtg/core';
-import type { AggregateState, Checkpoint, CommandOutcome, CommandRequest, DomainEvent, EventEnvelope, Replica, DeckState, WorkState } from '@torimtg/core';
+import { applyEvent, canonicalJson, decide, isPublicId, CHECKPOINT_AGE_MS, CHECKPOINT_EVENTS, DomainError } from '@torimtg/core';
+import type { AggregateState, CardEdit, Checkpoint, CollectionState, CommandOutcome, CommandRequest, DomainEvent, EventEnvelope, NamedState, PlacementMove, Replica, DeckState, WorkState } from '@torimtg/core';
 import { SqliteDatabase, SqliteTransaction } from '../database/sqlite';
 
 type HeadRow = { Id: string; Sequence: number; Hash: string; State: string; Position: number };
@@ -37,9 +37,15 @@ export class SyncRepository {
                 tx.run("INSERT INTO SyncMeta VALUES ('instance', ?)", [identity.Value]);
             }
             this.serverInstanceId = identity.Value;
-            if (tx.get("SELECT 1 FROM SyncMeta WHERE Key='legacy-imported'")) return;
-            this.importLegacy(tx);
-            tx.run("INSERT INTO SyncMeta VALUES ('legacy-imported', '1')");
+            if (!tx.get("SELECT 1 FROM SyncMeta WHERE Key='legacy-imported'")) {
+                this.importLegacy(tx);
+                tx.run("INSERT INTO SyncMeta VALUES ('legacy-imported', '1')");
+            }
+            // Collections were first imported by name only; their cards follow in a step of their own.
+            if (!tx.get("SELECT 1 FROM SyncMeta WHERE Key='legacy-collection-cards-imported'")) {
+                this.importLegacyCollectionCards(tx);
+                tx.run("INSERT INTO SyncMeta VALUES ('legacy-collection-cards-imported', '1')");
+            }
         });
     }
 
@@ -60,7 +66,7 @@ export class SyncRepository {
         for (const kind of ['collection', 'location'] as const) {
             const table = kind === 'collection' ? 'Collections' : 'StorageLocations';
             for (const row of tx.all<any>(`SELECT * FROM ${table}`)) {
-                const state = { id: row.PublicId, kind, name: row.Name, deleted: false, createdAt: row.CreatedAt, updatedAt: row.UpdatedAt };
+                const state = { id: row.PublicId, kind, name: row.Name, deleted: false, createdAt: row.CreatedAt, updatedAt: row.UpdatedAt } as NamedState;
                 this.opening(tx, state, { type: kind === 'collection' ? 'CollectionImportedFromLegacy' : 'StorageLocationImportedFromLegacy', state }, now);
             }
         }
@@ -73,6 +79,39 @@ export class SyncRepository {
         for (const row of tx.all<any>('SELECT * FROM Users')) {
             const state = { id: `profile_${row.UserId}`, kind: 'profile' as const, userId: row.UserId, deleted: false, profile: row.ProfileCardUuid ? { cardName: row.ProfileCardName, cardUuid: row.ProfileCardUuid, art: row.ProfileArt, crop: parseJson(row.ProfileCropJson) } : null, printingView: 'grid' as const, createdAt: row.CreatedAt, updatedAt: row.UpdatedAt };
             this.opening(tx, state, { type: 'ProfileImportedFromLegacy', state }, now);
+        }
+    }
+
+    /** Files each legacy Collection_Cards row into its collection, and into its storage location when it had one. */
+    private importLegacyCollectionCards(tx: SqliteTransaction): void {
+        if (!tx.get("SELECT 1 FROM sqlite_master WHERE type='table' AND name='Collection_Cards'")) return;
+        const rows = tx.all<any>(`SELECT c.PublicId AS CollectionId, l.PublicId AS LocationId, cc.Uuid, cc.Count
+            FROM Collection_Cards cc JOIN Collections c ON c.CollectionId = cc.CollectionId
+            LEFT JOIN StorageLocations l ON l.StorageLocationId = cc.StorageLocationId
+            WHERE cc.Uuid IS NOT NULL AND cc.Count > 0`);
+        const byCollection = new Map<string, any[]>();
+        for (const row of rows) {
+            if (!/^[A-Za-z0-9_-]{1,128}$/.test(row.Uuid)) continue;
+            const list = byCollection.get(row.CollectionId) || [];
+            list.push(row);
+            byCollection.set(row.CollectionId, list);
+        }
+        const now = new Date().toISOString();
+        for (const entry of byCollection) {
+            const id = entry[0];
+            const head = tx.get<HeadRow>('SELECT * FROM SyncHeads WHERE Id=?', [id]);
+            if (!head) continue;
+            let state = JSON.parse(head.State) as CollectionState;
+            if (state.kind !== 'collection' || state.deleted) continue;
+            const edits: CardEdit[] = entry[1].map((row) => ({ uuid: row.Uuid, action: 'add', count: row.Count }));
+            const moves: PlacementMove[] = entry[1].filter((row) => row.LocationId && isPublicId(row.LocationId, 'location')).map((row) => ({ uuid: row.Uuid, from: null, to: row.LocationId, count: row.Count }));
+            const events = decide(state, { type: 'collection.cards', id, edits });
+            state = events.reduce<CollectionState>((current, event) => applyEvent(current, event, id, now) as CollectionState, state);
+            if (moves.length) for (const event of decide(state, { type: 'collection.place', id, moves })) events.push(event);
+            if (!events.length) continue;
+            const operationId = `legacy-cards:${id}`;
+            const position = tx.run('INSERT INTO SyncCommits(OperationId) VALUES (?)', [operationId]).lastID;
+            this.append(tx, id, events, operationId, 0, now, position);
         }
     }
 

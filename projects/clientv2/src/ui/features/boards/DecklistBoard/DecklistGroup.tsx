@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react';
 import { DeckCardEntry } from '../../../../domain/models/deck';
 import { ManaCost } from '../../../kit/components/ManaCost/ManaCost';
+import { BoardChips, OwnershipBadge, OwnershipPips } from '../../../kit/components/OwnershipBadge/OwnershipBadge';
+import { ownedNameKey } from '../../../../domain/library/ownership';
+import type { BoardAnnotations } from '../board.types';
 import { TypeGroup } from '../../../../domain/deck/grouping';
 import {
 	DeckCardGroup,
@@ -83,14 +86,23 @@ function previewHandlers(
 
 type CardRowProps = {
 	group: DeckCardGroup;
+	annotations?: BoardAnnotations;
 	expanded: boolean;
 	onToggle: (name: string) => void;
 	onCardEvent?: OnCardEvent;
 };
 
 function CardRow(props: CardRowProps) {
-	const { group, expanded, onToggle, onCardEvent } = props;
+	const { group, annotations, expanded, onToggle, onCardEvent } = props;
 	const [top] = group.printings;
+	const owned = annotations?.ownership?.[ownedNameKey(group.name)];
+	// Filled pips say "owned" on their own; the chip speaks up only when copies are short.
+	const ownership = owned && (
+		<>
+			<OwnershipPips row={owned} />
+			{owned.status !== 'owned' && <OwnershipBadge row={owned} />}
+		</>
+	);
 	const topPreview = previewHandlers(top, onCardEvent);
 	const printingsId = `printings-${group.board}-${group.name.replace(/\W+/g, '-')}`;
 
@@ -117,9 +129,11 @@ function CardRow(props: CardRowProps) {
 						{group.name}{' '}
 						<span className={styles['set-code']}>
 							({top.setCode})
-						</span>
+						</span>{' '}
+						<BoardChips chips={annotations?.printingChips?.[top.uuid]} />
 					</span>
 					<ManaCost cost={top.manaCost} />
+					{ownership}
 				</button>
 				<button
 					type="button"
@@ -155,6 +169,7 @@ function CardRow(props: CardRowProps) {
 					<span className={styles['count']}>{group.count}</span>
 					<span className={styles['name']}>{group.name}</span>
 					<ManaCost cost={top.manaCost} />
+					{ownership}
 					<span className={styles['thumbnails']} aria-hidden="true">
 						{group.printings
 							.slice(0, MAX_ROW_THUMBNAILS)
@@ -236,7 +251,8 @@ function CardRow(props: CardRowProps) {
 										loading="lazy"
 									/>
 									<span className={styles['printing-code']}>
-										{card.setCode}
+										{card.setCode}{' '}
+										<BoardChips chips={annotations?.printingChips?.[card.uuid]} />
 									</span>
 									<ManaCost cost={card.manaCost} />
 									<span className={styles['printing-count']}>
@@ -255,12 +271,13 @@ function CardRow(props: CardRowProps) {
 export type DecklistCategoryProps = {
 	group: TypeGroup;
 	name: string;
+	annotations?: BoardAnnotations;
 	isExpanded: (name: string) => boolean;
 	onToggle: (name: string) => void;
 	onCardEvent?: OnCardEvent;
 };
 export function DecklistCategory(props: DecklistCategoryProps) {
-	const { group, name, isExpanded, onToggle, onCardEvent } = props;
+	const { group, name, annotations, isExpanded, onToggle, onCardEvent } = props;
 	const cards = useMemo(
 		() =>
 			groupDeckCardsByName(group.cards).sort(
@@ -285,6 +302,7 @@ export function DecklistCategory(props: DecklistCategoryProps) {
 					>
 						<CardRow
 							group={card}
+							annotations={annotations}
 							expanded={isExpanded(card.name)}
 							onToggle={onToggle}
 							onCardEvent={onCardEvent}
@@ -301,12 +319,13 @@ export type DecklistGroupProps = {
 		name: string;
 		groupData: TypeGroup;
 	}>;
+	annotations?: BoardAnnotations;
 	isExpanded: (name: string) => boolean;
 	onToggle: (name: string) => void;
 	onCardEvent?: OnCardEvent;
 };
 export function DecklistGroup(props: DecklistGroupProps) {
-	const { groups, isExpanded, onToggle, onCardEvent } = props;
+	const { groups, annotations, isExpanded, onToggle, onCardEvent } = props;
 	return (
 		<>
 			{groups.map((options) => {
@@ -316,6 +335,7 @@ export function DecklistGroup(props: DecklistGroupProps) {
 						key={name}
 						name={name}
 						group={groupData}
+						annotations={annotations}
 						isExpanded={isExpanded}
 						onToggle={onToggle}
 						onCardEvent={onCardEvent}
