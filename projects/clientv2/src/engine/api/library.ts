@@ -198,7 +198,7 @@ export class LibraryApi {
 		const edits = countEdits(before, applySteps(before, steps.filter((step) => step.type !== 'move'))).filter((edit) => edit.board === undefined);
 		if (!edits.length) return null;
 		// A printing new to the collection needs its details to be filed; download it first.
-		for (const edit of edits) if (edit.count > 0 && countsIn(before, edit.uuid).main === 0) await this.cards.details(edit.uuid);
+		for (const edit of edits) if (edit.count > 0 && countsIn(before, edit.uuid).main === 0) await this.cards.describe(edit.uuid);
 		await this.tori.commands.execute({ type: 'collection.cards', id: collectionId, edits });
 		const saved = await this.tori.queries.read<CollectionDetail>(query);
 		return saved.data ? { value: saved.data, revision: saved.localRevision } : null;

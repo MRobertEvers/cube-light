@@ -285,9 +285,9 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 				wide
 			/>
 			<div className={styles.field}>
-				<label htmlFor="mobile-add-card-name">Card name</label>
+				<label htmlFor="mobile-add-card-search">Card</label>
 				<SuggestionInput
-					id="mobile-add-card-name"
+					id="mobile-add-card-search"
 					inputRef={input}
 					value={viewAddItemText}
 					suggestions={suggestions.sorted}
@@ -307,7 +307,7 @@ export function AddCardSingleMobile(props: AddCardSingleMobileProps) {
 							? suggestions.sorted[0]
 							: undefined
 					}
-					placeholder={cardSource.source === 'collection' ? 'Search your collection' : 'Card name'}
+					placeholder={cardSource.source === 'collection' ? 'Search your collection' : 'Search cards'}
 					disabled={isSubmitting}
 					indicator={
 						isSearching ? (

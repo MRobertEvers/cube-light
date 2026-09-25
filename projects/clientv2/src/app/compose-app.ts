@@ -8,6 +8,7 @@ import { InThreadSyncHost } from '../platform/sync/in-thread-sync-host';
 import { BrowserPageLifecycle } from '../platform/page-lifecycle';
 import { BrowserDevice } from '../platform/device';
 import { BrowserReachability } from '../platform/reachability';
+import { IndexedDbCardPackStore } from '../platform/card-pack/indexeddb-card-pack-store';
 import { BrowserCardScanner } from '../platform/card-scanner/browser-card-scanner';
 import { WasmNameIndexBuilder } from '../platform/wasm/name-index-builder';
 import { API_URI } from '../platform/api-url';
@@ -49,7 +50,8 @@ export function composeApp(): StoreType {
 		nameIndexBuilder: new WasmNameIndexBuilder(),
 		cardListLinter: new CardListLintWorkerClient(),
 		offlineShell,
-		reachability
+		reachability,
+		cardPack: new IndexedDbCardPackStore(API_URI)
 	});
 	const store = configureStore(engine);
 	const dispatch: AppDispatch = store.dispatch;

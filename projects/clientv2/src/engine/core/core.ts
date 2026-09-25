@@ -25,14 +25,18 @@ import {
 	isCardSource,
 	overviewOf,
 	recordCards,
+	recordPackPrintings,
 	type CardCatalog
 } from './card-catalog';
+import type { PackPrinting } from '../../domain/models/card-pack';
+import type { CardPackLibrary } from '../card-pack/card-pack-library';
 
 export function createToriMTG(
 	store: LocalStore,
 	worker: SyncHost,
 	blobs: BlobUrlResolver,
-	lifecycle: PageLifecycle
+	lifecycle: PageLifecycle,
+	pack: PackPrintings
 ): ToriMTG {
 	const listeners = new Set<(notice: LocalNotice) => void>();
 	const channel =
@@ -85,9 +89,9 @@ export function createToriMTG(
 		active: AccountScope,
 		data: Dataset
 	): Promise<CardCatalog> {
-		const key = `${active.partition}:${active.generation}:${data.meta.revision}`;
+		const key = `${active.partition}:${active.generation}:${data.meta.revision}:${pack.revision()}`;
 		if (catalog?.key !== key) {
-			const cards = buildCatalog(data);
+			const cards = buildCatalog(data, pack);
 			catalog = { key, cards };
 			cards.catch(() => {
 				if (catalog?.cards === cards) catalog = null;
@@ -381,8 +385,34 @@ export function createToriMTG(
 	};
 }
 
-/** Catalog responses are stored separately from domain events and checkpoints. */
-async function buildCatalog(data: Dataset): Promise<CardCatalog> {
+/** The installed offline card pack, which describes printings until the server does. */
+export type PackPrintings = Pick<CardPackLibrary, 'printing' | 'revision'>;
+
+/** Every printing the account's decks and collections hold, including edits not yet synced. */
+function heldPrintings(data: Dataset): Set<string> {
+	const held = new Set<string>();
+	function add(quantities: Record<string, number> | undefined) {
+		for (const uuid of Object.keys(quantities ?? {})) held.add(uuid);
+	}
+	for (const state of data.states) {
+		if (state.kind === 'deck') {
+			add(state.cards);
+			add(state.sideboard);
+		} else if (state.kind === 'collection') add(state.cards);
+	}
+	for (const intent of data.intents) {
+		const edits = (intent.command as { edits?: unknown }).edits;
+		if (!Array.isArray(edits)) continue;
+		for (const edit of edits) if (edit && typeof edit.uuid === 'string') held.add(edit.uuid);
+	}
+	return held;
+}
+
+/**
+ * Catalog responses are stored separately from domain events and checkpoints. Printings
+ * no response describes yet, such as cards added offline, get the offline pack's text.
+ */
+async function buildCatalog(data: Dataset, pack: PackPrintings): Promise<CardCatalog> {
 	const cards: CardCatalog = {};
 	for (const card of Object.values(data.catalog))
 		recordCards(cards, 'sync', card);
@@ -398,6 +428,11 @@ async function buildCatalog(data: Dataset): Promise<CardCatalog> {
 					.then(JSON.parse)
 					.catch(() => null)
 			);
+	}
+	const undescribed = Array.from(heldPrintings(data)).filter((uuid) => !cards[uuid]?.overview && !cards[uuid]?.details);
+	if (undescribed.length > 0) {
+		const printings = await Promise.all(undescribed.map((uuid) => pack.printing(uuid).catch(() => null)));
+		recordPackPrintings(cards, printings.filter((printing): printing is PackPrinting => printing !== null));
 	}
 	return cards;
 }

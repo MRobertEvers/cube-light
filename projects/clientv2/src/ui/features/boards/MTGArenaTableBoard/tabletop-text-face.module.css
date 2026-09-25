@@ -1,0 +1,97 @@
+/* A card as text, for the tabletop while images need the server. It fills its card-shaped frame. */
+.face {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	box-sizing: border-box;
+	padding: 7px 8px;
+	overflow: hidden;
+	border: 1px solid #3c4d48;
+	border-radius: inherit;
+	background: linear-gradient(#1d2d28, #14201c);
+	color: #eef3f1;
+	font-size: 12px;
+	line-height: 1.3;
+	--mana-symbol-size: 13px;
+}
+
+/* The board's card-image rule stretches every img in a card; mana symbols stay symbol-sized. */
+.face .line img {
+	display: inline-block;
+	width: var(--mana-symbol-size);
+	height: var(--mana-symbol-size);
+	border-radius: 50%;
+}
+
+.title {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+}
+
+.name {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	font-size: 13px;
+	font-weight: 700;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.count {
+	flex: none;
+	padding: 0 4px;
+	border: 1px solid #6f8179;
+	border-radius: 5px;
+	background: #111c17;
+	font-size: 12px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.line {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	min-height: 15px;
+}
+
+.type {
+	overflow: hidden;
+	color: #aabbb5;
+	font-size: 11px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.stats {
+	margin-top: auto;
+	align-self: flex-end;
+	padding: 1px 6px;
+	border: 1px solid #6f8179;
+	border-radius: 5px;
+	background: #111c17;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Partly owned: the share owned, along the card's foot. */
+.ownedBar {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	height: 4px;
+	overflow: hidden;
+	background: #f5ebd6;
+}
+
+.ownedBar i {
+	display: block;
+	height: 100%;
+	background: #b07a1e;
+}

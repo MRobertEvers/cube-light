@@ -170,6 +170,16 @@
 	pointer-events: none;
 }
 
+.preview-text {
+	position: fixed;
+	z-index: 20;
+	width: 250px;
+	max-height: 350px;
+	overflow: hidden;
+	border-radius: 14px;
+	pointer-events: none;
+}
+
 .empty {
 	padding: 40px 16px;
 	color: var(--theme-text);
@@ -183,7 +193,8 @@
 }
 
 @media (hover: none) {
-	.preview {
+	.preview,
+	.preview-text {
 		display: none;
 	}
 }

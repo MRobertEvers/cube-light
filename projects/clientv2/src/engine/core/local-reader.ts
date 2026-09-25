@@ -58,6 +58,19 @@ export class LocalReader {
 		});
 	}
 
+	/** A downloaded JSON resource from this device only, parsed; null when it is not here. Never waits for the server. */
+	async localJson<T>(query: ResourceQuery): Promise<T | null> {
+		const snapshot = await this.tori.queries.read<StoredResource>({ type: 'resource', resource: query });
+		const stored = snapshot.data;
+		if (snapshot.presence === 'missing' || !stored || stored.status >= 400) return null;
+		return JSON.parse(await stored.body.text()) as T;
+	}
+
+	/** Asks the sync host to download `query` when it can, without waiting for it. */
+	async refreshLater(query: Query): Promise<void> {
+		await this.tori.queries.requestRefresh(query);
+	}
+
 	/** The data of `available`, for callers that do not need the snapshot's sync status. */
 	async value<T>(query: Query): Promise<T> {
 		return (await this.available<T>(query)).data as T;

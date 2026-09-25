@@ -818,3 +818,130 @@
 		transform: rotate(90deg);
 	}
 }
+
+/* Offline: printings as text, since images need the server. */
+.card-line {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 10px;
+	margin: 0;
+	padding: 0 24px 12px;
+	color: #4b4341;
+	font-size: 13px;
+}
+
+.deck-row-text-only {
+	grid-template-areas:
+		'text change'
+		'counts counts';
+	grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.choice-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.choice-list > li {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.choice {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	min-height: 48px;
+	margin: 0;
+	padding: 8px 12px;
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 8px;
+	background: white;
+	color: var(--theme-text);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+@media (hover: hover) {
+	.choice:hover:not(:disabled) {
+		background: #fbf6f4;
+	}
+}
+
+.choice:disabled {
+	cursor: default;
+	opacity: 0.6;
+}
+
+.choice-list .in-deck .choice {
+	border-color: var(--deck-accent, #7a3431);
+	box-shadow: 0 0 0 1px var(--deck-accent, #7a3431);
+}
+
+.choice-text {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.choice-badges {
+	display: flex;
+	flex: none;
+	gap: 3px;
+}
+
+.choice-remove {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: none;
+	color: #383331;
+	cursor: pointer;
+}
+
+.choice-remove span {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	border: 1px solid var(--deck-border, #e5e1df);
+	border-radius: 50%;
+	background: white;
+}
+
+.choice:focus-visible,
+.choice-remove:focus-visible {
+	outline: 2px solid var(--deck-accent, #7a3431);
+	outline-offset: 2px;
+}
+
+@media (max-width: 680px) {
+	.card-line {
+		padding: 0 16px 12px;
+	}
+
+	.deck-row-text-only {
+		grid-template-areas:
+			'text change'
+			'counts counts';
+	}
+}

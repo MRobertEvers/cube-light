@@ -20,6 +20,14 @@ async function copyStatic(root) {
 	const target = path.join(targetAssets, 'AllPrintings.sqlite');
 	await fs.rm(target, { force: true });
 	await fs.symlink(source, target);
+
+	// The offline card pack, when refresh-mtgjson.py has built it.
+	for (const name of ['CardPack.json.gz', 'CardPack.info.json']) {
+		const packTarget = path.join(targetAssets, name);
+		await fs.rm(packTarget, { force: true });
+		const packSource = await fs.realpath(path.join(sourceAssets, name)).catch(() => null);
+		if (packSource) await fs.symlink(packSource, packTarget);
+	}
 }
 
 if (require.main === module) {

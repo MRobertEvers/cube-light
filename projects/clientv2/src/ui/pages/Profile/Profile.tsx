@@ -2,15 +2,16 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { CardPrinting } from '../../../domain/models/card';
 import type { ProfileCrop, UserProfile } from '../../../domain/models/session';
 import { useAppDispatch } from '../../../redux/use-app-dispatch';
-import { readAllCardNames, readCardPrintings } from '../../../redux/cards/cards.thunks';
+import { readAllCardNames, readAvailableCardPrintings } from '../../../redux/cards/cards.thunks';
 import { saveProfileArt } from '../../../redux/session/session.thunks';
 import { errorMessage } from '../../../redux/thunk';
 import { useAuth } from '../../kit/components/Auth/AuthGate';
 import { Page } from '../../kit/components/Page/Page';
-import { PrintingPicker } from '../../kit/components/PrintingPicker/PrintingPicker';
+import { PrintingPickerReduxWidget } from '../../kit/components/PrintingPicker/PrintingPickerReduxWidget';
 import { SuggestionInput } from '../../kit/components/SuggestionInput/SuggestionInput';
 import { UserBop } from '../../kit/components/UserBop/UserBop';
 import { OfflineShellStatusCard } from './OfflineShellStatusCard';
+import { OfflineCardDataCard } from './OfflineCardDataCard';
 import { SyncStatusCard } from './SyncStatusCard';
 import styles from './profile.module.css';
 
@@ -92,7 +93,7 @@ export function Profile() {
 		setPrintings([]);
 		setSelectedUuid(preferredUuid ?? null);
 		try {
-			const items = (await dispatch(readCardPrintings(name))).filter(
+			const items = (await dispatch(readAvailableCardPrintings(name))).filter(
 				(item) => !!item.art
 			);
 			if (request !== printingRequest.current) return;
@@ -192,7 +193,7 @@ export function Profile() {
 						<p className={styles.intro}>
 							Search any card, then choose the printing whose art you want.
 						</p>
-						<label htmlFor="profile-card-search">Card name</label>
+						<label htmlFor="profile-card-search">Card</label>
 						<SuggestionInput
 							id="profile-card-search"
 							value={query}
@@ -219,7 +220,7 @@ export function Profile() {
 								? `Printings of ${chosenName}`
 								: 'Printings'}
 						</h3>
-						<PrintingPicker
+						<PrintingPickerReduxWidget
 							printings={!editingName ? printings : []}
 							selectedUuid={selectedUuid}
 							onSelect={choosePrinting}
@@ -275,6 +276,7 @@ export function Profile() {
 				</div>
 				<SyncStatusCard />
 				<OfflineShellStatusCard />
+				<OfflineCardDataCard />
 			</main>
 		</Page>
 	);

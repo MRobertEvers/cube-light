@@ -249,9 +249,9 @@ export function AddCard(props: AddCardProps) {
 					disabled={isSubmitting}
 				/>
 				<div className={styles['field']}>
-					<label htmlFor="add-card-name">Card name</label>
+					<label htmlFor="add-card-search">Card</label>
 					<SuggestionInput
-						id="add-card-name"
+						id="add-card-search"
 						inputRef={addItemInputRef}
 						value={viewAddItemText}
 						suggestions={suggestions.sorted}

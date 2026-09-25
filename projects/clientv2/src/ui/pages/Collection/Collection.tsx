@@ -30,7 +30,7 @@ import { CardPreviewerReduxWidget } from '../../features/CardPreviewer/CardPrevi
 import { Modal } from '../Deck/components/Modal';
 import { CollectionDialog, type CollectionDraft } from '../Library/components/CollectionDialog';
 import { AddToCollectionDialog } from './components/AddToCollectionDialog';
-import { CollectionCardDialog } from './components/CollectionCardDialog';
+import { CollectionCardDialogReduxWidget } from './components/CollectionCardDialogReduxWidget';
 import { MoveToCollectionDialog } from './components/MoveToCollectionDialog';
 import { PasteToCollectionDialog } from './components/PasteToCollectionDialog';
 
@@ -136,7 +136,7 @@ export function Collection(props: { collectionId: string }) {
 			{modal?.type === 'paste' && <PasteToCollectionDialog collectionId={collectionId} collectionName={collection.name} onClose={modalHistory.close} />}
 			{modal?.type === 'edit-card' && printingsOf(modal.name).length > 0 && (
 				<Modal fullScreenOnMobile>
-					<CollectionCardDialog
+					<CollectionCardDialogReduxWidget
 						key={modal.name}
 						collectionId={collectionId}
 						cardName={modal.name}

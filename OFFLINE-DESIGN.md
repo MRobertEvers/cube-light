@@ -1090,6 +1090,20 @@ the dev server instead, and from the release when the server does not answer
 within 4 seconds. The Profile page shows the running build (a release's date, or
 the dev server's commit) and whether the worker is installed on this device.
 
+The offline card pack (`projects/server/tools/scripts/refresh-mtgjson.py`) holds every
+card's text (faces, mana cost, type line, rules text and stats) and its default
+printing, the one the server's resolve-card picks; about 3 MB compressed. The Profile
+page installs, updates and removes it. It lives in its own IndexedDB database
+(`torimtg-card-pack`), outside account data, stored compressed and parsed once by
+`CardPackLibrary`. Installing it also downloads the card-name index, so name search
+works offline without having searched online first.
+
+Offline, adding a card by name resolves it to the pack's default printing at once and
+queues the server's resolve for later, so the command carries the same printing it
+would online. Printings a deck or collection holds that no server response describes
+yet get the catalog shape `pack` (text, no images) until an `overview` or `details`
+arrives, so an offline-added card files under its real type and name.
+
 Downloading large OCR models/card packs is explicit, resumable, and size-aware.
 Do not include every model in the mandatory install transaction. Show offline
 capability per pack; unavailable OCR/search data must be clear to the user.

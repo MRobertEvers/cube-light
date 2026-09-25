@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
+import { selectConnectivity } from '../../../../redux/connectivity/connectivity.selectors';
 import { selectArenaSearch } from '../../../../redux/arena-table/arena-table.selectors';
 import { selectDeck } from '../../../../redux/decks/decks.selectors';
 import type { BoardReduxWidgetProps } from '../board.types';
 import { useBoardCardEvents } from '../use-board-card-events';
-import { MobileMTGArenaTableVirtualBoard } from './MobileMTGArenaTableVirtualBoard';
+import { MobileMTGArenaTableVirtualBoardOffline } from './MobileMTGArenaTableVirtualBoardOffline';
+import { MobileMTGArenaTableVirtualBoardOnline } from './MobileMTGArenaTableVirtualBoardOnline';
 import { type ArenaTablePart, arenaTablePart } from '../MTGArenaTableBoard/split-arena-table';
 import { useAppSelector } from '../../../../redux/use-app-selector';
 
@@ -15,13 +17,14 @@ export type MobileMTGArenaTableVirtualBoardReduxWidgetProps = BoardReduxWidgetPr
 	emptyText: string;
 };
 
-/** One MobileMTGArenaTableVirtualBoard for a deck in the store. Renders nothing until the deck loads. */
+/** One phone tabletop virtual board for a deck in the store, as images online and text offline. Renders nothing until the deck loads. */
 export function MobileMTGArenaTableVirtualBoardReduxWidget(
 	props: MobileMTGArenaTableVirtualBoardReduxWidgetProps
 ) {
 	const { deckId, part, label, showLabel, emptyText } = props;
 	const data = useAppSelector((root) => selectDeck(root, deckId));
 	const search = useAppSelector((root) => selectArenaSearch(root, deckId));
+	const connectivity = useAppSelector(selectConnectivity);
 	const onCardEvent = useBoardCardEvents(props);
 	const groups = useMemo(
 		() => (data ? arenaTablePart(data.boards, search, part) : []),
@@ -29,8 +32,16 @@ export function MobileMTGArenaTableVirtualBoardReduxWidget(
 	);
 	if (!data) return null;
 
-	return (
-		<MobileMTGArenaTableVirtualBoard
+	return connectivity === 'online' ? (
+		<MobileMTGArenaTableVirtualBoardOnline
+			groups={groups}
+			label={label}
+			showLabel={showLabel}
+			emptyText={emptyText}
+			onCardEvent={onCardEvent}
+		/>
+	) : (
+		<MobileMTGArenaTableVirtualBoardOffline
 			groups={groups}
 			label={label}
 			showLabel={showLabel}

@@ -84,7 +84,7 @@
 	font-size: 16px;
 }
 
-.card > label:not(.range) {
+.card > label:not(.range):not(.shellMode) {
 	display: block;
 	margin: 20px 0 7px;
 	font-size: 14px;
@@ -242,6 +242,10 @@
 	gap: 2px;
 }
 
+.shellMode .shellDetail {
+	font-weight: 400;
+}
+
 .shellHeading {
 	margin: 22px 0 0;
 	font-size: 16px;
@@ -308,4 +312,86 @@
 	margin: 6px 0;
 	color: #706762;
 	font-size: 14px;
+}
+
+.syncActions button:disabled {
+	opacity: 0.55;
+	cursor: default;
+}
+
+.packLookup {
+	margin-top: 18px;
+}
+
+.packLookup label {
+	display: block;
+	margin-bottom: 6px;
+	font-size: 14px;
+	font-weight: 650;
+}
+
+.packLookup div {
+	display: flex;
+	gap: 8px;
+}
+
+.packLookup input {
+	flex: 1;
+	min-width: 0;
+	padding: 8px 10px;
+	border: 1px solid #cfc5c1;
+	border-radius: 7px;
+	font: inherit;
+	font-size: 15px;
+}
+
+.packLookup button {
+	flex: none;
+	padding: 8px 12px;
+	border: 1px solid #cfc5c1;
+	border-radius: 7px;
+	background: #fff;
+	color: #5d5551;
+	font: inherit;
+	font-size: 14px;
+	font-weight: 650;
+	cursor: pointer;
+}
+
+.packCard {
+	margin-top: 14px;
+	padding: 14px 16px;
+	border: 1px solid #e1dad7;
+	border-radius: 10px;
+	font-size: 14px;
+	line-height: 1.45;
+}
+
+.packCard p {
+	margin: 0;
+}
+
+.packFace + .packFace {
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid #e1dad7;
+}
+
+.packName {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 15px;
+}
+
+.packCard .packType {
+	margin-bottom: 6px;
+	color: #5d5551;
+}
+
+.packCard .packStats {
+	margin-top: 6px;
+	font-weight: 650;
+	text-align: right;
 }

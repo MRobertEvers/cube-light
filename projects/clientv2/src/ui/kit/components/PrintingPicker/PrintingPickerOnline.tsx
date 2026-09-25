@@ -1,33 +1,19 @@
-import React, { ReactNode, useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { CardPrinting } from '../../../../domain/models/card';
 import type { PrintingView } from '../../../../domain/models/session';
 import { useAppDispatch } from '../../../../redux/use-app-dispatch';
 import { useAppSelector } from '../../../../redux/use-app-selector';
 import { readPrintingView, savePrintingView } from '../../../../redux/profile/profile.thunks';
 import { selectDataRevision } from '../../../../redux/offline/offline.selectors';
+import { filterPrintings } from './filter-printings';
+import type { PrintingPickerOnlineProps } from './printing-picker.types';
 
 import styles from './printing-picker.module.css';
 
 const PRINTING_VIEW_KEY = 'printing-picker-view';
 
-export type PrintingPickerProps = {
-	printings: CardPrinting[];
-	selectedUuid: string | null;
-	onSelect: (uuid: string) => void;
-	/** Radio group name; must be unique on the page. */
-	name: string;
-	/** Which image the grid view shows. Compact rows always prefer the art crop. */
-	image: 'card' | 'art';
-	disabled?: boolean;
-	/** Grows to fill a flex column and scrolls the list, instead of a fixed-height list. */
-	fill?: boolean;
-	/** Shown in place of the list while there are no printings, keeping the picker's footprint. */
-	placeholder?: ReactNode;
-	'aria-label'?: string;
-	'aria-labelledby'?: string;
-};
-
-export function PrintingPicker(props: PrintingPickerProps) {
+/** Printings as a grid or compact rows of card art, for when the server can send images. */
+export function PrintingPickerOnline(props: PrintingPickerOnlineProps) {
 	const { printings, selectedUuid, onSelect, name, image, disabled } = props;
 	const [view, setView] = useState<PrintingView>('grid');
 	const [saveError, setSaveError] = useState<string | null>(null);
@@ -49,15 +35,7 @@ export function PrintingPicker(props: PrintingPickerProps) {
 	}, [dispatch, revision]);
 	const [query, setQuery] = useState('');
 
-	const visiblePrintings = useMemo(() => {
-		const needle = query.trim().toLowerCase();
-		if (!needle) return printings;
-		return printings.filter(
-			(printing) =>
-				printing.setCode.toLowerCase().includes(needle) ||
-				!!printing.setName?.toLowerCase().includes(needle)
-		);
-	}, [printings, query]);
+	const visiblePrintings = useMemo(() => filterPrintings(printings, query), [printings, query]);
 
 	const empty = printings.length === 0;
 	if (empty && props.placeholder === undefined) return null;

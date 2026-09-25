@@ -1,9 +1,14 @@
 import { Request, Response, Router, urlencoded } from 'express';
+import nodePath from 'path';
 import { getCardsDetails } from '../app/get-cards-details';
 import { CardDatabase } from '../database/cards/CardDatabase';
 import { imageBaseUrl } from '../images/image-base-url';
 import { cardImageUrl } from '../images/card-images';
 import { PathBuilder } from '../utils/PathBuilder';
+
+// Built by tools/scripts/refresh-mtgjson.py; copy-static links them into the build.
+const CARD_PACK_FILEPATH = nodePath.join(__dirname, '..', 'assets', 'CardPack.json.gz');
+const CARD_PACK_INFO_FILEPATH = nodePath.join(__dirname, '..', 'assets', 'CardPack.info.json');
 
 export function createRoutesCards(
 	path: PathBuilder,
@@ -12,6 +17,23 @@ export function createRoutesCards(
 	const app = Router();
 
 	app.use(urlencoded());
+
+	// The offline card pack: every card's text, gzip-compressed JSON the client stores as is.
+	app.get(path.pathAt('/pack'), (_req: Request, res: Response) => {
+		res.type('application/gzip');
+		res.setHeader('Cache-Control', 'no-cache');
+		res.sendFile(CARD_PACK_FILEPATH, function (error) {
+			if (error && !res.headersSent) res.sendStatus(404);
+		});
+	});
+
+	// What the pack holds and its size, so a client can offer it before downloading.
+	app.get(path.pathAt('/pack/info'), (_req: Request, res: Response) => {
+		res.setHeader('Cache-Control', 'no-cache');
+		res.sendFile(CARD_PACK_INFO_FILEPATH, { headers: { 'Content-Type': 'application/json' } }, function (error) {
+			if (error && !res.headersSent) res.sendStatus(404);
+		});
+	});
 	app.post(path.pathAt('/search'), async (req: Request, res: Response) => {
 		const { names: namesListString } = req.body as {
 			names: string;

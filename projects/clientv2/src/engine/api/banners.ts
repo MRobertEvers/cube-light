@@ -1,3 +1,4 @@
+import type { CardApi } from './cards';
 import type { BannerCrop } from '../../domain/appearance/banner-crop';
 import {
 	configForNewArtwork,
@@ -18,16 +19,23 @@ export class BannersApi {
 	private readonly decks: DeckApi;
 	private readonly blending: BannerBlending;
 	private readonly device: DeviceProfile;
+	private readonly cards: Pick<CardApi, 'serverReachable'>;
 
-	constructor(decks: DeckApi, blending: BannerBlending, device: DeviceProfile) {
+	constructor(decks: DeckApi, blending: BannerBlending, device: DeviceProfile, cards: Pick<CardApi, 'serverReachable'>) {
 		this.decks = decks;
 		this.blending = blending;
 		this.device = device;
+		this.cards = cards;
 	}
 
-	/** Shows this printing's artwork in the banner and renders a fresh blend for it. */
+	/**
+	 * Shows this printing's artwork in the banner and renders a fresh blend for it. With no
+	 * server the artwork cannot be loaded to render, so the card is saved and the plain art
+	 * shows until the banner is rendered again.
+	 */
 	async chooseCard(deckId: string, cardUuid: string, onProgress?: BannerProgress): Promise<void> {
 		await this.decks.setBannerCard(deckId, cardUuid);
+		if (!this.cards.serverReachable()) return;
 		const { value: deck } = await this.decks.get(deckId);
 		const config = deck.icon
 			? configForNewArtwork(normalizeBannerBlendConfig(deck.bannerBlend?.config), deck.icon, this.device.isMobile())

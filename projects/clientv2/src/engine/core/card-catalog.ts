@@ -2,8 +2,12 @@
  * Card data arrives in different shapes depending on the source. Each shape is kept
  * separately per printing so a thinner shape never overwrites or stands in for a richer one.
  * `details` includes every `overview` field; `printing` is a small, separate subset.
+ * `pack` is the installed offline card pack's text for a printing the server has not
+ * described here yet: it stands in until an `overview` or `details` arrives.
  */
-export type CardShape = 'printing' | 'overview' | 'details';
+import type { PackPrinting } from '../../domain/models/card-pack';
+
+export type CardShape = 'printing' | 'overview' | 'details' | 'pack';
 
 /** One entry of /cards/printings: enough to pick a printing, not to place it in a deck. */
 export type PrintingCard = {
@@ -30,7 +34,7 @@ export type DetailedCard = Omit<OverviewCard, 'image' | 'art'> & {
     image: string | null; highResImage: string | null; art: string | null;
 };
 
-type ShapeData = { printing: PrintingCard; overview: OverviewCard; details: DetailedCard };
+type ShapeData = { printing: PrintingCard; overview: OverviewCard; details: DetailedCard; pack: PackPrinting };
 
 export type CatalogEntry = { uuid: string } & { [shape in CardShape]?: ShapeData[shape] };
 export type CardCatalog = Record<string, CatalogEntry>;
@@ -68,10 +72,38 @@ export function recordCards(catalog: CardCatalog, source: CardSource, value: unk
     }
 }
 
+/** Records offline pack text for printings no server shape describes yet. */
+export function recordPackPrintings(catalog: CardCatalog, printings: PackPrinting[]): void {
+    for (const printing of printings) {
+        const entry = catalog[printing.uuid] ||= { uuid: printing.uuid };
+        if (!entry.overview && !entry.details) entry.pack = printing;
+    }
+}
+
+// Words before a type line's dash that are supertypes, not card types.
+const SUPERTYPES = new Set(['Basic', 'Legendary', 'Snow', 'World', 'Ongoing', 'Elite', 'Host']);
+
+/** An overview from pack text: the front face's cost, type line and stats; every face's rules text. No images. */
+function packOverview(printing: PackPrinting): OverviewCard {
+    const front = printing.faces[0];
+    const typeLine = front?.type ?? '';
+    const [before, after] = typeLine.split(' — ');
+    return {
+        uuid: printing.uuid, name: printing.name, scryfallId: '', setCode: printing.setCode,
+        types: (before ?? '').split(' ').filter((word) => word && !SUPERTYPES.has(word)).join(', '),
+        subtypes: (after ?? '').split(' ').filter(Boolean).join(', '),
+        manaCost: front?.manaCost ?? '',
+        text: printing.faces.map((face) => face.text ?? '').filter(Boolean).join('\n\n'),
+        type: typeLine || null, rarity: null, power: front?.power ?? null, toughness: front?.toughness ?? null,
+        loyalty: front?.loyalty ?? null, defense: front?.defense ?? null, number: null, artist: null,
+        flavorText: null, legalities: {}
+    };
+}
+
 /** Types, mana cost and rules text: what a deck needs to file a card. */
 export function overviewOf(entry: CatalogEntry | undefined): OverviewCard | null {
     if (entry?.overview) return entry.overview;
-    if (!entry?.details) return null;
+    if (!entry?.details) return entry?.pack ? packOverview(entry.pack) : null;
     const details = entry.details;
     const overview: OverviewCard = cardFields(details);
     if ('images' in details) overview.images = details.images;

@@ -37,8 +37,11 @@ export class IndexedDbDriver implements TableDatabase {
             operation.onerror = function () { reject(operation.error); };
             operation.onblocked = function () { reject(new Error('Close other ToriMTG tabs to finish the database upgrade.')); };
             operation.onsuccess = () => {
-                this.database = operation.result;
-                this.database.onversionchange = () => this.close();
+                const database = operation.result;
+                this.database = database;
+                database.onversionchange = () => this.close();
+                // The browser closed it on its own (iOS Safari does after the app sits in the background): open a new one next time.
+                database.onclose = () => { if (this.database === database) this.database = null; };
                 resolve();
             };
         }).finally(() => { this.opening = null; });
@@ -47,9 +50,24 @@ export class IndexedDbDriver implements TableDatabase {
 
     close(): void { this.database?.close(); this.database = null; }
 
-    async transaction<T>(stores: readonly TableName[], mode: 'readonly' | 'readwrite', callback: (tables: Tables) => Promise<T>): Promise<T> {
+    /**
+     * Starts a transaction, reopening once when the connection turned out to be closing:
+     * Safari can close it without a close event, and nothing has run yet, so retrying is safe.
+     */
+    private async begin(stores: readonly TableName[], mode: 'readonly' | 'readwrite'): Promise<IDBTransaction> {
         await this.open();
-        const transaction = this.database!.transaction(stores as TableName[], mode);
+        try {
+            return this.database!.transaction(stores as TableName[], mode);
+        } catch (error) {
+            if (!(error instanceof DOMException) || error.name !== 'InvalidStateError') throw error;
+            this.database = null;
+            await this.open();
+            return this.database!.transaction(stores as TableName[], mode);
+        }
+    }
+
+    async transaction<T>(stores: readonly TableName[], mode: 'readonly' | 'readwrite', callback: (tables: Tables) => Promise<T>): Promise<T> {
+        const transaction = await this.begin(stores, mode);
         const completed = new Promise<void>((resolve, reject) => {
             transaction.oncomplete = function () { resolve(); };
             transaction.onabort = function () { reject(transaction.error || new Error('Local save aborted.')); };

@@ -4,6 +4,8 @@ import { LocalReader } from './core/local-reader';
 import type { LocalStore, ToriMTG } from './core/types';
 import { BannersApi } from './api/banners';
 import { CardApi } from './api/cards';
+import { CardPackApi } from './card-pack/card-pack-api';
+import { CardPackLibrary } from './card-pack/card-pack-library';
 import { ConnectivityApi } from './api/connectivity';
 import { DeckApi } from './api/decks';
 import { LibraryApi } from './api/library';
@@ -22,6 +24,7 @@ import type {
 	BannerRenderer,
 	BlobUrlResolver,
 	CardListLinter,
+	CardPackStore,
 	CardNameIndexBuilder,
 	CardScanner,
 	Crypto,
@@ -48,7 +51,7 @@ export type ToriMTGEngine = {
 	banners: Pick<BannersApi, 'chooseCard' | 'crop' | 'render' | 'preview' | 'cancelPreview' | 'subjectMask' | 'cancelSubjectMask'>;
 	cards: Pick<
 		CardApi,
-		'details' | 'printings' | 'allNames' | 'prepareNameSearch' | 'suggestNames' | 'prepareListChecks' | 'checkList' | 'completeName'
+		'details' | 'printings' | 'localPrintings' | 'allNames' | 'prepareNameSearch' | 'suggestNames' | 'prepareListChecks' | 'checkList' | 'completeName'
 	>;
 	library: Pick<
 		LibraryApi,
@@ -67,6 +70,7 @@ export type ToriMTGEngine = {
 	sync: Pick<SyncApi, 'pendingEdits' | 'keepMine' | 'useServer' | 'exportUnsynced' | 'retryNow'>;
 	offlineShell: Pick<OfflineShell, 'watch' | 'running' | 'installedRelease' | 'mode' | 'setMode'>;
 	connectivity: Pick<ConnectivityApi, 'current'>;
+	cardPack: Pick<CardPackApi, 'status' | 'install' | 'remove' | 'lookup'>;
 	events: Pick<EngineEvents, 'subscribe'>;
 };
 
@@ -84,14 +88,16 @@ export type EnginePorts = {
 	cardListLinter: CardListLinter;
 	offlineShell: OfflineShell;
 	reachability: Reachability;
+	cardPack: CardPackStore;
 };
 
 export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
-	const { store, crypto, syncHost, blobs, lifecycle, device, bannerRenderer, cardScanner, nameIndexBuilder, cardListLinter, offlineShell, reachability } = ports;
+	const { store, crypto, syncHost, blobs, lifecycle, device, bannerRenderer, cardScanner, nameIndexBuilder, cardListLinter, offlineShell, reachability, cardPack } = ports;
 	const events = new EngineEvents();
-	const tori = createToriMTG(store, syncHost, blobs, lifecycle);
+	const packLibrary = new CardPackLibrary(cardPack);
+	const tori = createToriMTG(store, syncHost, blobs, lifecycle, packLibrary);
 	const reader = new LocalReader(tori);
-	const cards = new CardApi(reader, nameIndexBuilder, cardListLinter);
+	const cards = new CardApi(reader, nameIndexBuilder, cardListLinter, packLibrary, reachability);
 	const decks = new DeckApi(tori, reader, cards, new ArtworkSidecars(tori, reader));
 	const work = new WorkApi(tori, reader, cards, crypto);
 	const workQueue = new WorkQueue(work, events, lifecycle);
@@ -101,7 +107,7 @@ export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
 	return {
 		session: new SessionApi(tori),
 		decks,
-		banners: new BannersApi(decks, new BannerBlending(bannerRenderer, decks), device),
+		banners: new BannersApi(decks, new BannerBlending(bannerRenderer, decks), device, cards),
 		cards,
 		library: new LibraryApi(tori, reader, cards),
 		profile: new ProfileApi(tori),
@@ -109,6 +115,7 @@ export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
 		sync: new SyncApi(tori),
 		offlineShell,
 		connectivity: new ConnectivityApi(reachability, syncHost, events),
+		cardPack: new CardPackApi(cardPack, packLibrary, cards),
 		events
 	};
 }

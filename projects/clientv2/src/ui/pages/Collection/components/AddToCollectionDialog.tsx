@@ -127,9 +127,9 @@ export function AddToCollectionDialog(props: AddToCollectionDialogProps) {
 			}
 		>
 			<div className={styles.field}>
-				<label htmlFor="collection-add-name">Card name</label>
+				<label htmlFor="collection-add-search">Card</label>
 				<SuggestionInput
-					id="collection-add-name"
+					id="collection-add-search"
 					inputRef={input}
 					value={text}
 					suggestions={suggestions}

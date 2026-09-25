@@ -12,7 +12,7 @@ import { useHistoryModal } from 'src/ui/kit/hooks/useHistoryModal';
 import { CardNameSpan, locateCardName } from 'src/domain/card-names/parse-card-list';
 import type { CardListProblem } from 'src/domain/card-names/card-list-problem';
 import styles from './card-list-editor.module.css';
-import { PrintingSheet } from './PrintingSheet';
+import { PrintingSheetReduxWidget } from './PrintingSheetReduxWidget';
 
 type Metrics = {
 	lineHeight: number;
@@ -949,7 +949,7 @@ export function CardListEditor(props: CardListEditorProps) {
 				</div>
 			)}
 			{printingLine !== null && printingSpan && (
-				<PrintingSheet
+				<PrintingSheetReduxWidget
 					key={`${printingLine}:${printingSpan.name}`}
 					name={printingSpan.name}
 					setCode={printingSpan.printing?.setCode ?? null}

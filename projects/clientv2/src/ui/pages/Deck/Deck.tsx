@@ -10,7 +10,7 @@ import {
 } from '../../features/boards/board-visualizations';
 import type { BoardControlsProps } from '../../features/boards/board.types';
 import { CardPreviewerReduxWidget } from '../../features/CardPreviewer/CardPreviewerReduxWidget';
-import { ManagePrintings } from './components/ManagePrintings';
+import { ManagePrintingsReduxWidget } from './components/ManagePrintings';
 import { Modal } from './components/Modal';
 import { GroupedDeck } from '../../../domain/deck/grouping';
 import { DeckCardEntry } from '../../../domain/models/deck';
@@ -364,7 +364,7 @@ export function Deck(props: DeckProps) {
 			)}
 			{managingModal ? (
 				<Modal key={managingModal.name} extraWide fullScreenOnMobile>
-					<ManagePrintings
+					<ManagePrintingsReduxWidget
 						target={managingModal}
 						cards={data.cards
 							.concat(data.sideboard ?? [])

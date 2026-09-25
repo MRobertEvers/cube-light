@@ -23,6 +23,8 @@
 
 # Data
 **/AllPrintings.*
+**/CardPack.json.gz
+**/CardPack.info.json
 **/*.sqlite
 **/*.sqlite.bak*
 

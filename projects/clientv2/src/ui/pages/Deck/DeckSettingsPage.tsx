@@ -10,7 +10,7 @@ import { onAccent, readableAccent } from '../../../domain/appearance/card-palett
 import { artworkOf } from '../../../domain/appearance/artwork';
 import { appearanceActions } from '../../../redux/appearance-settings/appearanceSettingsSlice';
 import { appearanceView, selectAppearanceSettings } from '../../../redux/appearance-settings/appearance-settings.selectors';
-import { BannerCardPickerModal } from './BannerCardPickerModal';
+import { BannerCardPickerModalReduxWidget } from './BannerCardPickerModalReduxWidget';
 import {
 	BannerCardSection,
 	BlendSection,
@@ -94,7 +94,7 @@ export function DeckSettingsPage(props: DeckSettingsPageProps) {
 		<Page>
 			<main className={styles['page']} style={paletteStyle}>
 				{/* Inside main so the modal inherits the deck palette variables. */}
-				<BannerCardPickerModal
+				<BannerCardPickerModalReduxWidget
 					deckId={deckId}
 					deckName={data.name}
 					open={modal?.type === 'banner-picker'}

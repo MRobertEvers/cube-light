@@ -5,6 +5,7 @@ import { cardFields, identityOf, overviewOf, type CardCatalog } from './card-cat
 import type { BlobUrlResolver } from '../ports';
 import { artworkFor, deckArtworkUrls, type ImageSidecars } from './image-sidecars';
 import { manaCostColors } from '../../domain/deck/deck-colors';
+import { artworkKey } from '../../domain/appearance/banner-blend';
 import { ownedNameKey } from '../../domain/library/ownership';
 import type { OwnedPrinting, Ownership } from '../../domain/models/library';
 
@@ -46,8 +47,18 @@ function notes(deck: DeckState): unknown[] {
     return Object.entries(deck.notes || {}).map((entry) => ({ noteId: entry[0], text: entry[1].text, createdAt: entry[1].createdAt, updatedAt: entry[1].updatedAt })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
-function blend(deck: DeckState, blobs: BlobUrlResolver): unknown {
+/** The same artwork whether its URL is absolute, relative, or behind the /api prefix. */
+function sameArtwork(a: string, b: string): boolean {
+    return artworkKey(a).replace(/^\/api\//, '/') === artworkKey(b).replace(/^\/api\//, '/');
+}
+
+/**
+ * The deck's rendered banner blend, while it was rendered from the banner's current art. A
+ * banner card chosen offline cannot be rendered yet; the plain art shows until it is.
+ */
+function blend(deck: DeckState, currentArt: string | null, blobs: BlobUrlResolver): unknown {
     if (!deck.bannerBlend) return null;
+    if (currentArt && !sameArtwork(deck.bannerBlend.source, currentArt)) return null;
     return { config: deck.bannerBlend.config, images: { desktop: blobs.url(deck.bannerBlend.images.desktop), mobile: blobs.url(deck.bannerBlend.images.mobile), tile: blobs.url(deck.bannerBlend.images.tile) } };
 }
 
@@ -56,7 +67,7 @@ export function projectQuery(data: Dataset, cards: CardCatalog, sidecars: ImageS
     switch (query.type) {
         case 'decks': return states.filter((state): state is DeckState => state.kind === 'deck').map((deck) => {
             const deckArt = art(deck, cards);
-            return { deckId: deck.id, name: deck.name, art: deckArt, artwork: artworkFor([deckArt], sidecars), bannerBlend: blend(deck, blobs), colors: colors(deck, cards), tags: deck.tags ?? [], createdAt: deck.createdAt, updatedAt: deck.updatedAt };
+            return { deckId: deck.id, name: deck.name, art: deckArt, artwork: artworkFor([deckArt], sidecars), bannerBlend: blend(deck, deckArt, blobs), colors: colors(deck, cards), tags: deck.tags ?? [], createdAt: deck.createdAt, updatedAt: deck.updatedAt };
         });
         case 'deck': {
             const deck = states.find((state) => state.id === query.id);
@@ -66,7 +77,7 @@ export function projectQuery(data: Dataset, cards: CardCatalog, sidecars: ImageS
             const main = boardEntries(deck, 'main', cards) as Array<{ art?: string | null }>;
             // The sidecars of the images shown first travel with the deck, so its first paint is complete.
             const artwork = artworkFor(deckArtworkUrls({ icon, bannerCard: banner, cards: main }), sidecars);
-            return { name: deck.name, icon, artwork, bannerCardUuid: deck.bannerCardUuid, bannerCard: banner, palette: deck.palette, bannerCrop: deck.bannerCrop, bannerBlend: blend(deck, blobs), topStyle: deck.topStyle, boardVisualization: deck.boardVisualization ?? null, lastEdit: deck.updatedAt, cards: main, sideboard: boardEntries(deck, 'side', cards), notes: notes(deck), tags: deck.tags ?? [] };
+            return { name: deck.name, icon, artwork, bannerCardUuid: deck.bannerCardUuid, bannerCard: banner, palette: deck.palette, bannerCrop: deck.bannerCrop, bannerBlend: blend(deck, icon, blobs), topStyle: deck.topStyle, boardVisualization: deck.boardVisualization ?? null, lastEdit: deck.updatedAt, cards: main, sideboard: boardEntries(deck, 'side', cards), notes: notes(deck), tags: deck.tags ?? [] };
         }
         case 'collections': {
             const locations = liveLocations(states);

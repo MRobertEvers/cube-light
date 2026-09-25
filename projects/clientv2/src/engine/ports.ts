@@ -22,6 +22,7 @@ import type { CardListProblem } from '../domain/card-names/card-list-problem';
 import type { OfflineShellStatus } from '../domain/models/offline-shell';
 import type { BuildInfo, ShellMode } from '../domain/models/build-info';
 import type { Connectivity } from '../domain/models/connectivity';
+import type { CardPackInfo, InstalledCardPack } from '../domain/models/card-pack';
 
 /**
  * Everything the ToriMTGEngine needs from outside itself. The engine imports only these
@@ -74,6 +75,18 @@ export interface SyncTransport {
 	resource(query: ResourceQuery): Promise<StoredResource>;
 	upload(scope: AccountScope, blob: LocalBlob): Promise<number>;
 	authenticate(type: string, credentials?: { username: string; password: string }): Promise<AuthSession>;
+}
+
+/** The offline card pack: its download from the server and its storage on this device. */
+export interface CardPackStore {
+	/** The pack the server offers; null when it cannot be reached or has none. */
+	offered(): Promise<CardPackInfo | null>;
+	installed(): Promise<InstalledCardPack | null>;
+	/** Downloads the offered pack and replaces the installed one, reporting bytes as they arrive. */
+	install(onProgress: (received: number, total: number) => void): Promise<InstalledCardPack>;
+	remove(): Promise<void>;
+	/** The installed pack's JSON, decompressed; null when none is installed. */
+	read(): Promise<string | null>;
 }
 
 /** Whether the server can be reached now. */

@@ -1,6 +1,7 @@
 import type { CardEdit, DeckBoard } from '@torimtg/core';
 import type { LocalReader } from '../core/local-reader';
-import type { CardListLinter, CardNameIndex, CardNameIndexBuilder, CardNameSearch } from '../ports';
+import type { CardListLinter, CardNameIndex, CardNameIndexBuilder, CardNameSearch, Reachability } from '../ports';
+import type { CardPackLibrary } from '../card-pack/card-pack-library';
 import type { CardListProblem } from '../../domain/card-names/card-list-problem';
 import type {
 	CardPrinting,
@@ -37,11 +38,51 @@ export class CardApi {
 	private lintReady: Promise<void> | null = null;
 	private nameLookup: Promise<CardNameIndex> | null = null;
 	private suggestionCursor: CardNameSearch | null = null;
+	private readonly pack: Pick<CardPackLibrary, 'card'>;
+	private readonly reachability: Pick<Reachability, 'current'>;
 
-	constructor(reader: LocalReader, indexBuilder: CardNameIndexBuilder, linter: CardListLinter) {
+	constructor(
+		reader: LocalReader,
+		indexBuilder: CardNameIndexBuilder,
+		linter: CardListLinter,
+		pack: Pick<CardPackLibrary, 'card'>,
+		reachability: Pick<Reachability, 'current'>
+	) {
 		this.reader = reader;
 		this.indexBuilder = indexBuilder;
 		this.linter = linter;
+		this.pack = pack;
+		this.reachability = reachability;
+	}
+
+	/**
+	 * A printing's details when the server can be reached; null without it, with the
+	 * download queued for later instead of waiting for it.
+	 */
+	async detailsWhenReachable(uuid: string): Promise<CardDetails | null> {
+		if (this.reachability.current() === 'offline') {
+			await this.reader.refreshLater({ type: 'resource', resource: { type: 'card.details', uuid } });
+			return null;
+		}
+		return this.details(uuid);
+	}
+
+	/** Whether the server can be reached now. */
+	serverReachable(): boolean {
+		return this.reachability.current() === 'online';
+	}
+
+	/**
+	 * Makes sure this device can describe a printing about to be filed in a deck or
+	 * collection: downloads its details, or with no server queues the download for later
+	 * and lets the offline card pack describe it meanwhile.
+	 */
+	async describe(uuid: string): Promise<void> {
+		if (this.reachability.current() === 'offline') {
+			await this.reader.refreshLater({ type: 'resource', resource: { type: 'card.details', uuid } });
+			return;
+		}
+		await this.details(uuid);
 	}
 
 	details(uuid: string): Promise<CardDetails> {
@@ -52,14 +93,42 @@ export class CardApi {
 		return this.reader.json({ type: 'card.printings', name });
 	}
 
-	/** The printing a card name (and optional set) refers to. */
-	resolve(name: string, setCode?: string): Promise<{ uuid: string }> {
+	/** A card's printings if this device has downloaded them; null otherwise. Never waits for the server. */
+	localPrintings(name: string): Promise<CardPrinting[] | null> {
+		return this.reader.localJson<CardPrinting[]>({ type: 'card.printings', name });
+	}
+
+	/**
+	 * The printing a card name (and optional set) refers to. With no server, the offline
+	 * card pack answers at once with the card's default printing, the one the server picks
+	 * too, and the server's answer is queued so the card is fully described when it returns.
+	 */
+	async resolve(name: string, setCode?: string): Promise<{ uuid: string }> {
 		const query: { type: 'card.resolve'; name: string; setCode?: string } = {
 			type: 'card.resolve',
 			name
 		};
 		if (setCode) query.setCode = setCode;
-		return this.reader.json(query);
+		if (!setCode && this.reachability.current() === 'offline') {
+			const packed = await this.packPrinting(name);
+			if (packed) {
+				await this.reader.refreshLater({ type: 'resource', resource: query });
+				return packed;
+			}
+		}
+		try {
+			return await this.reader.json<{ uuid: string }>(query);
+		} catch (error) {
+			const packed = setCode ? null : await this.packPrinting(name);
+			if (packed) return packed;
+			throw error;
+		}
+	}
+
+	/** The offline card pack's default printing for a name; null without a pack or a match. */
+	private async packPrinting(name: string): Promise<{ uuid: string } | null> {
+		const card = await this.pack.card(name).catch(() => null);
+		return card?.printing ? { uuid: card.printing.uuid } : null;
 	}
 
 	suggestions(stub: string): Promise<CardSuggestions> {

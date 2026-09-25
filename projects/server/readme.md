@@ -51,6 +51,21 @@ python3 tools/scripts/refresh-mtgjson.py
 
 Rebuild and restart the server after refreshing so the binary name index also updates. Existing decks continue to refer to MTGJSON card UUIDs.
 
+The script also builds the **offline card pack** that clients can install from their
+Profile page: one entry per card name with each face's name, mana cost, type line, rules
+text, power/toughness, loyalty and defense, from its newest English printing, and the
+card's default printing: the one `/sync/v1/resolve-card` picks (its first front face), so
+a card added offline is the same printing it would be online. It has no other printings,
+images or legality. It is written beside `AllPrintings.sqlite` as `CardPack.json.gz`
+(about 3 MB for 35,000 cards) and `CardPack.info.json` (its version,
+card count, size and SHA-256), both linked into `src/assets` and ignored by Git. The
+server serves them at `/cards/pack` and `/cards/pack/info`. To rebuild only the pack
+from the installed database:
+
+```sh
+python3 tools/scripts/refresh-mtgjson.py --pack-only
+```
+
 ## Card images
 
 The server returns its own image URLs in card and deck responses. A request to

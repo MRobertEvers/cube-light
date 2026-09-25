@@ -117,9 +117,13 @@ export class DeckApi {
 		await this.tori.commands.execute({ type: 'deck.details', id: deckId, name });
 	}
 
-	/** Shows this printing's artwork in the deck's banner. */
+	/**
+	 * Shows this printing's artwork in the deck's banner. With no server the card is saved
+	 * alone, and the deck shows the art this device already knows for it.
+	 */
 	async setBannerCard(deckId: string, cardUuid: string): Promise<void> {
-		const [{ value: deck }, { art }] = await Promise.all([this.get(deckId), this.cards.details(cardUuid)]);
+		const [{ value: deck }, details] = await Promise.all([this.get(deckId), this.cards.detailsWhenReachable(cardUuid)]);
+		const art = details ? details.art : null;
 		const command: Extract<DomainCommand, { type: 'deck.details' }> = {
 			type: 'deck.details',
 			id: deckId,
@@ -295,11 +299,11 @@ export class DeckApi {
 		);
 		const edits = countEdits(before, applySteps(before, steps));
 		if (edits.length === 0) return null;
-		// A printing new to the deck needs its details to be filed; download it first.
+		// A printing new to the deck needs describing to be filed; download it first when the server can be reached.
 		for (const edit of edits) {
 			const held = countsIn(before, edit.uuid);
 			if (edit.count > 0 && held.main + held.side === 0)
-				await this.cards.details(edit.uuid);
+				await this.cards.describe(edit.uuid);
 		}
 		await this.tori.commands.execute({ type: 'deck.cards', id: deckId, edits });
 		const saved = await this.tori.queries.read<DeckDetail>(query);

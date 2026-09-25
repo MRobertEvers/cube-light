@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import type { DeckCardEntry } from '../../../../domain/models/deck';
 import { DECK_BOARD_LABELS, DECK_BOARD_ORDER } from '../../../../domain/deck/boards';
 import {
@@ -16,14 +16,18 @@ const PREVIEW_WIDTH = 250;
 const PREVIEW_HEIGHT = 350;
 
 /** The card shown on hover, and the row it sits beside. */
-type Preview = { card: DeckCardEntry; row: DOMRect };
+export type CubeTutorPreview = { card: DeckCardEntry; row: DOMRect };
+
+export type CubeTutorColumnsProps = BoardProps & {
+	onPreview: (preview: CubeTutorPreview | null) => void;
+};
 
 function allCards(deck: BoardGroups): DeckCardEntry[] {
 	return Object.values(deck.cardCategories).flatMap((group) => group.cards);
 }
 
 /** Beside the row, on whichever side has room, kept inside the viewport. */
-function previewPosition(row: DOMRect): React.CSSProperties {
+export function previewPosition(row: DOMRect): React.CSSProperties {
 	const left =
 		row.right + PREVIEW_WIDTH + 16 <= window.innerWidth
 			? row.right + 8
@@ -42,7 +46,7 @@ function CardRow(props: {
 	busy: boolean;
 	owned?: RowOwnership;
 	onView: (group: DeckCardGroup) => void;
-	onPreview: (preview: Preview | null) => void;
+	onPreview: (preview: CubeTutorPreview | null) => void;
 }) {
 	const { group, newTier, busy, owned, onView, onPreview } = props;
 	const card = group.printings[0];
@@ -77,7 +81,7 @@ function Column(props: {
 	busyName: string | null;
 	ownership?: Record<string, RowOwnership>;
 	onView: (group: DeckCardGroup) => void;
-	onPreview: (preview: Preview | null) => void;
+	onPreview: (preview: CubeTutorPreview | null) => void;
 }) {
 	const { column, busyName, ownership, onView, onPreview } = props;
 	return (
@@ -121,13 +125,11 @@ function Column(props: {
 }
 
 /**
- * A cube laid out like CubeTutor: a column per color, then multicolor,
- * colorless and lands. Colors split by card type, the rest by color
- * combination, and cards run by mana value. Hover a name to see the card.
+ * The cube's color columns, per deck board, that both CubeTutor boards draw.
+ * Hovering or focusing a name reports the card to preview beside it.
  */
-export function CubeTutorBoard(props: BoardProps) {
-	const { cards, busyGroup, onCardEvent, annotations } = props;
-	const [preview, setPreview] = useState<Preview | null>(null);
+export function CubeTutorColumns(props: CubeTutorColumnsProps) {
+	const { cards, busyGroup, onCardEvent, annotations, onPreview } = props;
 	const boards = useMemo(
 		() =>
 			DECK_BOARD_ORDER.map((board) => ({
@@ -142,7 +144,7 @@ export function CubeTutorBoard(props: BoardProps) {
 		return <p className={styles.empty}>This deck is empty.</p>;
 
 	return (
-		<div className={styles.board}>
+		<>
 			{boards.map(({ board, columns }) => (
 				<section
 					key={board}
@@ -170,21 +172,12 @@ export function CubeTutorBoard(props: BoardProps) {
 										group
 									})
 								}
-								onPreview={setPreview}
+								onPreview={onPreview}
 							/>
 						))}
 					</div>
 				</section>
 			))}
-			{preview && (
-				<img
-					className={styles.preview}
-					style={previewPosition(preview.row)}
-					src={preview.card.images?.normal ?? preview.card.image}
-					alt=""
-					aria-hidden="true"
-				/>
-			)}
-		</div>
+		</>
 	);
 }
