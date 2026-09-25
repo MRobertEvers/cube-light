@@ -42,6 +42,8 @@ The dev server serves the release's `sw.js`, its page at `/index.html?shell=rele
 and its `/assets/`. The worker precaches the release, so it also serves it offline.
 Turn development mode on or off under **Profile → App version**, which also shows what
 is running: a release's date and build time, or the dev server's commit and its time.
+It also names the release the service worker has installed on the device, which is
+what loads offline or when the dev server is down.
 The toggle needs the service worker, so it only appears on a secure origin (see
 below). Without a service worker, the dev server's own page loads as usual.
 

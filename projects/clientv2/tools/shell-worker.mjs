@@ -14,10 +14,11 @@ export const SHELL_PAGE = '/index.html?shell=release';
 /**
  * Builds ShellWorker into `<outDir>/sw.js`, with the list of built files to precache
  * and a build id derived from their contents. Runs after the app build.
- * @param {{ root: string, outDir: string }} options
+ * @param {{ root: string, outDir: string, buildInfo: string }} options buildInfo is the
+ *   app's `__BUILD_INFO__` as JSON, which the worker records as the release it installed.
  */
 export async function buildShellWorker(options) {
-    const { root, outDir } = options;
+    const { root, outDir, buildInfo } = options;
     const files = ['/index.html', '/manifest.webmanifest', '/favicon.png', '/favicon-32.png', '/apple-touch-icon.png'];
     for (const name of await readdir(path.join(outDir, 'assets'))) {
         // The OCR runtime and models are tens of megabytes and only needed for scanning; they are cached on first use.
@@ -27,7 +28,7 @@ export async function buildShellWorker(options) {
     const digest = createHash('sha256');
     for (const file of files) digest.update(await readFile(path.join(outDir, file.slice(1))));
     const precache = files.map(function (file) { return file === '/index.html' ? SHELL_PAGE : file; });
-    const code = await bundleShellWorker({ root, precache, buildId: digest.digest('hex').slice(0, 16) });
+    const code = await bundleShellWorker({ root, precache, buildId: digest.digest('hex').slice(0, 16), buildInfo });
     await writeFile(path.join(outDir, 'sw.js'), code);
 }
 
@@ -75,7 +76,7 @@ export function serveShellWorker(options) {
                     },
                     function () {
                         if (url.pathname !== '/sw.js') return next();
-                        unreleased = unreleased || bundleShellWorker({ root, precache: [], buildId: 'unreleased' });
+                        unreleased = unreleased || bundleShellWorker({ root, precache: [], buildId: 'unreleased', buildInfo: 'null' });
                         unreleased.then(
                             function (text) {
                                 response.setHeader('Content-Type', 'text/javascript');
@@ -114,14 +115,14 @@ function contentType(file) {
 
 /**
  * ShellWorker as one classic script, with its precache list and build id filled in.
- * @param {{ root: string, precache: string[], buildId: string }} options
+ * @param {{ root: string, precache: string[], buildId: string, buildInfo: string }} options
  * @returns {Promise<string>}
  */
 async function bundleShellWorker(options) {
-    const { root, precache, buildId } = options;
+    const { root, precache, buildId, buildInfo } = options;
     const result = await build({
         configFile: false, root, publicDir: false, logLevel: 'warn',
-        define: { __PRECACHE__: JSON.stringify(precache), __SHELL_PAGE__: JSON.stringify(SHELL_PAGE), __BUILD_ID__: JSON.stringify(buildId) },
+        define: { __PRECACHE__: JSON.stringify(precache), __SHELL_PAGE__: JSON.stringify(SHELL_PAGE), __BUILD_ID__: JSON.stringify(buildId), __RELEASE__: buildInfo },
         build: { write: false, copyPublicDir: false, lib: { entry: path.join(root, 'src/workers/shell/shell.worker.ts'), name: 'ShellWorker', formats: ['iife'], fileName: function () { return 'sw.js'; } } }
     });
     const outputs = Array.isArray(result) ? result : [result];

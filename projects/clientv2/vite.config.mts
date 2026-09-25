@@ -5,6 +5,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { buildShellWorker, serveShellWorker } from './tools/shell-worker.mjs';
 
+// The build info tools/vite.mjs compiles in; ShellWorker records it as the release it installed.
+let buildInfo = 'null';
+
 // tools/vite.mjs loads this named export through Vite's programmatic API.
 export const config = defineConfig({
 	plugins: [
@@ -12,6 +15,9 @@ export const config = defineConfig({
 		serveShellWorker({ root: fileURLToPath(new URL('./', import.meta.url)) }),
 		{
 			name: 'copy-public-preserving-model-links',
+			configResolved: function (resolved) {
+				buildInfo = String(resolved.define?.__BUILD_INFO__ ?? 'null');
+			},
 			closeBundle: async function () {
 				const root = fileURLToPath(new URL('./', import.meta.url));
 				await cp(path.join(root, 'public'), path.join(root, 'dist'), {
@@ -20,7 +26,7 @@ export const config = defineConfig({
 					dereference: false,
 					verbatimSymlinks: true
 				});
-				await buildShellWorker({ root, outDir: path.join(root, 'dist') });
+				await buildShellWorker({ root, outDir: path.join(root, 'dist'), buildInfo });
 			}
 		}
 	],

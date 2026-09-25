@@ -5,6 +5,7 @@ import type { OfflineShell } from '../../engine/ports';
 // Shared with ShellWorker, which reads the mode on every page load.
 const SETTINGS = 'torimtg-settings';
 const MODE_KEY = '/shell-mode';
+const RELEASE_KEY = '/shell-release';
 
 /**
  * Registers ShellWorker, which caches the built app so it can start offline. It is an
@@ -32,6 +33,18 @@ export class ShellWorkerClient implements OfflineShell {
 
 	running(): BuildInfo {
 		return this.build;
+	}
+
+	async installedRelease(): Promise<BuildInfo | null> {
+		if (!('caches' in self)) return null;
+		const saved = await (await caches.open(SETTINGS)).match(RELEASE_KEY);
+		if (!saved) return null;
+		try {
+			const info = (await saved.json()) as BuildInfo | null;
+			return info && info.channel === 'release' ? info : null;
+		} catch {
+			return null;
+		}
 	}
 
 	async mode(): Promise<ShellMode> {

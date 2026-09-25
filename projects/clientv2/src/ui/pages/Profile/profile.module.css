@@ -212,6 +212,13 @@
 	line-height: 1.5;
 }
 
+.shellInstalled {
+	margin: 10px 0 0;
+	color: #5d5551;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
 .shellMode {
 	display: flex;
 	align-items: flex-start;

@@ -17,6 +17,8 @@
 declare const __PRECACHE__: string[];
 declare const __SHELL_PAGE__: string;
 declare const __BUILD_ID__: string;
+// The release's build info (src/domain/models/build-info.ts); null with no release.
+declare const __RELEASE__: unknown;
 const worker = self as unknown as ServiceWorkerGlobalScope;
 const RELEASED = __PRECACHE__.length > 0;
 const SHELL_PREFIX = 'torimtg-shell-';
@@ -26,6 +28,8 @@ const STATIC_LIMIT = 200;
 // Written by ShellWorkerClient.setMode; holds 'development' or 'release'.
 const SETTINGS = 'torimtg-settings';
 const MODE_KEY = '/shell-mode';
+// The active worker's release, for the Profile page to show even while running development.
+const RELEASE_KEY = '/shell-release';
 // How long a page load waits for the development server before using the release.
 const DEV_SERVER_TIMEOUT_MS = 4000;
 
@@ -40,6 +44,7 @@ worker.addEventListener('install', (event) => {
 worker.addEventListener('activate', (event) => {
 	event.waitUntil((async function () {
 		await worker.clients.claim();
+		if (RELEASED) await (await caches.open(SETTINGS)).put(RELEASE_KEY, new Response(JSON.stringify(__RELEASE__)));
 		const keys = await caches.keys();
 		const shells = keys.filter((key) => key.startsWith(SHELL_PREFIX) && key !== SHELL);
 		// Keep the previous shell for tabs still running it; drop older ones and anything else ours.

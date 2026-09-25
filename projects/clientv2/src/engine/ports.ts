@@ -113,6 +113,8 @@ export interface OfflineShell {
 	watch(listener: (status: OfflineShellStatus) => void): () => void;
 	/** The build this page is running. */
 	running(): BuildInfo;
+	/** The release the active service worker holds, which loads offline; null when none is installed. */
+	installedRelease(): Promise<BuildInfo | null>;
 	/** Which build the service worker loads pages from on this device. */
 	mode(): Promise<ShellMode>;
 	/** Saves which build to load pages from, then reloads the page into it. */

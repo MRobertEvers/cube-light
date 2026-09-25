@@ -63,7 +63,7 @@ export type ToriMTGEngine = {
 		| 'addCandidate' | 'dismiss' | 'retry' | 'remove'
 	>;
 	sync: Pick<SyncApi, 'pendingEdits' | 'keepMine' | 'useServer' | 'exportUnsynced' | 'retryNow'>;
-	offlineShell: Pick<OfflineShell, 'watch' | 'running' | 'mode' | 'setMode'>;
+	offlineShell: Pick<OfflineShell, 'watch' | 'running' | 'installedRelease' | 'mode' | 'setMode'>;
 	events: Pick<EngineEvents, 'subscribe'>;
 };
 

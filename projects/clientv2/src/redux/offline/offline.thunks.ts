@@ -44,6 +44,13 @@ export function readRunningBuild(): AppThunk<BuildInfo> {
 	};
 }
 
+/** The release the service worker has installed on this device, whichever build is running. */
+export function readInstalledRelease(): AppThunk<Promise<BuildInfo | null>> {
+	return function (_dispatch, _getState, engine) {
+		return engine.offlineShell.installedRelease();
+	};
+}
+
 /** Which build the service worker loads pages from on this device. */
 export function readShellMode(): AppThunk<Promise<ShellMode>> {
 	return function (_dispatch, _getState, engine) {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import type { OfflineShellStatus } from '../../../domain/models/offline-shell';
 import type { BuildInfo, ShellMode } from '../../../domain/models/build-info';
 import { useAppDispatch } from '../../../redux/use-app-dispatch';
-import { readRunningBuild, readShellMode, setShellMode, watchOfflineShell } from '../../../redux/offline/offline.thunks';
+import { readInstalledRelease, readRunningBuild, readShellMode, setShellMode, watchOfflineShell } from '../../../redux/offline/offline.thunks';
 import styles from './profile.module.css';
 
 const LABELS: Record<OfflineShellStatus, { title: string; detail: string; tone: 'good' | 'pending' | 'off' }> = {
@@ -53,6 +53,7 @@ export function OfflineShellStatusCard() {
 	const [status, setStatus] = useState<OfflineShellStatus | null>(null);
 	const [mode, setMode] = useState<ShellMode | null>(null);
 	const [build] = useState(() => dispatch(readRunningBuild()));
+	const [installed, setInstalled] = useState<BuildInfo | null>(null);
 
 	useEffect(() => dispatch(watchOfflineShell(setStatus)), [dispatch]);
 	useEffect(() => {
@@ -65,6 +66,17 @@ export function OfflineShellStatusCard() {
 		};
 	}, [dispatch]);
 
+	// A new worker records its release when it activates, which changes the status.
+	useEffect(() => {
+		let current = true;
+		void dispatch(readInstalledRelease()).then(function (found) {
+			if (current) setInstalled(found);
+		});
+		return function () {
+			current = false;
+		};
+	}, [dispatch, status]);
+
 	const label = status ? LABELS[status] : null;
 	const running = describeBuild(build);
 	return (
@@ -75,6 +87,13 @@ export function OfflineShellStatusCard() {
 				<strong>{running.title}</strong>
 			</p>
 			<p className={styles.shellDetail}>{running.detail}</p>
+			{installed && (
+				<p className={styles.shellInstalled}>
+					Installed on this device: <strong>Release {installed.name}</strong>, released{' '}
+					{new Date(installed.time).toLocaleString()}
+					{build.channel === 'release' && build.time !== installed.time ? '. Reload to use it.' : ''}
+				</p>
+			)}
 			{status === 'installed' && mode && (
 				<label className={styles.shellMode}>
 					<input
