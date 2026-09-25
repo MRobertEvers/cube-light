@@ -5,25 +5,33 @@
  * the built HTML, JavaScript, CSS and static assets from Cache Storage and nothing
  * else: API requests, sync, and saved data never pass through it.
  *
- * Registered as `/sw.js?mode=development` by the dev server, it goes network-first
- * instead: every request reaches the dev server so edits show at once, and the last
- * copy of each one is kept for when the server cannot be reached.
+ * It is built with a release (`npm run release`, or `npm run build` for a deployment) and
+ * precaches that release. Pages load from the release unless the device is in
+ * development mode (ShellWorkerClient.setMode), which loads them from the development
+ * server and falls back to the release when the server cannot be reached.
+ *
+ * With no release built, the dev server serves it with nothing to precache, and every
+ * request goes to the network.
  */
 
 declare const __PRECACHE__: string[];
+declare const __SHELL_PAGE__: string;
 declare const __BUILD_ID__: string;
 const worker = self as unknown as ServiceWorkerGlobalScope;
-const DEVELOPMENT = new URL(worker.location.href).searchParams.get('mode') === 'development';
+const RELEASED = __PRECACHE__.length > 0;
 const SHELL_PREFIX = 'torimtg-shell-';
 const SHELL = `${SHELL_PREFIX}${__BUILD_ID__}`;
 const STATIC = 'torimtg-static-v1';
 const STATIC_LIMIT = 200;
-// A new dev server start has a new build id, which drops what the last one cached.
-const DEV = `torimtg-dev-${__BUILD_ID__}`;
+// Written by ShellWorkerClient.setMode; holds 'development' or 'release'.
+const SETTINGS = 'torimtg-settings';
+const MODE_KEY = '/shell-mode';
+// How long a page load waits for the development server before using the release.
+const DEV_SERVER_TIMEOUT_MS = 4000;
 
 worker.addEventListener('install', (event) => {
 	event.waitUntil((async function () {
-		if (!DEVELOPMENT) await (await caches.open(SHELL)).addAll(__PRECACHE__);
+		if (RELEASED) await (await caches.open(SHELL)).addAll(__PRECACHE__);
 		// Take over at once; tabs on the previous build keep loading its chunks from the kept shell.
 		await worker.skipWaiting();
 	})());
@@ -35,7 +43,7 @@ worker.addEventListener('activate', (event) => {
 		const keys = await caches.keys();
 		const shells = keys.filter((key) => key.startsWith(SHELL_PREFIX) && key !== SHELL);
 		// Keep the previous shell for tabs still running it; drop older ones and anything else ours.
-		const keep = DEVELOPMENT ? new Set([DEV]) : new Set([SHELL, STATIC, shells[shells.length - 1]]);
+		const keep = new Set([SHELL, STATIC, SETTINGS, shells[shells.length - 1]]);
 		for (const key of keys) if (key.startsWith('torimtg-') && !keep.has(key)) await caches.delete(key);
 	})());
 });
@@ -45,19 +53,11 @@ worker.addEventListener('fetch', (event) => {
 	if (request.method !== 'GET') return;
 	const url = new URL(request.url);
 	if (url.origin !== worker.location.origin || url.pathname.startsWith('/api/')) return;
-	if (DEVELOPMENT) {
-		// Vite's client pings the server to learn when it is back; a cached answer would fool it.
-		if (request.headers.get('accept') === 'text/x-vite-ping') return;
-		event.respondWith(networkFirst(request, url));
-		return;
-	}
 	if (request.mode === 'navigate') {
-		event.respondWith((async function () {
-			const shell = await (await caches.open(SHELL)).match('/index.html');
-			return shell || fetch(request);
-		})());
+		if (RELEASED) event.respondWith(page(request));
 		return;
 	}
+	// Everything else a development page loads (/src/, /@vite/, /node_modules/) goes to the server.
 	if (!/^\/assets\//.test(url.pathname) && !/\.(png|ico|webmanifest)$/.test(url.pathname)) return;
 	event.respondWith((async function () {
 		const cached = await (await caches.open(SHELL)).match(request) || await caches.match(request);
@@ -73,19 +73,36 @@ worker.addEventListener('fetch', (event) => {
 	})());
 });
 
-/** The dev server's response, kept for later; the kept copy only when the server cannot be reached. */
-async function networkFirst(request: Request, url: URL): Promise<Response> {
-	const cache = await caches.open(DEV);
-	// Every page is the same index.html, so one copy serves any route offline.
-	const key = request.mode === 'navigate' ? '/' : request;
-	try {
-		const response = await fetch(request);
-		// Hot updates add ?t= to the module URL; the next page load asks for it without one.
-		if (response.ok && !url.searchParams.has('t')) await cache.put(key, response.clone());
-		return response;
-	} catch (error) {
-		const cached = await cache.match(key);
-		if (cached) return cached;
-		throw error;
+/** Every route is the same page: the development server's in development mode when it answers, else the release's. */
+async function page(request: Request): Promise<Response> {
+	if (await developmentMode()) {
+		const response = await withinTimeout(fetch(request), DEV_SERVER_TIMEOUT_MS).catch(() => null);
+		if (response) return response;
 	}
+	const shell = await (await caches.open(SHELL)).match(__SHELL_PAGE__);
+	return shell || fetch(request);
+}
+
+async function developmentMode(): Promise<boolean> {
+	const saved = await (await caches.open(SETTINGS)).match(MODE_KEY);
+	return saved ? (await saved.text()) === 'development' : false;
+}
+
+/** The promise's result, or a rejection once `ms` pass; a navigation request cannot take an abort signal. */
+function withinTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+	return new Promise(function (resolve, reject) {
+		const timer = setTimeout(function () {
+			reject(new Error('timed out'));
+		}, ms);
+		promise.then(
+			function (value) {
+				clearTimeout(timer);
+				resolve(value);
+			},
+			function (error) {
+				clearTimeout(timer);
+				reject(error);
+			}
+		);
+	});
 }

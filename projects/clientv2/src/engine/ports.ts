@@ -20,6 +20,7 @@ import type { CardImageCandidate, ImageRegion } from '../domain/scans/scan-candi
 import type { TableName } from './local-store/schema';
 import type { CardListProblem } from '../domain/card-names/card-list-problem';
 import type { OfflineShellStatus } from '../domain/models/offline-shell';
+import type { BuildInfo, ShellMode } from '../domain/models/build-info';
 
 /**
  * Everything the ToriMTGEngine needs from outside itself. The engine imports only these
@@ -110,6 +111,12 @@ export interface DeviceProfile {
 export interface OfflineShell {
 	/** Calls the listener with the current status and on every change. Returns a stop function. */
 	watch(listener: (status: OfflineShellStatus) => void): () => void;
+	/** The build this page is running. */
+	running(): BuildInfo;
+	/** Which build the service worker loads pages from on this device. */
+	mode(): Promise<ShellMode>;
+	/** Saves which build to load pages from, then reloads the page into it. */
+	setMode(mode: ShellMode): Promise<void>;
 }
 
 // ── Off-thread work ──────────────────────────────────────────────────────────

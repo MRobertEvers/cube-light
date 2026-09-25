@@ -212,6 +212,34 @@
 	line-height: 1.5;
 }
 
+.shellMode {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	margin-top: 14px;
+	font-size: 15px;
+	cursor: pointer;
+}
+
+.shellMode input {
+	flex: none;
+	width: 18px;
+	height: 18px;
+	margin: 2px 0 0;
+	accent-color: #8e2524;
+}
+
+.shellMode > span {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.shellHeading {
+	margin: 22px 0 0;
+	font-size: 16px;
+}
+
 @media (max-width: 760px) {
 	.page {
 		padding: 24px 14px 42px;

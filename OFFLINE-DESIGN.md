@@ -1074,11 +1074,12 @@ durable commands, and saved blobs, which the page turns into object URLs.
 
 It registers on a secure context (localhost or a trusted certificate). Where it
 cannot, the app behaves the same but needs the network to load. The dev server
-serves it at `/sw.js` too, and development builds register it as
-`/sw.js?mode=development`: it then precaches nothing and goes network-first, so
-every edit shows at once and the last copy of each file serves when the dev server
-is down. Each dev server start drops what the previous one cached. The Profile
-page shows whether the worker is installed on this device.
+serves the committed release's worker (`release/`, from `npm run release`), which
+precaches that release and loads it by default. A device in development mode
+(a flag in the `torimtg-settings` cache, set from the Profile page) loads pages from
+the dev server instead, and from the release when the server does not answer
+within 4 seconds. The Profile page shows the running build (a release's date, or
+the dev server's commit) and whether the worker is installed on this device.
 
 Downloading large OCR models/card packs is explicit, resumable, and size-aware.
 Do not include every model in the mandatory install transaction. Show offline

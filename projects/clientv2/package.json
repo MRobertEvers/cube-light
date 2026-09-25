@@ -8,6 +8,7 @@
 		"dev:cert:le": "node tools/letsencrypt.mjs",
 		"start": "npm run dev",
 		"build": "node tools/vite.mjs build",
+		"release": "node tools/release.mjs",
 		"preview": "node tools/vite.mjs preview",
 		"typecheck": "tsc --noEmit",
 		"build:wasm": "npm run build:wasm:banner-blend && npm run build:wasm:card-list-lint",

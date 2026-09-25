@@ -5,6 +5,7 @@ import { loadAcmeConfig, loadDevCertificate } from './dev-certs.mjs';
 import { certificateDomains, ensureCertificate } from './letsencrypt.mjs';
 import { startRegistration } from './local-dns/register.mjs';
 import { acceptPlainHttp } from './plain-http.mjs';
+import { buildInfo } from './build-info.mjs';
 
 /** @param {string[]} args */
 async function main(args) {
@@ -52,6 +53,8 @@ async function main(args) {
 		server: serverConfig(config.server),
 		preview: serverConfig(config.preview),
 		build: config.build,
+		// What the Profile page shows about this build: a release's date, or the dev server's commit.
+		define: { __BUILD_INFO__: JSON.stringify(buildInfo(command === 'dev' ? 'serve' : 'build', process.cwd())) },
 		configFile: false
 	};
 	if (mode !== undefined) options.mode = mode;

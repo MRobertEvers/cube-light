@@ -13,6 +13,42 @@ npm run dev
 
 The development server runs on port 3000 on all interfaces, so it is reachable at `http://localhost:3000` and from the LAN at `http://<hostname>.local:3000`. Start the backend separately. API requests go to port 4040 on whichever host served the page; set `VITE_BACKEND_HOST_URI` before starting Vite to use another backend URL.
 
+### Releases
+
+Devices load the last **release** by default, even from the dev server, so the app stays
+usable while you develop. A release is the production build, committed under `release/`
+and named for its day (`YYYY-MM-DD`, then `YYYY-MM-DD.2` for a second one that day).
+
+```sh
+npm run release                      # build into release/
+git add release && git commit -m "Release 2026-09-25"
+git tag release-2026-09-25 && git push && git push --tags
+```
+
+```text
+ page load on a device with the shell worker
+     │
+     ▼
+ development mode on? ──no──► release page from this device's cache (release/index.html)
+     │ yes
+     ▼
+ dev server answers within 4 s? ──yes──► development page from Vite
+     │ no
+     ▼
+ release page from this device's cache
+```
+
+The dev server serves the release's `sw.js`, its page at `/index.html?shell=release`,
+and its `/assets/`. The worker precaches the release, so it also serves it offline.
+Turn development mode on or off under **Profile → App version**, which also shows what
+is running: a release's date and build time, or the dev server's commit and its time.
+The toggle needs the service worker, so it only appears on a secure origin (see
+below). Without a service worker, the dev server's own page loads as usual.
+
+Changes to `src/workers/shell/shell.worker.ts` reach devices with the next release.
+Before the first release, the dev server serves a worker with nothing cached, and
+every page loads from the dev server.
+
 ### HTTPS on your network
 
 A plain-HTTP LAN address is not a secure context, so browsers there withhold the

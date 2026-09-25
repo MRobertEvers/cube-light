@@ -1,5 +1,6 @@
 import type { PendingEdit } from '../../domain/models/pending-edit';
 import type { OfflineShellStatus } from '../../domain/models/offline-shell';
+import type { BuildInfo, ShellMode } from '../../domain/models/build-info';
 import type { AppThunk } from '../thunk';
 
 /** Edits saved on this device that the server has not accepted yet. */
@@ -33,5 +34,26 @@ export function retrySync(): AppThunk<Promise<void>> {
 export function watchOfflineShell(listener: (status: OfflineShellStatus) => void): AppThunk<() => void> {
 	return function (_dispatch, _getState, engine) {
 		return engine.offlineShell.watch(listener);
+	};
+}
+
+/** The build this page is running: a release, or the development server's commit. */
+export function readRunningBuild(): AppThunk<BuildInfo> {
+	return function (_dispatch, _getState, engine) {
+		return engine.offlineShell.running();
+	};
+}
+
+/** Which build the service worker loads pages from on this device. */
+export function readShellMode(): AppThunk<Promise<ShellMode>> {
+	return function (_dispatch, _getState, engine) {
+		return engine.offlineShell.mode();
+	};
+}
+
+/** Switches this device between the release and the development server, then reloads. */
+export function setShellMode(mode: ShellMode): AppThunk<Promise<void>> {
+	return function (_dispatch, _getState, engine) {
+		return engine.offlineShell.setMode(mode);
 	};
 }

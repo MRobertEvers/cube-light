@@ -15,6 +15,10 @@ import { CardListLintWorkerClient } from '../workers/card-list-lint/card-list-li
 import { ShellWorkerClient } from '../workers/shell/shell.client';
 import { configureStore, type StoreType } from '../redux/configure-store';
 import { startProjections } from '../redux/projections';
+import type { BuildInfo } from '../domain/models/build-info';
+
+// Compiled in by tools/vite.mjs from tools/build-info.mjs.
+declare const __BUILD_INFO__: BuildInfo;
 
 /**
  * The one place the app's objects are built, so reading this function shows the whole
@@ -22,7 +26,7 @@ import { startProjections } from '../redux/projections';
  * ports; Redux gets the engine; React gets only the store.
  */
 export function composeApp(): StoreType {
-	const offlineShell = new ShellWorkerClient(import.meta.env.PROD);
+	const offlineShell = new ShellWorkerClient(__BUILD_INFO__);
 	offlineShell.start();
 	const crypto = new WebCrypto();
 	const localStore = new OutboxLocalStore(new IndexedDbDriver('torimtg-v1', indexedDB), crypto);

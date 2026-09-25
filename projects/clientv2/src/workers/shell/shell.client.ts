@@ -1,27 +1,48 @@
 import type { OfflineShellStatus } from '../../domain/models/offline-shell';
+import type { BuildInfo, ShellMode } from '../../domain/models/build-info';
 import type { OfflineShell } from '../../engine/ports';
+
+// Shared with ShellWorker, which reads the mode on every page load.
+const SETTINGS = 'torimtg-settings';
+const MODE_KEY = '/shell-mode';
 
 /**
  * Registers ShellWorker, which caches the built app so it can start offline. It is an
  * enhancement: where it cannot register (an insecure origin such as a plain-HTTP LAN
  * address, an untrusted certificate, private browsing) the app works the same but
  * needs the network to load.
+ *
+ * The worker loads pages from the last release unless this device is in development mode,
+ * which loads them from the development server while it answers.
  */
 export class ShellWorkerClient implements OfflineShell {
-	private readonly production: boolean;
+	private readonly build: BuildInfo;
 	private registration: Promise<ServiceWorkerRegistration | null> = Promise.resolve(null);
 
-	constructor(production: boolean) {
-		this.production = production;
+	constructor(build: BuildInfo) {
+		this.build = build;
 	}
 
-	/** Registers the worker; in development it goes network-first so the dev server's changes show. */
 	start(): void {
 		if (!('serviceWorker' in navigator) || !isSecureContext) return;
-		const url = this.production ? '/sw.js' : '/sw.js?mode=development';
 		this.registration = navigator.serviceWorker
-			.register(url, { scope: '/', updateViaCache: 'none' })
+			.register('/sw.js', { scope: '/', updateViaCache: 'none' })
 			.catch(() => null);
+	}
+
+	running(): BuildInfo {
+		return this.build;
+	}
+
+	async mode(): Promise<ShellMode> {
+		if (!('caches' in self)) return 'release';
+		const saved = await (await caches.open(SETTINGS)).match(MODE_KEY);
+		return saved && (await saved.text()) === 'development' ? 'development' : 'release';
+	}
+
+	async setMode(mode: ShellMode): Promise<void> {
+		await (await caches.open(SETTINGS)).put(MODE_KEY, new Response(mode));
+		location.reload();
 	}
 
 	watch(listener: (status: OfflineShellStatus) => void): () => void {
