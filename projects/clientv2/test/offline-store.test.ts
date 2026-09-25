@@ -7,7 +7,7 @@ import { WebCrypto } from '../src/platform/crypto';
 import { OutboxLocalStore, hash } from '../src/engine/local-store/local-store';
 
 const webCrypto = new WebCrypto();
-import { applyEvent } from '@torimtg/core';
+import { CARD_CATALOG_VERSION, applyEvent } from '@torimtg/core';
 import type { EventEnvelope, Replica, DomainEvent } from '@torimtg/core';
 
 async function fixture() {
@@ -152,5 +152,33 @@ test('card edits join the deck edit still waiting to be sent, and survive a rebu
     deck = rebuilt.states[0] as any;
     assert.equal(deck.cards['card-a'], 1);
     assert.equal(deck.sideboard['card-a'], 3);
+    store.close();
+});
+
+test('a catalog described under older card rules bootstraps again and asks for saved card answers', async () => {
+    const { driver, store, scope } = await fixture();
+    await driver.transaction(['meta'], 'readwrite', async (tables) => {
+        const meta = (await tables.get<any>('meta', scope.partition))!;
+        delete meta.catalogVersion;
+        await tables.put('meta', meta);
+    });
+    await store.refresh(scope, { type: 'card.details', uuid: 'card-a' });
+    await store.refresh(scope, { type: 'history', id: 'deck_abcdefghijklmnop' });
+    let lease = (await store.acquire(scope, 'worker-one'))!;
+    for (const job of await store.jobs(scope)) await store.saveResource(lease, job, { key: job.key, body: new Blob(['{}']), status: 200, contentType: 'application/json', validatedAt: '' });
+    assert.equal((await store.jobs(scope)).length, 0);
+    const page = { protocolVersion: 1 as const, serverInstanceId: 'test-server', replicas: [], outcomes: [], cursor: 5, hasMore: false, catalog: { 'card-a': { uuid: 'card-a', types: 'Creature' } }, catalogVersion: CARD_CATALOG_VERSION, bootstrapComplete: true };
+    await store.settle(lease, page);
+    let data = await store.dataset(scope);
+    assert.equal(data.meta.catalogVersion, CARD_CATALOG_VERSION);
+    assert.equal(data.meta.bootstrap.complete, false);
+    assert.equal(data.meta.syncRequested, true);
+    assert.deepEqual((data.catalog['card-a'] as any).types, 'Creature');
+    assert.deepEqual((await store.jobs(scope)).map((job) => job.query.type), ['card.details']);
+    // The next bootstrap is under the same rules, so it completes.
+    await store.settle(lease, page);
+    data = await store.dataset(scope);
+    assert.equal(data.meta.bootstrap.complete, true);
+    assert.equal(data.meta.syncRequested, false);
     store.close();
 });

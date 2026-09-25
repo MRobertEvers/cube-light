@@ -26,6 +26,8 @@ export type ReplicaMeta = {
     cursor: number; bootstrap: { complete: boolean; after: string; watermark: number };
     validatedAt: string | null; refresh: LocalSnapshot['refresh']; error: string | null;
     nextAttemptAt: number; lease: Lease | null; syncRequested: boolean;
+    /** The CARD_CATALOG_VERSION of the server that described the stored cards; unset before versions. */
+    catalogVersion?: number;
 };
 export type AuthControl = { session: Session | null; generation: number; locked: boolean; pendingLogout: boolean; error: string | null; job: { id: string; type: 'session' | 'login' | 'setup' | 'logout'; status: 'queued' | 'complete' | 'failed' } | null };
 export type AuthCredentials = { tokens: TokenPair; serverInstanceId: string; accountId: number; generation: number; refreshRequestId: string | null };

@@ -67,7 +67,8 @@ export class SyncCoordinator {
                 const uncertain = data.intents.filter((intent) => outstanding(intent) && intent.prepared).map((intent) => intent.operationId);
                 const page = await this.server.pull(scope, data.meta, uncertain.slice(0, 500));
                 await this.notify(await this.store.settle(lease, page));
-                workRemains = page.hasMore;
+                // A catalog under other card rules starts the bootstrap again.
+                workRemains = page.hasMore || (page.catalogVersion !== undefined && page.catalogVersion !== data.meta.catalogVersion);
             } catch (error) {
                 await this.store.fail(lease, null, error instanceof Error ? error.message : 'Refresh failed.', retryTime(1, error), false, error instanceof SyncTransportError && error.status === 401);
                 return false;

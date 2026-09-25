@@ -1,7 +1,7 @@
 import { Router, json } from 'express';
 import type { Request, Response } from 'express';
 import type { CommandRequest, Json } from '@torimtg/core';
-import { DomainError } from '@torimtg/core';
+import { CARD_CATALOG_VERSION, DomainError } from '@torimtg/core';
 import { currentSession } from '../auth/middleware';
 import { SyncRepository } from './repository';
 import { CardDatabase } from '../database/cards/CardDatabase';
@@ -47,7 +47,7 @@ export function createSyncRoutes(repository: SyncRepository, cards: CardDatabase
                 const found = await cards.queryCardInfo(ids.slice(start, start + 500));
                 for (const card of await getDeckOverviewCardInfo(found.map((item) => item.uuid), cards, imageBaseUrl(req))) catalog[card.uuid] = JSON.parse(JSON.stringify(card));
             }
-            res.json({ protocolVersion: 1, serverInstanceId: repository.serverInstanceId, replicas: result.replicas, outcomes: result.outcomes, cursor: result.cursor, hasMore: result.hasMore, after: result.after, watermark: result.watermark, catalog, bootstrapComplete: bootstrap ? !result.hasMore : undefined });
+            res.json({ protocolVersion: 1, serverInstanceId: repository.serverInstanceId, replicas: result.replicas, outcomes: result.outcomes, cursor: result.cursor, hasMore: result.hasMore, after: result.after, watermark: result.watermark, catalog, catalogVersion: CARD_CATALOG_VERSION, bootstrapComplete: bootstrap ? !result.hasMore : undefined });
         } catch (error) { respondError(res, error); }
     }
     router.get('/sync/v1/resolve-card', async (req, res) => {

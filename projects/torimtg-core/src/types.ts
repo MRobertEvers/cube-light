@@ -1,6 +1,11 @@
 export const PROTOCOL_VERSION = 1;
 export const CHECKPOINT_EVENTS = 100;
 export const CHECKPOINT_AGE_MS = 24 * 60 * 60 * 1000;
+/**
+ * Bumped whenever the server changes how it describes a card, such as which face files it.
+ * A replica whose catalog came from another version drops it and bootstraps it again.
+ */
+export const CARD_CATALOG_VERSION = 2;
 
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 export type AggregateKind = 'deck' | 'collection' | 'location' | 'profile' | 'work';
@@ -151,7 +156,7 @@ export type Query =
 export type SyncPage = {
     protocolVersion: 1; serverInstanceId: string; replicas: Replica[];
     outcomes: CommandOutcome[]; cursor: number; hasMore: boolean;
-    catalog: Record<string, Json>; bootstrapComplete?: boolean;
+    catalog: Record<string, Json>; catalogVersion?: number; bootstrapComplete?: boolean;
 };
 export type StoredResource = { key: string; body: Blob; status: number; contentType: string; validatedAt: string };
 export type LocalSnapshot<T = unknown> = {

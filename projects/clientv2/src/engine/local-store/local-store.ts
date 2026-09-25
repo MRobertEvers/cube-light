@@ -1,10 +1,11 @@
-import { applyEvent, canonicalJson, decide, preview } from '@torimtg/core';
+import { CARD_CATALOG_VERSION, applyEvent, canonicalJson, decide, preview } from '@torimtg/core';
 import type { AccountScope, AggregateState, Checkpoint, CommandOutcome, CommandRequest, DomainCommand, Replica, ResourceQuery, Session, StoredResource, SyncPage } from '@torimtg/core';
 import type { AuthSession } from '@torimtg/core';
 import type { AuthCredentials } from '../core/types';
 import type { AuthControl, Dataset, Intent, JournalEntry, Lease, LocalBlob, LocalCommit, LocalNotice, LocalStore, ReplicaMeta, ResourceJob } from '../core/types';
 import type { Crypto, TableDatabase, Tables } from '../ports';
 import { TABLES } from './schema';
+import { isCardSource } from '../core/card-catalog';
 
 type StoredReplica = Replica & { partition: string };
 type StoredView = { partition: string; id: string; state: AggregateState };
@@ -23,7 +24,7 @@ export function queryKey(query: ResourceQuery): string { return canonicalJson(qu
 export function outstanding(intent: Intent): boolean { return !['accepted', 'discarded'].includes(intent.status); }
 
 function newMeta(crypto: Crypto, partition: string): ReplicaMeta {
-    return { partition, revision: 0, sequence: 0, clientId: crypto.randomUUID(), cursor: 0, bootstrap: { complete: false, after: '', watermark: 0 }, validatedAt: null, refresh: 'idle', error: null, nextAttemptAt: 0, lease: null, syncRequested: true };
+    return { partition, revision: 0, sequence: 0, clientId: crypto.randomUUID(), cursor: 0, bootstrap: { complete: false, after: '', watermark: 0 }, validatedAt: null, refresh: 'idle', error: null, nextAttemptAt: 0, lease: null, syncRequested: true, catalogVersion: CARD_CATALOG_VERSION };
 }
 
 async function authValue(tables: Tables): Promise<AuthControl> {
@@ -102,6 +103,21 @@ async function compact(tables: Tables, partition: string): Promise<void> {
     const removable = new Set(intents.filter((intent) => !outstanding(intent) && !referenced.has(intent.operationId) && Date.parse(intent.createdAt) < cutoff && (intent.status === 'discarded' || Object.entries(intent.outcome?.revisions || {}).every((entry) => (floors.get(entry[0]) || 0) >= entry[1]))).map((intent) => intent.operationId));
     for (const entry of await tables.all<JournalEntry>('journal', partition)) if (removable.has(entry.operationId)) await tables.remove('journal', [partition, entry.sequence]);
     for (const id of removable) await tables.remove('outbox', [partition, id]);
+}
+
+/**
+ * The stored cards were described under other rules. Bootstrapping again re-sends every deck's
+ * cards, each replacing its stale row as it arrives, and card answers already saved are asked again.
+ */
+async function redescribeCards(tables: Tables, meta: ReplicaMeta, catalogVersion: number): Promise<void> {
+    meta.catalogVersion = catalogVersion;
+    meta.bootstrap = { complete: false, after: '', watermark: 0 };
+    meta.syncRequested = true; meta.refresh = 'queued';
+    for (const job of await tables.all<ResourceJob>('jobs', meta.partition)) {
+        if (!isCardSource(job.query.type)) continue;
+        job.generation = Math.max(job.generation, job.served) + 1; job.attempts = 0; job.nextAttemptAt = 0; job.error = null;
+        await tables.put('jobs', job);
+    }
 }
 
 /** Verify outside an IDB transaction: WebCrypto must never suspend a live transaction. */
@@ -350,6 +366,7 @@ export class OutboxLocalStore implements LocalStore {
                 } else meta.cursor = Math.max(meta.cursor, result.cursor);
                 meta.validatedAt = new Date().toISOString(); meta.refresh = result.hasMore ? 'queued' : 'idle'; meta.error = null; meta.nextAttemptAt = 0;
                 meta.syncRequested = result.hasMore;
+                if (result.catalogVersion !== undefined && result.catalogVersion !== meta.catalogVersion) await redescribeCards(tables, meta, result.catalogVersion);
             }
             await project(tables, scope.partition);
             meta.revision++;
