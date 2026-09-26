@@ -5,11 +5,16 @@ let pending = 0;
 let lastHeight = 0;
 let settleTimers: number[] = [];
 let probe: HTMLDivElement | null = null;
+// Safari's floating form bar is about 44px tall with a little margin around it.
+const KEYBOARD_BAR_PX = 52;
 
 /**
  * Publishes how much of a full-screen fixed overlay is out of sight while an
  * overlay is open: --visual-viewport-top above the visible area and
- * --keyboard-inset below it, usually under the phone keyboard.
+ * --keyboard-inset below it, usually under the phone keyboard. --keyboard-bar
+ * is room to leave above an open keyboard: iOS Safari floats its form bar
+ * (previous, next, done) there, over the page, without counting it in the
+ * visual viewport, and only sometimes, so it cannot be measured.
  *
  * A phone keyboard shrinks only the visual viewport, so an overlay pinned
  * with `inset: 0` keeps its full height and its content ends up behind the
@@ -53,6 +58,7 @@ export function useVisualViewportFrame() {
 			const root = document.documentElement.style;
 			root.removeProperty('--visual-viewport-top');
 			root.removeProperty('--keyboard-inset');
+			root.removeProperty('--keyboard-bar');
 			probe?.remove();
 			probe = null;
 		};
@@ -95,6 +101,7 @@ function publish() {
 	const root = document.documentElement.style;
 	root.setProperty('--visual-viewport-top', `${top}px`);
 	root.setProperty('--keyboard-inset', `${bottom}px`);
+	root.setProperty('--keyboard-bar', bottom > 0 ? `${KEYBOARD_BAR_PX}px` : '0px');
 
 	// Focus scrolls the field into view before the keyboard finishes opening,
 	// so bring it back once the viewport has actually shrunk.

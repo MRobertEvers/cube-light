@@ -28,9 +28,12 @@
 	flex-direction: column;
 	min-height: min(360px, var(--sheet-room));
 	max-height: var(--sheet-room);
-	/* The home indicator only matters when the keyboard is not covering it. */
+	/*
+	 * The home indicator only matters when the keyboard is not covering it; with the
+	 * keyboard open, the actions stay clear of Safari's floating form bar instead.
+	 */
 	padding-bottom: max(
-		0px,
+		var(--keyboard-bar, 0px),
 		calc(env(safe-area-inset-bottom) - var(--keyboard-inset, 0px))
 	);
 	border-radius: 16px 16px 0 0;

@@ -320,7 +320,7 @@
 }
 @media (max-width: 680px) {
 	.backdrop {
-		padding: var(--visual-viewport-top, 0px) 0 var(--keyboard-inset, 0px);
+		padding: var(--visual-viewport-top, 0px) 0 calc(var(--keyboard-inset, 0px) + var(--keyboard-bar, 0px));
 		overflow: hidden;
 		overscroll-behavior: none;
 	}

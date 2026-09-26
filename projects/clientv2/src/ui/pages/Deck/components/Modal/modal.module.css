@@ -33,8 +33,15 @@
 }
 
 @media (max-width: 680px) {
+	/*
+	 * The dialog covers the whole screen, so the dimmed, blurred backdrop is never seen
+	 * except while the content paints; iOS Safari draws a new backdrop-filter layer
+	 * black for a frame, so opening flashed black. Plain white matches the page instead.
+	 */
 	.mobile-full-screen {
-		padding: var(--visual-viewport-top, 0px) 0 var(--keyboard-inset, 0px);
+		padding: var(--visual-viewport-top, 0px) 0 calc(var(--keyboard-inset, 0px) + var(--keyboard-bar, 0px));
+		background: white;
+		backdrop-filter: none;
 	}
 	.mobile-full-screen .modal-container-contents {
 		width: 100%;

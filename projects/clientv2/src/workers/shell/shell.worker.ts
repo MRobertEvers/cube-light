@@ -29,6 +29,10 @@ const SHELL_PREFIX = 'torimtg-shell-';
 const SHELL = `${SHELL_PREFIX}${__BUILD_ID__}`;
 const STATIC = 'torimtg-static-v1';
 const STATIC_LIMIT = 200;
+// Everything cached here is addressed by its URL and never changes, so a Vary header
+// (the dev server sends `Vary: Origin`, and module scripts carry an Origin that the
+// precache requests did not) must not stop a cached copy from answering.
+const MATCH: CacheQueryOptions = { ignoreVary: true };
 // Card images by Scryfall id and size. They never change, so the first copy serves for good.
 const IMAGES = 'torimtg-images-v1';
 const IMAGES_LIMIT = 2000;
@@ -79,7 +83,7 @@ worker.addEventListener('fetch', (event) => {
 	if (!/^\/assets\//.test(url.pathname) && !/\.(png|ico|webmanifest)$/.test(url.pathname)) return;
 	event.respondWith((async function () {
 		// Any of our caches: a tab still on the previous build loads its chunks from the kept shell.
-		const cached = await caches.match(request);
+		const cached = await caches.match(request, MATCH);
 		return cached || cacheFirst(STATIC, STATIC_LIMIT, request);
 	})());
 });
@@ -110,7 +114,7 @@ async function packedArt(url: URL): Promise<Response | null> {
 /** The cached copy, or the network's, kept for next time; the cache holds the latest `limit` files. */
 async function cacheFirst(name: string, limit: number, request: Request): Promise<Response> {
 	const cache = await caches.open(name);
-	const cached = await cache.match(request);
+	const cached = await cache.match(request, MATCH);
 	if (cached) return cached;
 	const response = await fetch(request);
 	if (response.ok) {
@@ -127,7 +131,7 @@ async function page(request: Request): Promise<Response> {
 		const response = await withinTimeout(fetch(request), DEV_SERVER_TIMEOUT_MS).catch(() => null);
 		if (response) return response;
 	}
-	const shell = await (await caches.open(SHELL)).match(__SHELL_PAGE__);
+	const shell = await (await caches.open(SHELL)).match(__SHELL_PAGE__, MATCH);
 	return shell || fetch(request);
 }
 
