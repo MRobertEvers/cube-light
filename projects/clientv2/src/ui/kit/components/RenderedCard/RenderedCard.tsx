@@ -1,4 +1,4 @@
-import React, { type CSSProperties, useRef, useState } from 'react';
+import React, { type CSSProperties, useMemo, useRef, useState } from 'react';
 import { type CardFrame, cardFrame } from '../../../../domain/models/card-frame';
 import type { DeckColor } from '../../../../domain/deck/deck-colors';
 import { ManaCost, ManaText } from '../ManaCost/ManaCost';
@@ -23,6 +23,13 @@ import ptM from '../../../../assets/card-frames/pt-m.webp?url';
 import ptR from '../../../../assets/card-frames/pt-r.webp?url';
 import ptU from '../../../../assets/card-frames/pt-u.webp?url';
 import ptW from '../../../../assets/card-frames/pt-w.webp?url';
+import pwFrameA from '../../../../assets/card-frames/pw-frame-a.webp?url';
+import pwFrameB from '../../../../assets/card-frames/pw-frame-b.webp?url';
+import pwFrameG from '../../../../assets/card-frames/pw-frame-g.webp?url';
+import pwFrameM from '../../../../assets/card-frames/pw-frame-m.webp?url';
+import pwFrameR from '../../../../assets/card-frames/pw-frame-r.webp?url';
+import pwFrameU from '../../../../assets/card-frames/pw-frame-u.webp?url';
+import pwFrameW from '../../../../assets/card-frames/pw-frame-w.webp?url';
 
 import styles from './rendered-card.module.css';
 
@@ -49,6 +56,7 @@ export type RenderedCardFace = {
 type FrameLayer = { src: string; mask: string | null };
 
 const FRAMES: Record<DeckColor, string> = { W: frameW, U: frameU, B: frameB, R: frameR, G: frameG };
+const WALKER_FRAMES: Record<DeckColor, string> = { W: pwFrameW, U: pwFrameU, B: pwFrameB, R: pwFrameR, G: pwFrameG };
 const PT_BOXES: Record<DeckColor, string> = { W: ptW, U: ptU, B: ptB, R: ptR, G: ptG };
 // A two-color frame's second color, across the right side as printed hybrid cards blend.
 const RIGHT_SIDE = 'linear-gradient(90deg, transparent 44%, #000 56%)';
@@ -59,6 +67,7 @@ const RIGHT_SIDE = 'linear-gradient(90deg, transparent 44%, #000 56%)';
  * on the land frame with pinlines in the colors of mana they make.
  */
 function frameLayers(frame: CardFrame, type: string | null): { layers: FrameLayer[]; pt: string } {
+	if (/\bPlaneswalker\b/.test(type ?? '')) return { layers: walkerLayers(frame), pt: ptC };
 	if (frame.kind === 'mono') return { layers: [{ src: FRAMES[frame.color], mask: null }], pt: PT_BOXES[frame.color] };
 	if (frame.kind === 'hybrid') {
 		return {
@@ -87,6 +96,38 @@ function frameLayers(frame: CardFrame, type: string | null): { layers: FrameLaye
 	}
 	if (frame.colors.length > 2) return { layers: [land, { src: frameM, mask: pinline }], pt: ptC };
 	return { layers: [land], pt: ptC };
+}
+
+/** A planeswalker's frame layers: its own frame, open over the art down to the loyalty box. */
+function walkerLayers(frame: CardFrame): FrameLayer[] {
+	if (frame.kind === 'mono') return [{ src: WALKER_FRAMES[frame.color], mask: null }];
+	if (frame.kind === 'hybrid') {
+		return [
+			{ src: WALKER_FRAMES[frame.colors[0]], mask: null },
+			{ src: WALKER_FRAMES[frame.colors[1]], mask: RIGHT_SIDE }
+		];
+	}
+	if (frame.kind === 'gold') return [{ src: pwFrameM, mask: null }];
+	return [{ src: pwFrameA, mask: null }];
+}
+
+/** One line of a planeswalker's text: a loyalty ability and its cost, or a static ability (cost null). */
+type WalkerAbility = { cost: string | null; kind: 'plus' | 'minus' | 'neutral'; text: string };
+
+// "[+1]: …", "+1: …", "[−X]: …", "0: …": a loyalty cost opening a line.
+const LOYALTY_COST = /^\[?([+\u2212-]\s?(?:\d+|X)|0)\]?:\s*/;
+
+function walkerAbilities(text: string | null): WalkerAbility[] {
+	return (text ?? '')
+		.split('\n')
+		.filter(Boolean)
+		.map(function (line) {
+			const match = LOYALTY_COST.exec(line);
+			if (!match) return { cost: null, kind: 'neutral', text: line };
+			const cost = match[1].replace(/\s/g, '').replace(/[\u2212-]/, '\u2013');
+			const kind = cost.startsWith('+') ? 'plus' : cost === '0' ? 'neutral' : 'minus';
+			return { cost: cost, kind: kind, text: line.slice(match[0].length) };
+		});
 }
 
 /** A masked layer's style: every mask image must show for the layer to (mask-composite: intersect). */
@@ -121,20 +162,25 @@ export function RenderedCard(props: { face: RenderedCardFace; className?: string
 	const name = useRef<HTMLSpanElement>(null);
 	const type = useRef<HTMLSpanElement>(null);
 	const box = useRef<HTMLDivElement>(null);
+	const bands = useRef<HTMLDivElement>(null);
+	const costs = useRef<HTMLDivElement>(null);
+	const mirrors = useMemo(() => [bands, costs], []);
 	const text = `${face.text ?? ''}\n${face.flavorText ?? ''}`;
 	useShrinkToFit(name, face.name, 'width', 0.6);
 	useShrinkToFit(type, face.type ?? '', 'width', 0.6);
-	useShrinkToFit(box, text, 'height', 0.5);
+	useShrinkToFit(box, text, 'height', 0.5, mirrors);
 
+	const walker = /\bPlaneswalker\b/.test(face.type ?? '');
 	const frame = cardFrame({ manaCost: face.manaCost, type: face.type, text: face.text });
 	const { layers, pt } = frameLayers(frame, face.type);
 	const cardStats = stats(face);
 	const art = face.art && face.art !== failedArt ? face.art : null;
 	const rarity = face.rarity ? RARITY_LETTERS[face.rarity.toLowerCase()] ?? null : null;
 	const number = face.number && /^\d+$/.test(face.number) ? face.number.padStart(4, '0') : face.number;
+	const abilities = walker ? walkerAbilities(face.text) : [];
 
 	return (
-		<article className={`${styles['card']} ${className ?? ''}`} data-frame={frame.kind} aria-label={face.name}>
+		<article className={`${styles['card']} ${className ?? ''}`} data-frame={frame.kind} data-layout={walker ? 'planeswalker' : 'regular'} aria-label={face.name}>
 			<div className={styles['art']}>
 				{art && (
 					<img
@@ -147,6 +193,15 @@ export function RenderedCard(props: { face: RenderedCardFace; className?: string
 					/>
 				)}
 			</div>
+			{walker && (
+				<div ref={bands} className={`${styles['abilities']} ${styles['bands']}`} aria-hidden="true">
+					{abilities.map((ability, index) => (
+						<div key={index} className={styles['ability']} data-shade={index % 2 === 0 ? 'light' : 'dark'}>
+							<span>{printedText(ability.text)}</span>
+						</div>
+					))}
+				</div>
+			)}
 			{layers.map((layer, index) => (
 				<img key={index} className={styles['frame']} style={layerStyle(layer)} src={layer.src} alt="" draggable={false} />
 			))}
@@ -166,23 +221,52 @@ export function RenderedCard(props: { face: RenderedCardFace; className?: string
 				</span>
 				{face.setCode && <SetSymbol setCode={face.setCode} rarity={face.rarity} />}
 			</div>
-			<div ref={box} className={styles['box']}>
-				{face.text?.split('\n').map((line, i) => (
-					<p key={i}>
-						<ManaText text={printedText(line)} />
-					</p>
-				))}
-				{face.flavorText && <p className={styles['flavor']}>{face.flavorText}</p>}
-			</div>
-			{cardStats && (
+			{walker ? (
 				<>
-					<img className={styles['pt-box']} src={pt} alt="" draggable={false} />
-					<div className={styles['stats']}>{cardStats}</div>
+					<div ref={box} className={styles['abilities']}>
+						{abilities.map((ability, index) => (
+							<div key={index} className={styles['ability']}>
+								<span>
+									<ManaText text={printedText(ability.text)} />
+								</span>
+							</div>
+						))}
+					</div>
+					{/* The loyalty costs, apart from the text so their shields, which overhang short abilities, never count as text overflowing. */}
+					<div ref={costs} className={`${styles['abilities']} ${styles['costs']}`} aria-hidden="true">
+						{abilities.map((ability, index) => (
+							<div key={index} className={styles['ability']}>
+								<span>{printedText(ability.text)}</span>
+								{ability.cost && (
+									<span className={styles['loyalty-cost']} data-kind={ability.kind}>
+										<span>{ability.cost}</span>
+									</span>
+								)}
+							</div>
+						))}
+					</div>
 				</>
+			) : (
+				<div ref={box} className={styles['box']}>
+					{face.text?.split('\n').map((line, i) => (
+						<p key={i}>
+							<ManaText text={printedText(line)} />
+						</p>
+					))}
+					{face.flavorText && <p className={styles['flavor']}>{face.flavorText}</p>}
+				</div>
 			)}
+			{walker
+				? face.loyalty && <div className={styles['loyalty']}>{face.loyalty}</div>
+				: cardStats && (
+						<>
+							<img className={styles['pt-box']} src={pt} alt="" draggable={false} />
+							<div className={styles['stats']}>{cardStats}</div>
+						</>
+					)}
 			<footer className={styles['footer']}>
-				<span>{[rarity, number].filter(Boolean).join(' ')}</span>
-				<span>
+				<span className={styles['info-first']}>{[rarity, number].filter(Boolean).join(' ')}</span>
+				<span className={styles['info-second']}>
 					{[face.setCode, 'EN'].filter(Boolean).join(' • ')}
 					{face.artist && (
 						<>

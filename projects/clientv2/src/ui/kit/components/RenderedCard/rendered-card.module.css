@@ -89,40 +89,54 @@
 	pointer-events: none;
 }
 
-/* The name bar holds the mana cost's 70-unit symbols; the type bar the set symbol's 86-unit place. */
+/*
+ * Text sits on Card Conjurer's baselines. With line-height 1, a line's baseline is its
+ * font's --baseline below the top of its line box (Beleren 0.77em, Beleren Small Caps
+ * 0.835em, Gotham 0.785em: half the leading plus the ascent, alike in Chrome and Safari),
+ * so a line whose baseline belongs at y starts at y less that.
+ *
+ * The name bar holds the mana cost's 70-unit symbols from its top; the type bar centers the
+ * set symbol's 86-unit place on it.
+ */
 .title,
 .type-line {
 	position: absolute;
 	left: calc(126 * var(--u));
 	display: flex;
-	align-items: center;
 	gap: calc(16 * var(--u));
 	min-width: 0;
 }
 
 .title {
-	top: calc(121 * var(--u));
+	--band-top: 121;
+	--baseline: 188;
+
+	top: calc(var(--band-top) * var(--u));
+	align-items: flex-start;
 	width: calc(1260 * var(--u));
 	height: calc(70 * var(--u));
 }
 
 .type-line {
-	top: calc(1196 * var(--u));
+	--band-top: 1198;
+	--baseline: 1264;
+
+	top: calc(var(--band-top) * var(--u));
+	align-items: center;
 	width: calc(1256 * var(--u));
 	height: calc(86 * var(--u));
 }
 
-/* Beleren's capitals sit 0.08em above the middle of its line box; `top` centers them. */
 .name,
 .type {
-	position: relative;
-	top: 0.08em;
+	align-self: flex-start;
 	flex: 1;
 	min-width: 0;
+	margin-top: calc((var(--baseline) - var(--band-top)) * var(--u) - 0.77em);
 	overflow: hidden;
 	font-family: 'Tori Beleren', 'Georgia', serif;
 	font-weight: 700;
-	line-height: 1.1;
+	line-height: 1;
 	white-space: nowrap;
 }
 
@@ -231,34 +245,53 @@
 	pointer-events: none;
 }
 
-.stats {
+/* Power/toughness and loyalty in Beleren Small Caps 78, on baseline 1954. */
+.stats,
+.loyalty {
 	position: absolute;
-	top: calc(1886 * var(--u) + 0.08em);
-	left: calc(1191 * var(--u));
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: calc(205 * var(--u));
-	height: calc(86 * var(--u));
-	font-family: 'Tori Beleren', 'Georgia', serif;
+	top: calc(1954 * var(--u) - 0.835em);
+	font-family: 'Tori Beleren Small Caps', 'Tori Beleren', serif;
 	font-size: calc(78 * var(--u));
 	font-weight: 700;
 	line-height: 1;
+	text-align: center;
 	white-space: nowrap;
 }
 
-/* Collector lines on the black border: rarity and number, then set, language and artist. */
+.stats {
+	left: calc(1191 * var(--u));
+	width: calc(205 * var(--u));
+}
+
+.loyalty {
+	left: calc(1209 * var(--u));
+	width: calc(210 * var(--u));
+	color: #fff;
+}
+
+/* Collector lines on the black border, on baselines 1990 and 2026: rarity and number, then set, language and artist. */
 .footer {
 	position: absolute;
-	top: calc(1962 * var(--u));
-	left: calc(97 * var(--u));
-	display: flex;
-	flex-direction: column;
-	width: calc(1030 * var(--u));
+	inset: 0;
 	color: #fff;
-	font: 500 calc(36 * var(--u)) / calc(38 * var(--u)) 'Tori Gotham', system-ui, sans-serif;
+	font: 500 calc(36 * var(--u)) / 1 'Tori Gotham', system-ui, sans-serif;
 	letter-spacing: 0.04em;
 	white-space: nowrap;
+	pointer-events: none;
+}
+
+.info-first,
+.info-second {
+	position: absolute;
+	left: calc(97 * var(--u));
+}
+
+.info-first {
+	top: calc(1990 * var(--u) - 0.785em);
+}
+
+.info-second {
+	top: calc(2026 * var(--u) - 0.785em);
 }
 
 .brush {
@@ -273,4 +306,147 @@
 	font-family: 'Tori Beleren Small Caps', 'Tori Beleren', serif;
 	font-weight: 700;
 	letter-spacing: 0.02em;
+}
+
+/* ── Planeswalkers ───────────────────────────────────────────────────────────
+ * The art runs under the frame down to the loyalty box. The abilities are laid out three
+ * times at the same size: bands of light and dark under the frame, whose edges trim them;
+ * their text over it, which is what shrinks to fit; and their loyalty costs over that,
+ * since the costs overlap the frame's edge.
+ */
+
+[data-layout='planeswalker'] .art {
+	top: calc(212 * var(--u));
+	left: calc(105 * var(--u));
+	width: calc(1290 * var(--u));
+	height: calc(1709 * var(--u));
+}
+
+[data-layout='planeswalker'] .title {
+	--band-top: 94;
+	--baseline: 157;
+
+	left: calc(130 * var(--u));
+}
+
+[data-layout='planeswalker'] .type-line {
+	--band-top: 1194;
+	--baseline: 1258;
+
+	left: calc(130 * var(--u));
+	width: calc(1253 * var(--u));
+}
+
+[data-layout='planeswalker'] .set-symbol {
+	width: calc(var(--symbol-width) * 80 / 86 * var(--u));
+	height: calc(var(--symbol-height) * 80 / 86 * var(--u));
+}
+
+.abilities {
+	position: absolute;
+	top: calc(1314 * var(--u));
+	left: calc(179 * var(--u));
+	display: flex;
+	flex-direction: column;
+	width: calc(1205 * var(--u));
+	height: calc(607 * var(--u));
+	font-family: 'Tori Plantin', 'Georgia', serif;
+	font-size: calc(74 * var(--u) * var(--fit, 1));
+	line-height: 1.07;
+}
+
+/* Each ability takes its text's height and a share of the room left. */
+.ability {
+	position: relative;
+	display: flex;
+	flex: 1 1 auto;
+	align-items: center;
+	box-sizing: border-box;
+	padding: calc(14 * var(--u)) calc(14 * var(--u)) calc(14 * var(--u)) calc(91 * var(--u));
+}
+
+.ability img {
+	width: 0.78em;
+	height: 0.78em;
+	margin: 0 0.04em;
+	vertical-align: -0.06em;
+	border-radius: 50%;
+	box-shadow: -0.02em 0.07em 0 #000;
+}
+
+.bands .ability > span:first-child,
+.costs .ability > span:first-child {
+	visibility: hidden;
+}
+
+.bands .ability[data-shade='light'] {
+	background: rgba(255, 255, 255, 0.608);
+}
+
+.bands .ability[data-shade='dark'] {
+	background: rgba(164, 164, 164, 0.706);
+}
+
+/* Between abilities, a band that shades from one to the next. */
+.bands .ability + .ability::before {
+	position: absolute;
+	top: calc(-20 * var(--u));
+	right: 0;
+	left: 0;
+	height: calc(40 * var(--u));
+	background: url('../../../../assets/card-frames/pw-line-odd.webp') 0 0 / 100% 100%;
+	content: '';
+}
+
+.bands .ability[data-shade='light'] + .ability::before {
+	background-image: url('../../../../assets/card-frames/pw-line-odd.webp');
+}
+
+.bands .ability[data-shade='dark'] + .ability::before {
+	background-image: url('../../../../assets/card-frames/pw-line-even.webp');
+}
+
+/* A loyalty cost's shield, 44 from the card's edge, its number in Beleren Small Caps 60. */
+.loyalty-cost {
+	position: absolute;
+	left: calc(-135 * var(--u));
+	width: calc(212 * var(--u));
+	background: 0 0 / 100% 100% no-repeat;
+	color: #fff;
+	font-family: 'Tori Beleren Small Caps', 'Tori Beleren', serif;
+	font-size: calc(60 * var(--u));
+	font-weight: 700;
+	line-height: 1;
+	text-align: center;
+}
+
+.loyalty-cost > span {
+	position: absolute;
+	right: 0;
+	left: calc(10 * var(--u));
+	top: calc(var(--baseline) * var(--u) - 0.835em);
+}
+
+.loyalty-cost[data-kind='plus'] {
+	--baseline: 90;
+
+	top: calc(50% - 74 * var(--u));
+	height: calc(152 * var(--u));
+	background-image: url('../../../../assets/card-frames/pw-plus.webp');
+}
+
+.loyalty-cost[data-kind='minus'] {
+	--baseline: 70;
+
+	top: calc(50% - 52 * var(--u));
+	height: calc(148 * var(--u));
+	background-image: url('../../../../assets/card-frames/pw-minus.webp');
+}
+
+.loyalty-cost[data-kind='neutral'] {
+	--baseline: 72;
+
+	top: calc(50% - 52 * var(--u));
+	height: calc(128 * var(--u));
+	background-image: url('../../../../assets/card-frames/pw-neutral.webp');
 }

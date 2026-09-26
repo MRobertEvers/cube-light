@@ -1117,7 +1117,9 @@ frame for the mana cost (mono, hybrid split, gold, artifact, colorless, or a lan
 the mana it makes; `domain/models/card-frame.ts`). The frame shows the name and cost,
 the type line with the set's symbol in its rarity's colors, the rules and flavor
 text shrunk to fit, the stats and the collector lines, in a printed card's fonts, sizes
-and places (Card Conjurer's M15 layout). The frame images and the fonts (Beleren,
+and places (Card Conjurer's M15 layout, each line on its baseline). Planeswalkers get
+their own frame: abilities in alternating bands with their loyalty cost shields, and
+loyalty in the frame's box. The frame images and the fonts (Beleren,
 MPlantin, Gotham) come from the archived Card Conjurer; they and a sprite of every set
 symbol, cropped so symbols fit their place alike (`tools/vendor-set-symbols.mjs`), are
 vendored under `src/assets/`, so the release precaches them like any other asset.

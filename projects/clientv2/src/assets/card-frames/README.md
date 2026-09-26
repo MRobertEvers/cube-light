@@ -10,6 +10,11 @@ coordinates (`data/scripts/versions/m15/version.js` and `regular.js`).
   `frame-l` land. Each is open over the art.
 - `pt-{w,u,b,r,g,m,a,c}`: power/toughness boxes, 282 × 154 at (1136, 1858).
 - `mask-pinline`: the frame's pinlines, through which a land shows the colors of mana it makes.
+- `pw-frame-{w,u,b,r,g,m,a}`: planeswalker frames (`data/images/cardImages/planeswalker/`),
+  open over the art and abilities down to the loyalty box, laid out per
+  `data/scripts/versions/m15Planeswalker/version.js`.
+- `pw-plus`, `pw-minus`, `pw-neutral`: loyalty ability cost shields; `pw-line-odd`,
+  `pw-line-even`: the shading between a planeswalker's light and dark ability bands.
 
 The frames recreate Wizards of the Coast's card frame design and come with no license:
 fine for personal card previews, not for publishing.
