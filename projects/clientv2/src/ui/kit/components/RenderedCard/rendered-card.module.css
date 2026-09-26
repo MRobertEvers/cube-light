@@ -62,7 +62,11 @@
 	text-align: left;
 }
 
-/* The art sits under the frame, which is open over it, so the frame's edge overlaps it as printed. */
+/*
+ * The art sits under the frame, which is open over it, so the frame's edge overlaps it as
+ * printed. It is softened, as it may not be the chosen printing's, and scaled past the
+ * blur's faded edges.
+ */
 .art {
 	position: absolute;
 	top: calc(237 * var(--u));
@@ -73,11 +77,85 @@
 	background: linear-gradient(160deg, #3b3632, #1b1817);
 }
 
-.art img {
+.art-image {
 	display: block;
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
+	filter: blur(calc(5 * var(--u)));
+	transform: scale(1.03);
+}
+
+/*
+ * "Offline preview", centered at the foot of the art window (--window-bottom), readable at
+ * tabletop sizes: never under 9px. Its explanation opens above it, over the art.
+ */
+.offline-note {
+	--window-bottom: 1150;
+
+	position: absolute;
+	top: calc(var(--window-bottom) * var(--u));
+	left: 50%;
+	transform: translate(-50%, -100%);
+	display: block;
+	max-width: 90%;
+	pointer-events: none;
+}
+
+.offline-label {
+	display: block;
+	box-sizing: border-box;
+	max-width: 100%;
+	margin: 0;
+	padding: 0.3em 0.8em;
+	overflow: hidden;
+	border: 0;
+	border-radius: 999px;
+	background: rgba(13, 11, 11, 0.72);
+	color: #fff;
+	font: 600 max(9px, calc(34 * var(--u))) / 1.2 system-ui, -apple-system, sans-serif;
+	letter-spacing: 0.02em;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	pointer-events: auto;
+}
+
+button.offline-label {
+	cursor: help;
+}
+
+button.offline-label:focus-visible {
+	outline: 2px solid #fff;
+	outline-offset: 1px;
+}
+
+.offline-tip {
+	position: absolute;
+	bottom: calc(100% + max(4px, calc(14 * var(--u))));
+	left: 50%;
+	transform: translateX(-50%);
+	box-sizing: border-box;
+	width: max(180px, calc(1100 * var(--u)));
+	padding: 0.6em 0.8em;
+	border-radius: 8px;
+	background: rgba(13, 11, 11, 0.9);
+	color: #fff;
+	font: 400 max(12px, calc(38 * var(--u))) / 1.35 system-ui, -apple-system, sans-serif;
+	text-align: center;
+	white-space: normal;
+	visibility: hidden;
+	pointer-events: none;
+}
+
+.offline-note[data-open='true'] .offline-tip,
+.offline-note:has(:focus-visible) .offline-tip {
+	visibility: visible;
+}
+
+@media (hover: hover) {
+	.offline-note:hover .offline-tip {
+		visibility: visible;
+	}
 }
 
 .frame {
@@ -315,11 +393,35 @@
  * since the costs overlap the frame's edge.
  */
 
+/*
+ * The art fills the frame's window above the type bar (212 to 1194), where it is seen
+ * whole; behind the abilities, down to the loyalty box, a blurred copy carries it on.
+ */
 [data-layout='planeswalker'] .art {
 	top: calc(212 * var(--u));
 	left: calc(105 * var(--u));
 	width: calc(1290 * var(--u));
 	height: calc(1709 * var(--u));
+}
+
+[data-layout='planeswalker'] .art-image {
+	position: relative;
+	height: calc(982 * var(--u));
+}
+
+[data-layout='planeswalker'] .offline-note {
+	--window-bottom: 1178;
+}
+
+.art-backdrop {
+	position: absolute;
+	inset: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	filter: blur(calc(24 * var(--u))) brightness(0.9);
+	transform: scale(1.08);
 }
 
 [data-layout='planeswalker'] .title {

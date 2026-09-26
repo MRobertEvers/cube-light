@@ -12,5 +12,5 @@ import { offlineArt, renderedFace } from '../../CardPreviewer/rendered-face';
 export function TabletopArtFace(props: { card: DeckCardEntry }) {
 	const { card } = props;
 	const art = useOfflineCardArt(card);
-	return <RenderedCard face={renderedFace(card, offlineArt(card, art))} />;
+	return <RenderedCard face={renderedFace(card, offlineArt(card, art))} note="label" />;
 }

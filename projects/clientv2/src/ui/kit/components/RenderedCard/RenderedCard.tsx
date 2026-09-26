@@ -2,6 +2,7 @@ import React, { type CSSProperties, useMemo, useRef, useState } from 'react';
 import { type CardFrame, cardFrame } from '../../../../domain/models/card-frame';
 import type { DeckColor } from '../../../../domain/deck/deck-colors';
 import { ManaCost, ManaText } from '../ManaCost/ManaCost';
+import { OfflineNote } from './OfflineNote';
 import { SetSymbol } from './SetSymbol';
 import { useShrinkToFit } from './use-shrink-to-fit';
 
@@ -154,10 +155,12 @@ const RARITY_LETTERS: Record<string, string> = { common: 'C', uncommon: 'U', rar
  * colors (assets/card-frames) over its art, with its name, cost, type line, set symbol,
  * rules text, stats and collector lines in a printed card's fonts, sizes and places. The
  * frames, art and fonts come through ShellWorker like any asset, so it draws offline once
- * they are stored.
+ * they are stored. Its art is softened and noted as an offline preview, since the pack holds
+ * each card's default printing's art, not always the chosen printing's. A card that is itself
+ * a button (the tabletop's) takes the note as a label, as a button cannot hold a button.
  */
-export function RenderedCard(props: { face: RenderedCardFace; className?: string }) {
-	const { face, className } = props;
+export function RenderedCard(props: { face: RenderedCardFace; className?: string; note?: 'button' | 'label' }) {
+	const { face, className, note } = props;
 	const [failedArt, setFailedArt] = useState<string | null>(null);
 	const name = useRef<HTMLSpanElement>(null);
 	const type = useRef<HTMLSpanElement>(null);
@@ -182,8 +185,10 @@ export function RenderedCard(props: { face: RenderedCardFace; className?: string
 	return (
 		<article className={`${styles['card']} ${className ?? ''}`} data-frame={frame.kind} data-layout={walker ? 'planeswalker' : 'regular'} aria-label={face.name}>
 			<div className={styles['art']}>
+				{walker && art && <img className={styles['art-backdrop']} src={art} alt="" draggable={false} />}
 				{art && (
 					<img
+						className={styles['art-image']}
 						src={art}
 						alt=""
 						draggable={false}
@@ -205,6 +210,7 @@ export function RenderedCard(props: { face: RenderedCardFace; className?: string
 			{layers.map((layer, index) => (
 				<img key={index} className={styles['frame']} style={layerStyle(layer)} src={layer.src} alt="" draggable={false} />
 			))}
+			<OfflineNote kind={note ?? 'button'} />
 			<div className={styles['title']}>
 				<span ref={name} className={styles['name']}>
 					{face.name}
