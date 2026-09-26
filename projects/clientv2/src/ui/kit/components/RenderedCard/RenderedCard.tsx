@@ -201,7 +201,7 @@ export function RenderedCard(props: { face: RenderedCardFace; className?: string
 			{walker && (
 				<div ref={bands} className={`${styles['abilities']} ${styles['bands']}`} aria-hidden="true">
 					{abilities.map((ability, index) => (
-						<div key={index} className={styles['ability']} data-shade={index % 2 === 0 ? 'light' : 'dark'}>
+						<div key={index} className={styles['ability']} data-shade={index % 2 === 0 ? 'light' : 'dark'} data-static={ability.cost ? undefined : ''}>
 							<span>{printedText(ability.text)}</span>
 						</div>
 					))}
@@ -231,7 +231,7 @@ export function RenderedCard(props: { face: RenderedCardFace; className?: string
 				<>
 					<div ref={box} className={styles['abilities']}>
 						{abilities.map((ability, index) => (
-							<div key={index} className={styles['ability']}>
+							<div key={index} className={styles['ability']} data-static={ability.cost ? undefined : ''}>
 								<span>
 									<ManaText text={printedText(ability.text)} />
 								</span>
@@ -241,7 +241,7 @@ export function RenderedCard(props: { face: RenderedCardFace; className?: string
 					{/* The loyalty costs, apart from the text so their shields, which overhang short abilities, never count as text overflowing. */}
 					<div ref={costs} className={`${styles['abilities']} ${styles['costs']}`} aria-hidden="true">
 						{abilities.map((ability, index) => (
-							<div key={index} className={styles['ability']}>
+							<div key={index} className={styles['ability']} data-static={ability.cost ? undefined : ''}>
 								<span>{printedText(ability.text)}</span>
 								{ability.cost && (
 									<span className={styles['loyalty-cost']} data-kind={ability.kind}>

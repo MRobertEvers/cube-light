@@ -13,8 +13,12 @@ coordinates (`data/scripts/versions/m15/version.js` and `regular.js`).
 - `pw-frame-{w,u,b,r,g,m,a}`: planeswalker frames (`data/images/cardImages/planeswalker/`),
   open over the art and abilities down to the loyalty box, laid out per
   `data/scripts/versions/m15Planeswalker/version.js`.
-- `pw-plus`, `pw-minus`, `pw-neutral`: loyalty ability cost shields; `pw-line-odd`,
-  `pw-line-even`: the shading between a planeswalker's light and dark ability bands.
+- `pw-plus`, `pw-minus`, `pw-neutral`: loyalty ability cost shields.
+- `pw-tear-{odd,even}-{upper,lower}`: masks for the torn edge where a planeswalker's light
+  and dark ability bands meet, made from `abilityLineOdd.png` (light over dark) and
+  `abilityLineEven.png` (dark over light): each line's lower shade as `lower`, its complement
+  as `upper`, solid three rows from each end. Each band is masked by one, so the two shades
+  meet along the tear and never overlap or leave a gap.
 
 The frames recreate Wizards of the Coast's card frame design and come with no license:
 fine for personal card previews, not for publishing.

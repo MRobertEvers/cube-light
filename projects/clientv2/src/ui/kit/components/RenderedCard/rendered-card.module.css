@@ -457,7 +457,12 @@ button.offline-label:focus-visible {
 	line-height: 1.07;
 }
 
-/* Each ability takes its text's height and a share of the room left. */
+/*
+ * The box is Card Conjurer's planeswalker text mask (img/frames/planeswalker/text.svg).
+ * Each ability takes its text's height and a share of the room left, as printed. A loyalty
+ * ability's text starts at 270, clear of its shield; a static one's at 204. The last
+ * ability's text ends above the loyalty box (maskLoyalty.png: from 1847 down, 1200 across).
+ */
 .ability {
 	position: relative;
 	display: flex;
@@ -465,6 +470,14 @@ button.offline-label:focus-visible {
 	align-items: center;
 	box-sizing: border-box;
 	padding: calc(14 * var(--u)) calc(14 * var(--u)) calc(14 * var(--u)) calc(91 * var(--u));
+}
+
+.ability[data-static] {
+	padding-left: calc(25 * var(--u));
+}
+
+.ability:last-child {
+	padding-bottom: calc((1921 - 1847) * var(--u));
 }
 
 .ability img {
@@ -481,31 +494,72 @@ button.offline-label:focus-visible {
 	visibility: hidden;
 }
 
+/*
+ * Each band is one shade, reaching 10 past its ends, where it meets the next along a torn
+ * edge: its mask there is the torn edge of Card Conjurer's ability line (abilityLineOdd,
+ * abilityLineEven), and the next band's the exact complement. The two shades never lie edge
+ * to edge or over each other, which draws a hairline wherever their edges fall between
+ * pixels. The mask's solid middle overlaps both tears by 3, clear of their torn rows.
+ */
+.bands .ability::after {
+	--solid: linear-gradient(#000, #000);
+
+	position: absolute;
+	top: calc(-10 * var(--u));
+	right: 0;
+	bottom: calc(-10 * var(--u));
+	left: 0;
+	background: var(--shade);
+	content: '';
+	mask-position: 0 0, 0 calc(17 * var(--u)), 0 100%;
+	mask-size: 100% calc(20 * var(--u)), 100% calc(100% - 34 * var(--u)), 100% calc(20 * var(--u));
+	mask-repeat: no-repeat;
+	-webkit-mask-position: 0 0, 0 calc(17 * var(--u)), 0 100%;
+	-webkit-mask-size: 100% calc(20 * var(--u)), 100% calc(100% - 34 * var(--u)), 100% calc(20 * var(--u));
+	-webkit-mask-repeat: no-repeat;
+}
+
 .bands .ability[data-shade='light'] {
-	background: rgba(255, 255, 255, 0.608);
+	--shade: rgba(255, 255, 255, 0.608);
 }
 
 .bands .ability[data-shade='dark'] {
-	background: rgba(164, 164, 164, 0.706);
+	--shade: rgba(164, 164, 164, 0.706);
 }
 
-/* Between abilities, a band that shades from one to the next. */
-.bands .ability + .ability::before {
-	position: absolute;
-	top: calc(-20 * var(--u));
-	right: 0;
-	left: 0;
-	height: calc(40 * var(--u));
-	background: url('../../../../assets/card-frames/pw-line-odd.webp') 0 0 / 100% 100%;
-	content: '';
+/* Light bands follow dark ones and precede them; dark bands the reverse. */
+.bands .ability[data-shade='light']::after {
+	mask-image: url('../../../../assets/card-frames/pw-tear-even-lower.webp'), var(--solid), url('../../../../assets/card-frames/pw-tear-odd-upper.webp');
+	-webkit-mask-image: url('../../../../assets/card-frames/pw-tear-even-lower.webp'), var(--solid), url('../../../../assets/card-frames/pw-tear-odd-upper.webp');
 }
 
-.bands .ability[data-shade='light'] + .ability::before {
-	background-image: url('../../../../assets/card-frames/pw-line-odd.webp');
+.bands .ability[data-shade='dark']::after {
+	mask-image: url('../../../../assets/card-frames/pw-tear-odd-lower.webp'), var(--solid), url('../../../../assets/card-frames/pw-tear-even-upper.webp');
+	-webkit-mask-image: url('../../../../assets/card-frames/pw-tear-odd-lower.webp'), var(--solid), url('../../../../assets/card-frames/pw-tear-even-upper.webp');
 }
 
-.bands .ability[data-shade='dark'] + .ability::before {
-	background-image: url('../../../../assets/card-frames/pw-line-even.webp');
+/* The first band starts at the box's top and the last ends at its foot, untorn. */
+.bands .ability:first-child::after {
+	top: 0;
+	mask-image: var(--solid), var(--solid), url('../../../../assets/card-frames/pw-tear-odd-upper.webp');
+	-webkit-mask-image: var(--solid), var(--solid), url('../../../../assets/card-frames/pw-tear-odd-upper.webp');
+}
+
+.bands .ability[data-shade='light']:last-child::after {
+	bottom: 0;
+	mask-image: url('../../../../assets/card-frames/pw-tear-even-lower.webp'), var(--solid), var(--solid);
+	-webkit-mask-image: url('../../../../assets/card-frames/pw-tear-even-lower.webp'), var(--solid), var(--solid);
+}
+
+.bands .ability[data-shade='dark']:last-child::after {
+	bottom: 0;
+	mask-image: url('../../../../assets/card-frames/pw-tear-odd-lower.webp'), var(--solid), var(--solid);
+	-webkit-mask-image: url('../../../../assets/card-frames/pw-tear-odd-lower.webp'), var(--solid), var(--solid);
+}
+
+.bands .ability:only-child::after {
+	mask-image: none;
+	-webkit-mask-image: none;
 }
 
 /* A loyalty cost's shield, 44 from the card's edge, its number in Beleren Small Caps 60. */
