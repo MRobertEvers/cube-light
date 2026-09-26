@@ -23,7 +23,8 @@ export async function buildShellWorker(options) {
     for (const name of await readdir(path.join(outDir, 'assets'))) {
         // The OCR runtime and models are tens of megabytes and only needed for scanning; they are cached on first use.
         const optionalOcr = /^(ort|worker-entry|experimental-scanner|card-ocr|title-index|paddle-region-reader)/.test(name);
-        if (!optionalOcr && /\.(js|css|wasm|woff2?|svg|png)$/.test(name)) files.push(`/assets/${name}`);
+        // Images include the card frames offline cards are drawn on, which no online view shows first.
+        if (!optionalOcr && /\.(js|css|wasm|woff2?|svg|png|jpg|webp)$/.test(name)) files.push(`/assets/${name}`);
     }
     const digest = createHash('sha256');
     for (const file of files) digest.update(await readFile(path.join(outDir, file.slice(1))));
@@ -108,6 +109,7 @@ function contentType(file) {
         '.woff2': 'font/woff2',
         '.png': 'image/png',
         '.jpg': 'image/jpeg',
+        '.webp': 'image/webp',
         '.svg': 'image/svg+xml'
     };
     return types[/** @type {keyof typeof types} */ (path.extname(file))] || 'application/octet-stream';
