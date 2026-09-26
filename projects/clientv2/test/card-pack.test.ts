@@ -19,6 +19,7 @@ const PACK = {
 function store(pack: unknown): CardPackStore {
 	return {
 		offered: async () => null,
+		offeredNames: async () => null,
 		installed: async () => null,
 		install: async () => { throw new Error('not used'); },
 		remove: async () => {},

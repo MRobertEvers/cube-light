@@ -1,4 +1,4 @@
-import type { CardPackInfo, InstalledCardPack } from '../../domain/models/card-pack';
+import type { CardNamesInfo, CardPackInfo, InstalledCardPack } from '../../domain/models/card-pack';
 import type { CardPackStore } from '../../engine/ports';
 
 const DATABASE = 'torimtg-card-pack';
@@ -24,6 +24,15 @@ export class IndexedDbCardPackStore implements CardPackStore {
 		try {
 			const response = await fetch(`${this.base}/cards/pack/info`, { cache: 'no-store', credentials: 'omit' });
 			return response.ok ? ((await response.json()) as CardPackInfo) : null;
+		} catch {
+			return null;
+		}
+	}
+
+	async offeredNames(): Promise<CardNamesInfo | null> {
+		try {
+			const response = await fetch(`${this.base}/suggest/card-names/info`, { cache: 'no-store', credentials: 'omit' });
+			return response.ok ? ((await response.json()) as CardNamesInfo) : null;
 		} catch {
 			return null;
 		}

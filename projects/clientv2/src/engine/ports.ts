@@ -22,7 +22,7 @@ import type { CardListProblem } from '../domain/card-names/card-list-problem';
 import type { OfflineShellStatus } from '../domain/models/offline-shell';
 import type { BuildInfo, ShellMode } from '../domain/models/build-info';
 import type { Connectivity } from '../domain/models/connectivity';
-import type { CardPackInfo, InstalledCardPack } from '../domain/models/card-pack';
+import type { CardNamesInfo, CardPackInfo, InstalledCardPack } from '../domain/models/card-pack';
 import type { CardArtInfo, InstalledCardArt } from '../domain/models/card-art';
 
 /**
@@ -82,6 +82,8 @@ export interface SyncTransport {
 export interface CardPackStore {
 	/** The pack the server offers; null when it cannot be reached or has none. */
 	offered(): Promise<CardPackInfo | null>;
+	/** The card-name index the server offers; null when it cannot be reached or has none. */
+	offeredNames(): Promise<CardNamesInfo | null>;
 	installed(): Promise<InstalledCardPack | null>;
 	/** Downloads the offered pack and replaces the installed one, reporting bytes as they arrive. */
 	install(onProgress: (received: number, total: number) => void): Promise<InstalledCardPack>;

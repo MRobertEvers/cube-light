@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { cardPackUpdateAvailable, type CardPackStatus, type PackCard } from '../../../domain/models/card-pack';
+import { cardNamesUpdateAvailable, cardPackUpdateAvailable, type CardPackStatus, type PackCard } from '../../../domain/models/card-pack';
 import { installCardPack, lookupPackCard, readCardPackStatus, removeCardPack } from '../../../redux/card-pack/card-pack.thunks';
 import { useAppDispatch } from '../../../redux/use-app-dispatch';
 import { PackCardText } from './PackCardText';
@@ -13,8 +13,9 @@ type Lookup = { name: string; card: PackCard | null };
 
 /**
  * Installs every card's text on this device (name, mana cost, type line, rules text and
- * stats, but no images or printings), so card text reads with no server. A lookup field
- * reads it back.
+ * stats, but no images or printings), so card text reads with no server, and the
+ * card-name index name search reads. Either can have an update. A lookup field reads the
+ * text back.
  */
 export function OfflineCardDataCard() {
 	const dispatch = useAppDispatch();
@@ -67,7 +68,10 @@ export function OfflineCardDataCard() {
 
 	const installed = status?.installed ?? null;
 	const offered = status?.offered ?? null;
-	const update = status ? cardPackUpdateAvailable(status) : false;
+	const packUpdate = status ? cardPackUpdateAvailable(status) : false;
+	const namesUpdate = status ? cardNamesUpdateAvailable(status) : false;
+	const update = packUpdate || namesUpdate;
+	const namesOffered = status?.namesOffered ?? null;
 	const busy = progress !== null;
 
 	return (
@@ -87,9 +91,14 @@ export function OfflineCardDataCard() {
 					{installed.cards.toLocaleString()} cards from card data of {installed.date}, installed {new Date(installed.installedAt).toLocaleString()}.
 				</p>
 			)}
-			{offered && (!installed || update) && (
+			{offered && (!installed || packUpdate) && (
 				<p className={styles.shellDetail}>
-					{update ? 'Newer card data' : 'Download'}: {offered.cards.toLocaleString()} cards from {offered.date}, {megabytes(offered.bytes)}.
+					{packUpdate ? 'Newer card data' : 'Download'}: {offered.cards.toLocaleString()} cards from {offered.date}, {megabytes(offered.bytes)}.
+				</p>
+			)}
+			{namesOffered && namesUpdate && (
+				<p className={styles.shellDetail}>
+					Newer card names for search: {namesOffered.names.toLocaleString()} names from {namesOffered.date}, {megabytes(namesOffered.bytes)}.
 				</p>
 			)}
 			{status && !offered && !installed && <p className={styles.shellDetail}>Connect to the server to download it.</p>}

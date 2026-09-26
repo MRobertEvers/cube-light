@@ -4,7 +4,7 @@
  * shows with no server.
  */
 
-/** What the server offers, before download. */
+/** What the server offers, before download (the server's CardArt.info.json). */
 export type CardArtInfo = {
 	/** The card data version the art was chosen for. */
 	version: string;
@@ -16,9 +16,26 @@ export type CardArtInfo = {
 	/** The whole download's size. */
 	bytes: number;
 	chunks: number;
+	builtAt: string;
+	/** The index's sha256, which names this build of the art: it changes whenever any art does. */
+	sha256: string;
 };
 
-export type InstalledCardArt = CardArtInfo & { installedAt: string };
+/**
+ * The art on this device. `builtAt` and `sha256` are null for art installed before the pack
+ * was versioned, which the server's art never matches, so it shows as needing an update.
+ */
+export type InstalledCardArt = {
+	version: string;
+	format: number;
+	width: number;
+	cards: number;
+	bytes: number;
+	chunks: number;
+	builtAt: string | null;
+	sha256: string | null;
+	installedAt: string;
+};
 
 /**
  * The art on this device, what the server offers, and whether this device was already
@@ -32,10 +49,7 @@ export type CardArtStatus = {
 	asked: boolean;
 };
 
-/** Whether the offered art differs from the installed art, in its cards, its size or its index's format. */
+/** Whether the offered art is another build than the installed art. */
 export function cardArtUpdateAvailable(status: CardArtStatus): boolean {
-	const installed = status.installed;
-	const offered = status.offered;
-	if (installed === null || offered === null) return false;
-	return offered.version !== installed.version || offered.width !== installed.width || offered.format !== installed.format;
+	return status.installed !== null && status.offered !== null && status.offered.sha256 !== status.installed.sha256;
 }

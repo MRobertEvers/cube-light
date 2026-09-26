@@ -1,6 +1,6 @@
 import type { CardEdit, DeckBoard } from '@torimtg/core';
 import type { LocalReader } from '../core/local-reader';
-import type { CardListLinter, CardNameIndex, CardNameIndexBuilder, CardNameSearch, Reachability } from '../ports';
+import type { CardListLinter, CardNameIndex, CardNameIndexBuilder, CardNameSearch, Crypto, Reachability } from '../ports';
 import type { CardPackLibrary } from '../card-pack/card-pack-library';
 import type { CardListProblem } from '../../domain/card-names/card-list-problem';
 import type {
@@ -40,19 +40,22 @@ export class CardApi {
 	private suggestionCursor: CardNameSearch | null = null;
 	private readonly pack: Pick<CardPackLibrary, 'card'>;
 	private readonly reachability: Pick<Reachability, 'current'>;
+	private readonly crypto: Pick<Crypto, 'sha256Hex'>;
 
 	constructor(
 		reader: LocalReader,
 		indexBuilder: CardNameIndexBuilder,
 		linter: CardListLinter,
 		pack: Pick<CardPackLibrary, 'card'>,
-		reachability: Pick<Reachability, 'current'>
+		reachability: Pick<Reachability, 'current'>,
+		crypto: Pick<Crypto, 'sha256Hex'>
 	) {
 		this.reader = reader;
 		this.indexBuilder = indexBuilder;
 		this.linter = linter;
 		this.pack = pack;
 		this.reachability = reachability;
+		this.crypto = crypto;
 	}
 
 	/**
@@ -157,6 +160,26 @@ export class CardApi {
 			format: 'index'
 		});
 		return index.body.arrayBuffer();
+	}
+
+	/**
+	 * The sha256 of the card-name index on this device, which names its build as the
+	 * server's NameLookup.info.json does; null when none is here.
+	 */
+	async nameIndexDigest(): Promise<string | null> {
+		const stored = await this.reader.localResource({ type: 'card.names', format: 'index' });
+		return stored ? this.crypto.sha256Hex(await stored.body.arrayBuffer()) : null;
+	}
+
+	/**
+	 * Downloads the card-name index again, then drops the lookup built from the old one, so
+	 * the next search uses the new one. The list checker's worker keeps the index it loaded
+	 * until the app next starts.
+	 */
+	async redownloadNameIndex(): Promise<void> {
+		await this.reader.redownload({ type: 'card.names', format: 'index' });
+		this.nameLookup = null;
+		this.suggestionCursor = null;
 	}
 
 	/** The card-name lookup. Built once; a failed build is retried by the next call. */

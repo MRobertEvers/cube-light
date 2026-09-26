@@ -10,6 +10,11 @@ const NAME_INDEX_FILEPATH = path.join(
 	'public',
 	'NameLookup.nmi'
 );
+// Written beside the index by tools/scripts/build-name-index.js.
+const NAME_INDEX_INFO_FILEPATH = path.join(
+	path.dirname(NAME_INDEX_FILEPATH),
+	'NameLookup.info.json'
+);
 const NAME_WASM_FILEPATH = path.join(
 	__dirname,
 	'..',
@@ -38,6 +43,21 @@ export function createRoutesSuggest(
 		(_req: Request, res: Response) => {
 			res.type('application/octet-stream');
 			res.sendFile(NAME_INDEX_FILEPATH);
+		}
+	);
+
+	// The index's card data version and sha256, so a client can tell its copy is out of date.
+	app.get(
+		path.pathAt('/card-names/info'),
+		(_req: Request, res: Response) => {
+			res.setHeader('Cache-Control', 'no-cache');
+			res.sendFile(
+				NAME_INDEX_INFO_FILEPATH,
+				{ headers: { 'Content-Type': 'application/json' } },
+				function (error) {
+					if (error && !res.headersSent) res.sendStatus(404);
+				}
+			);
 		}
 	);
 

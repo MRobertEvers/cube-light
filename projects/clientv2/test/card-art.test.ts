@@ -75,16 +75,17 @@ test('a changed text pack finds art again', async () => {
 	assert.equal(await blobText(await api.artFor({ name: 'Lightning Bolt', uuid: 'bolt-promo' })), 'bolt-default');
 });
 
-test('art whose index format changed is offered as an update', () => {
-	const offered: CardArtInfo = { version: 'v1', format: 2, width: 240, cards: 1, bytes: 1, chunks: 1 };
-	const installed = { version: 'v1', format: 1, width: 240, cards: 1, bytes: 1, chunks: 1, installedAt: 'then' };
+test('art rebuilt at the same card data version is offered as an update', () => {
+	const offered: CardArtInfo = { version: 'v1', format: 2, width: 240, cards: 1, bytes: 1, chunks: 1, builtAt: 'now', sha256: 'new' };
+	const installed = { version: 'v1', format: 2, width: 240, cards: 1, bytes: 1, chunks: 1, builtAt: 'then', sha256: 'old', installedAt: 'then' };
 	assert.equal(cardArtUpdateAvailable({ installed: installed, offered: offered, asked: true }), true);
-	const current = { version: 'v1', format: 2, width: 240, cards: 1, bytes: 1, chunks: 1, installedAt: 'then' };
+	const current = { version: 'v1', format: 2, width: 240, cards: 1, bytes: 1, chunks: 1, builtAt: 'now', sha256: 'new', installedAt: 'then' };
 	assert.equal(cardArtUpdateAvailable({ installed: current, offered: offered, asked: true }), false);
 });
 
-test('art rebuilt at another width is offered as an update', () => {
-	const offered: CardArtInfo = { version: 'v1', format: 2, width: 240, cards: 1, bytes: 1, chunks: 1 };
-	const installed = { version: 'v1', format: 2, width: 160, cards: 1, bytes: 1, chunks: 1, installedAt: 'then' };
-	assert.equal(cardArtUpdateAvailable({ installed: installed, offered: offered, asked: true }), true);
+test('art installed before the pack was versioned is offered as an update', () => {
+	const offered: CardArtInfo = { version: 'v1', format: 2, width: 240, cards: 1, bytes: 1, chunks: 1, builtAt: 'now', sha256: 'new' };
+	const unversioned = { version: 'v1', format: 2, width: 240, cards: 1, bytes: 1, chunks: 1, builtAt: null, sha256: null, installedAt: 'then' };
+	assert.equal(cardArtUpdateAvailable({ installed: unversioned, offered: offered, asked: true }), true);
+	assert.equal(cardArtUpdateAvailable({ installed: unversioned, offered: null, asked: true }), false);
 });

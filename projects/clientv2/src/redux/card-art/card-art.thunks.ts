@@ -1,4 +1,5 @@
-import type { CardArtStatus, InstalledCardArt } from '../../domain/models/card-art';
+import { cardArtUpdateAvailable, type CardArtStatus, type InstalledCardArt } from '../../domain/models/card-art';
+import { offlineDataSlice } from '../offline-data/offlineDataSlice';
 import type { AppThunk } from '../thunk';
 import { cardArtSlice } from './cardArtSlice';
 
@@ -16,10 +17,15 @@ export function loadCardArt(card: { name: string; uuid: string }): AppThunk<Prom
 	};
 }
 
-/** The card art on this device, what the server offers, and whether this device was asked. */
+/**
+ * The card art on this device, what the server offers, and whether this device was asked.
+ * Whether it has an update is recorded when the server answered.
+ */
 export function readCardArtStatus(): AppThunk<Promise<CardArtStatus>> {
-	return function (_dispatch, _getState, engine) {
-		return engine.cardArt.status();
+	return async function (dispatch, _getState, engine) {
+		const status = await engine.cardArt.status();
+		if (status.offered !== null || status.installed === null) dispatch(offlineDataSlice.actions.cardArtChecked(cardArtUpdateAvailable(status)));
+		return status;
 	};
 }
 

@@ -9,7 +9,9 @@ Mirrors Scryfall card images, and builds the offline card art pack from the mirr
             download first, so the art pack can be built before the mirror finishes.
   art-pack  Builds the offline card art pack from the mirror's art crops: one small WebP
             per card (its default printing, as CardPack.json.gz names it), packed into
-            a few chunk files and an index the client downloads on request.
+            a few chunk files and an index the client downloads on request. The art is
+            the default printing's illustration, cropped from its plainest printing:
+            Scryfall's crops of promos and special frames can take in the frame.
   art-index Rewrites an art pack's index from the current CardPack.json.gz, without
             re-encoding any art: for an index built before it named default printings.
 
@@ -34,6 +36,7 @@ import sys
 import tempfile
 import threading
 import time
+from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -46,6 +49,7 @@ USER_AGENT = "cube-light/1.0 (card image mirror)"
 EXTENSIONS = {"png": "png", "large": "jpg", "normal": "jpg", "small": "jpg", "art_crop": "jpg", "border_crop": "jpg",
               "art": "webp", "crop": "webp", "thumb": "webp", "grid": "webp", "display": "webp"}
 ART_PACK_INDEX = "CardArt.index.json"
+ART_PACK_INFO = "CardArt.info.json"
 CHUNK_BYTES = 5_000_000
 
 
@@ -244,15 +248,19 @@ def art_pack(args: argparse.Namespace) -> None:
     finally:
         connection.close()
     cards = [entry for entry in pack["cards"] if len(entry) > 2 and entry[2] and scryfall.get(entry[2])]
+    candidates = art_candidates(ASSETS / "AllPrintings.sqlite", [entry[2] for entry in cards])
     encoded: list = [None] * len(cards)
     missing = []
+    borrowed = []
 
     def encode(index: int) -> None:
         uuid = cards[index][2]
-        art = source / f"{scryfall[uuid]}.jpg"
-        if not art.exists():
+        art = next((path for path in (source / f"{candidate}.jpg" for candidate in candidates.get(uuid, [scryfall[uuid]])) if path.exists()), None)
+        if art is None:
             missing.append(cards[index][0])
             return
+        if art.stem != scryfall[uuid]:
+            borrowed.append(cards[index][0])
         with tempfile.NamedTemporaryFile(suffix=".webp") as target:
             subprocess.run(["cwebp", "-quiet", "-q", str(args.quality), "-m", "6", "-resize", str(args.width), "0",
                             str(art), "-o", target.name], check=True)
@@ -283,17 +291,80 @@ def art_pack(args: argparse.Namespace) -> None:
     if current:
         flush()
     total = sum(chunk["bytes"] for chunk in chunks)
-    (out / ART_PACK_INDEX).write_text(json.dumps({
+    write_art_pack_index(out, {
         "format": 2, "version": pack["version"], "width": args.width, "quality": args.quality,
         "cards": len(index), "bytes": total, "chunks": chunks, "art": index,
         "printings": default_printings(pack, scryfall, index),
-    }, separators=(",", ":")) + "\n")
+    })
     link = ASSETS / "card-art"
     if link.resolve() != out.resolve():
         if link.is_symlink() or link.exists():
             link.unlink()
         link.symlink_to(out)
-    print(f"Built art pack: {len(index)} cards, {len(chunks)} chunks, {total / 1e6:.1f} MB; {len(missing)} cards had no art crop yet")
+    print(f"Built art pack: {len(index)} cards, {len(chunks)} chunks, {total / 1e6:.1f} MB; "
+          f"{len(borrowed)} cropped from another printing of the same art; {len(missing)} cards had no art crop yet")
+
+
+def art_candidates(database: Path, uuids: list) -> dict:
+    """
+    For each default printing (MTGJSON uuid), the Scryfall ids whose art crop can stand for
+    its art, best first: printings of the same illustration, the plainest frame first
+    (not a promo, the current frame, a black border, no frame effects, not full art,
+    textless or oversized), and among equally plain ones the default printing itself, so a
+    card whose own crop is clean keeps it.
+    """
+    wanted = set(uuids)
+    connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True)
+    try:
+        rows = connection.execute(
+            "SELECT c.uuid, i.scryfallId, i.scryfallIllustrationId, c.isPromo, c.frameVersion, c.borderColor, "
+            "c.frameEffects, c.isFullArt, c.isTextless, c.isOversized, c.isOnlineOnly "
+            "FROM cards c JOIN cardIdentifiers i ON i.uuid = c.uuid "
+            "WHERE (c.side IS NULL OR c.side = 'a') AND i.scryfallId IS NOT NULL"
+        ).fetchall()
+    finally:
+        connection.close()
+    frames = {"2015": 0, "2003": 1}
+    by_illustration: dict = {}
+    defaults = {}
+    for uuid, scryfall_id, illustration, promo, frame, border, effects, full_art, textless, oversized, online in rows:
+        plainness = (bool(promo), bool(online), frames.get(frame, 2), border != "black", bool(effects),
+                     bool(full_art), bool(textless), bool(oversized))
+        if illustration:
+            by_illustration.setdefault(illustration, []).append((plainness, uuid, scryfall_id))
+        if uuid in wanted:
+            defaults[uuid] = (illustration, scryfall_id)
+    candidates = {}
+    for uuid, (illustration, scryfall_id) in defaults.items():
+        printings = by_illustration.get(illustration, []) if illustration else []
+        ranked = sorted(printings, key=lambda printing: (printing[0], printing[1] != uuid))
+        ids = [printing[2] for printing in ranked]
+        candidates[uuid] = ids if scryfall_id in ids else ids + [scryfall_id]
+    return candidates
+
+
+def write_art_pack_index(out: Path, index: dict) -> None:
+    """
+    Writes the index and CardArt.info.json, what the pack is without its 5 MB of offsets:
+    its versions, size and the index's sha256, which names this build of the pack. A client
+    compares that sha256 with its own to tell that the pack changed, even at the same
+    card data version. The index is written first: the info never names an index not there.
+    """
+    body = (json.dumps(index, separators=(",", ":")) + "\n").encode()
+    info = {
+        "format": index["format"],
+        "version": index["version"],
+        "builtAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "width": index.get("width", 160),
+        "cards": index["cards"],
+        "bytes": index["bytes"],
+        "chunks": len(index["chunks"]),
+        "sha256": hashlib.sha256(body).hexdigest(),
+    }
+    for filename, data in ((ART_PACK_INDEX, body), (ART_PACK_INFO, (json.dumps(info, indent="\t") + "\n").encode())):
+        staged = out / f".{filename}.tmp"
+        staged.write_bytes(data)
+        os.replace(staged, out / filename)
 
 
 def default_printings(pack: dict, scryfall: dict, art: dict) -> dict:
@@ -314,7 +385,7 @@ def art_index(args: argparse.Namespace) -> None:
         connection.close()
     index["format"] = 2
     index["printings"] = default_printings(pack, scryfall, index["art"])
-    path.write_text(json.dumps(index, separators=(",", ":")) + "\n")
+    write_art_pack_index(path.parent, index)
     print(f"Rewrote {path}: {len(index['printings'])} default printings")
 
 

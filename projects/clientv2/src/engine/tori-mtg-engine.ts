@@ -101,7 +101,7 @@ export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
 	const packLibrary = new CardPackLibrary(cardPack);
 	const tori = createToriMTG(store, syncHost, blobs, lifecycle, packLibrary);
 	const reader = new LocalReader(tori);
-	const cards = new CardApi(reader, nameIndexBuilder, cardListLinter, packLibrary, reachability);
+	const cards = new CardApi(reader, nameIndexBuilder, cardListLinter, packLibrary, reachability, crypto);
 	const decks = new DeckApi(tori, reader, cards, new ArtworkSidecars(tori, reader));
 	const work = new WorkApi(tori, reader, cards, crypto);
 	const workQueue = new WorkQueue(work, events, lifecycle);

@@ -12,6 +12,7 @@ import { arenaTableSlice } from './arena-table/arenaTableSlice';
 import { librarySlice } from './library/librarySlice';
 import { connectivitySlice } from './connectivity/connectivitySlice';
 import { cardArtSlice } from './card-art/cardArtSlice';
+import { offlineDataSlice } from './offline-data/offlineDataSlice';
 
 /** Every slice the store starts with. RootState is derived from this map. */
 export const rootReducers = {
@@ -28,7 +29,8 @@ export const rootReducers = {
 	[arenaTableSlice.name]: arenaTableSlice.reducer,
 	[librarySlice.name]: librarySlice.reducer,
 	[connectivitySlice.name]: connectivitySlice.reducer,
-	[cardArtSlice.name]: cardArtSlice.reducer
+	[cardArtSlice.name]: cardArtSlice.reducer,
+	[offlineDataSlice.name]: offlineDataSlice.reducer
 };
 
 export type RootState = { [Slice in keyof typeof rootReducers]: ReturnType<(typeof rootReducers)[Slice]> };

@@ -1,11 +1,13 @@
 import type { CardArtInfo, InstalledCardArt } from '../../domain/models/card-art';
 import type { CardArtStore } from '../../engine/ports';
+import { sha256Hex } from '../crypto';
 import { CHUNKS, META, artInIndex, inCardArtDatabase, type CardArtIndex, type InstalledIndex } from './card-art-database';
 
 /**
  * The offline card art pack in its own IndexedDB database (see card-art-database.ts),
  * downloaded chunk by chunk. A chunk already stored with the same checksum is kept, so an
- * interrupted install resumes and an update only fetches what changed.
+ * interrupted install resumes and an update only fetches what changed. What the server
+ * offers is read from its small info file, whose sha256 names the build of the index.
  */
 export class IndexedDbCardArtStore implements CardArtStore {
 	private readonly base: string;
@@ -17,19 +19,28 @@ export class IndexedDbCardArtStore implements CardArtStore {
 	}
 
 	async offered(): Promise<CardArtInfo | null> {
-		const index = await this.offeredIndex().catch(() => null);
-		return index ? infoOf(index) : null;
+		try {
+			const response = await fetch(`${this.base}/cards/art/info`, { cache: 'no-store', credentials: 'omit' });
+			return response.ok ? ((await response.json()) as CardArtInfo) : null;
+		} catch {
+			return null;
+		}
 	}
 
 	async installed(): Promise<InstalledCardArt | null> {
+		const info = await inCardArtDatabase<InstalledCardArt | undefined>([META], 'readonly', (transaction) => transaction.objectStore(META).get('info'));
+		if (info) return info;
+		// Installed before the pack was versioned: what it is comes from its index, and it has no build.
 		const installed = await inCardArtDatabase<InstalledIndex | undefined>([META], 'readonly', (transaction) => transaction.objectStore(META).get('index'));
 		if (!installed) return null;
-		const info = infoOf(installed.index);
-		return { version: info.version, format: info.format, width: info.width, cards: info.cards, bytes: info.bytes, chunks: info.chunks, installedAt: installed.installedAt };
+		const index = installed.index;
+		return { version: index.version, format: index.format, width: index.width ?? 160, cards: index.cards, bytes: index.bytes, chunks: index.chunks.length, builtAt: null, sha256: null, installedAt: installed.installedAt };
 	}
 
 	async install(onProgress: (received: number, total: number) => void): Promise<InstalledCardArt> {
-		const index = await this.offeredIndex();
+		const info = await this.offered();
+		if (!info) throw new Error('The server has no card art to download.');
+		const index = await this.offeredIndex(info.sha256);
 		const kept = await inCardArtDatabase<InstalledIndex | undefined>([META], 'readonly', (transaction) => transaction.objectStore(META).get('index'));
 		const keptChunks = new Map((kept ? kept.index.chunks : []).map((chunk) => [chunk.file, chunk.sha256]));
 		let received = 0;
@@ -48,20 +59,32 @@ export class IndexedDbCardArtStore implements CardArtStore {
 			onProgress(received, index.bytes);
 		}
 		const installedAt = new Date().toISOString();
+		const installed: InstalledCardArt = {
+			version: info.version,
+			format: info.format,
+			width: info.width,
+			cards: info.cards,
+			bytes: info.bytes,
+			chunks: info.chunks,
+			builtAt: info.builtAt,
+			sha256: info.sha256,
+			installedAt: installedAt
+		};
 		const current = new Set(index.chunks.map((chunk) => chunk.file));
 		await inCardArtDatabase([CHUNKS, META], 'readwrite', function (transaction) {
 			// Chunks of an older pack that this one does not use.
 			for (const file of keptChunks.keys()) if (!current.has(file)) transaction.objectStore(CHUNKS).delete(file);
+			transaction.objectStore(META).put(installed, 'info');
 			return transaction.objectStore(META).put({ index: index, installedAt: installedAt }, 'index');
 		});
 		this.index = null;
-		const info = infoOf(index);
-		return { version: info.version, format: info.format, width: info.width, cards: info.cards, bytes: info.bytes, chunks: info.chunks, installedAt: installedAt };
+		return installed;
 	}
 
 	async remove(): Promise<void> {
 		await inCardArtDatabase([CHUNKS, META], 'readwrite', function (transaction) {
 			transaction.objectStore(CHUNKS).clear();
+			transaction.objectStore(META).delete('info');
 			return transaction.objectStore(META).delete('index');
 		});
 		this.index = null;
@@ -81,10 +104,13 @@ export class IndexedDbCardArtStore implements CardArtStore {
 		await inCardArtDatabase([META], 'readwrite', (transaction) => transaction.objectStore(META).put(true, 'asked'));
 	}
 
-	private async offeredIndex(): Promise<CardArtIndex> {
+	/** The offered index, which must be the build `sha256` names: the server may rebuild the art between requests. */
+	private async offeredIndex(sha256: string): Promise<CardArtIndex> {
 		const response = await fetch(`${this.base}/cards/art/index`, { cache: 'no-store', credentials: 'omit' });
 		if (!response.ok) throw new Error('The server has no card art to download.');
-		const index = (await response.json()) as CardArtIndex;
+		const body = await response.arrayBuffer();
+		if ((await sha256Hex(body)) !== sha256) throw new Error('The card art changed on the server during the download. Try again.');
+		const index = JSON.parse(new TextDecoder().decode(body)) as CardArtIndex;
 		if (index.format !== 1 && index.format !== 2) throw new Error('The server offers card art in an unknown format.');
 		return index;
 	}
@@ -99,8 +125,4 @@ export class IndexedDbCardArtStore implements CardArtStore {
 		}
 		return this.index;
 	}
-}
-
-function infoOf(index: CardArtIndex): CardArtInfo {
-	return { version: index.version, format: index.format, width: index.width ?? 160, cards: index.cards, bytes: index.bytes, chunks: index.chunks.length };
 }

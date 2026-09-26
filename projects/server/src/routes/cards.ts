@@ -36,6 +36,14 @@ export function createRoutesCards(
 			if (error && !res.headersSent) res.sendStatus(404);
 		});
 	});
+	// What the art pack is, without its index's offsets: its size and the index's sha256,
+	// which names this build of it, so a client can tell its copy is out of date.
+	app.get(path.pathAt('/art/info'), (_req: Request, res: Response) => {
+		res.setHeader('Cache-Control', 'no-cache');
+		res.sendFile(nodePath.join(CARD_ART_DIRECTORY, 'CardArt.info.json'), { headers: { 'Content-Type': 'application/json' } }, function (error) {
+			if (error && !res.headersSent) res.sendStatus(404);
+		});
+	});
 	app.get(path.pathAt('/art/:file'), (req: Request<{ file: string }>, res: Response) => {
 		if (!/^CardArt-\d{2}\.bin$/.test(req.params.file)) {
 			res.sendStatus(400);

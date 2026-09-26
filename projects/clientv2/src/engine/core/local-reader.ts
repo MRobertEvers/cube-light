@@ -58,12 +58,55 @@ export class LocalReader {
 		});
 	}
 
-	/** A downloaded JSON resource from this device only, parsed; null when it is not here. Never waits for the server. */
-	async localJson<T>(query: ResourceQuery): Promise<T | null> {
+	/** A downloaded resource from this device only; null when it is not here. Never waits for the server. */
+	async localResource(query: ResourceQuery): Promise<StoredResource | null> {
 		const snapshot = await this.tori.queries.read<StoredResource>({ type: 'resource', resource: query });
 		const stored = snapshot.data;
 		if (snapshot.presence === 'missing' || !stored || stored.status >= 400) return null;
-		return JSON.parse(await stored.body.text()) as T;
+		return stored;
+	}
+
+	/** A downloaded JSON resource from this device only, parsed; null when it is not here. Never waits for the server. */
+	async localJson<T>(query: ResourceQuery): Promise<T | null> {
+		const stored = await this.localResource(query);
+		return stored ? (JSON.parse(await stored.body.text()) as T) : null;
+	}
+
+	/**
+	 * Downloads a resource again and waits for the new copy: one validated after the copy
+	 * here, if any. Rejects when the download fails or takes too long.
+	 */
+	async redownload(query: ResourceQuery): Promise<StoredResource> {
+		const tori = this.tori;
+		const full: Query = { type: 'resource', resource: query };
+		const before = (await tori.queries.read<StoredResource>(full)).data?.validatedAt ?? null;
+		await tori.queries.requestRefresh(full);
+		return new Promise<StoredResource>((resolve, reject) => {
+			let done = false;
+			const timeout = setTimeout(() => finish(new Error('The download is taking too long. Try again.')), DOWNLOAD_WAIT_MS);
+			const unsubscribe = tori.subscribe(check);
+			function finish(error?: Error, value?: StoredResource) {
+				if (done) return;
+				done = true;
+				clearTimeout(timeout);
+				unsubscribe();
+				if (error) reject(error);
+				else resolve(value as StoredResource);
+			}
+			async function check() {
+				try {
+					const result = await tori.queries.read<StoredResource>(full);
+					const stored = result.data;
+					if (stored && stored.validatedAt !== before) {
+						if (stored.status >= 400) finish(new Error(`Unable to load ${query.type} (${stored.status})`));
+						else finish(undefined, stored);
+					} else if (result.lastError) finish(new Error(result.lastError));
+				} catch (error) {
+					finish(error instanceof Error ? error : new Error('Local read failed.'));
+				}
+			}
+			void check();
+		});
 	}
 
 	/** Asks the sync host to download `query` when it can, without waiting for it. */

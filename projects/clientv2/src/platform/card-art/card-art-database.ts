@@ -3,7 +3,9 @@
  * and ShellWorker (which answers card art requests from it offline).
  *
  * Stores: `chunks` (chunk file name → Blob of WebP images back to back) and `meta`
- * (`index` → the pack's index and install time; `asked` → true once the device was offered it).
+ * (`index` → the pack's index and install time; `info` → what the installed pack is, its
+ * build's sha256 among it, so status reads need not load the index; `asked` → true once
+ * the device was offered it).
  */
 
 const DATABASE = 'torimtg-card-art';

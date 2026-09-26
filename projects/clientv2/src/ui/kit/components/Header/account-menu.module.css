@@ -4,6 +4,7 @@
 }
 
 .trigger {
+	position: relative;
 	display: grid;
 	place-items: center;
 	box-sizing: border-box;
@@ -85,4 +86,25 @@
 		color: #8e2524;
 		outline: none;
 	}
+}
+
+/* Installed offline data has an update: the same amber as Profile's "Update available". */
+.badge {
+	position: absolute;
+	top: 1px;
+	right: 1px;
+	width: 11px;
+	height: 11px;
+	box-sizing: border-box;
+	border: 2px solid #fff;
+	border-radius: 50%;
+	background: #c99a2e;
+}
+
+.note {
+	display: block;
+	margin-top: 2px;
+	color: #8a6a1d;
+	font-size: 12px;
+	font-weight: 500;
 }

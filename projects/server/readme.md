@@ -83,7 +83,14 @@ python3 tools/scripts/card-images.py mirror --dest /Volumes/<share>/card-images 
 python3 tools/scripts/card-images.py art-pack --source /Volumes/<share>/card-images
 ```
 
-The server serves the pack at `/cards/art/index` and `/cards/art/<chunk>`. Clients offer it
+Each card's art is its default printing's illustration, cropped from the plainest printing
+of it the mirror holds: Scryfall's crops of promos and special frames can take in the frame.
+
+The server serves the pack at `/cards/art/index` and `/cards/art/<chunk>`, and what it is
+at `/cards/art/info` (CardArt.info.json: its size and the index's sha256, which names the
+build, so clients can tell theirs is out of date). The card pack (`/cards/pack/info`) and
+the card-name index (`/suggest/card-names/info`, NameLookup.info.json written by
+`build-name-index.js`) publish their sha256 the same way. Clients offer it
 once when the app installs, and Profile installs, updates or removes it; offline, the
 service worker answers `/images/art_crop/<id>.jpg` from it.
 

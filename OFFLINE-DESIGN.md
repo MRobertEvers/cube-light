@@ -1110,6 +1110,19 @@ Scryfall id. Once the service worker is active the app offers it one time; Profi
 installs, updates and removes it. It lives in its own IndexedDB database
 (`torimtg-card-art`), and ShellWorker reads it to answer `/api/images/art_crop/<id>.jpg`
 when neither its cache nor the server can.
+The art is the default printing's illustration, but cropped from the plainest printing
+of it (not a promo, the current frame, a black border, no frame effects), since
+Scryfall's crops of promos and special frames can take in part of the frame.
+
+Each of the three packs names its build by a sha256 the server publishes beside it:
+`/cards/pack/info` (CardPack.info.json), `/suggest/card-names/info`
+(NameLookup.info.json, written by `build-name-index.js`) and `/cards/art/info`
+(CardArt.info.json, the index's sha256). A device compares them with its own: the
+installed pack's recorded sha256, the sha256 of the name index it holds, and the art's
+recorded sha256 (art installed before this has none, so it shows as out of date). Each
+time the server comes within reach the app checks, and when installed data has a newer
+build the account menu shows a dot and Profile offers the update. Updating card data
+downloads the pack only when it changed, and the name index again.
 
 Offline, card previews (the dialog and the hover card) and the tabletop boards draw the
 card from its text instead of showing a blank: `RenderedCard` puts the art in the M15
