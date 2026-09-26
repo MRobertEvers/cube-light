@@ -111,16 +111,24 @@ async function packedArt(url: URL): Promise<Response | null> {
 	return art ? new Response(art, { headers: { 'Content-Type': 'image/webp' } }) : null;
 }
 
-/** The cached copy, or the network's, kept for next time; the cache holds the latest `limit` files. */
+/**
+ * The cached copy, or the network's, kept for next time; the cache holds the latest `limit`
+ * files. Keeping a copy is best effort: storage that is full or unavailable (Safari evicts
+ * and caps it) must not keep the network's answer from the page.
+ */
 async function cacheFirst(name: string, limit: number, request: Request): Promise<Response> {
-	const cache = await caches.open(name);
-	const cached = await cache.match(request, MATCH);
+	const cache = await caches.open(name).catch(() => null);
+	const cached = cache ? await cache.match(request, MATCH).catch(() => undefined) : undefined;
 	if (cached) return cached;
 	const response = await fetch(request);
-	if (response.ok) {
-		await cache.put(request, response.clone());
-		const keys = await cache.keys();
-		for (const old of keys.slice(0, -limit)) await cache.delete(old);
+	if (response.ok && cache) {
+		try {
+			await cache.put(request, response.clone());
+			const keys = await cache.keys();
+			for (const old of keys.slice(0, -limit)) await cache.delete(old);
+		} catch {
+			// Not kept: the next request asks the network again.
+		}
 	}
 	return response;
 }
