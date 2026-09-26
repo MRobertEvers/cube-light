@@ -198,3 +198,27 @@
 	color: #4a4542;
 	font-size: 14px;
 }
+
+/* Offline, with the art pack installed: the card's art beside its cost and type. */
+.cardArtLine {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+/* Holds its place while the art is read, so the line beside it doesn't jump. */
+.cardArt {
+	flex: none;
+	width: 96px;
+	aspect-ratio: 4 / 3;
+	overflow: hidden;
+	border-radius: 6px;
+	background: #ddd8d5;
+}
+
+.cardArt img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
