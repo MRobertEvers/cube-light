@@ -16,6 +16,8 @@ fetched one by one from its CDN. The CDN (*.scryfall.io) has no rate limit, unli
 api.scryfall.com, so many downloads run at once.
 """
 
+from __future__ import annotations
+
 import argparse
 import gzip
 import hashlib
@@ -23,6 +25,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import sqlite3
 import subprocess
 import sys
@@ -49,8 +52,12 @@ def get(url: str, timeout: int = 60) -> bytes:
         return response.read()
 
 
-def bulk_cards(stage: Path) -> list:
-    """Scryfall's Default Cards: every card object in English, or its printed language."""
+def bulk_cards(stage: Path, variants: list) -> list:
+    """
+    Scryfall's Default Cards (every card in English, or its printed language), as just what
+    the mirror needs: [(scryfall id, [(face, {variant: url})])]. The file is read a line at
+    a time: whole card objects for 100,000+ printings take gigabytes, more than a NAS has.
+    """
     listing = json.loads(get("https://api.scryfall.com/bulk-data/default-cards"))
     url = listing.get("jsonl_download_uri") or listing["download_uri"]
     archive = stage / "default-cards.jsonl.gz"
@@ -58,8 +65,15 @@ def bulk_cards(stage: Path) -> list:
         print(f"Downloading {url} ...", flush=True)
         with urlopen(Request(url, headers={"User-Agent": USER_AGENT}), timeout=300) as source, archive.open("wb") as target:
             shutil.copyfileobj(source, target, length=1024 * 1024)
+    cards = []
     with gzip.open(archive, "rt", encoding="utf-8") as lines:
-        return [json.loads(line) for line in lines if line.strip()]
+        for line in lines:
+            if not line.strip():
+                continue
+            card = json.loads(line)
+            faces = [(face, {variant: uris[variant] for variant in variants if variant in uris}) for face, uris in images_of(card)]
+            cards.append((card["id"], faces))
+    return cards
 
 
 def images_of(card: dict) -> list:
@@ -74,7 +88,8 @@ def pack_printings() -> set:
     """Scryfall ids of the default printings the offline card pack names."""
     pack_path = ASSETS / "CardPack.json.gz"
     database = ASSETS / "AllPrintings.sqlite"
-    if not pack_path.exists():
+    # Run away from the server checkout (on a NAS, say), there is no pack: no priority order.
+    if not pack_path.exists() or not database.exists():
         return set()
     uuids = {entry[2] for entry in json.loads(gzip.open(pack_path).read())["cards"] if len(entry) > 2 and entry[2]}
     connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True)
@@ -86,6 +101,8 @@ def pack_printings() -> set:
 
 
 class Progress:
+    """Counts checked, downloaded and failed images, and writes them as one log line."""
+
     def __init__(self, total: int):
         self.total = total
         self.done = 0
@@ -104,8 +121,16 @@ class Progress:
             if failure:
                 self.failed.append(failure)
             if self.done % 500 == 0 or self.done == self.total:
-                rate = self.fetched / max(1.0, time.time() - self.started)
-                print(f"{self.done}/{self.total} checked, {self.fetched} downloaded ({self.bytes / 1e9:.2f} GB, {rate:.1f}/s), {len(self.failed)} failed", flush=True)
+                self.report_locked()
+
+    def report(self, prefix: str = "") -> None:
+        with self.lock:
+            self.report_locked(prefix)
+
+    def report_locked(self, prefix: str = "") -> None:
+        rate = self.fetched / max(1.0, time.time() - self.started)
+        stamp = time.strftime("%H:%M:%S")
+        print(f"{stamp} {prefix}{self.done}/{self.total} checked, {self.fetched} downloaded ({self.bytes / 1e9:.2f} GB, {rate:.1f}/s), {len(self.failed)} failed", flush=True)
 
 
 def fetch_to(url: str, path: Path, attempts: int = 4) -> int:
@@ -130,33 +155,69 @@ def fetch_to(url: str, path: Path, attempts: int = 4) -> int:
 def mirror(args: argparse.Namespace) -> None:
     dest = Path(args.dest).expanduser()
     dest.mkdir(parents=True, exist_ok=True)
-    cards = bulk_cards(dest)
+    print(f"Mirroring {', '.join(args.variants)} into {dest}", flush=True)
+    cards = bulk_cards(dest, args.variants)
     first = pack_printings()
     # Default printings first: the art pack is built from them.
-    cards.sort(key=lambda card: 0 if card["id"] in first else 1)
+    cards.sort(key=lambda card: 0 if card[0] in first else 1)
     jobs = []
-    for card in cards:
-        for face, uris in images_of(card):
-            for variant in args.variants:
-                if variant in uris:
-                    jobs.append((uris[variant], dest / variant / face / f"{card['id']}.{EXTENSIONS[variant]}"))
+    for card_id, faces in cards:
+        for face, uris in faces:
+            for variant, url in uris.items():
+                jobs.append((url, dest / variant / face / f"{card_id}.{EXTENSIONS[variant]}"))
     print(f"{len(cards)} printings, {len(jobs)} images ({', '.join(args.variants)}) into {dest}", flush=True)
     progress = Progress(len(jobs))
+    stop = threading.Event()
 
-    def run(job):
-        url, path = job
-        try:
-            progress.step(fetch_to(url, path))
-        except Exception as error:  # Keep going; failures are listed at the end.
-            progress.step(0, f"{url}: {error}")
+    # Messages: TERM or Ctrl-C stops after the downloads in flight; USR1 writes progress
+    # now, so `setup-tande-nas.sh --status` can tell a live mirror from a stuck one.
+    def on_stop(signum, frame):
+        stop.set()
+        print(f"{time.strftime('%H:%M:%S')} Stopping after the downloads in flight ({signal.Signals(signum).name})…", flush=True)
 
-    with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        list(pool.map(run, jobs))
+    signal.signal(signal.SIGTERM, on_stop)
+    signal.signal(signal.SIGINT, on_stop)
+    if hasattr(signal, "SIGUSR1"):
+        signal.signal(signal.SIGUSR1, lambda signum, frame: progress.report("status: "))
+
+    pending = iter(jobs)
+    pending_lock = threading.Lock()
+
+    def worker():
+        while not stop.is_set():
+            with pending_lock:
+                job = next(pending, None)
+            if job is None:
+                return
+            url, path = job
+            try:
+                progress.step(fetch_to(url, path))
+            except Exception as error:  # Keep going; failures are listed at the end.
+                progress.step(0, f"{url}: {error}")
+
+    workers = [threading.Thread(target=worker, daemon=True) for _ in range(args.workers)]
+    for thread in workers:
+        thread.start()
+    # The main thread only waits, in short steps: Python runs signal handlers on it, and a
+    # heartbeat every 30 s shows the mirror is alive even while it skips files it has.
+    heartbeat = time.time()
+    while any(thread.is_alive() for thread in workers):
+        for thread in workers:
+            thread.join(timeout=1)
+        if time.time() - heartbeat >= 30:
+            progress.report("heartbeat: ")
+            heartbeat = time.time()
+
     (dest / "mirror.json").write_text(json.dumps({
         "finishedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "stopped": stop.is_set(),
         "printings": len(cards), "images": len(jobs), "variants": args.variants, "failed": progress.failed,
     }, indent="\t") + "\n")
-    print(f"Done: {progress.fetched} downloaded, {len(progress.failed)} failed (listed in mirror.json)")
+    progress.report("final: ")
+    if stop.is_set():
+        print("Stopped. Run the mirror again to resume where it left off.", flush=True)
+    else:
+        print(f"Done: {progress.fetched} downloaded, {len(progress.failed)} failed (listed in mirror.json)", flush=True)
 
 
 def art_pack(args: argparse.Namespace) -> None:

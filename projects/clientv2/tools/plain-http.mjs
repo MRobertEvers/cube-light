@@ -21,6 +21,12 @@ export function acceptPlainHttp(server) {
 		server.emit('upgrade', req, socket, head);
 	});
 	server.on('connection', function (socket) {
+		// Until TLS or HTTP takes the socket over nothing else listens for its errors, and
+		// a device that drops the connection (a phone sleeping or changing network) resets
+		// it: unhandled, that would take the whole dev server down. Close it instead.
+		socket.on('error', function () {
+			socket.destroy();
+		});
 		socket.once('data', function (chunk) {
 			socket.pause();
 			socket.unshift(chunk);
