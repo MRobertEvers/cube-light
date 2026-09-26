@@ -1116,11 +1116,11 @@ card from its text instead of showing a blank: `RenderedCard` puts the art in th
 frame for the mana cost (mono, hybrid split, gold, artifact, colorless, or a land by
 the mana it makes; `domain/models/card-frame.ts`). The frame shows the name and cost,
 the type line with the set's symbol in its rarity's colors, the rules and flavor
-text shrunk to fit, and the stats, each at the frame's own coordinates. The frame
-images come from Magic Set Editor's M15 pack (`src/assets/card-frames/`). They, the
-fonts (Beleren, EB Garamond) and a sprite of every set symbol
-(`tools/vendor-set-symbols.mjs`) are vendored under `src/assets/`, so the release
-precaches them like any other asset.
+text shrunk to fit, the stats and the collector lines, in a printed card's fonts, sizes
+and places (Card Conjurer's M15 layout). The frame images and the fonts (Beleren,
+MPlantin, Gotham) come from the archived Card Conjurer; they and a sprite of every set
+symbol, cropped so symbols fit their place alike (`tools/vendor-set-symbols.mjs`), are
+vendored under `src/assets/`, so the release precaches them like any other asset.
 
 Downloading large OCR models/card packs is explicit, resumable, and size-aware.
 Do not include every model in the mandatory install transaction. Show offline

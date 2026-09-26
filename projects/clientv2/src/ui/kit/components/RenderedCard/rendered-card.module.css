@@ -1,8 +1,9 @@
 /*
- * A card drawn from its text on an M15 frame (assets/card-frames). Every place and size is
- * in the frame's own units, 375 to the card's width (--u), so it reads the same at hover
- * size and full screen. Fonts: Beleren for the name, type line and stats, EB Garamond for
- * rules text (see assets/fonts/README.md).
+ * A card drawn from its text on an M15 frame (assets/card-frames), in a printed card's
+ * fonts, sizes and places. Every place and size is in Card Conjurer's units, 1500 to the
+ * card's width (--u), so it reads the same at hover size and full screen. Fonts
+ * (assets/fonts/README.md): Beleren Bold for the name, type line and stats, MPlantin for
+ * rules and flavor text, Gotham Medium and Beleren Small Caps for the collector lines.
  */
 
 @font-face {
@@ -14,57 +15,60 @@
 }
 
 @font-face {
-	font-family: 'Tori Garamond';
+	font-family: 'Tori Beleren Small Caps';
 	font-style: normal;
-	font-weight: 400;
+	font-weight: 700;
 	font-display: swap;
-	src: url('../../../../assets/fonts/eb-garamond-latin-400-normal.woff2') format('woff2');
+	src: url('../../../../assets/fonts/beleren-bsc.ttf') format('truetype');
 }
 
 @font-face {
-	font-family: 'Tori Garamond';
+	font-family: 'Tori Plantin';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('../../../../assets/fonts/mplantin.ttf') format('truetype');
+}
+
+@font-face {
+	font-family: 'Tori Plantin';
 	font-style: italic;
 	font-weight: 400;
 	font-display: swap;
-	src: url('../../../../assets/fonts/eb-garamond-latin-400-italic.woff2') format('woff2');
+	src: url('../../../../assets/fonts/mplantin-i.ttf') format('truetype');
+}
+
+@font-face {
+	font-family: 'Tori Gotham';
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url('../../../../assets/fonts/gotham-medium.ttf') format('truetype');
 }
 
 .card {
-	--u: calc(100cqw / 375);
+	--u: calc(100cqw / 1500);
 
 	container-type: inline-size;
 	position: relative;
 	display: block;
 	box-sizing: border-box;
 	width: 100%;
-	aspect-ratio: 375 / 523;
+	aspect-ratio: 1500 / 2100;
 	overflow: hidden;
-	border-radius: 4.8% / 3.44%;
+	border-radius: 4.6% / 3.3%;
 	background: #0d0b0b;
-	color: #111;
+	color: #000;
 	text-align: left;
 }
 
-/* The frame fills the card; a two-color frame's second color shows across its right side. */
-.frame {
-	position: absolute;
-	inset: 0;
-	display: block;
-	width: 100%;
-	height: 100%;
-	pointer-events: none;
-}
-
-.right {
-	mask-image: linear-gradient(90deg, transparent 42%, #000 58%);
-}
-
+/* The art sits under the frame, which is open over it, so the frame's edge overlaps it as printed. */
 .art {
 	position: absolute;
-	top: calc(59 * var(--u));
-	left: calc(29 * var(--u));
-	width: calc(316 * var(--u));
-	height: calc(231 * var(--u));
+	top: calc(237 * var(--u));
+	left: calc(115 * var(--u));
+	width: calc(1270 * var(--u));
+	height: calc(929 * var(--u));
 	overflow: hidden;
 	background: linear-gradient(160deg, #3b3632, #1b1817);
 }
@@ -76,95 +80,109 @@
 	object-fit: cover;
 }
 
+.frame {
+	position: absolute;
+	inset: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+/* The name bar holds the mana cost's 70-unit symbols; the type bar the set symbol's 86-unit place. */
 .title,
 .type-line {
 	position: absolute;
-	left: calc(32 * var(--u));
+	left: calc(126 * var(--u));
 	display: flex;
 	align-items: center;
-	gap: calc(4 * var(--u));
+	gap: calc(16 * var(--u));
 	min-width: 0;
 }
 
-/* Each lies exactly on its bar's light face in the frame image, so centering centers on the bar. */
 .title {
-	top: calc(26 * var(--u));
-	width: calc(314 * var(--u));
-	height: calc(26 * var(--u));
+	top: calc(121 * var(--u));
+	width: calc(1260 * var(--u));
+	height: calc(70 * var(--u));
 }
 
 .type-line {
-	top: calc(295 * var(--u));
-	width: calc(312 * var(--u));
-	height: calc(24 * var(--u));
+	top: calc(1196 * var(--u));
+	width: calc(1256 * var(--u));
+	height: calc(86 * var(--u));
 }
 
 /* Beleren's capitals sit 0.08em above the middle of its line box; `top` centers them. */
 .name,
-.type,
-.stats {
+.type {
 	position: relative;
 	top: 0.08em;
-	font-family: 'Tori Beleren', 'Georgia', serif;
-	font-weight: 700;
-}
-
-.name,
-.type {
 	flex: 1;
 	min-width: 0;
 	overflow: hidden;
+	font-family: 'Tori Beleren', 'Georgia', serif;
+	font-weight: 700;
 	line-height: 1.1;
 	white-space: nowrap;
 }
 
 .name {
-	font-size: calc(16.5 * var(--u) * var(--fit, 1));
+	font-size: calc(80 * var(--u) * var(--fit, 1));
 }
 
 .type {
-	font-size: calc(13.5 * var(--u) * var(--fit, 1));
+	font-size: calc(68 * var(--u) * var(--fit, 1));
 }
 
+/* Mana symbols 70 across, 8 apart, each over a black shadow offset (-2, 6). */
 .cost {
-	--mana-symbol-size: calc(16 * var(--u));
-
 	display: flex;
 	flex: none;
 }
 
 .cost > span {
-	gap: calc(1.5 * var(--u));
+	gap: calc(8 * var(--u));
+}
+
+.cost img {
+	width: calc(70 * var(--u));
+	height: calc(70 * var(--u));
+	border-radius: 50%;
+	filter: none;
+	box-shadow: calc(-2 * var(--u)) calc(6 * var(--u)) 0 #000;
 }
 
 .set-symbol {
 	flex: none;
-	width: calc(19 * var(--u));
-	height: calc(19 * var(--u));
+	width: calc(var(--symbol-width) * var(--u));
+	height: calc(var(--symbol-height) * var(--u));
 	overflow: visible;
-	filter: drop-shadow(0 0 calc(0.6 * var(--u)) rgba(0, 0, 0, 0.9));
+	filter: drop-shadow(0 0 calc(2.5 * var(--u)) #000) drop-shadow(0 0 calc(1.5 * var(--u)) #000);
 }
 
 .set-symbol[data-rarity='common'] {
-	filter: drop-shadow(0 0 calc(0.6 * var(--u)) rgba(255, 255, 255, 0.95));
+	filter: drop-shadow(0 0 calc(2.5 * var(--u)) #fff) drop-shadow(0 0 calc(1.5 * var(--u)) #fff);
 }
 
-/* Rules and flavor text, centered in the box as printed and shrunk to fit it. */
+/*
+ * Rules and flavor text, centered in the text box as printed and shrunk to fit it, clear
+ * of the power/toughness box. `safe` lets text too long for the box run past its foot, where
+ * the fit measures it, not past both ends.
+ */
 .box {
 	position: absolute;
-	top: calc(327 * var(--u));
-	left: calc(29 * var(--u));
+	top: calc(1330 * var(--u));
+	left: calc(135 * var(--u));
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
+	justify-content: safe center;
 	box-sizing: border-box;
-	width: calc(314 * var(--u));
-	height: calc(152 * var(--u));
-	padding: calc(3 * var(--u)) calc(6 * var(--u)) calc(3 * var(--u)) calc(8 * var(--u));
+	width: calc(1230 * var(--u));
+	height: calc(556 * var(--u));
 	overflow: hidden;
-	font-family: 'Tori Garamond', 'Georgia', serif;
-	font-size: calc(14.5 * var(--u) * var(--fit, 1));
-	line-height: 1.16;
+	font-family: 'Tori Plantin', 'Georgia', serif;
+	font-size: calc(74 * var(--u) * var(--fit, 1));
+	line-height: 1.07;
 }
 
 .box p {
@@ -172,52 +190,87 @@
 }
 
 .box p + p {
-	margin-top: 0.4em;
+	margin-top: 0.3em;
 }
 
+/* Mana symbols in rules text sit on the line like a capital. */
+.box img {
+	width: 0.78em;
+	height: 0.78em;
+	margin: 0 0.04em;
+	vertical-align: -0.06em;
+	filter: none;
+	border-radius: 50%;
+	box-shadow: -0.02em 0.07em 0 #000;
+}
+
+/* Flavor text below a rule that fades out at its ends. */
 .box .flavor {
-	margin-top: 0.5em;
+	position: relative;
+	margin-top: 0.45em;
 	padding-top: 0.45em;
-	border-top: calc(0.8 * var(--u)) solid rgba(0, 0, 0, 0.3);
 	font-style: italic;
+}
+
+.box .flavor::before {
+	position: absolute;
+	top: 0;
+	right: 3%;
+	left: 3%;
+	height: calc(4 * var(--u));
+	background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.55) 15%, rgba(0, 0, 0, 0.55) 85%, transparent);
+	content: '';
 }
 
 .pt-box {
 	position: absolute;
-	top: calc(466 * var(--u));
-	left: calc(273 * var(--u));
-	width: calc(81 * var(--u));
-	height: calc(42 * var(--u));
+	top: calc(1858 * var(--u));
+	left: calc(1136 * var(--u));
+	width: calc(282 * var(--u));
+	height: calc(154 * var(--u));
 	pointer-events: none;
 }
 
 .stats {
 	position: absolute;
-	top: calc(469 * var(--u) + 0.08em);
-	left: calc(286 * var(--u));
-	width: calc(60 * var(--u));
-	height: calc(28 * var(--u));
-	font-size: calc(17 * var(--u));
-	line-height: calc(28 * var(--u));
-	text-align: center;
+	top: calc(1886 * var(--u) + 0.08em);
+	left: calc(1191 * var(--u));
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: calc(205 * var(--u));
+	height: calc(86 * var(--u));
+	font-family: 'Tori Beleren', 'Georgia', serif;
+	font-size: calc(78 * var(--u));
+	font-weight: 700;
+	line-height: 1;
 	white-space: nowrap;
 }
 
-/* The collector line on the black border under the frame. */
+/* Collector lines on the black border: rarity and number, then set, language and artist. */
 .footer {
 	position: absolute;
-	top: calc(489 * var(--u));
-	left: calc(26 * var(--u));
+	top: calc(1962 * var(--u));
+	left: calc(97 * var(--u));
 	display: flex;
 	flex-direction: column;
-	width: calc(240 * var(--u));
-	color: #f2ede8;
-	font: 400 calc(7.5 * var(--u)) / calc(9.5 * var(--u)) system-ui, sans-serif;
-	letter-spacing: 0.05em;
+	width: calc(1030 * var(--u));
+	color: #fff;
+	font: 500 calc(36 * var(--u)) / calc(38 * var(--u)) 'Tori Gotham', system-ui, sans-serif;
+	letter-spacing: 0.04em;
 	white-space: nowrap;
+}
+
+.brush {
+	width: calc(44 * var(--u));
+	height: calc(22 * var(--u));
+	margin: 0 calc(4 * var(--u)) 0 calc(10 * var(--u));
+	vertical-align: -0.05em;
+	fill: #fff;
 }
 
 .artist {
-	overflow: hidden;
-	text-overflow: ellipsis;
+	font-family: 'Tori Beleren Small Caps', 'Tori Beleren', serif;
+	font-weight: 700;
+	letter-spacing: 0.02em;
 }

@@ -1,33 +1,28 @@
-import React, { useRef, useState } from 'react';
+import React, { type CSSProperties, useRef, useState } from 'react';
 import { type CardFrame, cardFrame } from '../../../../domain/models/card-frame';
 import type { DeckColor } from '../../../../domain/deck/deck-colors';
 import { ManaCost, ManaText } from '../ManaCost/ManaCost';
 import { SetSymbol } from './SetSymbol';
 import { useShrinkToFit } from './use-shrink-to-fit';
 
-import acard from '../../../../assets/card-frames/acard.webp?url';
-import apt from '../../../../assets/card-frames/apt.webp?url';
-import bcard from '../../../../assets/card-frames/bcard.webp?url';
-import blcard from '../../../../assets/card-frames/blcard.webp?url';
-import bpt from '../../../../assets/card-frames/bpt.webp?url';
-import ccard from '../../../../assets/card-frames/ccard.webp?url';
-import clcard from '../../../../assets/card-frames/clcard.webp?url';
-import cpt from '../../../../assets/card-frames/cpt.webp?url';
-import gcard from '../../../../assets/card-frames/gcard.webp?url';
-import glcard from '../../../../assets/card-frames/glcard.webp?url';
-import gpt from '../../../../assets/card-frames/gpt.webp?url';
-import mcard from '../../../../assets/card-frames/mcard.webp?url';
-import mlcard from '../../../../assets/card-frames/mlcard.webp?url';
-import mpt from '../../../../assets/card-frames/mpt.webp?url';
-import rcard from '../../../../assets/card-frames/rcard.webp?url';
-import rlcard from '../../../../assets/card-frames/rlcard.webp?url';
-import rpt from '../../../../assets/card-frames/rpt.webp?url';
-import ucard from '../../../../assets/card-frames/ucard.webp?url';
-import ulcard from '../../../../assets/card-frames/ulcard.webp?url';
-import upt from '../../../../assets/card-frames/upt.webp?url';
-import wcard from '../../../../assets/card-frames/wcard.webp?url';
-import wlcard from '../../../../assets/card-frames/wlcard.webp?url';
-import wpt from '../../../../assets/card-frames/wpt.webp?url';
+import frameA from '../../../../assets/card-frames/frame-a.webp?url';
+import frameB from '../../../../assets/card-frames/frame-b.webp?url';
+import frameG from '../../../../assets/card-frames/frame-g.webp?url';
+import frameL from '../../../../assets/card-frames/frame-l.webp?url';
+import frameM from '../../../../assets/card-frames/frame-m.webp?url';
+import frameR from '../../../../assets/card-frames/frame-r.webp?url';
+import frameU from '../../../../assets/card-frames/frame-u.webp?url';
+import frameV from '../../../../assets/card-frames/frame-v.webp?url';
+import frameW from '../../../../assets/card-frames/frame-w.webp?url';
+import maskPinline from '../../../../assets/card-frames/mask-pinline.webp?url';
+import ptA from '../../../../assets/card-frames/pt-a.webp?url';
+import ptB from '../../../../assets/card-frames/pt-b.webp?url';
+import ptC from '../../../../assets/card-frames/pt-c.webp?url';
+import ptG from '../../../../assets/card-frames/pt-g.webp?url';
+import ptM from '../../../../assets/card-frames/pt-m.webp?url';
+import ptR from '../../../../assets/card-frames/pt-r.webp?url';
+import ptU from '../../../../assets/card-frames/pt-u.webp?url';
+import ptW from '../../../../assets/card-frames/pt-w.webp?url';
 
 import styles from './rendered-card.module.css';
 
@@ -50,24 +45,54 @@ export type RenderedCardFace = {
 	art: string | null;
 };
 
-/** A frame and power/toughness box image; a second frame blends over the right half for two-color frames. */
-type FrameImages = { frame: string; right: string | null; pt: string };
+/** A layer of frame image drawn over the card: all of it, or through a mask. */
+type FrameLayer = { src: string; mask: string | null };
 
-const MONO_FRAMES: Record<DeckColor, string> = { W: wcard, U: ucard, B: bcard, R: rcard, G: gcard };
-const LAND_FRAMES: Record<DeckColor, string> = { W: wlcard, U: ulcard, B: blcard, R: rlcard, G: glcard };
-const PT_BOXES: Record<DeckColor, string> = { W: wpt, U: upt, B: bpt, R: rpt, G: gpt };
+const FRAMES: Record<DeckColor, string> = { W: frameW, U: frameU, B: frameB, R: frameR, G: frameG };
+const PT_BOXES: Record<DeckColor, string> = { W: ptW, U: ptU, B: ptB, R: ptR, G: ptG };
+// A two-color frame's second color, across the right side as printed hybrid cards blend.
+const RIGHT_SIDE = 'linear-gradient(90deg, transparent 44%, #000 56%)';
 
-/** The M15 frame images for a frame: one color, a split of two, gold, artifact, colorless or land. */
-function frameImages(frame: CardFrame): FrameImages {
-	if (frame.kind === 'mono') return { frame: MONO_FRAMES[frame.color], right: null, pt: PT_BOXES[frame.color] };
-	if (frame.kind === 'hybrid') return { frame: MONO_FRAMES[frame.colors[0]], right: MONO_FRAMES[frame.colors[1]], pt: PT_BOXES[frame.colors[1]] };
-	if (frame.kind === 'gold') return { frame: mcard, right: null, pt: mpt };
-	if (frame.kind === 'artifact') return { frame: acard, right: null, pt: apt };
-	if (frame.kind === 'colorless') return { frame: ccard, right: null, pt: cpt };
-	if (frame.colors.length === 0) return { frame: clcard, right: null, pt: cpt };
-	if (frame.colors.length === 1) return { frame: LAND_FRAMES[frame.colors[0]], right: null, pt: cpt };
-	if (frame.colors.length === 2) return { frame: LAND_FRAMES[frame.colors[0]], right: LAND_FRAMES[frame.colors[1]], pt: cpt };
-	return { frame: mlcard, right: null, pt: cpt };
+/**
+ * The M15 frame layers and power/toughness box for a frame, bottom first: one color, a
+ * hybrid's two colors split left and right, gold, artifact (vehicles their own), and lands
+ * on the land frame with pinlines in the colors of mana they make.
+ */
+function frameLayers(frame: CardFrame, type: string | null): { layers: FrameLayer[]; pt: string } {
+	if (frame.kind === 'mono') return { layers: [{ src: FRAMES[frame.color], mask: null }], pt: PT_BOXES[frame.color] };
+	if (frame.kind === 'hybrid') {
+		return {
+			layers: [
+				{ src: FRAMES[frame.colors[0]], mask: null },
+				{ src: FRAMES[frame.colors[1]], mask: RIGHT_SIDE }
+			],
+			pt: PT_BOXES[frame.colors[1]]
+		};
+	}
+	if (frame.kind === 'gold') return { layers: [{ src: frameM, mask: null }], pt: ptM };
+	if (frame.kind === 'artifact') return { layers: [{ src: /\bVehicle\b/.test(type ?? '') ? frameV : frameA, mask: null }], pt: ptA };
+	if (frame.kind === 'colorless') return { layers: [{ src: frameA, mask: null }], pt: ptC };
+	const pinline = `url(${maskPinline})`;
+	const land: FrameLayer = { src: frameL, mask: null };
+	if (frame.colors.length === 1) return { layers: [land, { src: FRAMES[frame.colors[0]], mask: pinline }], pt: ptC };
+	if (frame.colors.length === 2) {
+		return {
+			layers: [
+				land,
+				{ src: FRAMES[frame.colors[0]], mask: pinline },
+				{ src: FRAMES[frame.colors[1]], mask: `${pinline}, ${RIGHT_SIDE}` }
+			],
+			pt: ptC
+		};
+	}
+	if (frame.colors.length > 2) return { layers: [land, { src: frameM, mask: pinline }], pt: ptC };
+	return { layers: [land], pt: ptC };
+}
+
+/** A masked layer's style: every mask image must show for the layer to (mask-composite: intersect). */
+function layerStyle(layer: FrameLayer): CSSProperties | undefined {
+	if (!layer.mask) return undefined;
+	return { maskImage: layer.mask, WebkitMaskImage: layer.mask, maskSize: '100% 100%', maskComposite: 'intersect', WebkitMaskComposite: 'source-in' } as CSSProperties;
 }
 
 /** Power and toughness, or loyalty, or defense; null for cards with none. */
@@ -76,13 +101,19 @@ function stats(face: RenderedCardFace): string | null {
 	return face.loyalty ?? face.defense;
 }
 
+/** Rules text as a card prints it: MPlantin has no minus sign (U+2212), so loyalty costs use a hyphen. */
+function printedText(line: string): string {
+	return line.replace(/\u2212/g, '-');
+}
+
 const RARITY_LETTERS: Record<string, string> = { common: 'C', uncommon: 'U', rare: 'R', mythic: 'M', special: 'S', bonus: 'B' };
 
 /**
  * A card drawn from its text, for when its image cannot be shown: the M15 frame for its
- * colors (assets/card-frames) with its art in the frame's window, name, cost, type line,
- * set symbol, rules text and stats laid where a printed card has them. The frames, art and
- * fonts come through ShellWorker like any asset, so it draws offline once they are stored.
+ * colors (assets/card-frames) over its art, with its name, cost, type line, set symbol,
+ * rules text, stats and collector lines in a printed card's fonts, sizes and places. The
+ * frames, art and fonts come through ShellWorker like any asset, so it draws offline once
+ * they are stored.
  */
 export function RenderedCard(props: { face: RenderedCardFace; className?: string }) {
 	const { face, className } = props;
@@ -96,15 +127,14 @@ export function RenderedCard(props: { face: RenderedCardFace; className?: string
 	useShrinkToFit(box, text, 'height', 0.5);
 
 	const frame = cardFrame({ manaCost: face.manaCost, type: face.type, text: face.text });
-	const images = frameImages(frame);
+	const { layers, pt } = frameLayers(frame, face.type);
 	const cardStats = stats(face);
 	const art = face.art && face.art !== failedArt ? face.art : null;
 	const rarity = face.rarity ? RARITY_LETTERS[face.rarity.toLowerCase()] ?? null : null;
+	const number = face.number && /^\d+$/.test(face.number) ? face.number.padStart(4, '0') : face.number;
 
 	return (
 		<article className={`${styles['card']} ${className ?? ''}`} data-frame={frame.kind} aria-label={face.name}>
-			<img className={styles['frame']} src={images.frame} alt="" draggable={false} />
-			{images.right && <img className={`${styles['frame']} ${styles['right']}`} src={images.right} alt="" draggable={false} />}
 			<div className={styles['art']}>
 				{art && (
 					<img
@@ -117,6 +147,9 @@ export function RenderedCard(props: { face: RenderedCardFace; className?: string
 					/>
 				)}
 			</div>
+			{layers.map((layer, index) => (
+				<img key={index} className={styles['frame']} style={layerStyle(layer)} src={layer.src} alt="" draggable={false} />
+			))}
 			<div className={styles['title']}>
 				<span ref={name} className={styles['name']}>
 					{face.name}
@@ -136,22 +169,30 @@ export function RenderedCard(props: { face: RenderedCardFace; className?: string
 			<div ref={box} className={styles['box']}>
 				{face.text?.split('\n').map((line, i) => (
 					<p key={i}>
-						<ManaText text={line} />
+						<ManaText text={printedText(line)} />
 					</p>
 				))}
 				{face.flavorText && <p className={styles['flavor']}>{face.flavorText}</p>}
 			</div>
 			{cardStats && (
 				<>
-					<img className={styles['pt-box']} src={images.pt} alt="" draggable={false} />
+					<img className={styles['pt-box']} src={pt} alt="" draggable={false} />
 					<div className={styles['stats']}>{cardStats}</div>
 				</>
 			)}
 			<footer className={styles['footer']}>
-				<span>{[face.number, rarity].filter(Boolean).join(' ')}</span>
+				<span>{[rarity, number].filter(Boolean).join(' ')}</span>
 				<span>
-					{face.setCode}
-					{face.artist && <span className={styles['artist']}> · Illus. {face.artist}</span>}
+					{[face.setCode, 'EN'].filter(Boolean).join(' • ')}
+					{face.artist && (
+						<>
+							{' '}
+							<svg className={styles['brush']} viewBox="0 0 24 12" aria-hidden="true">
+								<path d="M0 7.5C3 4 6 4.5 8.5 5.5l2-1.5c.6-.4 1.4-.4 1.9.1L24 1.5 13 7.8c-.2.7-.8 1.2-1.5 1.3l-2.4.4C6.7 11.6 3 12 0 7.5z" />
+							</svg>
+							<span className={styles['artist']}>{face.artist}</span>
+						</>
+					)}
 				</span>
 			</footer>
 		</article>

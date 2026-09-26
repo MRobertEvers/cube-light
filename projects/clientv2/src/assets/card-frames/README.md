@@ -1,14 +1,15 @@
 # Card frames
 
-M15 card frames and power/toughness boxes for `RenderedCard`, from Magic Set Editor's
-[Basic M15 Magic Pack](https://github.com/MagicSetEditorPacks/Basic-M15-Magic-Pack)
-(`data/magic-modules.mse-include/cards/375 m15 simple/` and `pts/375 m15/`), converted to
-WebP. Each frame is 375 × 523; `rendered-card.module.css` places the card's fields at the
-pack's own coordinates (`data/magic-m15.mse-style/style`).
+M15 card frames for `RenderedCard`, from the archived Card Conjurer
+(https://github.com/fiahdrgn473/CardConjurer, `data/images/cardImages/m15/`), vendored on
+2026-09-26 and converted to WebP. Frames are drawn on a 1500 × 2100 card (stored at 1050
+wide); `rendered-card.module.css` places the card's fields at Card Conjurer's M15
+coordinates (`data/scripts/versions/m15/version.js` and `regular.js`).
 
-- `{w,u,b,r,g}card`: one color; `mcard` gold, `acard` artifact, `ccard` colorless.
-- `{w,u,b,r,g,m,c}lcard`: lands, by the colors of mana they make.
-- `{w,u,b,r,g,m,a,c}pt`: power/toughness boxes.
+- `frame-{w,u,b,r,g}`: one color; `frame-m` gold, `frame-a` artifact, `frame-v` vehicle,
+  `frame-l` land. Each is open over the art.
+- `pt-{w,u,b,r,g,m,a,c}`: power/toughness boxes, 282 × 154 at (1136, 1858).
+- `mask-pinline`: the frame's pinlines, through which a land shows the colors of mana it makes.
 
-The frames recreate Wizards of the Coast's card frame design. The pack publishes no
-license; they are used here, as in Magic Set Editor, for personal card previews.
+The frames recreate Wizards of the Coast's card frame design and come with no license:
+fine for personal card previews, not for publishing.

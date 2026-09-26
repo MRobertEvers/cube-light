@@ -6,10 +6,12 @@
  * - set-symbols.svg: one <symbol id="<icon>"> per distinct icon, fills removed so CSS can
  *   color them by rarity, and path numbers rounded to what a small symbol can show.
  * - set-icons.json: lower-case set code → icon id. Many sets (promos, tokens) share one.
+ * - set-symbol-sizes.json: each icon's size once cropped (tools/tighten-set-symbols.mjs).
  */
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { tightenSetSymbols } from './tighten-set-symbols.mjs';
 
 const OUT = path.resolve(import.meta.dirname, '../src/assets/set-symbols');
 const HEADERS = { 'User-Agent': 'ToriMTG/1.0', Accept: 'application/json;q=0.9,*/*;q=0.8' };
@@ -121,6 +123,7 @@ async function main() {
 	const sorted = Object.fromEntries(Object.entries(setIcons).sort());
 	await fs.writeFile(path.join(OUT, 'set-icons.json'), JSON.stringify(sorted) + '\n');
 	console.log(`${symbols.length} icons for ${sets.length} sets${missing.length ? `; missing ${missing.join(', ')}` : ''}`);
+	await tightenSetSymbols();
 }
 
 await main();

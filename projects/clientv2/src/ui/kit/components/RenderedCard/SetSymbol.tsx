@@ -1,10 +1,24 @@
-import React, { useId } from 'react';
+import React, { type CSSProperties, useId } from 'react';
 import setIcons from '../../../../assets/set-symbols/set-icons.json';
+import setSymbolSizes from '../../../../assets/set-symbols/set-symbol-sizes.json';
 import spriteUrl from '../../../../assets/set-symbols/set-symbols.svg?url';
 
 import styles from './rendered-card.module.css';
 
 const ICONS: Record<string, string> = setIcons;
+const SIZES: Record<string, number[]> = setSymbolSizes;
+
+// The set symbol's place on an M15 card, in its 1500-wide units: as tall as 86, at most 180 wide.
+const MAX_WIDTH = 180;
+const MAX_HEIGHT = 86;
+
+/** The symbol's width and height on the card: as large as fits its place, keeping its shape. */
+function fitted(icon: string): [number, number] {
+	const size = SIZES[icon];
+	if (!size) return [MAX_HEIGHT, MAX_HEIGHT];
+	const scale = Math.min(MAX_WIDTH / size[0], MAX_HEIGHT / size[1]);
+	return [size[0] * scale, size[1] * scale];
+}
 
 /** Each rarity's symbol colors, top to bottom, as printed. */
 const RARITY_STOPS: Record<string, [string, string]> = {
@@ -18,8 +32,8 @@ const RARITY_STOPS: Record<string, [string, string]> = {
 
 /**
  * A set's expansion symbol in its rarity's colors, from the vendored sprite
- * (tools/vendor-set-symbols.mjs), so it draws with no network. Sets the sprite does not
- * know show the generic symbol.
+ * (tools/vendor-set-symbols.mjs), so it draws with no network, sized to fit its place on
+ * the card as printed. Sets the sprite does not know show the generic symbol.
  */
 export function SetSymbol(props: { setCode: string; rarity: string | null }) {
 	const { setCode, rarity } = props;
@@ -27,8 +41,9 @@ export function SetSymbol(props: { setCode: string; rarity: string | null }) {
 	const icon = ICONS[setCode.toLowerCase()] ?? 'default';
 	const known = rarity ? rarity.toLowerCase() : 'common';
 	const stops = RARITY_STOPS[known] ?? RARITY_STOPS.common;
+	const size = fitted(icon);
 	return (
-		<svg className={styles['set-symbol']} data-rarity={known} aria-hidden="true">
+		<svg className={styles['set-symbol']} style={{ '--symbol-width': size[0], '--symbol-height': size[1] } as CSSProperties} data-rarity={known} aria-hidden="true">
 			<defs>
 				<linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
 					<stop offset="0" stopColor={stops[0]} />

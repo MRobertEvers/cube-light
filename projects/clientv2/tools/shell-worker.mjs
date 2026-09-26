@@ -24,7 +24,7 @@ export async function buildShellWorker(options) {
         // The OCR runtime and models are tens of megabytes and only needed for scanning; they are cached on first use.
         const optionalOcr = /^(ort|worker-entry|experimental-scanner|card-ocr|title-index|paddle-region-reader)/.test(name);
         // Images include the card frames offline cards are drawn on, which no online view shows first.
-        if (!optionalOcr && /\.(js|css|wasm|woff2?|svg|png|jpg|webp)$/.test(name)) files.push(`/assets/${name}`);
+        if (!optionalOcr && /\.(js|css|wasm|woff2?|ttf|svg|png|jpg|webp)$/.test(name)) files.push(`/assets/${name}`);
     }
     const digest = createHash('sha256');
     for (const file of files) digest.update(await readFile(path.join(outDir, file.slice(1))));
@@ -107,6 +107,7 @@ function contentType(file) {
         '.wasm': 'application/wasm',
         '.woff': 'font/woff',
         '.woff2': 'font/woff2',
+        '.ttf': 'font/ttf',
         '.png': 'image/png',
         '.jpg': 'image/jpeg',
         '.webp': 'image/webp',
