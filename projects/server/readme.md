@@ -78,7 +78,7 @@ fetches each card's default printing first.
 # Art crops (~10 GB) and full PNGs (~200 GB) of every printing, e.g. onto the NAS.
 python3 tools/scripts/card-images.py mirror --dest /Volumes/<share>/card-images --variants art_crop png
 
-# The offline art pack: each card's default-printing art at 160 px wide (WebP, ~73 MB for
+# The offline art pack: each card's default-printing art at 240 px wide (WebP, ~137 MB for
 # 35,000 cards) in 5 MB chunks, written beside AllPrintings.sqlite and linked as src/assets/card-art.
 python3 tools/scripts/card-images.py art-pack --source /Volumes/<share>/card-images
 ```

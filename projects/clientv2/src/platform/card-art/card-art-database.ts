@@ -14,6 +14,8 @@ export const META = 'meta';
 export type CardArtIndex = {
 	format: number;
 	version: string;
+	/** The art's width in pixels; indexes built before it was recorded hold 160 px art. */
+	width?: number;
 	cards: number;
 	bytes: number;
 	chunks: Array<{ file: string; bytes: number; sha256: string }>;

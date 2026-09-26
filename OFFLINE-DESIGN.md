@@ -1105,20 +1105,22 @@ yet get the catalog shape `pack` (text, no images) until an `overview` or `detai
 arrives, so an offline-added card files under its real type and name.
 
 The offline card art pack (`projects/server/tools/scripts/card-images.py art-pack`) holds
-each card's default-printing art as a 160 px WebP, about 73 MB in 5 MB chunks, keyed by
+each card's default-printing art as a 240 px WebP, about 137 MB in 5 MB chunks, keyed by
 Scryfall id. Once the service worker is active the app offers it one time; Profile
 installs, updates and removes it. It lives in its own IndexedDB database
 (`torimtg-card-art`), and ShellWorker reads it to answer `/api/images/art_crop/<id>.jpg`
 when neither its cache nor the server can.
 
-Offline, card previews (the dialog and the hover card) draw the card from its text
-instead of showing a blank: `RenderedCard` puts the art in a frame colored from the
-mana cost (mono, hybrid split, gold, artifact, colorless, or a land tinted by the
-mana it makes; `domain/models/card-frame.ts`). The frame shows the name and cost,
+Offline, card previews (the dialog and the hover card) and the tabletop boards draw the
+card from its text instead of showing a blank: `RenderedCard` puts the art in the M15
+frame for the mana cost (mono, hybrid split, gold, artifact, colorless, or a land by
+the mana it makes; `domain/models/card-frame.ts`). The frame shows the name and cost,
 the type line with the set's symbol in its rarity's colors, the rules and flavor
-text shrunk to fit, and the stats. The frames are CSS. The fonts (Beleren, EB Garamond)
-and a sprite of every set symbol (`tools/vendor-set-symbols.mjs`) are vendored
-under `src/assets/`, so the release precaches them like any other asset.
+text shrunk to fit, and the stats, each at the frame's own coordinates. The frame
+images come from Magic Set Editor's M15 pack (`src/assets/card-frames/`). They, the
+fonts (Beleren, EB Garamond) and a sprite of every set symbol
+(`tools/vendor-set-symbols.mjs`) are vendored under `src/assets/`, so the release
+precaches them like any other asset.
 
 Downloading large OCR models/card packs is explicit, resumable, and size-aware.
 Do not include every model in the mandatory install transaction. Show offline

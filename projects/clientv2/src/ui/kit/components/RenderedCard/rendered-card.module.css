@@ -1,7 +1,8 @@
 /*
- * A card drawn from its text. Every size is a share of the card's width (cqw), so it
- * reads the same at hover size and full screen. Fonts: Beleren for the name, type line
- * and stats, EB Garamond for rules text (see assets/fonts/README.md).
+ * A card drawn from its text on an M15 frame (assets/card-frames). Every place and size is
+ * in the frame's own units, 375 to the card's width (--u), so it reads the same at hover
+ * size and full screen. Fonts: Beleren for the name, type line and stats, EB Garamond for
+ * rules text (see assets/fonts/README.md).
  */
 
 @font-face {
@@ -29,90 +30,43 @@
 }
 
 .card {
+	--u: calc(100cqw / 375);
+
 	container-type: inline-size;
 	position: relative;
-	display: flex;
-	flex-direction: column;
+	display: block;
 	box-sizing: border-box;
 	width: 100%;
-	aspect-ratio: 63 / 88;
-	padding: 3.6% 3.6% 0;
+	aspect-ratio: 375 / 523;
 	overflow: hidden;
-	border-radius: 4.6% / 3.3%;
-	background: #141111;
-	color: #161312;
+	border-radius: 4.8% / 3.44%;
+	background: #0d0b0b;
+	color: #111;
 	text-align: left;
 }
 
+/* The frame fills the card; a two-color frame's second color shows across its right side. */
 .frame {
-	position: relative;
-	display: flex;
-	flex: 1;
-	flex-direction: column;
-	gap: 1.3cqw;
-	min-height: 0;
-	padding: 2.2cqw 2.2cqw 3.4cqw;
-	border-radius: 1.4cqw 1.4cqw 3cqw 3cqw;
-	background:
-		radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.22), transparent 42%),
-		radial-gradient(circle at 85% 70%, rgba(0, 0, 0, 0.16), transparent 50%),
-		linear-gradient(90deg, var(--frame-a) 40%, var(--frame-b) 60%);
-	box-shadow: inset 0 0 0 0.35cqw rgba(0, 0, 0, 0.25);
+	position: absolute;
+	inset: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
 }
 
-.bar {
-	display: flex;
-	flex: none;
-	align-items: center;
-	justify-content: space-between;
-	gap: 1.5cqw;
-	min-width: 0;
-	height: 7.6cqw;
-	padding: 0 2.4cqw;
-	border-radius: 1.6cqw / 50%;
-	background:
-		linear-gradient(180deg, rgba(255, 255, 255, 0.45), transparent 55%),
-		linear-gradient(90deg, var(--bar-a) 40%, var(--bar-b) 60%);
-	box-shadow:
-		0 0.35cqw 0 rgba(0, 0, 0, 0.35),
-		inset 0 0 0 0.3cqw rgba(0, 0, 0, 0.3);
-}
-
-.name,
-.type {
-	flex: 1;
-	min-width: 0;
-	overflow: hidden;
-	font-family: 'Tori Beleren', 'Georgia', serif;
-	font-weight: 700;
-	line-height: 1;
-	white-space: nowrap;
-}
-
-.name {
-	font-size: calc(5.4cqw * var(--fit, 1));
-}
-
-.type {
-	font-size: calc(4.6cqw * var(--fit, 1));
-}
-
-.cost {
-	--mana-symbol-size: 4.6cqw;
-
-	display: flex;
-	flex: none;
+.right {
+	mask-image: linear-gradient(90deg, transparent 42%, #000 58%);
 }
 
 .art {
-	flex: none;
-	aspect-ratio: 626 / 457;
-	margin: 0 1.6cqw;
+	position: absolute;
+	top: calc(59 * var(--u));
+	left: calc(29 * var(--u));
+	width: calc(316 * var(--u));
+	height: calc(231 * var(--u));
 	overflow: hidden;
-	background:
-		radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.35), transparent 60%),
-		linear-gradient(135deg, var(--box-a), var(--frame-a) 60%, var(--frame-b));
-	box-shadow: 0 0 0 0.4cqw rgba(0, 0, 0, 0.45);
+	background: linear-gradient(160deg, #3b3632, #1b1817);
 }
 
 .art img {
@@ -122,31 +76,95 @@
 	object-fit: cover;
 }
 
+.title,
+.type-line {
+	position: absolute;
+	left: calc(32 * var(--u));
+	display: flex;
+	align-items: center;
+	gap: calc(4 * var(--u));
+	min-width: 0;
+}
+
+/* Each lies exactly on its bar's light face in the frame image, so centering centers on the bar. */
+.title {
+	top: calc(26 * var(--u));
+	width: calc(314 * var(--u));
+	height: calc(26 * var(--u));
+}
+
+.type-line {
+	top: calc(295 * var(--u));
+	width: calc(312 * var(--u));
+	height: calc(24 * var(--u));
+}
+
+/* Beleren's capitals sit 0.08em above the middle of its line box; `top` centers them. */
+.name,
+.type,
+.stats {
+	position: relative;
+	top: 0.08em;
+	font-family: 'Tori Beleren', 'Georgia', serif;
+	font-weight: 700;
+}
+
+.name,
+.type {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	line-height: 1.1;
+	white-space: nowrap;
+}
+
+.name {
+	font-size: calc(16.5 * var(--u) * var(--fit, 1));
+}
+
+.type {
+	font-size: calc(13.5 * var(--u) * var(--fit, 1));
+}
+
+.cost {
+	--mana-symbol-size: calc(16 * var(--u));
+
+	display: flex;
+	flex: none;
+}
+
+.cost > span {
+	gap: calc(1.5 * var(--u));
+}
+
 .set-symbol {
 	flex: none;
-	width: 5.2cqw;
-	height: 5.2cqw;
+	width: calc(19 * var(--u));
+	height: calc(19 * var(--u));
 	overflow: visible;
-	filter: drop-shadow(0 0 0.25cqw rgba(0, 0, 0, 0.85));
+	filter: drop-shadow(0 0 calc(0.6 * var(--u)) rgba(0, 0, 0, 0.9));
 }
 
 .set-symbol[data-rarity='common'] {
-	filter: drop-shadow(0 0 0.25cqw rgba(255, 255, 255, 0.9));
+	filter: drop-shadow(0 0 calc(0.6 * var(--u)) rgba(255, 255, 255, 0.95));
 }
 
+/* Rules and flavor text, centered in the box as printed and shrunk to fit it. */
 .box {
-	flex: 1;
-	min-height: 0;
-	margin: 0 1.6cqw;
-	padding: 2.2cqw 3cqw;
+	position: absolute;
+	top: calc(327 * var(--u));
+	left: calc(29 * var(--u));
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	box-sizing: border-box;
+	width: calc(314 * var(--u));
+	height: calc(152 * var(--u));
+	padding: calc(3 * var(--u)) calc(6 * var(--u)) calc(3 * var(--u)) calc(8 * var(--u));
 	overflow: hidden;
-	background:
-		linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 30%),
-		linear-gradient(90deg, var(--box-a) 40%, var(--box-b) 60%);
-	box-shadow: 0 0 0 0.4cqw rgba(0, 0, 0, 0.35);
 	font-family: 'Tori Garamond', 'Georgia', serif;
-	font-size: calc(4.9cqw * var(--fit, 1));
-	line-height: 1.18;
+	font-size: calc(14.5 * var(--u) * var(--fit, 1));
+	line-height: 1.16;
 }
 
 .box p {
@@ -154,46 +172,48 @@
 }
 
 .box p + p {
-	margin-top: 0.45em;
+	margin-top: 0.4em;
 }
 
 .box .flavor {
+	margin-top: 0.5em;
 	padding-top: 0.45em;
-	border-top: 0.25cqw solid rgba(0, 0, 0, 0.2);
+	border-top: calc(0.8 * var(--u)) solid rgba(0, 0, 0, 0.3);
 	font-style: italic;
+}
+
+.pt-box {
+	position: absolute;
+	top: calc(466 * var(--u));
+	left: calc(273 * var(--u));
+	width: calc(81 * var(--u));
+	height: calc(42 * var(--u));
+	pointer-events: none;
 }
 
 .stats {
 	position: absolute;
-	right: 2.6cqw;
-	bottom: 0.8cqw;
-	min-width: 13cqw;
-	padding: 1cqw 2cqw;
-	border-radius: 1.4cqw;
-	background:
-		linear-gradient(180deg, rgba(255, 255, 255, 0.45), transparent 55%),
-		var(--bar-b);
-	box-shadow:
-		0 0.35cqw 0 rgba(0, 0, 0, 0.35),
-		inset 0 0 0 0.3cqw rgba(0, 0, 0, 0.3);
-	font-family: 'Tori Beleren', 'Georgia', serif;
-	font-size: 5.6cqw;
-	font-weight: 700;
-	line-height: 1;
+	top: calc(469 * var(--u) + 0.08em);
+	left: calc(286 * var(--u));
+	width: calc(60 * var(--u));
+	height: calc(28 * var(--u));
+	font-size: calc(17 * var(--u));
+	line-height: calc(28 * var(--u));
 	text-align: center;
 	white-space: nowrap;
 }
 
+/* The collector line on the black border under the frame. */
 .footer {
+	position: absolute;
+	top: calc(489 * var(--u));
+	left: calc(26 * var(--u));
 	display: flex;
-	flex: none;
-	justify-content: space-between;
-	gap: 3cqw;
-	height: 6.2cqw;
-	padding: 0 2cqw;
-	color: #efe9e4;
-	font: 400 2.6cqw/6.2cqw system-ui, sans-serif;
-	letter-spacing: 0.04em;
+	flex-direction: column;
+	width: calc(240 * var(--u));
+	color: #f2ede8;
+	font: 400 calc(7.5 * var(--u)) / calc(9.5 * var(--u)) system-ui, sans-serif;
+	letter-spacing: 0.05em;
 	white-space: nowrap;
 }
 

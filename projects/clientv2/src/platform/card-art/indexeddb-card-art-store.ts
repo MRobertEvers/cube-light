@@ -25,7 +25,7 @@ export class IndexedDbCardArtStore implements CardArtStore {
 		const installed = await inCardArtDatabase<InstalledIndex | undefined>([META], 'readonly', (transaction) => transaction.objectStore(META).get('index'));
 		if (!installed) return null;
 		const info = infoOf(installed.index);
-		return { version: info.version, format: info.format, cards: info.cards, bytes: info.bytes, chunks: info.chunks, installedAt: installed.installedAt };
+		return { version: info.version, format: info.format, width: info.width, cards: info.cards, bytes: info.bytes, chunks: info.chunks, installedAt: installed.installedAt };
 	}
 
 	async install(onProgress: (received: number, total: number) => void): Promise<InstalledCardArt> {
@@ -56,7 +56,7 @@ export class IndexedDbCardArtStore implements CardArtStore {
 		});
 		this.index = null;
 		const info = infoOf(index);
-		return { version: info.version, format: info.format, cards: info.cards, bytes: info.bytes, chunks: info.chunks, installedAt: installedAt };
+		return { version: info.version, format: info.format, width: info.width, cards: info.cards, bytes: info.bytes, chunks: info.chunks, installedAt: installedAt };
 	}
 
 	async remove(): Promise<void> {
@@ -102,5 +102,5 @@ export class IndexedDbCardArtStore implements CardArtStore {
 }
 
 function infoOf(index: CardArtIndex): CardArtInfo {
-	return { version: index.version, format: index.format, cards: index.cards, bytes: index.bytes, chunks: index.chunks.length };
+	return { version: index.version, format: index.format, width: index.width ?? 160, cards: index.cards, bytes: index.bytes, chunks: index.chunks.length };
 }

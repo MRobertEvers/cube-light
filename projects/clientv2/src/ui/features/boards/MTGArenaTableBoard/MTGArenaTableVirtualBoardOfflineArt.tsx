@@ -1,4 +1,5 @@
 import React from 'react';
+import { OwnershipBadge } from '../../../kit/components/OwnershipBadge/OwnershipBadge';
 import { ownedNameKey } from '../../../../domain/library/ownership';
 import type { MTGArenaTableVirtualBoardProps, TabletopCardProps } from './mtg-arena-table.types';
 import { TabletopArtFace } from './TabletopArtFace';
@@ -18,13 +19,28 @@ function TabletopCardOfflineArt(props: TabletopCardProps) {
 			onClick={() => onCardEvent({ type: 'view', card, group })}
 		>
 			<span className={owned?.status === 'missing' ? `${styles.face} ${styles.missing}` : styles.face}>
-				<TabletopArtFace group={group} owned={owned} />
+				<TabletopArtFace card={card} />
+				{owned && (
+					<span className={styles.ownership}>
+						<OwnershipBadge row={owned} compact />
+					</span>
+				)}
+				{owned?.status === 'partial' && (
+					<span className={styles.ownedBar} aria-hidden="true">
+						<i style={{ width: `${Math.round((owned.owned / owned.need) * 100)}%` }} />
+					</span>
+				)}
+				{group.count > 1 && (
+					<span className={styles.quantity} aria-hidden="true">
+						×{group.count}
+					</span>
+				)}
 			</span>
 		</button>
 	);
 }
 
-/** Cards drawn from the offline art pack, stacked in columns by mana value: one tabletop board while the server is out of reach. */
+/** Cards drawn from their text and offline art, stacked in columns by mana value: one tabletop board while the server is out of reach. */
 export function MTGArenaTableVirtualBoardOfflineArt(props: MTGArenaTableVirtualBoardProps) {
 	return (
 		<TabletopColumns

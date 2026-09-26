@@ -84,9 +84,10 @@
 	width: min(66vw, 280px);
 }
 
-/* Holds the card's shape before the image loads, so the text below doesn't jump. */
-.desktop-image img,
-.mobile-image img {
+/* Holds the card's shape before the image loads, so the text below doesn't jump. Only the
+   card image itself: a drawn card's own images (mana and set symbols) keep their sizes. */
+.desktop-image > img,
+.mobile-image > img {
 	display: block;
 	width: min(100%, 390px);
 	height: auto;
@@ -139,7 +140,7 @@
 	padding: 16px;
 }
 
-.mobile-image img {
+.mobile-image > img {
 	width: min(66vw, 280px);
 }
 

@@ -329,7 +329,7 @@ def main() -> None:
     pack_parser = commands.add_parser("art-pack", help="build the offline card art pack from mirrored art crops")
     pack_parser.add_argument("--source", required=True, help="the mirror folder (with art_crop/front)")
     pack_parser.add_argument("--out", default=str(DATA / "card-art"), help="where to write CardArt-*.bin and the index")
-    pack_parser.add_argument("--width", type=int, default=160)
+    pack_parser.add_argument("--width", type=int, default=240)
     pack_parser.add_argument("--quality", type=int, default=31)
     index_parser = commands.add_parser("art-index", help="add default printings to an existing art pack's index")
     index_parser.add_argument("--out", default=str(DATA / "card-art"), help="the art pack folder")

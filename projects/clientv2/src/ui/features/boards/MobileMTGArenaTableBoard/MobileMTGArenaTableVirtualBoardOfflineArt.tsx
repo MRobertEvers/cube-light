@@ -1,4 +1,5 @@
 import React from 'react';
+import { OwnershipBadge } from '../../../kit/components/OwnershipBadge/OwnershipBadge';
 import { ownedNameKey } from '../../../../domain/library/ownership';
 import type { TabletopCardProps } from '../MTGArenaTableBoard/mtg-arena-table.types';
 import { TabletopArtFace } from '../MTGArenaTableBoard/TabletopArtFace';
@@ -17,12 +18,27 @@ function TabletopCardOfflineArt(props: TabletopCardProps) {
 			aria-label={`Open ${group.name}, ${group.count} ${group.count === 1 ? 'copy' : 'copies'}`}
 			onClick={() => onCardEvent({ type: 'view', card, group })}
 		>
-			<TabletopArtFace group={group} owned={owned} />
+			<TabletopArtFace card={card} />
+			{owned && (
+				<span className={styles.ownership}>
+					<OwnershipBadge row={owned} compact />
+				</span>
+			)}
+			{owned?.status === 'partial' && (
+				<span className={styles.ownedBar} aria-hidden="true">
+					<i style={{ width: `${Math.round((owned.owned / owned.need) * 100)}%` }} />
+				</span>
+			)}
+			{group.count > 1 && (
+				<span className={styles.quantity} aria-hidden="true">
+					×{group.count}
+				</span>
+			)}
 		</button>
 	);
 }
 
-/** Cards drawn from the offline art pack in one swipeable row per mana value: one phone tabletop board while the server is out of reach. */
+/** Cards drawn from their text and offline art in one swipeable row per mana value: one phone tabletop board while the server is out of reach. */
 export function MobileMTGArenaTableVirtualBoardOfflineArt(
 	props: MobileMTGArenaTableVirtualBoardProps
 ) {

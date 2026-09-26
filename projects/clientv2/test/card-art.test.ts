@@ -76,9 +76,15 @@ test('a changed text pack finds art again', async () => {
 });
 
 test('art whose index format changed is offered as an update', () => {
-	const offered: CardArtInfo = { version: 'v1', format: 2, cards: 1, bytes: 1, chunks: 1 };
-	const installed = { version: 'v1', format: 1, cards: 1, bytes: 1, chunks: 1, installedAt: 'then' };
+	const offered: CardArtInfo = { version: 'v1', format: 2, width: 240, cards: 1, bytes: 1, chunks: 1 };
+	const installed = { version: 'v1', format: 1, width: 240, cards: 1, bytes: 1, chunks: 1, installedAt: 'then' };
 	assert.equal(cardArtUpdateAvailable({ installed: installed, offered: offered, asked: true }), true);
-	const current = { version: 'v1', format: 2, cards: 1, bytes: 1, chunks: 1, installedAt: 'then' };
+	const current = { version: 'v1', format: 2, width: 240, cards: 1, bytes: 1, chunks: 1, installedAt: 'then' };
 	assert.equal(cardArtUpdateAvailable({ installed: current, offered: offered, asked: true }), false);
+});
+
+test('art rebuilt at another width is offered as an update', () => {
+	const offered: CardArtInfo = { version: 'v1', format: 2, width: 240, cards: 1, bytes: 1, chunks: 1 };
+	const installed = { version: 'v1', format: 2, width: 160, cards: 1, bytes: 1, chunks: 1, installedAt: 'then' };
+	assert.equal(cardArtUpdateAvailable({ installed: installed, offered: offered, asked: true }), true);
 });
