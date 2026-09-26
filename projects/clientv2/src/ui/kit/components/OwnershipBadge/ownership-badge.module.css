@@ -39,29 +39,3 @@
 	min-width: 0;
 }
 
-.pips {
-	flex: none;
-	display: inline-flex;
-	gap: 2px;
-}
-
-.pips i {
-	display: inline-block;
-	width: 7px;
-	height: 7px;
-	border: 1px solid #c9c1bd;
-	border-radius: 2px;
-}
-
-.pips i.filled {
-	border-color: #2f6f5e;
-	background: #2f6f5e;
-}
-
-.pipCount {
-	flex: none;
-	color: #6d6764;
-	font-size: 11px;
-	font-weight: 600;
-	font-variant-numeric: tabular-nums;
-}

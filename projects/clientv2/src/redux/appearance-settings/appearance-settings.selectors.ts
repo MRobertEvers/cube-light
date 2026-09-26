@@ -1,8 +1,8 @@
 import type { RootState } from '../root-reducers';
 import { boardVisualizationIdOf } from '../../domain/appearance/board-visualization';
 import type { GroupedDeck } from '../../domain/deck/grouping';
-import { CardPalette, DEFAULT_CARD_PALETTE } from '../../domain/appearance/card-palette';
-import { BannerCrop, DEFAULT_BANNER_CROP } from '../../domain/appearance/banner-crop';
+import { type CardPalette, DEFAULT_CARD_PALETTE } from '../../domain/appearance/card-palette';
+import { type BannerCrop, DEFAULT_BANNER_CROP } from '../../domain/appearance/banner-crop';
 import { normalizeBannerBlendConfig } from '../../domain/appearance/banner-blend';
 import { initialAppearanceSettings } from './appearanceSettingsSlice';
 import type { AppearanceSettingsState } from './appearance-settings.types';

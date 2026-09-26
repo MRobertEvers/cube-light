@@ -10,6 +10,7 @@ import {
 } from '../../domain/appearance/banner-blend';
 import type { DeckDetail } from '../../domain/models/deck';
 import type { DeckApi } from '../api/decks';
+import type { Versioned } from '../api/versioned';
 import type { BannerImages, BannerRenderer } from '../ports';
 
 /** Renders deck banners through the BannerRenderer port and saves the result with the deck. */
@@ -28,7 +29,7 @@ export class BannerBlending {
 		deck: DeckDetail,
 		configArg?: BannerBlendConfig,
 		onProgress?: (message: string, fraction?: number) => void
-	): Promise<void> {
+	): Promise<Versioned<DeckDetail>> {
 		const config = configArg === undefined ? normalizeBannerBlendConfig(deck.bannerBlend?.config) : configArg;
 
 		if (!deck.icon) throw new Error('Choose banner artwork first.');
@@ -44,7 +45,7 @@ export class BannerBlending {
 			total: Math.round(performance.now() - started)
 		}));
 		onProgress?.('Saving generated banners…', 0.97);
-		await this.decks.saveBannerBlend(deckId, {
+		return this.decks.saveBannerBlend(deckId, {
 			source: deck.icon,
 			crop: job.crop,
 			config: job.config,

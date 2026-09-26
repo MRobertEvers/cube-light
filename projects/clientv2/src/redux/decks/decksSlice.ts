@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { DeckSummaries } from '../../domain/models/deck';
-import type { GroupedDeck } from '../../domain/deck/grouping';
+import type { DeckDetail, DeckSummaries } from '../../domain/models/deck';
+import { groupDeck, type GroupedDeck } from '../../domain/deck/grouping';
+import type { Versioned } from '../../engine/api/versioned';
 import { deleteDeckCardGroup, loadDeck, loadDecks, moveDeckCardGroup } from './decks.thunks';
 import type { DecksState } from './decks.types';
 
@@ -34,6 +35,16 @@ export const decksSlice = createSlice({
 			action: PayloadAction<DeckSummaries>
 		) {
 			state.list = action.payload;
+		},
+		/**
+		 * A deck an engine save just returned. Saves dispatch this before they settle, so
+		 * anything that clears a draft on success finds the saved deck already here.
+		 */
+		deckSaved: function (state, action: PayloadAction<{ deckId: string; saved: Versioned<DeckDetail> }>) {
+			const { deckId, saved } = action.payload;
+			if (saved.revision < (state.revisionsById[deckId] || 0)) return;
+			state.byId[deckId] = groupDeck(saved.value);
+			state.revisionsById[deckId] = saved.revision;
 		},
 		setInitialDeck: function (
 			state,
@@ -111,4 +122,4 @@ export const decksSlice = createSlice({
 	}
 });
 
-export const { setInitialDecks, setInitialDeck } = decksSlice.actions;
+export const { setInitialDecks, setInitialDeck, deckSaved } = decksSlice.actions;

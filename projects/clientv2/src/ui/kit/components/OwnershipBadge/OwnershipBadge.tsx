@@ -9,9 +9,6 @@ export type BoardChip = {
 	tone: 'neutral' | 'owned' | 'partial' | 'missing';
 };
 
-/** More copies than this show as a count instead of one pip each. */
-const MAX_PIPS = 8;
-
 function statusLabel(row: RowOwnership): string {
 	if (row.status === 'owned') return 'owned';
 	if (row.status === 'missing') return 'missing';
@@ -24,25 +21,6 @@ export function ownershipDescription(row: RowOwnership): string {
 	if (row.inOtherDecks > 0) parts.push(`${row.free} not in other decks`);
 	if (row.wanted > 0) parts.push(`${row.wanted} wanted`);
 	return parts.join(', ');
-}
-
-/** One pip per copy a deck needs, filled for each owned copy. */
-export function OwnershipPips(props: { row: RowOwnership }) {
-	const { row } = props;
-	if (row.need > MAX_PIPS)
-		return (
-			<span className={styles.pipCount} aria-hidden="true">
-				{Math.min(row.owned, row.need)}/{row.need}
-			</span>
-		);
-	const pips = [];
-	for (let index = 0; index < row.need; index++)
-		pips.push(<i key={index} className={index < row.owned ? styles.filled : undefined} />);
-	return (
-		<span className={styles.pips} aria-hidden="true">
-			{pips}
-		</span>
-	);
 }
 
 /** Owned, partly owned or missing, as a small colored chip. `compact` shows only a mark. */

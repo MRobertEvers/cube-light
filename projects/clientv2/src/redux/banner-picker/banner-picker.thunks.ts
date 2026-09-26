@@ -1,4 +1,5 @@
 import { createAppThunk } from '../thunk';
+import { deckSaved } from '../decks/decksSlice';
 
 export const loadBannerPrintings = createAppThunk(
 	'bannerPicker/loadPrintings',
@@ -14,6 +15,7 @@ export const saveBannerSelection = createAppThunk(
 	'bannerPicker/save',
 	async (args: { deckId: string; uuid: string }, context) => {
 		const { deckId, uuid } = args;
-		await context.extra.banners.chooseCard(deckId, uuid);
+		const saved = await context.extra.banners.chooseCard(deckId, uuid);
+		context.dispatch(deckSaved({ deckId, saved }));
 	}
 );

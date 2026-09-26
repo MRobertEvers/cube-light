@@ -78,8 +78,7 @@ export const editDeckCards = createAppThunk(
 		const { deckId, steps } = input;
 		const { decks } = api.extra;
 		const saved = await decks.applyCardSteps(deckId, steps);
-		if (saved)
-			api.dispatch(decksSlice.actions.setInitialDeck({ deckId, data: groupDeck(saved.value), revision: saved.revision }));
+		if (saved) api.dispatch(decksSlice.actions.deckSaved({ deckId, saved }));
 	}
 );
 

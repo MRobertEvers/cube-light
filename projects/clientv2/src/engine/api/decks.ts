@@ -121,7 +121,7 @@ export class DeckApi {
 	 * Shows this printing's artwork in the deck's banner. With no server the card is saved
 	 * alone, and the deck shows the art this device already knows for it.
 	 */
-	async setBannerCard(deckId: string, cardUuid: string): Promise<void> {
+	async setBannerCard(deckId: string, cardUuid: string): Promise<Versioned<DeckDetail>> {
 		const [{ value: deck }, details] = await Promise.all([this.get(deckId), this.cards.detailsWhenReachable(cardUuid)]);
 		const art = details ? details.art : null;
 		const command: Extract<DomainCommand, { type: 'deck.details' }> = {
@@ -135,36 +135,41 @@ export class DeckApi {
 		const ref = imageRefOf(art);
 		if (ref) await this.sidecars.fetch([ref]);
 		await this.tori.commands.execute(command);
+		return this.saved(deckId);
 	}
 
-	async setPalette(deckId: string, palette: CardPalette | null): Promise<void> {
+	async setPalette(deckId: string, palette: CardPalette | null): Promise<Versioned<DeckDetail>> {
 		await this.tori.commands.execute({ type: 'deck.palette', id: deckId, palette });
+		return this.saved(deckId);
 	}
 
-	async setBannerCrop(deckId: string, crop: BannerCrop): Promise<void> {
+	async setBannerCrop(deckId: string, crop: BannerCrop): Promise<Versioned<DeckDetail>> {
 		await this.tori.commands.execute({ type: 'deck.crop', id: deckId, crop });
+		return this.saved(deckId);
 	}
 
-	async setTopStyle(deckId: string, topStyle: DeckTopStyle): Promise<void> {
+	async setTopStyle(deckId: string, topStyle: DeckTopStyle): Promise<Versioned<DeckDetail>> {
 		await this.tori.commands.execute({ type: 'deck.style', id: deckId, topStyle });
+		return this.saved(deckId);
 	}
 
 	async setBoardVisualization(
 		deckId: string,
 		boardVisualization: string
-	): Promise<void> {
+	): Promise<Versioned<DeckDetail>> {
 		await this.tori.commands.execute({
 			type: 'deck.visualization',
 			id: deckId,
 			boardVisualization
 		});
+		return this.saved(deckId);
 	}
 
 	/** Saves each generated banner image as a local blob, then the blend that uses them. */
 	async saveBannerBlend(
 		deckId: string,
 		blend: GeneratedBannerBlend
-	): Promise<void> {
+	): Promise<Versioned<DeckDetail>> {
 		const images = {} as Record<BannerBlendVariant, string>;
 		for (const variant of ['desktop', 'mobile', 'tile'] as const) {
 			const bytes = Uint8Array.from(atob(blend.images[variant]), (character) =>
@@ -184,6 +189,7 @@ export class DeckApi {
 				images
 			}
 		});
+		return this.saved(deckId);
 	}
 
 	/** Replaces the deck's tags. Blank and repeated tags are dropped. */
@@ -284,6 +290,16 @@ export class DeckApi {
 		} finally {
 			if (this.stepQueues.get(deckId) === next) this.stepQueues.delete(deckId);
 		}
+	}
+
+	/**
+	 * The deck as the command just left it on this device. Saves return it so the caller can
+	 * show it before the change event arrives, instead of briefly showing the old deck.
+	 */
+	private async saved(deckId: string): Promise<Versioned<DeckDetail>> {
+		const snapshot = await this.tori.queries.read<DeckDetail>({ type: 'deck', id: deckId });
+		if (!snapshot.data) throw new Error('This deck was deleted or is not downloaded.');
+		return { value: snapshot.data, revision: snapshot.localRevision };
 	}
 
 	private async commitCardSteps(

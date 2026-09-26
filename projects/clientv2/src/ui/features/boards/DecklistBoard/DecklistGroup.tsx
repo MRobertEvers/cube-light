@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { DeckCardEntry } from '../../../../domain/models/deck';
 import { ManaCost } from '../../../kit/components/ManaCost/ManaCost';
-import { BoardChips, OwnershipBadge, OwnershipPips } from '../../../kit/components/OwnershipBadge/OwnershipBadge';
+import { BoardChips, OwnershipBadge } from '../../../kit/components/OwnershipBadge/OwnershipBadge';
 import { ownedNameKey } from '../../../../domain/library/ownership';
 import type { BoardAnnotations } from '../board.types';
 import { TypeGroup } from '../../../../domain/deck/grouping';
@@ -96,13 +96,8 @@ function CardRow(props: CardRowProps) {
 	const { group, annotations, expanded, onToggle, onCardEvent } = props;
 	const [top] = group.printings;
 	const owned = annotations?.ownership?.[ownedNameKey(group.name)];
-	// Filled pips say "owned" on their own; the chip speaks up only when copies are short.
-	const ownership = owned && (
-		<>
-			<OwnershipPips row={owned} />
-			{owned.status !== 'owned' && <OwnershipBadge row={owned} />}
-		</>
-	);
+	// The chip speaks up only when copies are short.
+	const ownership = owned && owned.status !== 'owned' && <OwnershipBadge row={owned} />;
 	const topPreview = previewHandlers(top, onCardEvent);
 	const printingsId = `printings-${group.board}-${group.name.replace(/\W+/g, '-')}`;
 

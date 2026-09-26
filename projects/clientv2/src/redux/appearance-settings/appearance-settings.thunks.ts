@@ -10,6 +10,7 @@ import type {
 	BannerProtection,
 	BannerSubjectMask
 } from '../../domain/appearance/banner-blend';
+import { deckSaved } from '../decks/decksSlice';
 import { appearanceActions } from './appearanceSettingsSlice';
 
 export const savePalette = createAppThunk(
@@ -17,7 +18,8 @@ export const savePalette = createAppThunk(
 	async (args: { deckId: string; palette: CardPalette | null }, context) => {
 		const { deckId, palette } = args;
 		const { decks } = context.extra;
-		await decks.setPalette(deckId, palette);
+		const saved = await decks.setPalette(deckId, palette);
+		context.dispatch(deckSaved({ deckId, saved }));
 	}
 );
 
@@ -30,9 +32,10 @@ export const saveCrop = createAppThunk(
 	) => {
 		const { deckId, crop, config } = args;
 		const { dispatch } = context;
-		await context.extra.banners.crop(deckId, crop, config, (message, progress) =>
+		const saved = await context.extra.banners.crop(deckId, crop, config, (message, progress) =>
 			dispatch(appearanceActions.renderProgress({ deckId, section: 'crop', message, progress }))
 		);
+		dispatch(deckSaved({ deckId, saved }));
 	}
 );
 
@@ -41,9 +44,10 @@ export const saveBlend = createAppThunk(
 	async (args: { deckId: string; config: BannerBlendConfig }, context) => {
 		const { deckId, config } = args;
 		const { dispatch } = context;
-		await context.extra.banners.render(deckId, config, (message, progress) =>
+		const saved = await context.extra.banners.render(deckId, config, (message, progress) =>
 			dispatch(appearanceActions.renderProgress({ deckId, section: 'blend', message, progress }))
 		);
+		dispatch(deckSaved({ deckId, saved }));
 	}
 );
 
@@ -52,7 +56,8 @@ export const saveStyle = createAppThunk(
 	async (args: { deckId: string; style: DeckTopStyle }, context) => {
 		const { deckId, style } = args;
 		const { decks } = context.extra;
-		await decks.setTopStyle(deckId, style);
+		const saved = await decks.setTopStyle(deckId, style);
+		context.dispatch(deckSaved({ deckId, saved }));
 	}
 );
 
@@ -64,7 +69,8 @@ export const saveVisualization = createAppThunk(
 	) => {
 		const { deckId, visualization } = args;
 		const { decks } = context.extra;
-		await decks.setBoardVisualization(deckId, visualization);
+		const saved = await decks.setBoardVisualization(deckId, visualization);
+		context.dispatch(deckSaved({ deckId, saved }));
 	}
 );
 

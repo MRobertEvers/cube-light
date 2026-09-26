@@ -11,6 +11,8 @@ import {
 import type { BannerBlending } from '../jobs/banner-blending';
 import type { BannerImages, DeviceProfile } from '../ports';
 import type { DeckApi } from './decks';
+import type { Versioned } from './versioned';
+import type { DeckDetail } from '../../domain/models/deck';
 
 export type BannerProgress = (message: string, fraction?: number) => void;
 
@@ -33,27 +35,28 @@ export class BannersApi {
 	 * server the artwork cannot be loaded to render, so the card is saved and the plain art
 	 * shows until the banner is rendered again.
 	 */
-	async chooseCard(deckId: string, cardUuid: string, onProgress?: BannerProgress): Promise<void> {
-		await this.decks.setBannerCard(deckId, cardUuid);
-		if (!this.cards.serverReachable()) return;
+	async chooseCard(deckId: string, cardUuid: string, onProgress?: BannerProgress): Promise<Versioned<DeckDetail>> {
+		const chosen = await this.decks.setBannerCard(deckId, cardUuid);
+		if (!this.cards.serverReachable()) return chosen;
 		const { value: deck } = await this.decks.get(deckId);
 		const config = deck.icon
 			? configForNewArtwork(normalizeBannerBlendConfig(deck.bannerBlend?.config), deck.icon, this.device.isMobile())
 			: undefined;
-		await this.blending.renderAndSave(deckId, deck, config, onProgress);
+		return this.blending.renderAndSave(deckId, deck, config, onProgress);
 	}
 
 	/** Moves the artwork within the banner and re-renders it with the blend settings in place. */
-	async crop(deckId: string, crop: BannerCrop, config: BannerBlendConfig, onProgress?: BannerProgress): Promise<void> {
-		await this.decks.setBannerCrop(deckId, crop);
+	async crop(deckId: string, crop: BannerCrop, config: BannerBlendConfig, onProgress?: BannerProgress): Promise<Versioned<DeckDetail>> {
+		const cropped = await this.decks.setBannerCrop(deckId, crop);
 		const { value: deck } = await this.decks.get(deckId);
-		if (deck.icon) await this.blending.renderAndSave(deckId, deck, config, onProgress);
+		if (!deck.icon) return cropped;
+		return this.blending.renderAndSave(deckId, deck, config, onProgress);
 	}
 
 	/** Renders and saves the banner with new blend settings. */
-	async render(deckId: string, config: BannerBlendConfig, onProgress?: BannerProgress): Promise<void> {
+	async render(deckId: string, config: BannerBlendConfig, onProgress?: BannerProgress): Promise<Versioned<DeckDetail>> {
 		const { value: deck } = await this.decks.get(deckId);
-		await this.blending.renderAndSave(deckId, deck, config, onProgress);
+		return this.blending.renderAndSave(deckId, deck, config, onProgress);
 	}
 
 	/** An unsaved render for the crop editor. Newer previews replace older ones. */
