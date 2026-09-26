@@ -1,7 +1,6 @@
 /* ── Desktop dialog ───────────────────────────────────────────────────────── */
 
-.desktop,
-.desktop-offline {
+.desktop {
 	display: flex;
 	flex-direction: column;
 	box-sizing: border-box;
@@ -11,10 +10,6 @@
 	border-radius: 16px;
 	background: white;
 	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
-}
-
-.desktop-offline {
-	width: min(560px, calc(100vw - 40px));
 }
 
 .header,
@@ -52,8 +47,7 @@
 	outline-offset: 2px;
 }
 
-.desktop-body,
-.desktop-offline-body {
+.desktop-body {
 	display: flex;
 	min-height: 0;
 	overflow: auto;
@@ -77,6 +71,17 @@
 	align-items: flex-start;
 	padding: 22px;
 	overflow: auto;
+}
+
+/* Offline, the card drawn from its text stands where the image goes. */
+.rendered {
+	flex: none;
+	width: min(100%, 390px);
+	box-shadow: 0 16px 34px rgba(26, 22, 20, 0.28);
+}
+
+.mobile-image .rendered {
+	width: min(66vw, 280px);
 }
 
 /* Holds the card's shape before the image loads, so the text below doesn't jump. */
@@ -279,53 +284,6 @@
 	box-shadow: 0 18px 48px rgba(24, 19, 17, 0.32);
 }
 
-.hover-text {
-	box-sizing: border-box;
-	padding: 14px 16px;
-	border: 1px solid var(--deck-border, #e5e1df);
-	border-radius: 14px;
-	background: white;
-	box-shadow: 0 18px 48px rgba(24, 19, 17, 0.24);
-	color: #2b2725;
-	font-size: 0.875rem;
-	line-height: 1.45;
-}
-
-.hover-text p {
-	margin: 0;
-}
-
-.hover-name {
-	display: flex;
-	align-items: baseline;
-	justify-content: space-between;
-	gap: 8px;
-	font-size: 1rem;
-	font-weight: 650;
-}
-
-.hover-name .cost {
-	flex: none;
-	margin-left: 0;
-}
-
-.hover-type {
-	margin-top: 2px;
-	padding-bottom: 8px;
-	border-bottom: 1px solid var(--deck-border, #e5e1df);
-	color: #5d5551;
-}
-
-.hover-rules {
-	padding-top: 8px;
-}
-
-.hover-rules p + p {
-	margin-top: 5px;
-}
-
-.hover-stats {
-	margin-top: 8px;
-	font-weight: 650;
-	text-align: right;
+.hover-rendered {
+	box-shadow: 0 18px 48px rgba(24, 19, 17, 0.32);
 }

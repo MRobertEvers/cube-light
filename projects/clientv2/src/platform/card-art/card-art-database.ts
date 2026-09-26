@@ -19,6 +19,8 @@ export type CardArtIndex = {
 	chunks: Array<{ file: string; bytes: number; sha256: string }>;
 	/** Scryfall id → [chunk, offset, length]. */
 	art: Record<string, [number, number, number]>;
+	/** Format 2: each default printing's MTGJSON uuid → its Scryfall id in `art`. */
+	printings?: Record<string, string>;
 };
 
 export type InstalledIndex = { index: CardArtIndex; installedAt: string };
@@ -69,10 +71,15 @@ export async function readCardArt(scryfallId: string): Promise<Blob | null> {
 	if (!installed) return null;
 	// The index is large; parse-free reuse while the same install is current.
 	if (!cachedIndex || cachedIndex.at !== installed.installedAt) cachedIndex = { at: installed.installedAt, index: installed.index };
-	const place = cachedIndex.index.art[scryfallId];
+	return artInIndex(cachedIndex.index, scryfallId);
+}
+
+/** The art `index` places under a Scryfall id, as a WebP Blob; null when it has none. */
+export async function artInIndex(index: CardArtIndex, scryfallId: string): Promise<Blob | null> {
+	const place = index.art[scryfallId];
 	if (!place) return null;
 	const [chunk, offset, length] = place;
-	const file = cachedIndex.index.chunks[chunk]?.file;
+	const file = index.chunks[chunk]?.file;
 	if (!file) return null;
 	const blob = await inCardArtDatabase<Blob | undefined>([CHUNKS], 'readonly', (transaction) => transaction.objectStore(CHUNKS).get(file));
 	return blob ? blob.slice(offset, offset + length, 'image/webp') : null;

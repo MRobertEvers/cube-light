@@ -73,7 +73,7 @@ export type ToriMTGEngine = {
 	offlineShell: Pick<OfflineShell, 'watch' | 'running' | 'installedRelease' | 'mode' | 'setMode'>;
 	connectivity: Pick<ConnectivityApi, 'current'>;
 	cardPack: Pick<CardPackApi, 'status' | 'install' | 'remove' | 'lookup'>;
-	cardArt: Pick<CardArtApi, 'status' | 'install' | 'remove' | 'markAsked'>;
+	cardArt: Pick<CardArtApi, 'status' | 'isInstalled' | 'install' | 'remove' | 'markAsked' | 'artFor'>;
 	events: Pick<EngineEvents, 'subscribe'>;
 };
 
@@ -120,7 +120,7 @@ export function createToriMTGEngine(ports: EnginePorts): ToriMTGEngine {
 		offlineShell,
 		connectivity: new ConnectivityApi(reachability, syncHost, events),
 		cardPack: new CardPackApi(cardPack, packLibrary, cards),
-		cardArt: new CardArtApi(cardArt),
+		cardArt: new CardArtApi(cardArt, packLibrary),
 		events
 	};
 }

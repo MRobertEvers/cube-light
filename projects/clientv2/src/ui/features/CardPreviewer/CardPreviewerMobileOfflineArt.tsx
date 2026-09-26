@@ -3,16 +3,21 @@ import { HeaderBackButton } from 'src/ui/kit/components/BackLink/BackLink';
 import { HeaderBackSlot } from 'src/ui/kit/components/Header/HeaderBackSlot';
 import { RenderedCard } from 'src/ui/kit/components/RenderedCard/RenderedCard';
 import { useCloseOnEscape } from 'src/ui/kit/hooks/useCloseOnEscape';
+import { useOfflineCardArt } from 'src/ui/kit/hooks/useOfflineCardArt';
 import type { CardPreviewerProps } from './card-previewer.types';
 import { CardPreviewerTitle } from './CardPreviewerTitle';
 import { CardRulesText } from './CardRulesText';
-import { cardArtUrl, renderedFace } from './rendered-face';
+import { offlineArt, renderedFace } from './rendered-face';
 
 import styles from './card-previewer.module.css';
 
-/** A full-screen page with one printing drawn from its text and stored art above its rules text. Back closes it. */
-export function CardPreviewerMobileOffline(props: CardPreviewerProps) {
+/**
+ * A full-screen page with the card drawn from its text around its art from the offline
+ * art pack, above one printing's rules text, where online shows the card's image. Back closes it.
+ */
+export function CardPreviewerMobileOfflineArt(props: CardPreviewerProps) {
 	const { card, onClose } = props;
+	const art = useOfflineCardArt(card);
 	useCloseOnEscape(onClose);
 
 	return (
@@ -25,7 +30,7 @@ export function CardPreviewerMobileOffline(props: CardPreviewerProps) {
 			</header>
 			<div className={styles['mobile-body']}>
 				<div className={styles['mobile-image']}>
-					<RenderedCard face={renderedFace(card, cardArtUrl(card))} className={styles['rendered']} />
+					<RenderedCard face={renderedFace(card, offlineArt(card, art))} className={styles['rendered']} />
 				</div>
 				<CardRulesText key={card.uuid} details={card} className={styles['mobile-details']} />
 			</div>

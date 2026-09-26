@@ -1111,6 +1111,15 @@ installs, updates and removes it. It lives in its own IndexedDB database
 (`torimtg-card-art`), and ShellWorker reads it to answer `/api/images/art_crop/<id>.jpg`
 when neither its cache nor the server can.
 
+Offline, card previews (the dialog and the hover card) draw the card from its text
+instead of showing a blank: `RenderedCard` puts the art in a frame colored from the
+mana cost (mono, hybrid split, gold, artifact, colorless, or a land tinted by the
+mana it makes; `domain/models/card-frame.ts`). The frame shows the name and cost,
+the type line with the set's symbol in its rarity's colors, the rules and flavor
+text shrunk to fit, and the stats. The frames are CSS. The fonts (Beleren, EB Garamond)
+and a sprite of every set symbol (`tools/vendor-set-symbols.mjs`) are vendored
+under `src/assets/`, so the release precaches them like any other asset.
+
 Downloading large OCR models/card packs is explicit, resumable, and size-aware.
 Do not include every model in the mandatory install transaction. Show offline
 capability per pack; unavailable OCR/search data must be clear to the user.

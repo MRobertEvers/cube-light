@@ -1,0 +1,203 @@
+/*
+ * A card drawn from its text. Every size is a share of the card's width (cqw), so it
+ * reads the same at hover size and full screen. Fonts: Beleren for the name, type line
+ * and stats, EB Garamond for rules text (see assets/fonts/README.md).
+ */
+
+@font-face {
+	font-family: 'Tori Beleren';
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url('../../../../assets/fonts/beleren-bold.woff') format('woff');
+}
+
+@font-face {
+	font-family: 'Tori Garamond';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('../../../../assets/fonts/eb-garamond-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Tori Garamond';
+	font-style: italic;
+	font-weight: 400;
+	font-display: swap;
+	src: url('../../../../assets/fonts/eb-garamond-latin-400-italic.woff2') format('woff2');
+}
+
+.card {
+	container-type: inline-size;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	width: 100%;
+	aspect-ratio: 63 / 88;
+	padding: 3.6% 3.6% 0;
+	overflow: hidden;
+	border-radius: 4.6% / 3.3%;
+	background: #141111;
+	color: #161312;
+	text-align: left;
+}
+
+.frame {
+	position: relative;
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 1.3cqw;
+	min-height: 0;
+	padding: 2.2cqw 2.2cqw 3.4cqw;
+	border-radius: 1.4cqw 1.4cqw 3cqw 3cqw;
+	background:
+		radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.22), transparent 42%),
+		radial-gradient(circle at 85% 70%, rgba(0, 0, 0, 0.16), transparent 50%),
+		linear-gradient(90deg, var(--frame-a) 40%, var(--frame-b) 60%);
+	box-shadow: inset 0 0 0 0.35cqw rgba(0, 0, 0, 0.25);
+}
+
+.bar {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1.5cqw;
+	min-width: 0;
+	height: 7.6cqw;
+	padding: 0 2.4cqw;
+	border-radius: 1.6cqw / 50%;
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.45), transparent 55%),
+		linear-gradient(90deg, var(--bar-a) 40%, var(--bar-b) 60%);
+	box-shadow:
+		0 0.35cqw 0 rgba(0, 0, 0, 0.35),
+		inset 0 0 0 0.3cqw rgba(0, 0, 0, 0.3);
+}
+
+.name,
+.type {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	font-family: 'Tori Beleren', 'Georgia', serif;
+	font-weight: 700;
+	line-height: 1;
+	white-space: nowrap;
+}
+
+.name {
+	font-size: calc(5.4cqw * var(--fit, 1));
+}
+
+.type {
+	font-size: calc(4.6cqw * var(--fit, 1));
+}
+
+.cost {
+	--mana-symbol-size: 4.6cqw;
+
+	display: flex;
+	flex: none;
+}
+
+.art {
+	flex: none;
+	aspect-ratio: 626 / 457;
+	margin: 0 1.6cqw;
+	overflow: hidden;
+	background:
+		radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.35), transparent 60%),
+		linear-gradient(135deg, var(--box-a), var(--frame-a) 60%, var(--frame-b));
+	box-shadow: 0 0 0 0.4cqw rgba(0, 0, 0, 0.45);
+}
+
+.art img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.set-symbol {
+	flex: none;
+	width: 5.2cqw;
+	height: 5.2cqw;
+	overflow: visible;
+	filter: drop-shadow(0 0 0.25cqw rgba(0, 0, 0, 0.85));
+}
+
+.set-symbol[data-rarity='common'] {
+	filter: drop-shadow(0 0 0.25cqw rgba(255, 255, 255, 0.9));
+}
+
+.box {
+	flex: 1;
+	min-height: 0;
+	margin: 0 1.6cqw;
+	padding: 2.2cqw 3cqw;
+	overflow: hidden;
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 30%),
+		linear-gradient(90deg, var(--box-a) 40%, var(--box-b) 60%);
+	box-shadow: 0 0 0 0.4cqw rgba(0, 0, 0, 0.35);
+	font-family: 'Tori Garamond', 'Georgia', serif;
+	font-size: calc(4.9cqw * var(--fit, 1));
+	line-height: 1.18;
+}
+
+.box p {
+	margin: 0;
+}
+
+.box p + p {
+	margin-top: 0.45em;
+}
+
+.box .flavor {
+	padding-top: 0.45em;
+	border-top: 0.25cqw solid rgba(0, 0, 0, 0.2);
+	font-style: italic;
+}
+
+.stats {
+	position: absolute;
+	right: 2.6cqw;
+	bottom: 0.8cqw;
+	min-width: 13cqw;
+	padding: 1cqw 2cqw;
+	border-radius: 1.4cqw;
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.45), transparent 55%),
+		var(--bar-b);
+	box-shadow:
+		0 0.35cqw 0 rgba(0, 0, 0, 0.35),
+		inset 0 0 0 0.3cqw rgba(0, 0, 0, 0.3);
+	font-family: 'Tori Beleren', 'Georgia', serif;
+	font-size: 5.6cqw;
+	font-weight: 700;
+	line-height: 1;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.footer {
+	display: flex;
+	flex: none;
+	justify-content: space-between;
+	gap: 3cqw;
+	height: 6.2cqw;
+	padding: 0 2cqw;
+	color: #efe9e4;
+	font: 400 2.6cqw/6.2cqw system-ui, sans-serif;
+	letter-spacing: 0.04em;
+	white-space: nowrap;
+}
+
+.artist {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}

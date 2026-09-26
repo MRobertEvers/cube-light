@@ -1,5 +1,20 @@
 import type { CardArtStatus, InstalledCardArt } from '../../domain/models/card-art';
 import type { AppThunk } from '../thunk';
+import { cardArtSlice } from './cardArtSlice';
+
+/** Reads whether card art is installed here, for views to choose their offline-art form. */
+export function loadCardArtInstalled(): AppThunk<Promise<void>> {
+	return async function (dispatch, _getState, engine) {
+		dispatch(cardArtSlice.actions.installedChanged(await engine.cardArt.isInstalled()));
+	};
+}
+
+/** An object URL of a card's installed art, by its printing then its name; null when there is none. */
+export function loadCardArt(card: { name: string; uuid: string }): AppThunk<Promise<string | null>> {
+	return function (_dispatch, _getState, engine) {
+		return engine.cardArt.artFor({ name: card.name, uuid: card.uuid });
+	};
+}
 
 /** The card art on this device, what the server offers, and whether this device was asked. */
 export function readCardArtStatus(): AppThunk<Promise<CardArtStatus>> {
@@ -13,16 +28,19 @@ export function readCardArtStatus(): AppThunk<Promise<CardArtStatus>> {
  * comes with it when it is missing: art alone cannot be looked up by name.
  */
 export function installCardArt(onProgress: (received: number, total: number) => void): AppThunk<Promise<InstalledCardArt>> {
-	return async function (_dispatch, _getState, engine) {
+	return async function (dispatch, _getState, engine) {
 		const text = await engine.cardPack.status();
 		if (!text.installed && text.offered) await engine.cardPack.install(function () {});
-		return engine.cardArt.install(onProgress);
+		const installed = await engine.cardArt.install(onProgress);
+		dispatch(cardArtSlice.actions.installedChanged(true));
+		return installed;
 	};
 }
 
 export function removeCardArt(): AppThunk<Promise<void>> {
-	return function (_dispatch, _getState, engine) {
-		return engine.cardArt.remove();
+	return async function (dispatch, _getState, engine) {
+		await engine.cardArt.remove();
+		dispatch(cardArtSlice.actions.installedChanged(false));
 	};
 }
 

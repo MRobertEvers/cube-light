@@ -19,6 +19,7 @@ import { ShellWorkerClient } from '../workers/shell/shell.client';
 import { configureStore, type StoreType } from '../redux/configure-store';
 import { startProjections } from '../redux/projections';
 import { loadConnectivity } from '../redux/connectivity/connectivity.thunks';
+import { loadCardArtInstalled } from '../redux/card-art/card-art.thunks';
 import type { AppDispatch } from '../redux/use-app-dispatch';
 import type { BuildInfo } from '../domain/models/build-info';
 
@@ -59,5 +60,6 @@ export function composeApp(): StoreType {
 	const dispatch: AppDispatch = store.dispatch;
 	startProjections(dispatch, engine.events);
 	dispatch(loadConnectivity());
+	void dispatch(loadCardArtInstalled()).catch(() => {});
 	return store;
 }

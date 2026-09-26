@@ -8,6 +8,8 @@
 export type CardArtInfo = {
 	/** The card data version the art was chosen for. */
 	version: string;
+	/** The index's format: 2 also maps each card's default printing to its art. */
+	format: number;
 	cards: number;
 	/** The whole download's size. */
 	bytes: number;
@@ -28,7 +30,8 @@ export type CardArtStatus = {
 	asked: boolean;
 };
 
-/** Whether the offered art differs from the installed art. */
+/** Whether the offered art differs from the installed art, in its cards or its index's format. */
 export function cardArtUpdateAvailable(status: CardArtStatus): boolean {
-	return status.installed !== null && status.offered !== null && status.offered.version !== status.installed.version;
+	if (status.installed === null || status.offered === null) return false;
+	return status.offered.version !== status.installed.version || status.offered.format !== status.installed.format;
 }

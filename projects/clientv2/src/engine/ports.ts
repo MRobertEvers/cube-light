@@ -98,6 +98,8 @@ export interface CardArtStore {
 	/** Downloads the offered art, keeping chunks already here, reporting bytes as they arrive. */
 	install(onProgress: (received: number, total: number) => void): Promise<InstalledCardArt>;
 	remove(): Promise<void>;
+	/** The installed art of a default printing (by MTGJSON uuid) as an image; null when none is installed for it. */
+	art(printingUuid: string): Promise<Blob | null>;
 	/** Whether this device was already asked if it wants the art. */
 	asked(): Promise<boolean>;
 	/** Records that this device was asked, whatever the answer. */

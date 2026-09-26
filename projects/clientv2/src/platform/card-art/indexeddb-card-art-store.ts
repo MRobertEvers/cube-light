@@ -1,6 +1,6 @@
 import type { CardArtInfo, InstalledCardArt } from '../../domain/models/card-art';
 import type { CardArtStore } from '../../engine/ports';
-import { CHUNKS, META, inCardArtDatabase, type CardArtIndex, type InstalledIndex } from './card-art-database';
+import { CHUNKS, META, artInIndex, inCardArtDatabase, type CardArtIndex, type InstalledIndex } from './card-art-database';
 
 /**
  * The offline card art pack in its own IndexedDB database (see card-art-database.ts),
@@ -9,6 +9,8 @@ import { CHUNKS, META, inCardArtDatabase, type CardArtIndex, type InstalledIndex
  */
 export class IndexedDbCardArtStore implements CardArtStore {
 	private readonly base: string;
+	/** The installed index, read once for art lookups; the index is large. */
+	private index: Promise<InstalledIndex | null> | null = null;
 
 	constructor(apiBase: string) {
 		this.base = apiBase.replace(/\/$/, '');
@@ -23,7 +25,7 @@ export class IndexedDbCardArtStore implements CardArtStore {
 		const installed = await inCardArtDatabase<InstalledIndex | undefined>([META], 'readonly', (transaction) => transaction.objectStore(META).get('index'));
 		if (!installed) return null;
 		const info = infoOf(installed.index);
-		return { version: info.version, cards: info.cards, bytes: info.bytes, chunks: info.chunks, installedAt: installed.installedAt };
+		return { version: info.version, format: info.format, cards: info.cards, bytes: info.bytes, chunks: info.chunks, installedAt: installed.installedAt };
 	}
 
 	async install(onProgress: (received: number, total: number) => void): Promise<InstalledCardArt> {
@@ -52,8 +54,9 @@ export class IndexedDbCardArtStore implements CardArtStore {
 			for (const file of keptChunks.keys()) if (!current.has(file)) transaction.objectStore(CHUNKS).delete(file);
 			return transaction.objectStore(META).put({ index: index, installedAt: installedAt }, 'index');
 		});
+		this.index = null;
 		const info = infoOf(index);
-		return { version: info.version, cards: info.cards, bytes: info.bytes, chunks: info.chunks, installedAt: installedAt };
+		return { version: info.version, format: info.format, cards: info.cards, bytes: info.bytes, chunks: info.chunks, installedAt: installedAt };
 	}
 
 	async remove(): Promise<void> {
@@ -61,6 +64,13 @@ export class IndexedDbCardArtStore implements CardArtStore {
 			transaction.objectStore(CHUNKS).clear();
 			return transaction.objectStore(META).delete('index');
 		});
+		this.index = null;
+	}
+
+	async art(printingUuid: string): Promise<Blob | null> {
+		const installed = await this.installedIndex();
+		const scryfallId = installed?.index.printings?.[printingUuid];
+		return installed && scryfallId ? artInIndex(installed.index, scryfallId) : null;
 	}
 
 	async asked(): Promise<boolean> {
@@ -75,11 +85,22 @@ export class IndexedDbCardArtStore implements CardArtStore {
 		const response = await fetch(`${this.base}/cards/art/index`, { cache: 'no-store', credentials: 'omit' });
 		if (!response.ok) throw new Error('The server has no card art to download.');
 		const index = (await response.json()) as CardArtIndex;
-		if (index.format !== 1) throw new Error('The server offers card art in an unknown format.');
+		if (index.format !== 1 && index.format !== 2) throw new Error('The server offers card art in an unknown format.');
 		return index;
+	}
+
+	private installedIndex(): Promise<InstalledIndex | null> {
+		if (!this.index) {
+			const reading = inCardArtDatabase<InstalledIndex | undefined>([META], 'readonly', (transaction) => transaction.objectStore(META).get('index')).then((found) => found ?? null);
+			reading.catch(() => {
+				if (this.index === reading) this.index = null;
+			});
+			this.index = reading;
+		}
+		return this.index;
 	}
 }
 
 function infoOf(index: CardArtIndex): CardArtInfo {
-	return { version: index.version, cards: index.cards, bytes: index.bytes, chunks: index.chunks.length };
+	return { version: index.version, format: index.format, cards: index.cards, bytes: index.bytes, chunks: index.chunks.length };
 }

@@ -1,0 +1,31 @@
+/* A card from the offline art pack: the text face (tabletop-text-face.module.css) with its art. */
+
+/* The art box holds its place while the art is read, so the text below does not jump. */
+.art {
+	display: block;
+	flex: none;
+	aspect-ratio: 4 / 3;
+	overflow: hidden;
+	border: 1px solid #0b1411;
+	border-radius: 3px;
+	background: #0f1916;
+}
+
+/* The boards stretch every img in a card to fill it; the art fills only its box. */
+.face .art img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border-radius: 0;
+	object-fit: cover;
+}
+
+.rules {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: hidden;
+	color: #d3ddd9;
+	font-size: 11px;
+	line-height: 1.3;
+	white-space: pre-line;
+}

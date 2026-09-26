@@ -10,6 +10,8 @@ Mirrors Scryfall card images, and builds the offline card art pack from the mirr
   art-pack  Builds the offline card art pack from the mirror's art crops: one small WebP
             per card (its default printing, as CardPack.json.gz names it), packed into
             a few chunk files and an index the client downloads on request.
+  art-index Rewrites an art pack's index from the current CardPack.json.gz, without
+            re-encoding any art: for an index built before it named default printings.
 
 Scryfall serves no image archives, only bulk JSON with each image's URL, so the images are
 fetched one by one from its CDN. The CDN (*.scryfall.io) has no rate limit, unlike
@@ -156,7 +158,9 @@ def mirror(args: argparse.Namespace) -> None:
     dest = Path(args.dest).expanduser()
     dest.mkdir(parents=True, exist_ok=True)
     print(f"Mirroring {', '.join(args.variants)} into {dest}", flush=True)
-    cards = bulk_cards(dest, args.variants)
+    stage = Path(args.bulk_dir).expanduser() if args.bulk_dir else dest
+    stage.mkdir(parents=True, exist_ok=True)
+    cards = bulk_cards(stage, args.variants)
     first = pack_printings()
     # Default printings first: the art pack is built from them.
     cards.sort(key=lambda card: 0 if card[0] in first else 1)
@@ -222,10 +226,13 @@ def mirror(args: argparse.Namespace) -> None:
 
 def art_pack(args: argparse.Namespace) -> None:
     """
-    CardArt-NN.bin: WebP images back to back. CardArt.index.json: {"format": 1, "version",
+    CardArt-NN.bin: WebP images back to back. CardArt.index.json: {"format": 2, "version",
     "width", "quality", "bytes", "chunks": [{"file", "bytes", "sha256"}],
-    "art": {scryfall id: [chunk, offset, length]}} keyed by the default printing's Scryfall id,
-    the id in its /images/art_crop/<id>.jpg URL, so the service worker can answer that URL.
+    "art": {scryfall id: [chunk, offset, length]}, "printings": {uuid: scryfall id}}.
+    `art` is keyed by the default printing's Scryfall id, the id in its
+    /images/art_crop/<id>.jpg URL, so the service worker can answer that URL. `printings`
+    maps each default printing's MTGJSON uuid (as CardPack.json.gz names it) to that id,
+    so the app can find a card's art from its name through the offline card pack.
     """
     source = Path(args.source).expanduser() / "art_crop" / "front"
     out = Path(args.out).expanduser()
@@ -277,8 +284,9 @@ def art_pack(args: argparse.Namespace) -> None:
         flush()
     total = sum(chunk["bytes"] for chunk in chunks)
     (out / ART_PACK_INDEX).write_text(json.dumps({
-        "format": 1, "version": pack["version"], "width": args.width, "quality": args.quality,
+        "format": 2, "version": pack["version"], "width": args.width, "quality": args.quality,
         "cards": len(index), "bytes": total, "chunks": chunks, "art": index,
+        "printings": default_printings(pack, scryfall, index),
     }, separators=(",", ":")) + "\n")
     link = ASSETS / "card-art"
     if link.resolve() != out.resolve():
@@ -288,6 +296,28 @@ def art_pack(args: argparse.Namespace) -> None:
     print(f"Built art pack: {len(index)} cards, {len(chunks)} chunks, {total / 1e6:.1f} MB; {len(missing)} cards had no art crop yet")
 
 
+def default_printings(pack: dict, scryfall: dict, art: dict) -> dict:
+    """MTGJSON uuid → Scryfall id for each default printing the pack names that has art."""
+    return {entry[2]: scryfall[entry[2]] for entry in pack["cards"]
+            if len(entry) > 2 and entry[2] and scryfall.get(entry[2]) in art}
+
+
+def art_index(args: argparse.Namespace) -> None:
+    """Rewrites an existing art pack's index as format 2, adding `printings` (see art_pack)."""
+    path = Path(args.out).expanduser() / ART_PACK_INDEX
+    index = json.loads(path.read_text())
+    pack = json.loads(gzip.open(ASSETS / "CardPack.json.gz").read())
+    connection = sqlite3.connect(f"file:{ASSETS / 'AllPrintings.sqlite'}?mode=ro", uri=True)
+    try:
+        scryfall = dict(connection.execute("SELECT uuid, scryfallId FROM cardIdentifiers").fetchall())
+    finally:
+        connection.close()
+    index["format"] = 2
+    index["printings"] = default_printings(pack, scryfall, index["art"])
+    path.write_text(json.dumps(index, separators=(",", ":")) + "\n")
+    print(f"Rewrote {path}: {len(index['printings'])} default printings")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -295,14 +325,19 @@ def main() -> None:
     mirror_parser.add_argument("--dest", required=True, help="folder to mirror into, e.g. the NAS share")
     mirror_parser.add_argument("--variants", nargs="+", default=["art_crop", "png"], choices=sorted(EXTENSIONS))
     mirror_parser.add_argument("--workers", type=int, default=24, help="parallel downloads (default 24)")
+    mirror_parser.add_argument("--bulk-dir", help="where to keep Scryfall's bulk file (default: --dest)")
     pack_parser = commands.add_parser("art-pack", help="build the offline card art pack from mirrored art crops")
     pack_parser.add_argument("--source", required=True, help="the mirror folder (with art_crop/front)")
     pack_parser.add_argument("--out", default=str(DATA / "card-art"), help="where to write CardArt-*.bin and the index")
     pack_parser.add_argument("--width", type=int, default=160)
     pack_parser.add_argument("--quality", type=int, default=31)
+    index_parser = commands.add_parser("art-index", help="add default printings to an existing art pack's index")
+    index_parser.add_argument("--out", default=str(DATA / "card-art"), help="the art pack folder")
     args = parser.parse_args()
     if args.command == "mirror":
         mirror(args)
+    elif args.command == "art-index":
+        art_index(args)
     else:
         if not shutil.which("cwebp"):
             sys.exit("art-pack needs cwebp (brew install webp)")
