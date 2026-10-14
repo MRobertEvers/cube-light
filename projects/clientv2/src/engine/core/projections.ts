@@ -26,6 +26,7 @@ function quantityEntries(quantities: Record<string, number>, board: DeckBoard, c
             const row: Record<string, unknown> = cardFields(overview);
             if ('image' in overview) row.image = overview.image;
             if ('images' in overview) row.images = overview.images;
+            if (overview.backImages) row.backImages = overview.backImages;
             if ('art' in overview) row.art = overview.art;
             row.uuid = uuid;
             row.count = count;

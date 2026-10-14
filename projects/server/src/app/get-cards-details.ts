@@ -2,7 +2,7 @@ import {
 	CardDatabase,
 	CardRulesInfo
 } from '../database/cards/CardDatabase';
-import { getDeckOverviewCardInfo } from './get-deck-overview-card-info';
+import { DeckOverviewCardInfo, getDeckOverviewCardInfo } from './get-deck-overview-card-info';
 
 export type CompleteCardInfo = Omit<CardRulesInfo, 'uuid'> & {
 	// From DetailedCardInfo
@@ -16,6 +16,11 @@ export type CompleteCardInfo = Omit<CardRulesInfo, 'uuid'> & {
 	setCode: string;
 
 	sets: Array<[string, string]>;
+
+	/** Every size of the front face's image. */
+	images?: DeckOverviewCardInfo['images'];
+	/** The back face's images, for a double-faced printing only. */
+	backImages?: DeckOverviewCardInfo['backImages'];
 
 	// URLs served by this server.
 	image: string | null;
@@ -43,7 +48,7 @@ export async function getCardsDetails(
 		const { uuid } = card;
 		const sets = cardSets[uuid];
 
-		return {
+		const details: CompleteCardInfo = {
 			name: card.name,
 			uuid: card.uuid,
 			scryfallId: card.scryfallId,
@@ -68,5 +73,7 @@ export async function getCardsDetails(
 			sets: sets,
 			highResImage: card.images?.normal || null
 		};
+		if (card.backImages) details.backImages = card.backImages;
+		return details;
 	});
 }

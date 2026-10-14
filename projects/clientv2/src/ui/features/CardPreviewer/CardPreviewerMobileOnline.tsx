@@ -2,7 +2,7 @@ import React from 'react';
 import { HeaderBackButton } from 'src/ui/kit/components/BackLink/BackLink';
 import { HeaderBackSlot } from 'src/ui/kit/components/Header/HeaderBackSlot';
 import { useCloseOnEscape } from 'src/ui/kit/hooks/useCloseOnEscape';
-import { ViewArtButton } from 'src/ui/kit/components/BannerArtwork/ViewArtButton';
+import { CardFaceImage } from './CardFaceImage';
 import type { CardPreviewerProps } from './card-previewer.types';
 import { CardPreviewerTitle } from './CardPreviewerTitle';
 import { CardRulesText } from './CardRulesText';
@@ -24,10 +24,7 @@ export function CardPreviewerMobileOnline(props: CardPreviewerProps) {
 			</header>
 			<div className={styles['mobile-body']}>
 				<div className={styles['mobile-image']}>
-					<span className={styles['image-frame']}>
-						<img src={card.images?.normal ?? card.image} alt={`${card.name}, ${card.setCode} printing`} />
-						<ViewArtButton image={card.images?.art_crop ?? card.art} placement="card" />
-					</span>
+					<CardFaceImage key={card.uuid} card={card} />
 				</div>
 				<CardRulesText key={card.uuid} details={card} className={styles['mobile-details']} />
 			</div>

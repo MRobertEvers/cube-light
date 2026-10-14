@@ -19,6 +19,13 @@ export type DeckCardEntry = CardPreviewDetails & {
 		large: string;
 		art_crop: string;
 	};
+	/** The back face's images, for a double-faced printing (transform, modal) only. */
+	backImages?: {
+		small: string;
+		normal: string;
+		large: string;
+		art_crop: string;
+	};
 	uuid: string;
 	art: string;
 	setCode: string;

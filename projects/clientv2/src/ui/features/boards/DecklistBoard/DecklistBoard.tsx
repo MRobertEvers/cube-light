@@ -46,6 +46,8 @@ function expandableRowKeys(cards: Record<DeckBoard, BoardGroups>, boards: readon
 }
 
 const HOVER_CARD = { width: 300, height: 420 };
+/** Between a double-faced card's two faces (CardHoverPreviewOnline's gap). */
+const HOVER_FACE_GAP = 12;
 /** The closest the hover card comes to the viewport's edges. */
 const HOVER_MARGIN = 16;
 
@@ -62,21 +64,26 @@ function viewportSize(): Size {
 	return { width: window.innerWidth, height: window.innerHeight };
 }
 
+/** The hover card's width: a double-faced card shows both faces. */
+function hoverCardWidth(card: DeckCardEntry): number {
+	return card.backImages ? HOVER_CARD.width * 2 + HOVER_FACE_GAP : HOVER_CARD.width;
+}
+
 /**
  * Where the hover card goes for a pointer: left of it when there is room, otherwise
  * to its right, and a little above it; always inside the viewport's margins.
  */
-function hoverCardPosition(pointer: Point, viewport: Size) {
-	const fitsLeft = pointer.x > HOVER_CARD.width + 40;
+function hoverCardPosition(pointer: Point, viewport: Size, width: number) {
+	const fitsLeft = pointer.x > width + 40;
 	const left = fitsLeft
-		? pointer.x - HOVER_CARD.width - HOVER_MARGIN
+		? pointer.x - width - HOVER_MARGIN
 		: pointer.x + 120;
 	const top = pointer.y - 170;
 	return {
 		left: clamp(
 			left,
 			HOVER_MARGIN,
-			viewport.width - HOVER_CARD.width - HOVER_MARGIN
+			viewport.width - width - HOVER_MARGIN
 		),
 		top: clamp(
 			top,
@@ -146,8 +153,9 @@ export function DecklistBoard(props: DecklistBoardProps) {
 		},
 		[onCardEvent, setImageSource]
 	);
+	const hoverWidth = imageSource ? hoverCardWidth(imageSource.card) : HOVER_CARD.width;
 	const hover = imageSource
-		? hoverCardPosition(imageSource.position, viewportSize())
+		? hoverCardPosition(imageSource.position, viewportSize(), hoverWidth)
 		: { left: 0, top: 0 };
 
 	return (
@@ -159,7 +167,8 @@ export function DecklistBoard(props: DecklistBoardProps) {
 				}
 				style={{
 					left: hover.left,
-					top: hover.top
+					top: hover.top,
+					width: hoverWidth
 				}}
 			>
 				{imageSource && <HoverPreview card={imageSource.card} />}

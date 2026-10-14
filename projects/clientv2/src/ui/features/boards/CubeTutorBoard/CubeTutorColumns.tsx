@@ -12,6 +12,13 @@ import styles from './cube-tutor-board.module.css';
 
 const PREVIEW_WIDTH = 250;
 const PREVIEW_HEIGHT = 350;
+/** Between a double-faced card's two faces. */
+const PREVIEW_FACE_GAP = 8;
+
+/** The hover preview's width: a double-faced card shows both faces. */
+export function previewWidth(card: DeckCardEntry): number {
+	return card.backImages ? PREVIEW_WIDTH * 2 + PREVIEW_FACE_GAP : PREVIEW_WIDTH;
+}
 
 /** The card shown on hover, and the row it sits beside. */
 export type CubeTutorPreview = { card: DeckCardEntry; row: DOMRect };
@@ -25,11 +32,11 @@ function allCards(deck: BoardGroups): DeckCardEntry[] {
 }
 
 /** Beside the row, on whichever side has room, kept inside the viewport. */
-export function previewPosition(row: DOMRect): React.CSSProperties {
+export function previewPosition(row: DOMRect, width: number = PREVIEW_WIDTH): React.CSSProperties {
 	const left =
-		row.right + PREVIEW_WIDTH + 16 <= window.innerWidth
+		row.right + width + 16 <= window.innerWidth
 			? row.right + 8
-			: row.left - PREVIEW_WIDTH - 8;
+			: row.left - width - 8;
 	const top = Math.min(
 		Math.max(8, row.top - PREVIEW_HEIGHT / 3),
 		window.innerHeight - PREVIEW_HEIGHT - 8

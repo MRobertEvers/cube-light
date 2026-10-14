@@ -170,6 +170,19 @@
 	pointer-events: none;
 }
 
+/* A double-faced card's two faces side by side, placed as one. */
+.previewFaces {
+	position: fixed;
+	z-index: 20;
+	display: flex;
+	gap: 8px;
+	pointer-events: none;
+}
+
+.previewFaces > .preview {
+	position: static;
+}
+
 .preview-text {
 	position: fixed;
 	z-index: 20;
@@ -194,6 +207,7 @@
 
 @media (hover: none) {
 	.preview,
+	.previewFaces,
 	.preview-text {
 		display: none;
 	}

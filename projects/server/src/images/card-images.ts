@@ -3,6 +3,8 @@ import type { ImageCache, ImageState } from './ImageCache';
 import type { ImageMeasurer } from './image-measurer';
 
 export type ImageVariant = 'small' | 'normal' | 'large' | 'art_crop';
+/** Which side of the printed card: a double-faced card (transform, modal) has a back of its own. */
+export type CardFace = 'front' | 'back';
 
 /** A failed download is not asked of Scryfall again for an hour (as torimtgd does). */
 const RETRY_FAILED_SECONDS = 3600;
@@ -29,21 +31,35 @@ export function isScryfallId(value: string): boolean {
 	return SCRYFALL_ID.test(value);
 }
 
+/** An image's name in its address and in the art cache: `<id>` for a front, `<id>-back` for a back. */
+export function imageName(id: string, face: CardFace): string {
+	return face === 'back' ? `${id.toLowerCase()}-back` : id.toLowerCase();
+}
+
+/** The Scryfall id and face an image name stands for, or null for anything else. */
+export function parseImageName(name: string): { id: string; face: CardFace } | null {
+	const back = name.toLowerCase().endsWith('-back');
+	const id = back ? name.slice(0, -'-back'.length) : name;
+	return isScryfallId(id) ? { id: id.toLowerCase(), face: back ? 'back' : 'front' } : null;
+}
+
 export function cardImagePath(
 	id: string | null | undefined,
-	variant: ImageVariant
+	variant: ImageVariant,
+	face: CardFace = 'front'
 ): string | null {
 	return id && isScryfallId(id)
-		? `/images/${variant}/${id.toLowerCase()}.jpg`
+		? `/images/${variant}/${imageName(id, face)}.jpg`
 		: null;
 }
 
 export function cardImageUrl(
 	baseUrl: string,
 	id: string | null | undefined,
-	variant: ImageVariant
+	variant: ImageVariant,
+	face: CardFace = 'front'
 ): string | null {
-	const imagePath = cardImagePath(id, variant);
+	const imagePath = cardImagePath(id, variant, face);
 	return imagePath ? `${baseUrl}${imagePath}` : null;
 }
 
@@ -89,15 +105,16 @@ export class CardImageService {
 		this.fetchImage = fetchImageArg === undefined ? fetch : fetchImageArg;
 	}
 
-	/** The image, downloading it when no one has; null when Scryfall has none. */
-	async get(id: string, variant: ImageVariant): Promise<Buffer | null> {
-		const key = `${variant}/${id.toLowerCase()}`;
+	/** The image, downloading it when no one has; null when Scryfall has none (a single-faced
+	 * card has no back). */
+	async get(id: string, variant: ImageVariant, face: CardFace = 'front'): Promise<Buffer | null> {
+		const key = `${variant}/${imageName(id, face)}`;
 		const cached = await this.cache.get(key);
 		if (cached) return cached;
 
 		let pending = this.inFlight.get(key);
 		if (!pending) {
-			pending = this.obtain(id.toLowerCase(), variant, key);
+			pending = this.obtain(id.toLowerCase(), variant, face, key);
 			this.inFlight.set(key, pending);
 		}
 		try {
@@ -112,11 +129,11 @@ export class CardImageService {
 	 * machine or before measuring existed), or whose measuring failed, are measured now.
 	 * Null when there is no such image or it cannot be decoded.
 	 */
-	async meta(id: string, variant: ImageVariant): Promise<ImageMeta | null> {
-		const key = `${variant}/${id.toLowerCase()}`;
+	async meta(id: string, variant: ImageVariant, face: CardFace = 'front'): Promise<ImageMeta | null> {
+		const key = `${variant}/${imageName(id, face)}`;
 		const stored = await this.cache.getMeta(key);
 		if (stored) return stored;
-		const image = await this.get(id, variant);
+		const image = await this.get(id, variant, face);
 		if (!image) return null;
 		return (await this.cache.getMeta(key)) ?? this.measure(key, id.toLowerCase(), variant, image);
 	}
@@ -155,6 +172,7 @@ export class CardImageService {
 	private async obtain(
 		id: string,
 		variant: ImageVariant,
+		face: CardFace,
 		key: string
 	): Promise<Buffer | null> {
 		const deadline = Date.now() + WAIT_LIMIT_MS;
@@ -168,7 +186,7 @@ export class CardImageService {
 				// Gone from the folder: forgotten, so the next lookup sees it absent.
 			} else if (state === 'absent') {
 				if (await this.cache.claim(key, LEASE_SECONDS)) {
-					return this.download(id, variant, key);
+					return this.download(id, variant, face, key);
 				}
 				// Refused: another process has claimed or made it since the lookup.
 			}
@@ -188,9 +206,10 @@ export class CardImageService {
 	private async download(
 		id: string,
 		variant: ImageVariant,
+		face: CardFace,
 		key: string
 	): Promise<Buffer | null> {
-		const url = `https://cards.scryfall.io/${variant}/front/${id[0]}/${id[1]}/${id}.jpg`;
+		const url = `https://cards.scryfall.io/${variant}/${face}/${id[0]}/${id[1]}/${id}.jpg`;
 		let image: Buffer;
 		try {
 			const response = await this.fetchImage(url, {

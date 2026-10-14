@@ -156,6 +156,60 @@
 	width: 100%;
 }
 
+/* A double-faced card: room under the image for the Flip button that sits on its bottom edge. */
+.two-faced {
+	margin-bottom: 20px;
+}
+
+.flip {
+	position: absolute;
+	bottom: 0;
+	left: 50%;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 16px;
+	border: 0;
+	border-radius: 999px;
+	background: rgba(24, 19, 17, 0.82);
+	box-shadow: 0 6px 18px rgba(24, 19, 17, 0.3);
+	color: #fff;
+	font: inherit;
+	font-size: 14px;
+	font-weight: 650;
+	cursor: pointer;
+	transform: translate(-50%, 50%);
+}
+
+@media (hover: hover) {
+	.flip:hover {
+		background: rgba(24, 19, 17, 0.92);
+	}
+}
+
+.flip:focus-visible {
+	outline: 2px solid var(--deck-accent, #7a3431);
+	outline-offset: 2px;
+}
+
+/* Turning the card over: each face swings in on its vertical axis. */
+.face-turned {
+	animation: face-turn 260ms ease-out;
+}
+
+@keyframes face-turn {
+	from {
+		transform: perspective(900px) rotateY(80deg);
+		opacity: 0.4;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.face-turned {
+		animation: none;
+	}
+}
+
 .mobile-image > .image-frame {
 	width: min(66vw, 280px);
 }
@@ -299,6 +353,17 @@
 	height: auto;
 	border-radius: 14px;
 	box-shadow: 0 18px 48px rgba(24, 19, 17, 0.32);
+}
+
+/* A double-faced card: front and back side by side, in a hover card as wide as both. */
+.hover-faces {
+	display: flex;
+	gap: 12px;
+}
+
+.hover-faces > .hover-image {
+	flex: 1 1 0;
+	min-width: 0;
 }
 
 .hover-rendered {

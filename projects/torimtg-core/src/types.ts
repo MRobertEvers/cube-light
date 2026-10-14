@@ -5,7 +5,7 @@ export const CHECKPOINT_AGE_MS = 24 * 60 * 60 * 1000;
  * Bumped whenever the server changes how it describes a card, such as which face files it.
  * A replica whose catalog came from another version drops it and bootstraps it again.
  */
-export const CARD_CATALOG_VERSION = 2;
+export const CARD_CATALOG_VERSION = 3;
 
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 export type AggregateKind = 'deck' | 'collection' | 'location' | 'profile' | 'work';

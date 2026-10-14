@@ -4,7 +4,7 @@ import { SqliteDatabase, placeholders } from '../sqlite';
 const CARD_DATABASE_COLUMNS =
 	'c.name, c.uuid, i.scryfallId, c.types, c.manaCost';
 const CARD_DATA_COLUMNS =
-	'c.name, c.uuid, i.scryfallId, c.types, c.subtypes, c.manaCost, c.text, c.setCode';
+	'c.name, c.uuid, i.scryfallId, c.types, c.subtypes, c.manaCost, c.text, c.setCode, c.layout';
 /**
  * The row that stands for a whole card. A multi-face card has one row per face; its adventure,
  * omen, prepared side or back face is a later side and is filed and listed under the first.
@@ -28,6 +28,8 @@ export type DetailedCardInfo = CardInfo & {
 	subtypes: string;
 	text: string;
 	setCode: string;
+	/** MTGJSON's layout: 'normal', 'transform', 'modal_dfc', 'adventure', 'split'… */
+	layout: string | null;
 };
 
 /** Printed card-face details shown alongside a card preview. */

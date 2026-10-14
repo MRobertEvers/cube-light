@@ -3,7 +3,27 @@ import {
 	CardRulesInfo,
 	DetailedCardInfo
 } from '../database/cards/CardDatabase';
-import { cardImageUrl, ImageVariant } from '../images/card-images';
+import { CardFace, cardImageUrl, ImageVariant } from '../images/card-images';
+
+/** Layouts printed on two faces, each with an image of its own (Scryfall's `back` images). Split,
+ * adventure, flip and the like are one face; a meld card's other half is another card. */
+const DOUBLE_FACED_LAYOUTS = new Set(['transform', 'modal_dfc', 'reversible_card']);
+
+/** Every size of one face's image, as this server serves them. */
+function faceImages(
+	imageBaseUrl: string,
+	scryfallId: string,
+	face: CardFace
+): Record<ImageVariant, string> | undefined {
+	const small = cardImageUrl(imageBaseUrl, scryfallId, 'small', face);
+	if (!small) return undefined;
+	return {
+		small,
+		normal: cardImageUrl(imageBaseUrl, scryfallId, 'normal', face)!,
+		large: cardImageUrl(imageBaseUrl, scryfallId, 'large', face)!,
+		art_crop: cardImageUrl(imageBaseUrl, scryfallId, 'art_crop', face)!
+	};
+}
 
 export type DeckOverviewCardInfo = Omit<CardRulesInfo, 'uuid'> & {
 	// From DetailedCardInfo
@@ -19,6 +39,8 @@ export type DeckOverviewCardInfo = Omit<CardRulesInfo, 'uuid'> & {
 	// URLs served by this server.
 	image?: string;
 	images?: Record<ImageVariant, string>;
+	/** The back face's images, for a double-faced printing only. */
+	backImages?: Record<ImageVariant, string>;
 	art?: string;
 };
 
@@ -59,29 +81,13 @@ export async function getDeckOverviewCardInfo(
 			flavorText: null,
 			legalities: {}
 		};
-		const small = cardImageUrl(imageBaseUrl, baseCard.scryfallId, 'small');
-		const images = small
-			? {
-					small,
-					normal: cardImageUrl(
-						imageBaseUrl,
-						baseCard.scryfallId,
-						'normal'
-					)!,
-					large: cardImageUrl(
-						imageBaseUrl,
-						baseCard.scryfallId,
-						'large'
-					)!,
-					art_crop: cardImageUrl(
-						imageBaseUrl,
-						baseCard.scryfallId,
-						'art_crop'
-					)!
-				}
-			: undefined;
+		const images = faceImages(imageBaseUrl, baseCard.scryfallId, 'front');
+		const backImages =
+			baseCard.layout && DOUBLE_FACED_LAYOUTS.has(baseCard.layout)
+				? faceImages(imageBaseUrl, baseCard.scryfallId, 'back')
+				: undefined;
 
-		return {
+		const card: DeckOverviewCardInfo = {
 			name: baseCard.name,
 			uuid: baseCard.uuid,
 			scryfallId: baseCard.scryfallId,
@@ -104,5 +110,8 @@ export async function getDeckOverviewCardInfo(
 			images,
 			art: images?.art_crop
 		};
+		// Only on double-faced printings, so other cards' records stay as they were.
+		if (backImages) card.backImages = backImages;
+		return card;
 	});
 }

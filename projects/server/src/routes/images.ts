@@ -3,7 +3,7 @@ import { Request, Response, Router } from 'express';
 import {
 	CardImageService,
 	isImageVariant,
-	isScryfallId
+	parseImageName
 } from '../images/card-images';
 
 export function createRoutesImages(images: CardImageService): Router {
@@ -17,13 +17,15 @@ export function createRoutesImages(images: CardImageService): Router {
 		) => {
 			res.setHeader('Cache-Control', 'no-store');
 			const { id, variant } = req.params;
-			if (!isImageVariant(variant) || !isScryfallId(id)) {
+			// `<id>` is a card's front, `<id>-back` the back of a double-faced card.
+			const named = parseImageName(id);
+			if (!isImageVariant(variant) || !named) {
 				res.sendStatus(400);
 				return;
 			}
 
 			try {
-				const image = await images.get(id, variant);
+				const image = await images.get(named.id, variant, named.face);
 				if (!image) {
 					res.sendStatus(404);
 					return;
@@ -66,12 +68,14 @@ export function createRoutesImages(images: CardImageService): Router {
 		) => {
 			res.setHeader('Cache-Control', 'no-store');
 			const { id, variant } = req.params;
-			if (!isImageVariant(variant) || !isScryfallId(id)) {
+			// `<id>` is a card's front, `<id>-back` the back of a double-faced card.
+			const named = parseImageName(id);
+			if (!isImageVariant(variant) || !named) {
 				res.sendStatus(400);
 				return;
 			}
 			try {
-				const meta = await images.meta(id, variant);
+				const meta = await images.meta(named.id, variant, named.face);
 				if (!meta) {
 					res.sendStatus(404);
 					return;

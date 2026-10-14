@@ -141,6 +141,44 @@ test('serves a Scryfall image once, persists it, and handles browser caching', (
 	}
 }));
 
+test('serves a double-faced card\'s back from Scryfall\'s back images, apart from its front', () => withArtCache(async (scratch) => {
+	let server;
+	const asked = [];
+	try {
+		const images = new CardImageService(scratch.open(), new NativeImageMeasurer(), async (url) => {
+			asked.push(url);
+			return new Response(jpeg, { headers: { 'Content-Type': 'image/jpeg' } });
+		});
+		const app = express();
+		app.use(createRoutesImages(images));
+		server = app.listen(0, '127.0.0.1');
+		await once(server, 'listening');
+		const base = `http://127.0.0.1:${server.address().port}/images/normal`;
+
+		const back = await fetch(`${base}/${id}-back.jpg`);
+		assert.equal(back.status, 200);
+		assert.deepEqual(asked, [`https://cards.scryfall.io/normal/back/6/7/${id}.jpg`]);
+		assert.deepEqual(await readFile(path.join(scratch.root, 'normal', `${id}-back.jpg`)), jpeg);
+
+		// The front is its own image, asked for separately.
+		assert.equal((await fetch(`${base}/${id}.jpg`)).status, 200);
+		assert.deepEqual(asked, [
+			`https://cards.scryfall.io/normal/back/6/7/${id}.jpg`,
+			`https://cards.scryfall.io/normal/front/6/7/${id}.jpg`
+		]);
+
+		// Only `-back` names a face.
+		assert.equal((await fetch(`${base}/${id}-side.jpg`)).status, 400);
+		assert.equal(cardImageUrl('http://x', id, 'normal', 'back'), `http://x/images/normal/${id}-back.jpg`);
+		assert.equal(cardImageUrl('http://x', id, 'normal'), `http://x/images/normal/${id}.jpg`);
+	} finally {
+		if (server) {
+			server.close();
+			await once(server, 'close');
+		}
+	}
+}));
+
 test('rewrites saved Scryfall deck art to the local image endpoint', () => {
 	const base = 'http://localhost:4040';
 	assert.equal(

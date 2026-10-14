@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { BoardProps } from '../board.types';
-import { type CubeTutorPreview, CubeTutorColumns, previewPosition } from './CubeTutorColumns';
+import { type CubeTutorPreview, CubeTutorColumns, previewPosition, previewWidth } from './CubeTutorColumns';
 import styles from './cube-tutor-board.module.css';
 
 /**
@@ -19,7 +19,7 @@ export function CubeTutorBoardOnline(props: BoardProps) {
 				annotations={props.annotations}
 				onPreview={setPreview}
 			/>
-			{preview && (
+			{preview && !preview.card.backImages && (
 				<img
 					className={styles.preview}
 					style={previewPosition(preview.row)}
@@ -27,6 +27,13 @@ export function CubeTutorBoardOnline(props: BoardProps) {
 					alt=""
 					aria-hidden="true"
 				/>
+			)}
+			{preview && preview.card.backImages && (
+				// A double-faced card: both faces side by side.
+				<span className={styles.previewFaces} style={previewPosition(preview.row, previewWidth(preview.card))} aria-hidden="true">
+					<img className={styles.preview} src={preview.card.images?.normal ?? preview.card.image} alt="" />
+					<img className={styles.preview} src={preview.card.backImages.normal} alt="" />
+				</span>
 			)}
 		</div>
 	);

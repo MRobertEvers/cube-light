@@ -9,7 +9,7 @@ import {
 import type { ImageCache, ImageState } from './ImageCache';
 
 const KEY =
-	/^(small|normal|large|art_crop)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/;
+	/^(small|normal|large|art_crop)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:-back)?)$/;
 /** Where an image's measurements live in this machine's index. */
 const META_KEY = 'cubelight.meta';
 

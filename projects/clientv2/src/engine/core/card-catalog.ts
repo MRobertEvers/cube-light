@@ -26,6 +26,8 @@ export type OverviewCard = {
     loyalty: string | null; defense: string | null; number: string | null; artist: string | null;
     flavorText: string | null; legalities: Record<string, string>;
     image?: string; images?: CardImages; art?: string;
+    /** The back face's images, for a double-faced printing (transform, modal) only. */
+    backImages?: CardImages;
 };
 
 /** /cards/details: the overview plus every set the card was printed in. */
@@ -107,6 +109,7 @@ export function overviewOf(entry: CatalogEntry | undefined): OverviewCard | null
     const details = entry.details;
     const overview: OverviewCard = cardFields(details);
     if ('images' in details) overview.images = details.images;
+    if (details.backImages) overview.backImages = details.backImages;
     if (details.image) overview.image = details.image;
     if (details.art) overview.art = details.art;
     return overview;
@@ -140,6 +143,7 @@ export function detailsOf(entry: CatalogEntry | undefined): DetailedCard | Omit<
         image: overview.images?.small ?? overview.image ?? null, highResImage: overview.images?.normal ?? null, art: overview.images?.art_crop ?? overview.art ?? null
     };
     if ('images' in overview) details.images = overview.images;
+    if (overview.backImages) details.backImages = overview.backImages;
     return details;
 }
 
