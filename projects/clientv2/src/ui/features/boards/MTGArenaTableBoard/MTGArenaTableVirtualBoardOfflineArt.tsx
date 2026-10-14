@@ -20,7 +20,7 @@ function TabletopCardOfflineArt(props: TabletopCardProps) {
 		>
 			<span className={owned?.status === 'missing' ? `${styles.face} ${styles.missing}` : styles.face}>
 				<TabletopArtFace card={card} />
-				{owned && (
+				{owned && owned.status !== 'missing' && (
 					<span className={styles.ownership}>
 						<OwnershipBadge row={owned} compact />
 					</span>

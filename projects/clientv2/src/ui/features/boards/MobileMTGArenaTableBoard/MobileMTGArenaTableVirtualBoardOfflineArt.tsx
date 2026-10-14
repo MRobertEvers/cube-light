@@ -19,7 +19,7 @@ function TabletopCardOfflineArt(props: TabletopCardProps) {
 			onClick={() => onCardEvent({ type: 'view', card, group })}
 		>
 			<TabletopArtFace card={card} />
-			{owned && (
+			{owned && owned.status !== 'missing' && (
 				<span className={styles.ownership}>
 					<OwnershipBadge row={owned} compact />
 				</span>

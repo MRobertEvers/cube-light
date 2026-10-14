@@ -82,7 +82,7 @@ function MobileCardRow(props: MobileCardRowProps) {
 					<span className={styles.count}>{group.count}</span>
 					<span className={styles.name}>{group.name}</span>
 					<ManaCost cost={top.manaCost} />
-					{owned && owned.status !== 'owned' && <OwnershipBadge row={owned} compact />}
+					{owned && owned.status === 'partial' && <OwnershipBadge row={owned} compact />}
 					{group.printings.length === 1 ? (
 						<span className={styles.setCode}>({top.setCode})</span>
 					) : (

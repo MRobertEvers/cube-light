@@ -96,8 +96,8 @@ function CardRow(props: CardRowProps) {
 	const { group, annotations, expanded, onToggle, onCardEvent } = props;
 	const [top] = group.printings;
 	const owned = annotations?.ownership?.[ownedNameKey(group.name)];
-	// The chip speaks up only when copies are short.
-	const ownership = owned && owned.status !== 'owned' && <OwnershipBadge row={owned} />;
+	// The chip speaks up only when some copies are owned but not all.
+	const ownership = owned && owned.status === 'partial' && <OwnershipBadge row={owned} />;
 	const topPreview = previewHandlers(top, onCardEvent);
 	const printingsId = `printings-${group.board}-${group.name.replace(/\W+/g, '-')}`;
 

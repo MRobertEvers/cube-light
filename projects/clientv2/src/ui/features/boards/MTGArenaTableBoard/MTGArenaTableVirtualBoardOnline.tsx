@@ -33,7 +33,7 @@ function TabletopCardOnline(props: TabletopCardProps) {
 				) : (
 					<span className={styles.fallback}>{group.name}</span>
 				)}
-				{owned && (
+				{owned && owned.status !== 'missing' && (
 					<span className={styles.ownership}>
 						<OwnershipBadge row={owned} compact />
 					</span>

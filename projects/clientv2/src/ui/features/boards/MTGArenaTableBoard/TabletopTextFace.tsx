@@ -27,7 +27,7 @@ export function TabletopTextFace(props: { group: DeckCardGroup; owned?: RowOwner
 			</span>
 			<span className={styles.line}>
 				<ManaCost cost={card.manaCost} />
-				{owned && <OwnershipBadge row={owned} compact />}
+				{owned && owned.status !== 'missing' && <OwnershipBadge row={owned} compact />}
 			</span>
 			{card.type && <span className={styles.type}>{card.type}</span>}
 			{stats && <span className={styles.stats}>{stats}</span>}
