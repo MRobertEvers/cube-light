@@ -9,6 +9,7 @@ import { CardImageService } from './images/card-images';
 import { ArtCacheImageCache } from './images/ArtCacheImageCache';
 import { artcache } from './images/artcache';
 import { NativeImageMeasurer } from './images/image-measurer';
+import { DepthMapService } from './images/depth/depth-maps';
 import { createKVStore } from './auth/kv-store';
 import { UserStore } from './auth/UserStore';
 
@@ -19,7 +20,9 @@ const CARD_DATABASE_PATH = path.join(__dirname, './assets/AllPrintings.sqlite');
 async function main() {
 	const cDb = new CardDatabase(CARD_DATABASE_PATH);
 	const db = await Database.Sqlite('database.sqlite');
-	const images = new CardImageService(openArtCache(), new NativeImageMeasurer());
+	const artCache = openArtCache();
+	const images = new CardImageService(artCache, new NativeImageMeasurer());
+	const depthMaps = openDepthMaps(images, artCache);
 
 	const kv = createKVStore();
 	const auth = {
@@ -29,7 +32,7 @@ async function main() {
 
 	const app = express();
 
-	app.use(createRoutes(db, cDb, images, auth));
+	app.use(createRoutes(db, cDb, images, auth, depthMaps));
 
 	const server = new Server(
 		{
@@ -58,6 +61,21 @@ function openArtCache(): ArtCacheImageCache {
 	});
 	console.log(`Card art: ${cache.root} (this machine's index: ${cache.indexPath})`);
 	return cache;
+}
+
+/**
+ * Height maps ("parallax art") of the art crops, made on request in the same folder; off with
+ * CUBELIGHT_DEPTH=0. The model is models/depth-anything-v2-small/model.onnx (CUBELIGHT_DEPTH_MODEL).
+ */
+function openDepthMaps(images: CardImageService, artCache: ArtCacheImageCache): DepthMapService | null {
+	if (process.env.CUBELIGHT_DEPTH === '0') return null;
+	const depthMaps = new DepthMapService(images, {
+		root: artCache.root,
+		index: artCache.indexPath
+	});
+	const status = depthMaps.status();
+	console.log(status.available ? `Parallax art: ${status.stamp}` : `Parallax art is off: ${status.reason}`);
+	return depthMaps;
 }
 
 main();

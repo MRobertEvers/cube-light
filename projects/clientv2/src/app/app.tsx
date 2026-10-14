@@ -8,6 +8,7 @@ import { useAppDispatch } from '../redux/use-app-dispatch';
 import { useAppSelector } from '../redux/use-app-selector';
 import { selectConnectivity } from '../redux/connectivity/connectivity.selectors';
 import { checkOfflineDataUpdates } from '../redux/offline-data/offline-data.thunks';
+import { loadParallaxArt } from '../redux/parallax-art/parallax-art.thunks';
 import {
 	runQueuedScansHere,
 	watchWorkQueue
@@ -53,7 +54,8 @@ export function App(props: AppProps) {
 
 /**
  * Mounted only with a session: the queue and the scan runner need one. Each time the server
- * comes within reach, it asks whether installed offline data has an update.
+ * comes within reach, it asks whether installed offline data has an update. The profile's
+ * display preferences are read once here, for every page that draws card art.
  */
 function SignedInApp() {
 	const dispatch = useAppDispatch();
@@ -61,6 +63,9 @@ function SignedInApp() {
 	React.useEffect(() => {
 		if (online) void dispatch(checkOfflineDataUpdates()).catch(() => {});
 	}, [dispatch, online]);
+	React.useEffect(() => {
+		void dispatch(loadParallaxArt()).catch(() => {});
+	}, [dispatch]);
 	React.useEffect(() => {
 		const stopWatching = dispatch(watchWorkQueue());
 		const stopRunning = dispatch(runQueuedScansHere());

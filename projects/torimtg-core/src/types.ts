@@ -73,6 +73,9 @@ export type ProfileState = CommonState & {
     kind: 'profile'; userId: number; profile: Profile | null; printingView: 'compact' | 'grid';
     /** How the deck list is grouped, in display order. Absent while there are none, so older states hash the same. */
     deckGroups?: DeckGroup[];
+    /** Card art drawn with depth (parallax) where the server has a height map and the browser has WebGL.
+     * Absent while off, so older states hash the same. */
+    parallaxArt?: true;
 };
 export type WorkState = CommonState & {
     kind: 'work'; deckId: string; fileName: string; contentType: string; blobId: string;
@@ -105,6 +108,7 @@ export type DomainCommand =
     | { type: 'profile.artwork'; id: string; userId: number; profile: Profile }
     | { type: 'profile.printingView'; id: string; userId: number; printingView: 'compact' | 'grid' }
     | { type: 'profile.deckGroups'; id: string; userId: number; deckGroups: DeckGroup[] }
+    | { type: 'profile.parallaxArt'; id: string; userId: number; parallaxArt: boolean }
     | { type: 'work.queue'; id: string; deckId: string; fileName: string; contentType: string; blobId: string; pipeline: 'card-aware' | 'paddle-only' }
     | { type: 'work.start'; id: string; token: string }
     | { type: 'work.progress'; id: string; token: string; completed: number; total: number }
@@ -137,6 +141,7 @@ export type DomainEvent =
     | { type: 'ProfileArtworkSelected'; userId: number; profile: Profile }
     | { type: 'PrintingViewPreferenceSet'; userId: number; printingView: 'compact' | 'grid' }
     | { type: 'DeckGroupsSet'; userId: number; deckGroups: DeckGroup[] }
+    | { type: 'ParallaxArtPreferenceSet'; userId: number; parallaxArt: boolean }
     | { type: 'ScanQueued'; deckId: string; fileName: string; contentType: string; blobId: string; pipeline: 'card-aware' | 'paddle-only' }
     | { type: 'ScanStarted' | 'ScanReleased' | 'ScanRetried' | 'ScanDeleted' }
     | { type: 'ScanCompleted'; cardsAdded: number }

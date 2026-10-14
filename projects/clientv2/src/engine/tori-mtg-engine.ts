@@ -63,7 +63,10 @@ export type ToriMTGEngine = {
 		| 'addCardByName' | 'addCards' | 'importList' | 'removeCards' | 'moveCards' | 'placeCards'
 		| 'addMissingFromDeck' | 'applyCardSteps'
 	>;
-	profile: Pick<ProfileApi, 'setArtwork' | 'printingView' | 'setPrintingView' | 'deckGroups' | 'setDeckGroups'>;
+	profile: Pick<
+		ProfileApi,
+		'setArtwork' | 'printingView' | 'setPrintingView' | 'deckGroups' | 'setDeckGroups' | 'parallaxArt' | 'setParallaxArt'
+	>;
 	scans: Pick<
 		ScansApi,
 		| 'scansAreSlowHere' | 'scanPhoto' | 'queueForDesktop' | 'runQueued' | 'runQueuedScansHere' | 'watchQueue'

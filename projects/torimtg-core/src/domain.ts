@@ -311,6 +311,10 @@ export function decide(state: AggregateState | null, command: DomainCommand): Do
             const deckGroups: DeckGroup[] = command.deckGroups.map((group) => ({ groupId: group.groupId, name: group.name.trim(), tags: normalizeTags(group.tags), match: group.match }));
             return canonicalJson(deckGroups) === canonicalJson((state as ProfileState | null)?.deckGroups || []) ? [] : [{ type: 'DeckGroupsSet', userId: command.userId, deckGroups }];
         }
+        case 'profile.parallaxArt':
+            requireValue(Number.isSafeInteger(command.userId) && command.userId > 0 && command.id === `profile_${command.userId}`, 'Invalid profile identity.');
+            requireValue(typeof command.parallaxArt === 'boolean', 'Invalid preference.');
+            return command.parallaxArt === ((state as ProfileState | null)?.parallaxArt === true) ? [] : [{ type: 'ParallaxArtPreferenceSet', userId: command.userId, parallaxArt: command.parallaxArt }];
         case 'work.queue':
             requireValue(isPublicId(command.deckId, 'deck') && typeof command.fileName === 'string' && command.fileName.length <= 255 && /^image\/(jpeg|png|webp|heic|heif|gif)$/.test(command.contentType) && /^blob_[a-f0-9]{64}$/.test(command.blobId) && ['card-aware', 'paddle-only'].includes(command.pipeline), 'Invalid scan.');
             return [{ type: 'ScanQueued', deckId: command.deckId, fileName: command.fileName, contentType: command.contentType, blobId: command.blobId, pipeline: command.pipeline }];
@@ -331,10 +335,15 @@ export function applyEvent(state: AggregateState | null, event: DomainEvent, id:
             requireValue(!state && event.state.id === id, 'Invalid opening balance.'); return structuredClone(event.state);
         case 'DeckCreated': requireValue(!state, 'Duplicate creation event.'); return { id, deleted: false, createdAt: at, updatedAt: at, kind: 'deck', name: event.name, cards: {}, art: null, bannerCardUuid: null, palette: null, bannerCrop: null, topStyle: 'card', bannerBlend: null };
         case 'CollectionCreated': case 'StorageLocationCreated': requireValue(!state, 'Duplicate creation event.'); return { id, deleted: false, createdAt: at, updatedAt: at, kind: event.type === 'CollectionCreated' ? 'collection' : 'location', name: event.name };
-        case 'ProfileArtworkSelected': case 'PrintingViewPreferenceSet': case 'DeckGroupsSet': {
+        case 'ProfileArtworkSelected': case 'PrintingViewPreferenceSet': case 'DeckGroupsSet': case 'ParallaxArtPreferenceSet': {
             const profile: ProfileState = state?.kind === 'profile' ? structuredClone(state) : { id, deleted: false, createdAt: at, updatedAt: at, kind: 'profile', userId: event.userId, profile: null, printingView: 'grid' };
             if (event.type === 'ProfileArtworkSelected') profile.profile = event.profile;
             else if (event.type === 'PrintingViewPreferenceSet') profile.printingView = event.printingView;
+            // Off is stored as absent so the profile hashes like one that never set it.
+            else if (event.type === 'ParallaxArtPreferenceSet') {
+                if (event.parallaxArt) profile.parallaxArt = true;
+                else delete profile.parallaxArt;
+            }
             // No groups are stored as absent so the profile hashes like one that never had any.
             else if (event.deckGroups.length) profile.deckGroups = structuredClone(event.deckGroups);
             else delete profile.deckGroups;

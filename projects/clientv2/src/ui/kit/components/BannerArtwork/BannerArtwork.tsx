@@ -5,6 +5,11 @@ import {
 	clamp
 } from '../../../../domain/appearance/banner-crop';
 import type { ArtworkInfo } from '../../../../domain/appearance/artwork';
+import { useAppSelector } from '../../../../redux/use-app-selector';
+import { selectParallaxArt } from '../../../../redux/parallax-art/parallax-art.selectors';
+import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
+import { depthMapUrl } from './depth-map';
+import { ParallaxArt } from './ParallaxArt';
 import styles from './banner-artwork.module.css';
 
 type Props = {
@@ -40,6 +45,12 @@ export function BannerArtwork(props: Props) {
 	);
 	const [bounds, setBounds] = useState({ width: 0, height: 0 });
 	const [natural, setNatural] = useState({ src: '', width: 0, height: 0 });
+	// Parallax art: the profile asks for it, the system does not ask for less motion, and the art is
+	// this server's (which makes its height map). The flat image stays underneath as the fallback.
+	const parallax = useAppSelector(selectParallaxArt);
+	const reducedMotion = usePrefersReducedMotion();
+	const depthSrc = parallax && !reducedMotion ? depthMapUrl(src) : null;
+	const [parallaxActive, setParallaxActive] = useState(false);
 
 	// Layout effects, so an image that is already loaded is placed before the first paint.
 	useLayoutEffect(() => {
@@ -185,7 +196,13 @@ export function BannerArtwork(props: Props) {
 			{src && (
 				<img
 					ref={image}
-					className={preview && !loaded ? styles.pending : undefined}
+					className={
+						preview && !loaded
+							? styles.pending
+							: depthSrc && parallaxActive
+								? styles.underParallax
+								: undefined
+					}
 					src={src}
 					alt=""
 					draggable={false}
@@ -206,6 +223,17 @@ export function BannerArtwork(props: Props) {
 					}
 				/>
 			)}
+			{src && depthSrc && loaded && scale ? (
+				<ParallaxArt
+					src={src}
+					depthSrc={depthSrc}
+					width={width}
+					height={height}
+					left={left}
+					top={top}
+					onActive={setParallaxActive}
+				/>
+			) : null}
 		</div>
 	);
 }

@@ -14,6 +14,7 @@ import { OfflineShellStatusCard } from './OfflineShellStatusCard';
 import { OfflineCardDataCard } from './OfflineCardDataCard';
 import { OfflineCardArtCard } from './OfflineCardArtCard';
 import { SyncStatusCard } from './SyncStatusCard';
+import { DisplaySettingsCard } from './DisplaySettingsCard';
 import styles from './profile.module.css';
 
 const DEFAULT_CROP: ProfileCrop = { x: 0.5, y: 0.5, zoom: 1 };
@@ -275,6 +276,7 @@ export function Profile() {
 						)}
 					</section>
 				</div>
+				<DisplaySettingsCard />
 				<SyncStatusCard />
 				<OfflineShellStatusCard />
 				<OfflineCardDataCard />

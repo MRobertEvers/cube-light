@@ -18,7 +18,9 @@
 		"copy-static": "node tools/scripts/copy-static.js",
 		"build:core": "npm --prefix ../torimtg-core run build",
 		"compile": "npm run build:core && tsc",
-		"test": "npm run compile && node --test test/*.test.js"
+		"test": "npm run compile && node --test test/*.test.js",
+		"test:depth": "tsc && node --test test/depth-maps.test.js",
+		"depth-model": "node tools/scripts/depth-model.js"
 	},
 	"author": "",
 	"license": "ISC",
@@ -27,7 +29,8 @@
 	},
 	"dependencies": {
 		"@torimtg/core": "file:../torimtg-core",
-		"express": "^5.2.1"
+		"express": "^5.2.1",
+		"onnxruntime-node": "1.30.0"
 	},
 	"devDependencies": {
 		"@types/express": "^5.0.6",

@@ -53,7 +53,8 @@ depth model.
 - A PNG without that chunk takes the first line of its folder's `stamp.txt`, the convention of
   folders written before the chunk existed.
 - A file of another version than the one a host asks for is **stale**. It is still served, and the
-  host decides whether to make it again. torimtgd remakes it unless the map is newer than its own
+  host decides whether to make it again. torimtgd and cube-light, which make the same maps
+  under the same stamp, remake it unless the map is newer than their own
   worker: the same model with a higher pipeline number. Two machines on different revisions
   therefore never take turns remaking each other's maps.
 - Nothing ever deletes a folder of maps.

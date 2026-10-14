@@ -108,6 +108,18 @@ test('a deck keeps its tags tidy and drops them entirely when cleared', () => {
     assert.equal('tags' in state, false, 'a deck without tags stores none');
 });
 
+test('parallax art is a profile preference, stored only while it is on', () => {
+    const profileId = 'profile_7';
+    let state = preview(null, { type: 'profile.parallaxArt', id: profileId, userId: 7, parallaxArt: true }, at);
+    assert.equal(state.parallaxArt, true);
+    assert.deepEqual(decide(state, { type: 'profile.parallaxArt', id: profileId, userId: 7, parallaxArt: true }), []);
+    assert.throws(() => decide(state, { type: 'profile.parallaxArt', id: profileId, userId: 8, parallaxArt: false }), /profile identity/);
+    assert.throws(() => decide(state, { type: 'profile.parallaxArt', id: profileId, userId: 7, parallaxArt: 'yes' }), /Invalid preference/);
+    state = preview(state, { type: 'profile.parallaxArt', id: profileId, userId: 7, parallaxArt: false }, at);
+    assert.equal('parallaxArt' in state, false, 'a profile with parallax off stores nothing');
+    assert.deepEqual(decide(state, { type: 'profile.parallaxArt', id: profileId, userId: 7, parallaxArt: false }), []);
+});
+
 test('deck groups live on the profile and match decks by any or all of their tags', () => {
     const profileId = 'profile_7';
     const groupId = 'group_abcdefghijklmnop';

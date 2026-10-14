@@ -25,6 +25,63 @@
 	opacity: 0;
 }
 
+/* The art drawn with depth (ParallaxArt), placed exactly over the flat image. It never takes the
+   pointer: dragging to crop still reaches the frame. */
+.parallax {
+	position: absolute;
+	display: block;
+	pointer-events: none;
+}
+
+/* The flat image under parallax art: kept (it is the fallback, and it measures the art) but unseen. */
+.underParallax {
+	opacity: 0;
+}
+
+/* On a phone not yet letting the art follow it: a small mark in the corner. */
+.motionBadge {
+	position: absolute;
+	right: 8px;
+	bottom: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	color: #fff;
+	background: rgba(0, 0, 0, 0.45);
+	pointer-events: none;
+}
+
+/* The button that asks for the phone's motion, over the art after a tap. */
+.motionPrompt {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 12px;
+	display: flex;
+	justify-content: center;
+	pointer-events: none;
+}
+
+.motionPrompt button {
+	pointer-events: auto;
+	padding: 8px 14px;
+	border: 0;
+	border-radius: 999px;
+	color: #fff;
+	background: rgba(0, 0, 0, 0.7);
+	font: inherit;
+	font-size: 0.875rem;
+	cursor: pointer;
+}
+
+.motionPrompt button:focus-visible {
+	outline: 2px solid #fff;
+	outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.viewport img {
 		transition: none;

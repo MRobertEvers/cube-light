@@ -141,6 +141,50 @@ in `src/images/ImageCache.ts` and replace `ArtCacheImageCache` in `src/main.ts`.
 `npm run test:images` to test image fetching, the cache shared between processes and
 machines, and HTTP responses.
 
+## Parallax art (height maps)
+
+With **Parallax art** on (Profile → Display, saved on the profile), deck banners draw
+their card art with depth.
+- **How:** the client marches through the art's height map in WebGL 2.
+- **What moves the view:** the mouse over the art, or the phone's tilt. iOS must be asked
+  for motion first: a small badge marks art that could follow the phone, and tapping the art
+  shows the button that asks. With nothing moving it, the view drifts slowly.
+- **When it stays flat:** without WebGL 2, without a map, or when the system asks for
+  reduced motion.
+
+The server makes each art crop's height map the first time a client asks, and keeps it in
+the art cache as `depth/<id>.png`, where torimtgd keeps its own.
+
+- **`GET /images/depth`** says whether this server makes them (`{ available, stamp, reason }`).
+- **`GET /images/depth/<scryfallId>.png`** answers with the map: a greyscale PNG the size
+  of the art, 105 for the farthest point and 223 for the nearest. While the map is being
+  made the answer is `503` with `Retry-After`. It is `404` when there is none to be had: no
+  art, no model, or making it failed twice. A map is cached for a day by its `ETag`.
+
+**The model** is Depth-Anything V2 Small (ONNX, Apache-2.0), at
+`models/depth-anything-v2-small/model.onnx`. It is tracked in Git, so a checkout has it.
+`npm run depth-model` verifies it against `models/models.json`, and
+`npm run depth-model -- install` restores it from Hugging Face if it is missing or corrupt.
+`CUBELIGHT_DEPTH_MODEL` names another file, and `CUBELIGHT_DEPTH=0` turns parallax art off.
+
+**How the maps are made.**
+- **Where:** the model runs on `onnxruntime-node` (CPU) on a worker thread, so requests are
+  never held up. It is loaded on the first request and released after ten idle minutes. A
+  map takes about half a second.
+- **The same maps as torimtgd's:** `src/images/depth/height-map.ts` ports mtg-ai's
+  `torimtg/server/depth_worker.py`, pipeline 1 (the same input resize, bicubic upsampling,
+  blur and tone curve). From the same pixels its maps agree with torimtgd's to within one
+  byte. The two servers write the same stamp into each map's PNG (`torimtg-version`), so
+  they use each other's maps instead of remaking them.
+- **Keeping in step:** when mtg-ai bumps `PIPELINE`, port the change and bump
+  `DEPTH_PIPELINE`.
+- **Other stamps:** a map with an older stamp is served while it is made again. A newer one
+  (the same model, a later pipeline) is left as it is.
+- **Several processes:** on one machine, a map being made is claimed in the art cache's
+  index, so two processes never make it at once.
+
+Run `npm run test:depth` to test making, serving and sharing maps.
+
 ## Card name index
 
 `npm run build` compiles the C name index with node-gyp, compiles the same lookup code

@@ -5,6 +5,7 @@ import { UserStore } from '../auth/UserStore';
 import { Database } from '../database/app/database';
 import { CardDatabase } from '../database/cards/CardDatabase';
 import { CardImageService } from '../images/card-images';
+import type { DepthMapService } from '../images/depth/depth-maps';
 import { PathBuilder } from '../utils/PathBuilder';
 import { createRoutesCards } from './cards';
 import { createRoutesDecks } from './decks';
@@ -12,6 +13,7 @@ import { createRoutesSuggest } from './suggest';
 import { createRoutes_Collections } from './collections';
 import { createRoutes_StorageLocations } from './storage-locations';
 import { createRoutesImages } from './images';
+import { createRoutesDepthMaps } from './depth-maps';
 import { createRoutesWork } from './work';
 import { createRoutesAuth } from './auth';
 import { createSyncRoutes } from '../sync/routes';
@@ -28,8 +30,10 @@ export function createRoutes(
 	database: Database,
 	cardDatabase: CardDatabase,
 	images: CardImageService,
-	auth: AuthServices
+	auth: AuthServices,
+	depthMapsArg?: DepthMapService | null
 ): Router {
+	const depthMaps = depthMapsArg === undefined ? null : depthMapsArg;
 	const app = Router();
 	let pathBuilder = new PathBuilder();
 
@@ -54,6 +58,7 @@ export function createRoutes(
 		createRoutesDecks(pathBuilder.routes('/decks'), database, cardDatabase)
 	);
 	app.use(createRoutesCards(pathBuilder.routes('/cards'), cardDatabase));
+	if (depthMaps) app.use(createRoutesDepthMaps(depthMaps));
 	app.use(createRoutesImages(images));
 	app.use(createRoutesWork(database, cardDatabase));
 

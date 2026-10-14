@@ -63,6 +63,24 @@ export class ProfileApi {
 		});
 	}
 
+	/** Whether card art is drawn with depth (parallax) where it can be. Off before it is set. */
+	async parallaxArt(): Promise<Versioned<boolean>> {
+		const saved = await this.tori.queries.read<{ parallaxArt?: boolean }>({
+			type: 'profile'
+		});
+		return { value: saved.data?.parallaxArt === true, revision: saved.localRevision };
+	}
+
+	async setParallaxArt(parallaxArt: boolean): Promise<void> {
+		const user = await this.signedInUser();
+		await this.tori.commands.execute({
+			type: 'profile.parallaxArt',
+			id: `profile_${user.id}`,
+			userId: user.id,
+			parallaxArt
+		});
+	}
+
 	private async signedInUser() {
 		const user = (await this.tori.session()).user;
 		if (!user) throw new Error('Sign in required');

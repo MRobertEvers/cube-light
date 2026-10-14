@@ -192,10 +192,50 @@ sample(napi_env env, napi_callback_info callback)
     return result;
 }
 
+/*
+ * decode(jpeg: Buffer) -> { width, height, rgb: Buffer }
+ * The whole image as RGB bytes, top row first (what the height maps are made from).
+ */
+static napi_value
+decode(napi_env env, napi_callback_info callback)
+{
+    size_t argc = 1;
+    napi_value argv[1];
+    NAPI_OK(napi_get_cb_info(env, callback, &argc, argv, NULL, NULL));
+    if( argc != 1 )
+        return fail(env, "decode expects a Buffer");
+    void* data;
+    size_t length;
+    int width, height, channels;
+    if( !read_info(env, argv[0], &data, &length, &width, &height) )
+        return NULL;
+    uint8_t* rgb = stbi_load_from_memory(data, (int)length, &width, &height, &channels, 3);
+    if( !rgb )
+        return fail(env, "not a decodable JPEG");
+    napi_value result, value;
+    void* pixels;
+    if( napi_create_object(env, &result) != napi_ok ||
+        napi_create_buffer(env, (size_t)width * height * 3, &pixels, &value) != napi_ok )
+    {
+        stbi_image_free(rgb);
+        return NULL;
+    }
+    memcpy(pixels, rgb, (size_t)width * height * 3);
+    stbi_image_free(rgb);
+    NAPI_OK(napi_set_named_property(env, result, "rgb", value));
+    NAPI_OK(napi_create_int32(env, width, &value));
+    NAPI_OK(napi_set_named_property(env, result, "width", value));
+    NAPI_OK(napi_create_int32(env, height, &value));
+    NAPI_OK(napi_set_named_property(env, result, "height", value));
+    return result;
+}
+
 static napi_value
 init(napi_env env, napi_value exports)
 {
     napi_value function;
+    NAPI_OK(napi_create_function(env, "decode", NAPI_AUTO_LENGTH, decode, NULL, &function));
+    NAPI_OK(napi_set_named_property(env, exports, "decode", function));
     NAPI_OK(napi_create_function(env, "info", NAPI_AUTO_LENGTH, info, NULL, &function));
     NAPI_OK(napi_set_named_property(env, exports, "info", function));
     NAPI_OK(napi_create_function(env, "sample", NAPI_AUTO_LENGTH, sample, NULL, &function));

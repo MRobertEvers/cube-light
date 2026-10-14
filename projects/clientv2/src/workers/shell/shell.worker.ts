@@ -37,6 +37,11 @@ const MATCH: CacheQueryOptions = { ignoreVary: true };
 const IMAGES = 'torimtg-images-v1';
 const IMAGES_LIMIT = 2000;
 const CARD_IMAGE = /^\/api\/images\/[a-z_]+\/[0-9a-f-]+\.jpg$/i;
+// Height maps of card art (parallax art), made by the server on request. Only a finished map
+// (200) is kept; while one is being made the server answers 503, which passes through.
+const DEPTH_MAPS = 'torimtg-depth-v1';
+const DEPTH_MAPS_LIMIT = 300;
+const DEPTH_MAP = /^\/api\/images\/depth\/[0-9a-f-]+\.png$/i;
 // Written by ShellWorkerClient.setMode; holds 'development' or 'release'.
 const SETTINGS = 'torimtg-settings';
 const MODE_KEY = '/shell-mode';
@@ -60,7 +65,7 @@ worker.addEventListener('activate', (event) => {
 		const keys = await caches.keys();
 		const shells = keys.filter((key) => key.startsWith(SHELL_PREFIX) && key !== SHELL);
 		// Keep the previous shell for tabs still running it; drop older ones and anything else ours.
-		const keep = new Set([SHELL, STATIC, IMAGES, SETTINGS, shells[shells.length - 1]]);
+		const keep = new Set([SHELL, STATIC, IMAGES, DEPTH_MAPS, SETTINGS, shells[shells.length - 1]]);
 		for (const key of keys) if (key.startsWith('torimtg-') && !keep.has(key)) await caches.delete(key);
 	})());
 });
@@ -72,6 +77,10 @@ worker.addEventListener('fetch', (event) => {
 	if (url.origin !== worker.location.origin) return;
 	if (CARD_IMAGE.test(url.pathname)) {
 		event.respondWith(cardImage(request, url));
+		return;
+	}
+	if (DEPTH_MAP.test(url.pathname)) {
+		event.respondWith(cacheFirst(DEPTH_MAPS, DEPTH_MAPS_LIMIT, request));
 		return;
 	}
 	if (url.pathname.startsWith('/api/')) return;
