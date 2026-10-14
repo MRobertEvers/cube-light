@@ -166,6 +166,15 @@ export class UserStore {
 		return this.findById(userId);
 	}
 
+	/** Returns false when no account with a password has this ID. */
+	async setPassword(userId: number, passwordHash: string): Promise<boolean> {
+		const result = await this.db.run(
+			'UPDATE Users SET PasswordHash = ?, UpdatedAt = ? WHERE UserId = ? AND PasswordHash IS NOT NULL',
+			[passwordHash, timestamp(), userId]
+		);
+		return result.changes > 0;
+	}
+
 	async hasAccounts(): Promise<boolean> {
 		return !!(await this.db.get(
 			'SELECT 1 FROM Users WHERE PasswordHash IS NOT NULL LIMIT 1'

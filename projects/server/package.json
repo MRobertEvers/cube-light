@@ -12,6 +12,7 @@
 		"test:images": "tsc && node --test test/images.test.js",
 		"test:auth": "tsc && node --test test/kv-store.test.js test/auth.test.js test/token-database.test.js",
 		"create-user": "tsc && node tools/scripts/create-user.js",
+		"set-password": "tsc && node tools/scripts/set-password.js",
 		"dev": "npm run build && node tools/scripts/dev.js",
 		"start": "npm run build && node build/src/main.js",
 		"copy-static": "node tools/scripts/copy-static.js",
