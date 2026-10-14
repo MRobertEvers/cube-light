@@ -1,6 +1,7 @@
 import express from 'express';
 import { Server } from './server/Server';
 import path from 'path';
+import fs from 'fs';
 
 import { Database } from './database/app/database';
 import { CardDatabase } from './database/cards/CardDatabase';
@@ -20,7 +21,7 @@ const CARD_DATABASE_PATH = path.join(__dirname, './assets/AllPrintings.sqlite');
 async function main() {
 	const cDb = new CardDatabase(CARD_DATABASE_PATH);
 	const db = await Database.Sqlite('database.sqlite');
-	const artCache = openArtCache();
+	const artCache = await openArtCache();
 	const images = new CardImageService(artCache, new NativeImageMeasurer());
 	const depthMaps = openDepthMaps(images, artCache);
 
@@ -51,16 +52,33 @@ async function main() {
  * artcache's default (TMG_SCRYFALL_CACHE, else <per-user data>/torimtg/scryfall_cache). Its index
  * is this machine's: TORIMTG_ART_INDEX, else artcache's default.
  */
-function openArtCache(): ArtCacheImageCache {
+async function openArtCache(): Promise<ArtCacheImageCache> {
 	const root = process.env.TORIMTG_ART_CACHE || artcache.defaultRoot();
 	if (!root) {
 		throw new Error('No card art folder: set TORIMTG_ART_CACHE');
 	}
+	await waitForArtFolder(root);
 	const cache = new ArtCacheImageCache(root, {
 		index: process.env.TORIMTG_ART_INDEX || null
 	});
 	console.log(`Card art: ${cache.root} (this machine's index: ${cache.indexPath})`);
 	return cache;
+}
+
+/**
+ * A card art folder on a share that is not mounted yet (at login, before the NAS is) has no parent
+ * either. Waits for it rather than failing: a failed start leaves the watcher waiting for a file
+ * change, not starting the server again. A new folder in a place that exists is made as usual.
+ */
+async function waitForArtFolder(root: string): Promise<void> {
+	let said = false;
+	while (!fs.existsSync(root) && !fs.existsSync(path.dirname(root))) {
+		if (!said) {
+			console.log(`Waiting for the card art folder ${root} (is its share mounted?)`);
+			said = true;
+		}
+		await new Promise((resolve) => setTimeout(resolve, 5000));
+	}
 }
 
 /**
