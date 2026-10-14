@@ -5,6 +5,7 @@
  */
 
 const ART_CROP = /^(.*\/images)\/art_crop\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jpg$/i;
+const CARD_IMAGE = /\/images\/(?:small|normal|large|art_crop)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jpg$/i;
 /** How long to keep asking while the server makes a map (its model loads on the first). */
 const GIVE_UP_MS = 60000;
 
@@ -26,6 +27,16 @@ export function depthMapUrl(artSrc: string | null, base?: string): string | null
 	url.pathname = `${match[1]}/depth/${match[2].toLowerCase()}.png`;
 	url.search = '';
 	return url.toString();
+}
+
+/** The art crop of this server's card image of any size (`/images/normal/<id>.jpg` and the like), in
+ * the same form (relative or not), or null for any other image. */
+export function artCropUrl(imageSrc: string | null | undefined): string | null {
+	if (!imageSrc) return null;
+	const path = imageSrc.split(/[?#]/)[0];
+	const match = CARD_IMAGE.exec(path);
+	if (!match) return null;
+	return `${path.slice(0, match.index)}/images/art_crop/${match[1].toLowerCase()}.jpg`;
 }
 
 function wait(milliseconds: number, signal: AbortSignal): Promise<void> {

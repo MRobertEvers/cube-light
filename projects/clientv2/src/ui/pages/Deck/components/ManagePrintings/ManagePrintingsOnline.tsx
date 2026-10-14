@@ -1,6 +1,7 @@
 import React from 'react';
 import { DECK_BOARD_ORDER } from '../../../../../domain/deck/boards';
 import { BoardChips } from 'src/ui/kit/components/OwnershipBadge/OwnershipBadge';
+import { ViewArtButton } from 'src/ui/kit/components/BannerArtwork/ViewArtButton';
 import type { ManagePrintingsProps } from './manage-printings.types';
 import { useServerPrintings } from './use-card-printings';
 import { setNameOf, totalOf, useManagePrintings } from './use-manage-printings';
@@ -171,6 +172,10 @@ export function ManagePrintingsOnline(props: ManagePrintingsProps) {
 												{choice.printing.setName ?? ' '}
 											</span>
 										</button>
+										{/* Beside the tile (a button itself), over its image. */}
+										<span className={styles['tile-art']}>
+											<ViewArtButton image={choice.printing.image} placement="card" />
+										</span>
 										{choice.count > 0 && !replacing && (
 											<ChoiceRemoveButton
 												manager={manager}

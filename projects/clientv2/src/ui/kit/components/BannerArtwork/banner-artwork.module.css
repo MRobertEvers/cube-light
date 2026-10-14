@@ -54,12 +54,179 @@
 	pointer-events: none;
 }
 
-/* The button that asks for the phone's motion, over the art after a tap. */
-.motionPrompt {
+/* While the art's height map is on its way (the server makes it on first request): a small spinner in
+   the corner. It appears only after a moment, so a map that is already made never flashes it. */
+.depthPending {
 	position: absolute;
+	right: 8px;
+	bottom: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.45);
+	pointer-events: none;
+	animation: depth-pending-in 200ms ease-out 400ms both;
+}
+
+.spinner {
+	box-sizing: border-box;
+	width: 12px;
+	height: 12px;
+	border: 2px solid rgba(255, 255, 255, 0.35);
+	border-top-color: #fff;
+	border-radius: 50%;
+	animation: depth-pending-spin 800ms linear infinite;
+}
+
+@keyframes depth-pending-in {
+	from {
+		opacity: 0;
+	}
+}
+
+@keyframes depth-pending-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.visuallyHidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+/* Over parallax art: opens the whole art with depth (ParallaxArtViewer). */
+.viewArt {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	color: #fff;
+	background: rgba(0, 0, 0, 0.45);
+	cursor: pointer;
+}
+
+.viewArt:focus-visible {
+	outline: 2px solid #fff;
+	outline-offset: 2px;
+}
+
+/* Over a whole card image: the top corner of its art box, clear of the name and mana cost. */
+.viewArtOnCard {
+	top: 13%;
+	right: 9%;
+}
+
+@media (hover: hover) {
+	.viewArt:hover {
+		background: rgba(0, 0, 0, 0.65);
+	}
+}
+
+/* The whole art with depth, over everything: a light top bar like other full-screen dialogs, and
+   the art on a dark stage below it. */
+.viewer {
+	position: fixed;
+	inset: 0;
+	z-index: 120;
+	display: flex;
+	flex-direction: column;
+	background: #151211;
+	overscroll-behavior: none;
+	touch-action: none;
+}
+
+.viewerBar {
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 8px;
+	box-sizing: border-box;
+	min-height: var(--app-header-height, 56px);
+	padding: calc(6px + env(safe-area-inset-top)) 16px 6px;
+	background: white;
+	border-bottom: 1px solid #e5e1df;
+}
+
+.viewerBar h2 {
+	flex: 1;
+	margin: 0;
+	font-size: 18px;
+	line-height: 1.25;
+}
+
+.viewerClose {
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: #f3efed;
+	color: #4e4744;
+	font: inherit;
+	font-size: 24px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+/* Phones close it with the back button in the bar instead. */
+@media (max-width: 680px) {
+	.viewerClose {
+		display: none;
+	}
+}
+
+.viewerStage {
+	position: relative;
+	flex: 1;
+	min-height: 0;
+	padding-bottom: env(safe-area-inset-bottom);
+}
+
+.viewerArt {
+	position: absolute;
+	overflow: hidden;
+	border-radius: 6px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.viewerArt img {
+	position: absolute;
+	inset: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+	user-select: none;
+	transition: opacity 200ms ease-out;
+}
+
+/* The button that asks for the phone's motion, after a tap on the art: along the bottom of the
+   screen, over everything (the art viewer too), so it can always be seen and tapped. */
+.motionPrompt {
+	position: fixed;
 	left: 0;
 	right: 0;
-	bottom: 12px;
+	bottom: calc(24px + env(safe-area-inset-bottom));
+	z-index: 130;
 	display: flex;
 	justify-content: center;
 	pointer-events: none;
@@ -71,9 +238,10 @@
 	border: 0;
 	border-radius: 999px;
 	color: #fff;
-	background: rgba(0, 0, 0, 0.7);
+	background: rgba(0, 0, 0, 0.8);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 	font: inherit;
-	font-size: 0.875rem;
+	font-size: 0.9375rem;
 	cursor: pointer;
 }
 

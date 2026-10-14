@@ -10,6 +10,7 @@ import { selectParallaxArt } from '../../../../redux/parallax-art/parallax-art.s
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import { depthMapUrl } from './depth-map';
 import { ParallaxArt } from './ParallaxArt';
+import { ViewArtButton } from './ViewArtButton';
 import styles from './banner-artwork.module.css';
 
 type Props = {
@@ -36,6 +37,11 @@ function recordLoaded(src: string, width: number, height: number) {
 	return { src: src, width: width, height: height };
 }
 
+/** Art smaller than this (a header's thumbnail) has no room for buttons and marks over it: the one
+ * that opens the whole art, the loading spinner, the motion badge and its prompt. */
+const ROOMY_ART_MIN_WIDTH = 120;
+const ROOMY_ART_MIN_HEIGHT = 80;
+
 export function BannerArtwork(props: Props) {
 	const { src, frame, onChange, label, allowLeftBleed = false, artwork } = props;
 	const viewport = useRef<HTMLDivElement>(null);
@@ -51,6 +57,7 @@ export function BannerArtwork(props: Props) {
 	const reducedMotion = usePrefersReducedMotion();
 	const depthSrc = parallax && !reducedMotion ? depthMapUrl(src) : null;
 	const [parallaxActive, setParallaxActive] = useState(false);
+	const roomy = bounds.width >= ROOMY_ART_MIN_WIDTH && bounds.height >= ROOMY_ART_MIN_HEIGHT;
 
 	// Layout effects, so an image that is already loaded is placed before the first paint.
 	useLayoutEffect(() => {
@@ -232,7 +239,11 @@ export function BannerArtwork(props: Props) {
 					left={left}
 					top={top}
 					onActive={setParallaxActive}
+					controls={roomy}
 				/>
+			) : null}
+			{src && depthSrc && parallaxActive && roomy ? (
+				<ViewArtButton image={src} size={{ width: known.width, height: known.height }} />
 			) : null}
 		</div>
 	);

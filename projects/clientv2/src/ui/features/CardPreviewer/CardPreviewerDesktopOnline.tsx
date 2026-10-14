@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCloseOnEscape } from 'src/ui/kit/hooks/useCloseOnEscape';
+import { ViewArtButton } from 'src/ui/kit/components/BannerArtwork/ViewArtButton';
 import type { CardPreviewerProps } from './card-previewer.types';
 import { CardPreviewerTitle } from './CardPreviewerTitle';
 import { CardRulesText } from './CardRulesText';
@@ -21,7 +22,10 @@ export function CardPreviewerDesktopOnline(props: CardPreviewerProps) {
 			</header>
 			<div className={styles['desktop-body']}>
 				<div className={styles['desktop-image']}>
-					<img src={card.images?.normal ?? card.image} alt={`${card.name}, ${card.setCode} printing`} />
+					<span className={styles['image-frame']}>
+						<img src={card.images?.normal ?? card.image} alt={`${card.name}, ${card.setCode} printing`} />
+						<ViewArtButton image={card.images?.art_crop ?? card.art} placement="card" />
+					</span>
 				</div>
 				<CardRulesText key={card.uuid} details={card} className={styles['desktop-details']} />
 			</div>

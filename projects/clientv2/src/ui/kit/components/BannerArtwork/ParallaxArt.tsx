@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { loadArt, loadDepthMap } from './depth-map';
 import { motionAccess, OrientationTilt, requestMotionAccess, subscribeMotionAccess, subscribeOrientation } from './device-motion';
 import { ParallaxRenderer } from './parallax-renderer';
@@ -15,6 +16,9 @@ type Props = {
 	top: number;
 	/** True once the art is drawn with depth (the flat image can step aside), false when it no longer is. */
 	onActive: (active: boolean) => void;
+	/** Whether the art has room for its marks (the loading spinner, the motion badge) and is offered
+	 * the motion prompt; a header's thumbnail has not. */
+	controls: boolean;
 };
 
 /** The drawing buffer's most pixels: the march reads the map dozens of times per pixel. */
@@ -47,17 +51,18 @@ function isTouch() {
  * which stays underneath throughout.
  */
 export function ParallaxArt(props: Props) {
-	const { src, depthSrc, width, height, left, top, onActive } = props;
+	const { src, depthSrc, width, height, left, top, onActive, controls } = props;
 	const canvas = useRef<HTMLCanvasElement>(null);
 	const onActiveRef = useRef(onActive);
 	onActiveRef.current = onActive;
 	const orientation = useRef(new OrientationTilt());
 	const [active, setActive] = useState(false);
+	const [loading, setLoading] = useState(false);
 	const [prompt, setPrompt] = useState(false);
 	const [asking, setAsking] = useState(false);
 	const access = useSyncExternalStore(subscribeMotionAccess, motionAccess, () => 'denied' as const);
 	const touch = useSyncExternalStore(subscribeTouch, isTouch, () => false);
-	const needsAsking = touch && (access === 'ask' || access === 'denied');
+	const needsAsking = controls && touch && (access === 'ask' || access === 'denied');
 	const needsAskingRef = useRef(needsAsking);
 	needsAskingRef.current = needsAsking;
 
@@ -181,7 +186,11 @@ export function ParallaxArt(props: Props) {
 		document.addEventListener('visibilitychange', start);
 		target.addEventListener('webglcontextlost', () => setLive(false));
 
+		setLoading(true);
 		void Promise.all([loadArt(src, controller.signal), loadDepthMap(depthSrc, controller.signal)])
+			.finally(() => {
+				if (!controller.signal.aborted) setLoading(false);
+			})
 			.then((images) => {
 				const art = images[0];
 				const depth = images[1];
@@ -210,6 +219,7 @@ export function ParallaxArt(props: Props) {
 			renderer?.dispose();
 			renderer = null;
 			setActive(false);
+			setLoading(false);
 			onActiveRef.current(false);
 		};
 	}, [src, depthSrc]);
@@ -217,6 +227,12 @@ export function ParallaxArt(props: Props) {
 	return (
 		<>
 			<canvas ref={canvas} className={styles.parallax} aria-hidden="true" style={{ width, height, left, top }} />
+			{loading && controls && (
+				<span className={styles.depthPending} role="status" title="Adding depth to the art">
+					<span className={styles.spinner} aria-hidden="true" />
+					<span className={styles.visuallyHidden}>Adding depth to the art</span>
+				</span>
+			)}
 			{active && needsAsking && !prompt && (
 				<span className={styles.motionBadge} title="Tap the art to let it move with your phone" aria-hidden="true">
 					<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -226,25 +242,31 @@ export function ParallaxArt(props: Props) {
 					</svg>
 				</span>
 			)}
-			{active && needsAsking && prompt && (
-				<div className={styles.motionPrompt}>
-					<button
-						type="button"
-						disabled={asking}
-						onPointerDown={(event) => event.stopPropagation()}
-						onClick={(event) => {
-							event.stopPropagation();
-							setAsking(true);
-							void requestMotionAccess().finally(() => {
-								setAsking(false);
-								setPrompt(false);
-							});
-						}}
-					>
-						{access === 'denied' ? 'Motion is blocked: try again' : 'Move with your phone'}
-					</button>
-				</div>
-			)}
+			{active &&
+				needsAsking &&
+				prompt &&
+				// Over the page, not in the art's clipped frame: art can be too small to hold it.
+				createPortal(
+					<div className={styles.motionPrompt}>
+						<button
+							type="button"
+							disabled={asking}
+							onPointerDown={(event) => event.stopPropagation()}
+							onPointerUp={(event) => event.stopPropagation()}
+							onClick={(event) => {
+								event.stopPropagation();
+								setAsking(true);
+								void requestMotionAccess().finally(() => {
+									setAsking(false);
+									setPrompt(false);
+								});
+							}}
+						>
+							{access === 'denied' ? 'Motion is blocked: try again' : 'Move with your phone'}
+						</button>
+					</div>,
+					document.body
+				)}
 		</>
 	);
 }

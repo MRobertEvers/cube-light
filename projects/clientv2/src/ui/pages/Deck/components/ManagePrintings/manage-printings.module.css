@@ -494,6 +494,20 @@
 }
 
 /* A 44px target around a small visible button, over the tile's top-left corner. */
+/* Over a tile's image, for the button that opens its art: the image's box, letting clicks through. */
+.tile-art {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	aspect-ratio: 0.716;
+	pointer-events: none;
+}
+
+.tile-art > * {
+	pointer-events: auto;
+}
+
 .tile-remove {
 	position: absolute;
 	top: -10px;

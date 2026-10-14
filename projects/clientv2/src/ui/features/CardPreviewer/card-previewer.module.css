@@ -87,7 +87,8 @@
 /* Holds the card's shape before the image loads, so the text below doesn't jump. Only the
    card image itself: a drawn card's own images (mana and set symbols) keep their sizes. */
 .desktop-image > img,
-.mobile-image > img {
+.mobile-image > img,
+.image-frame > img {
 	display: block;
 	width: min(100%, 390px);
 	height: auto;
@@ -141,6 +142,21 @@
 }
 
 .mobile-image > img {
+	width: min(66vw, 280px);
+}
+
+/* The card image with the button that opens its art over it: the frame takes the image's size. */
+.image-frame {
+	position: relative;
+	flex: none;
+	width: min(100%, 390px);
+}
+
+.image-frame > img {
+	width: 100%;
+}
+
+.mobile-image > .image-frame {
 	width: min(66vw, 280px);
 }
 
