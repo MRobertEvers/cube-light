@@ -97,16 +97,49 @@ service worker answers `/images/art_crop/<id>.jpg` from it.
 ## Card images
 
 The server returns its own image URLs in card and deck responses. A request to
-`/images/{small|normal|large|art_crop}/{scryfallId}.jpg` first reads the local
-cache, then downloads the JPEG from Scryfall and stores it before responding.
-The default cache is `~/Documents/mtg-card-images`, outside this Git repository.
-To use another storage system, implement `ImageCache` in `src/images/ImageCache.ts`
-and replace `FileImageCache` in `src/main.ts`.
+`/images/{small|normal|large|art_crop}/{scryfallId}.jpg` first reads the art cache,
+then downloads the JPEG from Scryfall and stores it before responding. The cache is
+artcache, the card-art cache this server shares with torimtgd (the mtg-ai repository's
+server): its contract is [`3rd/artcache/FORMAT.md`](../../3rd/artcache/FORMAT.md), and
+the C library (`3rd/artcache`, a copy of mtg-ai's `torimtg/3rd/artcache` made by
+`scripts/sync-artcache.sh`; never edit it here) is built into the `artcache` addon
+(`native/artcache_addon.c`).
+
+- **The folder** holds the images as `<root>/<variant>/<id>.jpg`. Set it with
+  `TORIMTG_ART_CACHE`; otherwise it is `TMG_SCRYFALL_CACHE`, else
+  `<per-user data>/torimtg/scryfall_cache` (`%LOCALAPPDATA%` on Windows,
+  `~/Library/Application Support` on macOS, `$XDG_DATA_HOME` or `~/.local/share`
+  elsewhere). It may be on a network share used by several machines.
+- **The index** is this machine's SQLite record of the folder: which images are there,
+  which process here is downloading which, recent failures, and each image's
+  measurements (size, palette and preview, served at `/images/<variant>/<id>.json`). It
+  never lives in the folder. Its default is
+  `<per-user data>/torimtg/artcache/<hash of the folder>.sqlite`; set `TORIMTG_ART_INDEX`
+  to put it elsewhere. Deleting it costs only re-measuring and the failure records.
+
+The server logs both paths when it starts. Processes on one machine share the index, so
+two servers asking for the same image download it once: the other waits for it. A
+machine finds images another machine put in the folder without downloading them. A
+Scryfall 404 (or other failure) is not asked again for an hour.
+
+**Sharing a NAS with torimtgd.** Point both servers at the same folder on every machine,
+for example `TORIMTG_ART_CACHE=Z:\mtg-ai-assets\scryfall` on Windows and
+`/mnt/z/mtg-ai-assets/scryfall` under WSL (torimtgd also takes `--art-cache DIR`).
+Leave each machine its own index: WSL and Windows count as different machines.
+
+**Moving the old cache.** Earlier versions kept images in `~/Documents/mtg-card-images`
+as `<variant>/<id>.jpg` with a `<variant>/<id>.json` sidecar beside each. Move the
+`.jpg` files into the same `<variant>/` folders of the new cache; they are taken in the
+first time they are asked for. The `.json` sidecars are no longer used and can be
+deleted (each image is measured again, once per machine).
 
 Successful images are served with `Cache-Control: public, max-age=31536000`
 and a content-based `ETag`; matching conditional requests receive `304`. The
-local copy is retained until you remove it from the cache directory. Run
-`npm run test:images` to test image fetching, local caching, and HTTP responses.
+local copy is retained until you remove it from the cache folder (a file removed
+there is downloaded again). To use another storage system, implement `ImageCache`
+in `src/images/ImageCache.ts` and replace `ArtCacheImageCache` in `src/main.ts`. Run
+`npm run test:images` to test image fetching, the cache shared between processes and
+machines, and HTTP responses.
 
 ## Card name index
 

@@ -1,8 +1,16 @@
 import type { ImageMeta } from '@torimtg/core';
-import { ImageCache } from './ImageCache';
+import type { ImageCache, ImageState } from './ImageCache';
 import type { ImageMeasurer } from './image-measurer';
 
 export type ImageVariant = 'small' | 'normal' | 'large' | 'art_crop';
+
+/** A failed download is not asked of Scryfall again for an hour (as torimtgd does). */
+const RETRY_FAILED_SECONDS = 3600;
+/** A download's claim; one that outlives it (a hung process) is taken over. */
+const LEASE_SECONDS = 120;
+/** How often an image another process here is downloading is looked for, and for how long. */
+const WAIT_POLL_MS = 250;
+const WAIT_LIMIT_MS = 120_000;
 
 const SCRYFALL_ID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -59,8 +67,10 @@ export function localDeckArtUrl(
 }
 
 /**
- * Card images from Scryfall, stored once on disk. Each image is measured when it is
- * stored, and the measurements are kept as a sidecar the client reads with a deck.
+ * Card images from Scryfall, stored once in the art cache and downloaded by one process at a
+ * time: processes on this machine that share the cache wait for each other's downloads. Each
+ * image is measured when it is stored, and the measurements are kept for the client to read
+ * with a deck.
  */
 export class CardImageService {
 	private readonly inFlight = new Map<string, Promise<Buffer | null>>();
@@ -79,6 +89,7 @@ export class CardImageService {
 		this.fetchImage = fetchImageArg === undefined ? fetch : fetchImageArg;
 	}
 
+	/** The image, downloading it when no one has; null when Scryfall has none. */
 	async get(id: string, variant: ImageVariant): Promise<Buffer | null> {
 		const key = `${variant}/${id.toLowerCase()}`;
 		const cached = await this.cache.get(key);
@@ -86,7 +97,7 @@ export class CardImageService {
 
 		let pending = this.inFlight.get(key);
 		if (!pending) {
-			pending = this.download(id.toLowerCase(), variant, key);
+			pending = this.obtain(id.toLowerCase(), variant, key);
 			this.inFlight.set(key, pending);
 		}
 		try {
@@ -97,8 +108,9 @@ export class CardImageService {
 	}
 
 	/**
-	 * The image's sidecar. Images stored before sidecars existed, or whose measuring
-	 * failed, are measured now. Null when there is no such image or it cannot be decoded.
+	 * The image's measurements. Images this machine has not measured (stored by another
+	 * machine or before measuring existed), or whose measuring failed, are measured now.
+	 * Null when there is no such image or it cannot be decoded.
 	 */
 	async meta(id: string, variant: ImageVariant): Promise<ImageMeta | null> {
 		const key = `${variant}/${id.toLowerCase()}`;
@@ -135,37 +147,94 @@ export class CardImageService {
 		return pending;
 	}
 
+	/**
+	 * The image from the cache once whoever is making it has, or downloaded here after claiming
+	 * it. Another process on this machine making it is waited for; null when it fails, when it
+	 * failed within the hour, or when waiting runs out.
+	 */
+	private async obtain(
+		id: string,
+		variant: ImageVariant,
+		key: string
+	): Promise<Buffer | null> {
+		const deadline = Date.now() + WAIT_LIMIT_MS;
+		let previous: ImageState | null = null;
+		for (;;) {
+			const state = await this.cache.lookup(key, RETRY_FAILED_SECONDS);
+			if (state === 'failed') return null;
+			if (state === 'present') {
+				const image = await this.cache.get(key);
+				if (image) return image;
+				// Gone from the folder: forgotten, so the next lookup sees it absent.
+			} else if (state === 'absent') {
+				if (await this.cache.claim(key, LEASE_SECONDS)) {
+					return this.download(id, variant, key);
+				}
+				// Refused: another process has claimed or made it since the lookup.
+			}
+			// Waiting on another process, or nothing changed since the last look: pause first.
+			if (state === 'claimed' || state === previous) {
+				if (Date.now() >= deadline) {
+					console.error(`Gave up waiting for card image ${key}`);
+					return null;
+				}
+				await delay(WAIT_POLL_MS);
+			}
+			previous = state;
+		}
+	}
+
+	/** Downloads an image this service has claimed, and stores it or records the failure. */
 	private async download(
 		id: string,
 		variant: ImageVariant,
 		key: string
 	): Promise<Buffer | null> {
 		const url = `https://cards.scryfall.io/${variant}/front/${id[0]}/${id[1]}/${id}.jpg`;
-		const response = await this.fetchImage(url, {
-			headers: {
-				'User-Agent': 'CubeLight/1.0 (card image cache)',
-				Accept: 'image/jpeg'
+		let image: Buffer;
+		try {
+			const response = await this.fetchImage(url, {
+				headers: {
+					'User-Agent': 'CubeLight/1.0 (card image cache)',
+					Accept: 'image/jpeg'
+				}
+			});
+			if (response.status === 404) {
+				await this.cache.fail(key, 'Scryfall has no such image (404)');
+				return null;
 			}
-		});
-		if (response.status === 404) return null;
-		if (!response.ok)
-			throw new Error(
-				`Scryfall image request failed: ${response.status}`
-			);
-		if (
-			!response.headers
-				.get('content-type')
-				?.toLowerCase()
-				.startsWith('image/jpeg')
-		) {
-			throw new Error('Scryfall returned a non-JPEG image response');
+			if (!response.ok)
+				throw new Error(
+					`Scryfall image request failed: ${response.status}`
+				);
+			if (
+				!response.headers
+					.get('content-type')
+					?.toLowerCase()
+					.startsWith('image/jpeg')
+			) {
+				throw new Error('Scryfall returned a non-JPEG image response');
+			}
+			image = Buffer.from(await response.arrayBuffer());
+		} catch (error) {
+			await this.cache.fail(key, String(error));
+			throw error;
 		}
-		const image = Buffer.from(await response.arrayBuffer());
-		await this.cache.set(key, image);
+		try {
+			await this.cache.set(key, image);
+		} catch (error) {
+			// Scryfall served it; storing it failed, so let the next request try again.
+			await this.cache.release(key).catch(() => undefined);
+			throw error;
+		}
 		// Measure while the image is at hand; a failure leaves it to be measured on request.
 		await this.measure(key, id, variant, image).catch((error) => {
-			console.error(`Unable to store the sidecar for ${key}`, error);
+			console.error(`Unable to keep the measurements of ${key}`, error);
 		});
 		return image;
 	}
+}
+
+function delay(milliseconds: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }

@@ -29,6 +29,7 @@ const commands = targets.flatMap((target) =>
 					'-std=c11',
 					`-DNODE_GYP_MODULE_NAME=${target.target_name}`,
 					'-DBUILDING_NODE_EXTENSION',
+					...(target.defines || []).map((define) => `-D${define}`),
 					`-I${nodeInclude}`,
 					'-c',
 					file

@@ -1,0 +1,2 @@
+# Shell scripts run under bash on every platform (Git Bash too), which a CR at line ends breaks.
+*.sh text eol=lf
