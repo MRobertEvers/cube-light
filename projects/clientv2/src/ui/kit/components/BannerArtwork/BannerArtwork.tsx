@@ -10,6 +10,7 @@ import { selectParallaxArt } from '../../../../redux/parallax-art/parallax-art.s
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import { depthMapUrl } from './depth-map';
 import { ParallaxArt } from './ParallaxArt';
+import { parallaxSupported, parallaxZoom } from './parallax-renderer';
 import { ViewArtButton } from './ViewArtButton';
 import styles from './banner-artwork.module.css';
 
@@ -24,6 +25,8 @@ type Props = {
 	 * before it loads, and its preview stands in (blurred) until it has.
 	 */
 	artwork?: ArtworkInfo | null;
+	/** Parallax art: whether a mouse over it aims the view (true unless said otherwise). */
+	followPointer?: boolean;
 };
 
 /**
@@ -37,13 +40,20 @@ function recordLoaded(src: string, width: number, height: number) {
 	return { src: src, width: width, height: height };
 }
 
+let supported: boolean | null = null;
+/** Whether this browser draws parallax art (WebGL 2), asked once. */
+function canDrawParallax(): boolean {
+	if (supported === null) supported = parallaxSupported();
+	return supported;
+}
+
 /** Art smaller than this (a header's thumbnail) has no room for buttons and marks over it: the one
  * that opens the whole art, the loading spinner, the motion badge and its prompt. */
 const ROOMY_ART_MIN_WIDTH = 120;
 const ROOMY_ART_MIN_HEIGHT = 80;
 
 export function BannerArtwork(props: Props) {
-	const { src, frame, onChange, label, allowLeftBleed = false, artwork } = props;
+	const { src, frame, onChange, label, allowLeftBleed = false, artwork, followPointer = true } = props;
 	const viewport = useRef<HTMLDivElement>(null);
 	const image = useRef<HTMLImageElement>(null);
 	const pointer = useRef<{ x: number; y: number; frame: BannerFrame } | null>(
@@ -115,6 +125,10 @@ export function BannerArtwork(props: Props) {
 		-horizontalOverflow * Math.min(frame.x, 1) -
 		(allowLeftBleed ? Math.max(0, frame.x - 1) * bounds.width : 0);
 	const top = (bounds.height - height) * frame.y;
+	// With parallax art on, the flat art is drawn as the parallax view draws it at rest (a little
+	// larger: the margins it crops), so the two swap without a jump.
+	const zoom = depthSrc && known.width && known.height && canDrawParallax() ? parallaxZoom(known.width, known.height) : null;
+	const transform = zoom ? `scale(${zoom.x}, ${zoom.y})` : undefined;
 
 	return (
 		<div
@@ -197,7 +211,7 @@ export function BannerArtwork(props: Props) {
 					alt=""
 					aria-hidden="true"
 					draggable={false}
-					style={{ width, height, left, top }}
+					style={{ width, height, left, top, transform }}
 				/>
 			) : null}
 			{src && (
@@ -225,7 +239,7 @@ export function BannerArtwork(props: Props) {
 					// Unplaced, the image would show at its natural size in the corner.
 					style={
 						scale
-							? { width, height, left, top }
+							? { width, height, left, top, transform }
 							: { visibility: 'hidden' }
 					}
 				/>
@@ -240,6 +254,7 @@ export function BannerArtwork(props: Props) {
 					top={top}
 					onActive={setParallaxActive}
 					controls={roomy}
+					followPointer={followPointer}
 				/>
 			) : null}
 			{src && depthSrc && parallaxActive && roomy ? (

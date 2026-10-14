@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { depthMapUrl, loadDepthMap } from '../src/ui/kit/components/BannerArtwork/depth-map';
 
 const ID = '67f4c93b-080c-4196-b095-6a120a221988';
+const OTHER_ID = '0bbfb7ae-9a32-428d-903c-99d0d8669b8d';
 const PAGE = 'https://cube.example/deck/deck_a';
 
 test("only this server's art crops have height maps, beside the art", () => {
@@ -54,9 +55,10 @@ test('a map being made is asked for again after Retry-After; a missing one is no
 	} finally {
 		making.restore();
 	}
+	// Another art: a map once decoded is kept (decodedImage), so the same address would not ask again.
 	const missing = serve([{ status: 404 }]);
 	try {
-		assert.equal(await loadDepthMap(`https://cube.example/api/images/depth/${ID}.png`, new AbortController().signal), null);
+		assert.equal(await loadDepthMap(`https://cube.example/api/images/depth/${OTHER_ID}.png`, new AbortController().signal), null);
 		assert.equal(missing.calls(), 1);
 	} finally {
 		missing.restore();

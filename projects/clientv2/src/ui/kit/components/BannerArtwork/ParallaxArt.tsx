@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { loadArt, loadDepthMap } from './depth-map';
+import { decodedImage, loadArt, loadDepthMap } from './depth-map';
 import { motionAccess, OrientationTilt, requestMotionAccess, subscribeMotionAccess, subscribeOrientation } from './device-motion';
 import { ParallaxRenderer } from './parallax-renderer';
 import styles from './banner-artwork.module.css';
@@ -19,6 +19,9 @@ type Props = {
 	/** Whether the art has room for its marks (the loading spinner, the motion badge) and is offered
 	 * the motion prompt; a header's thumbnail has not. */
 	controls: boolean;
+	/** Whether a mouse over the art aims the view (true unless said otherwise); without, the view
+	 * drifts on its own, or follows the phone. */
+	followPointer?: boolean;
 };
 
 /** The drawing buffer's most pixels: the march reads the map dozens of times per pixel. */
@@ -30,6 +33,19 @@ const SENSOR_QUIET_MS = 1000;
 /** How long the motion button stays up when it is not pressed. */
 const PROMPT_MS = 8000;
 const TOUCH_QUERY = '(hover: none) and (pointer: coarse)';
+/** How long art seen for the first time fades in over the flat art (art seen before is drawn at once). */
+const FADE_MS = 220;
+
+/** How the phone is held, for every banner: a page's banners share it, and so does the next page's. */
+const phone = new OrientationTilt();
+
+/** Where the view looks at `time` without a mouse over the art: the phone, else a slow drift. The
+ * drift is the clock's, so a banner on the next page picks it up where the last one was. */
+function restingAim(time: number): { x: number; y: number } {
+	if (phone.tilt && time - phone.lastReading < SENSOR_QUIET_MS) return phone.tilt;
+	const seconds = time / 1000;
+	return { x: Math.sin(seconds * 0.45) * 0.45, y: Math.cos(seconds * 0.31) * 0.3 };
+}
 
 function subscribeTouch(onChange: () => void) {
 	const query = window.matchMedia(TOUCH_QUERY);
@@ -51,12 +67,16 @@ function isTouch() {
  * which stays underneath throughout.
  */
 export function ParallaxArt(props: Props) {
-	const { src, depthSrc, width, height, left, top, onActive, controls } = props;
+	const { src, depthSrc, width, height, left, top, onActive, controls, followPointer = true } = props;
 	const canvas = useRef<HTMLCanvasElement>(null);
 	const onActiveRef = useRef(onActive);
 	onActiveRef.current = onActive;
-	const orientation = useRef(new OrientationTilt());
+	const followPointerRef = useRef(followPointer);
+	followPointerRef.current = followPointer;
 	const [active, setActive] = useState(false);
+	const [fadeIn, setFadeIn] = useState(false);
+	// Draws again at once, after the drawing buffer is resized (which clears it).
+	const redraw = useRef<(() => void) | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [prompt, setPrompt] = useState(false);
 	const [asking, setAsking] = useState(false);
@@ -66,19 +86,24 @@ export function ParallaxArt(props: Props) {
 	const needsAskingRef = useRef(needsAsking);
 	needsAskingRef.current = needsAsking;
 
-	// The drawing buffer follows the placed size (and the screen's density, within a budget).
-	useEffect(() => {
+	// The drawing buffer follows the placed size (and the screen's density, within a budget). A layout
+	// effect, before the one that may draw before the first paint.
+	useLayoutEffect(() => {
 		const element = canvas.current;
 		if (!element || width <= 0 || height <= 0) return;
 		const density = Math.min(window.devicePixelRatio || 1, Math.sqrt(MAX_PIXELS / (width * height)));
-		element.width = Math.max(1, Math.round(width * density));
-		element.height = Math.max(1, Math.round(height * density));
+		const nextWidth = Math.max(1, Math.round(width * density));
+		const nextHeight = Math.max(1, Math.round(height * density));
+		if (element.width === nextWidth && element.height === nextHeight) return;
+		element.width = nextWidth;
+		element.height = nextHeight;
+		redraw.current?.();
 	}, [width, height]);
 
 	// The phone, once it may be listened to.
 	useEffect(() => {
 		if (access !== 'unneeded' && access !== 'granted') return;
-		return subscribeOrientation((reading) => orientation.current.read(reading, performance.now()));
+		return subscribeOrientation((reading) => phone.read(reading, performance.now()));
 	}, [access]);
 
 	// The button goes away by itself.
@@ -90,7 +115,8 @@ export function ParallaxArt(props: Props) {
 		};
 	}, [prompt]);
 
-	useEffect(() => {
+	// A layout effect: art decoded before (the last page's) is drawn before the first paint.
+	useLayoutEffect(() => {
 		const element = canvas.current;
 		if (!element) return;
 		const target = element;
@@ -99,7 +125,8 @@ export function ParallaxArt(props: Props) {
 		let frame = 0;
 		let visible = false;
 		let pointer: { x: number; y: number } | null = null;
-		let tilt = { x: 0, y: 0 };
+		let tilt = restingAim(performance.now());
+		let fadeTimer = 0;
 		let last = 0;
 		let drawnSize = '';
 		let drawnTilt = { x: NaN, y: NaN };
@@ -109,17 +136,41 @@ export function ParallaxArt(props: Props) {
 			onActiveRef.current(live);
 		}
 
+		/** Draws the art with depth from now on; `fade` for art seen for the first time, which fades in
+		 * over the flat art (still shown until it has). */
+		function goLive(art: ImageBitmap, depth: ImageBitmap, fade: boolean) {
+			renderer = ParallaxRenderer.create(target);
+			if (!renderer || !renderer.setImages(art, depth, art.width, art.height)) {
+				renderer?.dispose();
+				renderer = null;
+				return;
+			}
+			renderer.draw(tilt.x, tilt.y);
+			drawnTilt = tilt;
+			drawnSize = `${target.width}x${target.height}`;
+			redraw.current = function () {
+				if (!renderer) return;
+				renderer.draw(tilt.x, tilt.y);
+				drawnTilt = tilt;
+				drawnSize = `${target.width}x${target.height}`;
+			};
+			if (fade) {
+				setFadeIn(true);
+				setActive(true);
+				fadeTimer = window.setTimeout(() => onActiveRef.current(true), FADE_MS);
+			} else {
+				setLive(true);
+			}
+			start();
+		}
+
 		function stop() {
 			if (frame) cancelAnimationFrame(frame);
 			frame = 0;
 		}
 
 		function aim(time: number): { x: number; y: number } {
-			if (pointer) return pointer;
-			const phone = orientation.current;
-			if (phone.tilt && time - phone.lastReading < SENSOR_QUIET_MS) return phone.tilt;
-			const seconds = time / 1000;
-			return { x: Math.sin(seconds * 0.45) * 0.45, y: Math.cos(seconds * 0.31) * 0.3 };
+			return pointer ?? restingAim(time);
 		}
 
 		function tick(time: number) {
@@ -160,6 +211,10 @@ export function ParallaxArt(props: Props) {
 		// A mouse (or pen) over the art aims the view; a finger does not (it scrolls, and taps).
 		function onPointerMove(event: PointerEvent) {
 			if (event.pointerType === 'touch') return;
+			if (!followPointerRef.current) {
+				pointer = null;
+				return;
+			}
 			const rect = inside(event);
 			pointer = rect
 				? {
@@ -186,28 +241,24 @@ export function ParallaxArt(props: Props) {
 		document.addEventListener('visibilitychange', start);
 		target.addEventListener('webglcontextlost', () => setLive(false));
 
-		setLoading(true);
-		void Promise.all([loadArt(src, controller.signal), loadDepthMap(depthSrc, controller.signal)])
-			.finally(() => {
-				if (!controller.signal.aborted) setLoading(false);
-			})
-			.then((images) => {
-				const art = images[0];
-				const depth = images[1];
-				if (controller.signal.aborted || !art || !depth) return;
-				renderer = ParallaxRenderer.create(target);
-				if (!renderer || !renderer.setImages(art, depth, art.width, art.height)) {
-					renderer?.dispose();
-					renderer = null;
-					return;
-				}
-				renderer.draw(0, 0);
-				drawnTilt = { x: 0, y: 0 };
-				drawnSize = `${target.width}x${target.height}`;
-				setLive(true);
-				start();
-			})
-			.catch(() => undefined);
+		const knownArt = decodedImage(src);
+		const knownDepth = decodedImage(depthSrc);
+		if (knownArt && knownDepth) {
+			goLive(knownArt, knownDepth, false);
+		} else {
+			setLoading(true);
+			void Promise.all([loadArt(src, controller.signal), loadDepthMap(depthSrc, controller.signal)])
+				.finally(() => {
+					if (!controller.signal.aborted) setLoading(false);
+				})
+				.then((images) => {
+					const art = images[0];
+					const depth = images[1];
+					if (controller.signal.aborted || !art || !depth) return;
+					goLive(art, depth, true);
+				})
+				.catch(() => undefined);
+		}
 
 		return function () {
 			controller.abort();
@@ -216,9 +267,12 @@ export function ParallaxArt(props: Props) {
 			window.removeEventListener('pointermove', onPointerMove);
 			window.removeEventListener('pointerup', onPointerUp);
 			document.removeEventListener('visibilitychange', start);
+			window.clearTimeout(fadeTimer);
+			redraw.current = null;
 			renderer?.dispose();
 			renderer = null;
 			setActive(false);
+			setFadeIn(false);
 			setLoading(false);
 			onActiveRef.current(false);
 		};
@@ -226,7 +280,12 @@ export function ParallaxArt(props: Props) {
 
 	return (
 		<>
-			<canvas ref={canvas} className={styles.parallax} aria-hidden="true" style={{ width, height, left, top }} />
+			<canvas
+				ref={canvas}
+				className={fadeIn ? `${styles.parallax} ${styles.parallaxFadeIn}` : styles.parallax}
+				aria-hidden="true"
+				style={{ width, height, left, top }}
+			/>
 			{loading && controls && (
 				<span className={styles.depthPending} role="status" title="Adding depth to the art">
 					<span className={styles.spinner} aria-hidden="true" />

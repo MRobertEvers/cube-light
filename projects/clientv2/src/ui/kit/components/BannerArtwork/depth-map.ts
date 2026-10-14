@@ -39,6 +39,33 @@ export function artCropUrl(imageSrc: string | null | undefined): string | null {
 	return `${path.slice(0, match.index)}/images/art_crop/${match[1].toLowerCase()}.jpg`;
 }
 
+/** Decoded art and height maps by address, kept across pages: a banner shown again (after a
+ * navigation) draws with depth before its first paint instead of showing the flat art first. The
+ * most recently used few. */
+const DECODED_LIMIT = 24;
+const decoded = new Map<string, ImageBitmap>();
+
+/** The image at this address, if it has been decoded already. */
+export function decodedImage(url: string): ImageBitmap | undefined {
+	const bitmap = decoded.get(url);
+	if (bitmap) {
+		decoded.delete(url);
+		decoded.set(url, bitmap);
+	}
+	return bitmap;
+}
+
+function remember(url: string, bitmap: ImageBitmap): ImageBitmap {
+	decoded.delete(url);
+	decoded.set(url, bitmap);
+	while (decoded.size > DECODED_LIMIT) {
+		const oldest = decoded.keys().next();
+		if (oldest.done) break;
+		decoded.delete(oldest.value);
+	}
+	return bitmap;
+}
+
 function wait(milliseconds: number, signal: AbortSignal): Promise<void> {
 	return new Promise((resolve, reject) => {
 		const timer = setTimeout(resolve, milliseconds);
@@ -56,6 +83,8 @@ async function decode(blob: Blob): Promise<ImageBitmap> {
 
 /** The map, once the server has it; null when it will not (404, an error, or too long a wait). */
 export async function loadDepthMap(url: string, signal: AbortSignal): Promise<ImageBitmap | null> {
+	const known = decodedImage(url);
+	if (known) return known;
 	const giveUp = Date.now() + GIVE_UP_MS;
 	for (;;) {
 		let response: Response;
@@ -65,7 +94,7 @@ export async function loadDepthMap(url: string, signal: AbortSignal): Promise<Im
 			if (signal.aborted) throw error;
 			return null;
 		}
-		if (response.ok) return decode(await response.blob());
+		if (response.ok) return remember(url, await decode(await response.blob()));
 		if (response.status !== 503 || Date.now() >= giveUp) return null;
 		const after = Number(response.headers.get('Retry-After'));
 		await wait(Math.min(Math.max(Number.isFinite(after) ? after : 3, 1), 10) * 1000, signal);
@@ -74,10 +103,12 @@ export async function loadDepthMap(url: string, signal: AbortSignal): Promise<Im
 
 /** The art itself, decoded for the GPU (the same address the page's image has, so it comes from cache). */
 export async function loadArt(url: string, signal: AbortSignal): Promise<ImageBitmap | null> {
+	const known = decodedImage(url);
+	if (known) return known;
 	try {
 		const response = await fetch(url, { signal, credentials: 'omit' });
 		if (!response.ok) return null;
-		return await createImageBitmap(await response.blob(), { premultiplyAlpha: 'none' });
+		return remember(url, await createImageBitmap(await response.blob(), { premultiplyAlpha: 'none' }));
 	} catch (error) {
 		if (signal.aborted) throw error;
 		return null;

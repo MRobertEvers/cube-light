@@ -510,6 +510,8 @@ export function Deck(props: DeckProps) {
 							crop={bannerCrop}
 							name={data.name}
 							cardCount={data.deck.count}
+							// In the cube view the art keeps its own drift: the mouse does not aim it.
+							followPointer={visualization.id !== 'cube-tutor'}
 						/>
 					)}
 					<div

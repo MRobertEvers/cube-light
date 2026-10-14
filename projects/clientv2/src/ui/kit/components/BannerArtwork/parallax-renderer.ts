@@ -64,6 +64,23 @@ const DEPTH_RANGE = [105 / 255, 223 / 255];
 const MAX_SHIFT = 0.035;
 const PIVOT = 0.5;
 
+/** How far a full tilt reaches across and down (as fractions of the art), and the margin cropped
+ * from each side so a tilted view never runs off the art. */
+function reachOf(artWidth: number, artHeight: number) {
+	const longer = Math.max(artWidth, artHeight);
+	const reachX = (MAX_SHIFT * longer) / artWidth;
+	const reachY = (MAX_SHIFT * longer) / artHeight;
+	// Every sample stays within reach * max(pivot, 1 - pivot) of the pixel: crop that much away.
+	return { reachX, reachY, marginX: reachX * Math.max(PIVOT, 1 - PIVOT), marginY: reachY * Math.max(PIVOT, 1 - PIVOT) };
+}
+
+/** How much larger than the flat art its parallax view draws it, across and down (the cropped
+ * margins), so the flat art can be drawn the same way and the two swap without a jump. */
+export function parallaxZoom(artWidth: number, artHeight: number): { x: number; y: number } {
+	const { marginX, marginY } = reachOf(artWidth, artHeight);
+	return { x: 1 / (1 - 2 * marginX), y: 1 / (1 - 2 * marginY) };
+}
+
 function compile(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader | null {
 	const shader = gl.createShader(type);
 	if (!shader) return null;
@@ -187,12 +204,7 @@ export class ParallaxRenderer {
 		gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 		gl.useProgram(this.program);
 		gl.bindVertexArray(this.vertices);
-		const longer = Math.max(this.artWidth, this.artHeight);
-		const reachX = (MAX_SHIFT * longer) / this.artWidth;
-		const reachY = (MAX_SHIFT * longer) / this.artHeight;
-		// Every sample stays within reach * max(pivot, 1 - pivot) of the pixel: crop that much away.
-		const marginX = reachX * Math.max(PIVOT, 1 - PIVOT);
-		const marginY = reachY * Math.max(PIVOT, 1 - PIVOT);
+		const { reachX, reachY, marginX, marginY } = reachOf(this.artWidth, this.artHeight);
 		gl.uniform2f(this.uniforms.shift, -tiltX * reachX, -tiltY * reachY);
 		gl.uniform1f(this.uniforms.pivot, PIVOT);
 		gl.uniform4f(this.uniforms.crop, 1 - 2 * marginX, 1 - 2 * marginY, marginX, marginY);

@@ -33,6 +33,18 @@
 	pointer-events: none;
 }
 
+/* Art seen for the first time fades in over the flat art; art seen before (the last page's) is
+   drawn before the first paint instead. */
+.parallaxFadeIn {
+	animation: parallax-fade-in 220ms ease-out both;
+}
+
+@keyframes parallax-fade-in {
+	from {
+		opacity: 0;
+	}
+}
+
 /* The flat image under parallax art: kept (it is the fallback, and it measures the art) but unseen. */
 .underParallax {
 	opacity: 0;

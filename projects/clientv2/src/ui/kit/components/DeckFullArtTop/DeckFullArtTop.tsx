@@ -17,6 +17,8 @@ type Props = {
 	onEditDetails?: () => void;
 	onCropChange?: (variant: keyof BannerCrop, frame: BannerFrame) => void;
 	ref?: React.Ref<HTMLDivElement>;
+	/** Parallax art: whether a mouse over it aims the view (true unless said otherwise). */
+	followPointer?: boolean;
 };
 
 export function DeckFullArtTop(props: Props) {
@@ -30,7 +32,8 @@ export function DeckFullArtTop(props: Props) {
 		variant = 'responsive',
 		onEditDetails,
 		onCropChange,
-		ref
+		ref,
+		followPointer = true
 	} = props;
 	return (
 		<div ref={ref} className={`${styles.top} ${styles[variant]}`}>
@@ -38,6 +41,7 @@ export function DeckFullArtTop(props: Props) {
 				<BannerArtwork
 					src={src}
 					artwork={artInfo}
+					followPointer={followPointer}
 					frame={crop.desktop}
 					onChange={
 						onCropChange
@@ -57,6 +61,7 @@ export function DeckFullArtTop(props: Props) {
 				<BannerArtwork
 					src={src}
 					artwork={artInfo}
+					followPointer={followPointer}
 					frame={crop.mobile}
 					onChange={
 						onCropChange
