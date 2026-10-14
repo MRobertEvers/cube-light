@@ -1,0 +1,25 @@
+.intro {
+	margin: 0 0 14px;
+	color: #69615f;
+	font-size: 14px;
+	line-height: 1.45;
+}
+
+.list {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 200px;
+	padding: 10px 12px;
+	border: 1px solid #ddd6d2;
+	border-radius: 8px;
+	background: #faf8f7;
+	color: #302b29;
+	font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+	resize: vertical;
+}
+
+.error {
+	margin: 12px 0 0;
+	color: #a12323;
+	font-size: 13px;
+}

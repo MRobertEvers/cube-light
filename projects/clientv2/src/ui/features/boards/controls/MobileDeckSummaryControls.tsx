@@ -25,6 +25,7 @@ export function MobileDeckSummaryControls(props: BoardControlsProps) {
 		onAddCards,
 		onImportImage,
 		onEditName,
+		onExport,
 		onDeleteDeck,
 		ownership,
 		ownershipFilter,
@@ -54,6 +55,7 @@ export function MobileDeckSummaryControls(props: BoardControlsProps) {
 					onAddCards={onAddCards}
 					onImportImage={onImportImage}
 					onEditName={onEditName}
+					onExport={onExport}
 					onDeleteDeck={onDeleteDeck}
 				/>
 				<DeckImageScanCard deckId={deckId} />

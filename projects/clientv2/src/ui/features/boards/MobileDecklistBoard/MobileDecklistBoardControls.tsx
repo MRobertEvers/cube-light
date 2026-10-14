@@ -19,6 +19,7 @@ export function MobileDecklistBoardControls(props: BoardControlsProps) {
 			onAddCards={props.onAddCards}
 			onImportImage={props.onImportImage}
 			onEditName={props.onEditName}
+			onExport={props.onExport}
 			onDeleteDeck={props.onDeleteDeck}
 			ownership={props.ownership}
 			ownershipFilter={props.ownershipFilter}

@@ -25,6 +25,7 @@ export function DeckToolbarControls(props: BoardControlsProps) {
 		onAddCards,
 		onImportImage,
 		onEditName,
+		onExport,
 		onDeleteDeck,
 		ownership,
 		ownershipFilter,
@@ -90,6 +91,9 @@ export function DeckToolbarControls(props: BoardControlsProps) {
 						onClick={() => navigate(`/deck/${deckId}/settings`)}
 					>
 						Appearance
+					</button>
+					<button type="button" onClick={onExport}>
+						Export
 					</button>
 					<button
 						type="button"

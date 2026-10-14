@@ -57,6 +57,7 @@ import { useHistoryModal } from '../../kit/hooks/useHistoryModal';
 import { SmallInputModal } from '../../kit/components/SmallInputModal/SmallInputModal';
 import { DeleteDeckDialog } from './DeleteDeckDialog';
 import { AddMissingDialog } from './components/AddMissingDialog/AddMissingDialog';
+import { ExportDeckDialog } from './components/ExportDeckDialog/ExportDeckDialog';
 import { loadLibrary } from '../../../redux/library/library.thunks';
 import { selectDeckOwnership } from '../../../redux/library/library.selectors';
 import type { OwnershipFilter } from '../../../domain/library/ownership';
@@ -69,6 +70,8 @@ type DeckModal =
 	| { type: 'image-import' }
 	| { type: 'deck-details' }
 	| { type: 'delete-deck' }
+	/** The deck as a text list to copy or download. */
+	| { type: 'export' }
 	/** Chooses the wanted collection to add the cards the deck lacks to. */
 	| { type: 'add-missing' };
 
@@ -330,6 +333,7 @@ export function Deck(props: DeckProps) {
 			setSaveError(null);
 			modalHistory.open({ type: 'deck-details' });
 		},
+		onExport: () => modalHistory.open({ type: 'export' }),
 		onDeleteDeck: () => modalHistory.open({ type: 'delete-deck' }),
 		ownership: ownership?.summary ?? null,
 		ownershipFilter,
@@ -471,6 +475,8 @@ export function Deck(props: DeckProps) {
 					missingCopies={ownership?.summary.missingCopies ?? 0}
 					onClose={modalHistory.close}
 				/>
+			) : modal?.type === 'export' ? (
+				<ExportDeckDialog deck={data} onClose={modalHistory.close} />
 			) : showDeleteDeckModal && data ? (
 				<DeleteDeckDialog
 					deckName={data.name}
@@ -541,6 +547,7 @@ export function Deck(props: DeckProps) {
 								onAddCards={controls.onAddCards}
 								onImportImage={controls.onImportImage}
 								onEditName={controls.onEditName}
+								onExport={controls.onExport}
 								onDeleteDeck={controls.onDeleteDeck}
 								ownership={controls.ownership}
 								ownershipFilter={controls.ownershipFilter}

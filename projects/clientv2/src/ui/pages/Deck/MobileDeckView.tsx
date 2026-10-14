@@ -79,6 +79,7 @@ export function MobileDeckView(props: MobileDeckViewProps) {
 					onAddCards={controls.onAddCards}
 					onImportImage={controls.onImportImage}
 					onEditName={controls.onEditName}
+					onExport={controls.onExport}
 					onDeleteDeck={controls.onDeleteDeck}
 					ownership={controls.ownership}
 					ownershipFilter={controls.ownershipFilter}

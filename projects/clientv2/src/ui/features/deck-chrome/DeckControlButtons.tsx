@@ -11,6 +11,7 @@ export type DeckControlButtonsProps = {
 	view: DeckView;
 	deckId: string;
 	onEditName: () => void;
+	onExport: () => void;
 	onDeleteDeck: () => void;
 	onAddCard: () => void;
 	onImportImage: () => void;
@@ -23,6 +24,7 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 	const {
 		view,
 		onEditName,
+		onExport,
 		onDeleteDeck,
 		onAddCard,
 		onImportImage,
@@ -96,6 +98,12 @@ export function DeckControlButtons(props: DeckControlButtonsProps) {
 							onClick={() => navigate(`/deck/${deckId}/settings`)}
 						>
 							Appearance
+						</Button>
+						<Button
+							className={styles['deck-control-button']}
+							onClick={onExport}
+						>
+							Export
 						</Button>
 						<Button
 							className={concatClassNames([

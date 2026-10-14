@@ -25,6 +25,7 @@ export function DeckSidebarControls(props: BoardControlsProps) {
 		onAddCards,
 		onImportImage,
 		onEditName,
+		onExport,
 		onDeleteDeck,
 		ownership,
 		ownershipFilter,
@@ -48,6 +49,7 @@ export function DeckSidebarControls(props: BoardControlsProps) {
 				view={view}
 				deckId={deckId}
 				onEditName={onEditName}
+				onExport={onExport}
 				onDeleteDeck={onDeleteDeck}
 				onAddCard={onAddCard}
 				onImportImage={onImportImage}

@@ -7,8 +7,6 @@ import {
 } from '../../../../domain/deck/group-cube-tutor-cards';
 import { type DeckCardGroup, manaValue } from '../../../../domain/deck/group-deck-cards';
 import type { BoardGroups } from '../../../../domain/deck/grouping';
-import { OwnershipBadge } from '../../../kit/components/OwnershipBadge/OwnershipBadge';
-import { ownedNameKey, type RowOwnership } from '../../../../domain/library/ownership';
 import type { BoardProps } from '../board.types';
 import styles from './cube-tutor-board.module.css';
 
@@ -44,11 +42,10 @@ function CardRow(props: {
 	/** First card of a new mana value within its section. */
 	newTier: boolean;
 	busy: boolean;
-	owned?: RowOwnership;
-	onView: (group: DeckCardGroup) => void;
+	onEdit: (group: DeckCardGroup) => void;
 	onPreview: (preview: CubeTutorPreview | null) => void;
 }) {
-	const { group, newTier, busy, owned, onView, onPreview } = props;
+	const { group, newTier, busy, onEdit, onPreview } = props;
 	const card = group.printings[0];
 	function show(event: React.SyntheticEvent<HTMLElement>) {
 		onPreview({ card, row: event.currentTarget.getBoundingClientRect() });
@@ -59,8 +56,8 @@ function CardRow(props: {
 				type="button"
 				className={styles.row}
 				disabled={busy}
-				aria-label={`Open ${group.name}${group.count > 1 ? `, ${group.count} copies` : ''}`}
-				onClick={() => onView(group)}
+				aria-label={`Edit ${group.name}${group.count > 1 ? `, ${group.count} copies` : ''}`}
+				onClick={() => onEdit(group)}
 				onMouseEnter={show}
 				onFocus={show}
 				onMouseLeave={() => onPreview(null)}
@@ -70,7 +67,6 @@ function CardRow(props: {
 					<span className={styles.count}>{group.count}</span>
 				)}
 				<span className={styles.name}>{group.name}</span>
-				{owned && <OwnershipBadge row={owned} compact />}
 			</button>
 		</li>
 	);
@@ -79,11 +75,10 @@ function CardRow(props: {
 function Column(props: {
 	column: CubeTutorColumn;
 	busyName: string | null;
-	ownership?: Record<string, RowOwnership>;
-	onView: (group: DeckCardGroup) => void;
+	onEdit: (group: DeckCardGroup) => void;
 	onPreview: (preview: CubeTutorPreview | null) => void;
 }) {
-	const { column, busyName, ownership, onView, onPreview } = props;
+	const { column, busyName, onEdit, onPreview } = props;
 	return (
 		<section
 			className={styles.column}
@@ -111,8 +106,7 @@ function Column(props: {
 											manaValue(group.printings[0].manaCost)
 									}
 									busy={busyName === group.name}
-									owned={ownership?.[ownedNameKey(group.name)]}
-									onView={onView}
+									onEdit={onEdit}
 									onPreview={onPreview}
 								/>
 							);
@@ -126,10 +120,11 @@ function Column(props: {
 
 /**
  * The cube's color columns, per deck board, that both CubeTutor boards draw.
- * Hovering or focusing a name reports the card to preview beside it.
+ * Hovering or focusing a name reports the card to preview beside it; clicking
+ * it edits the card's copies and printings.
  */
 export function CubeTutorColumns(props: CubeTutorColumnsProps) {
-	const { cards, busyGroup, onCardEvent, annotations, onPreview } = props;
+	const { cards, busyGroup, onCardEvent, onPreview } = props;
 	const boards = useMemo(
 		() =>
 			DECK_BOARD_ORDER.map((board) => ({
@@ -164,14 +159,7 @@ export function CubeTutorColumns(props: CubeTutorColumnsProps) {
 								busyName={
 									busyGroup?.board === board ? busyGroup.name : null
 								}
-								ownership={annotations?.ownership}
-								onView={(group) =>
-									onCardEvent({
-										type: 'view',
-										card: group.printings[0],
-										group
-									})
-								}
+								onEdit={(group) => onCardEvent({ type: 'edit', group })}
 								onPreview={onPreview}
 							/>
 						))}

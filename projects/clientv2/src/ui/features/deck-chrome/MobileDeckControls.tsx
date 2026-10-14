@@ -14,6 +14,7 @@ export type MobileDeckControlsProps = {
 	onAddCards: () => void;
 	onImportImage: () => void;
 	onEditName: () => void;
+	onExport: () => void;
 	onDeleteDeck: () => void;
 };
 
@@ -27,6 +28,7 @@ export function MobileDeckControls(props: MobileDeckControlsProps) {
 		onAddCards,
 		onImportImage,
 		onEditName,
+		onExport,
 		onDeleteDeck
 	} = props;
 	const navigate = useNavigate();
@@ -71,6 +73,7 @@ export function MobileDeckControls(props: MobileDeckControlsProps) {
 					>
 						Appearance
 					</Button>
+					<Button onClick={onExport}>Export</Button>
 					<Button
 						className={styles.deleteDeck}
 						disabled={isSaving}

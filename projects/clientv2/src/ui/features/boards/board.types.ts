@@ -97,6 +97,8 @@ export type BoardControlsProps = {
 	onAddCards: () => void;
 	onImportImage: () => void;
 	onEditName: () => void;
+	/** Opens the deck as a text list to copy or download. */
+	onExport: () => void;
 	onDeleteDeck: () => void;
 	/** How much of the deck the owned collections cover; null until the library is read. */
 	ownership: DeckOwnershipSummary | null;
