@@ -111,11 +111,9 @@ export function ManagePrintingsOnline(props: ManagePrintingsProps) {
 								return (
 									<li
 										key={choice.uuid}
-										className={
-											totalOf(choice.counts) > 0
-												? styles['in-deck']
-												: undefined
-										}
+										className={`${totalOf(choice.counts) > 0 ? styles['in-deck'] : ''} ${
+											choice.current ? styles['current'] : ''
+										}`}
 									>
 										<button
 											type="button"
@@ -131,6 +129,11 @@ export function ManagePrintingsOnline(props: ManagePrintingsProps) {
 													alt=""
 													loading="lazy"
 												/>
+												{choice.current && (
+													<span className={styles['current-tag']} aria-hidden="true">
+														Current
+													</span>
+												)}
 												{totalOf(choice.counts) > 0 && (
 													<span
 														className={styles['badges']}
@@ -176,11 +179,12 @@ export function ManagePrintingsOnline(props: ManagePrintingsProps) {
 										<span className={styles['tile-art']}>
 											<ViewArtButton image={choice.printing.image} placement="card" />
 										</span>
-										{choice.count > 0 && !replacing && (
+										{choice.count > 0 && (
 											<ChoiceRemoveButton
 												manager={manager}
 												uuid={choice.uuid}
 												className={styles['tile-remove']}
+												hidden={!!replacing}
 											/>
 										)}
 									</li>

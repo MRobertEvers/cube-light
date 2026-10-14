@@ -366,6 +366,20 @@
 	font-size: 13px;
 }
 
+/* Both hints in one cell: the hidden one still holds its height, so switching doesn't move the grid. */
+.all-hint {
+	display: grid;
+}
+
+.all-hint > span {
+	grid-area: 1 / 1;
+}
+
+.all-hint > span[hidden] {
+	display: block;
+	visibility: hidden;
+}
+
 .search {
 	box-sizing: border-box;
 	width: 220px;
@@ -451,6 +465,35 @@
 		0 0 0 5px var(--deck-accent, #7a3431);
 }
 
+.current .tile {
+	cursor: default;
+}
+
+/* Marks the printing being replaced, where it sits in the grid. */
+.current-tag {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	box-sizing: border-box;
+	height: 22px;
+	padding: 0 8px;
+	border-radius: 11px;
+	background: #383331;
+	color: white;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.tile-image .current-tag {
+	position: absolute;
+	bottom: 8px;
+	left: 50%;
+	border: 2px solid white;
+	transform: translateX(-50%);
+}
+
 .badges {
 	position: absolute;
 	top: -8px;
@@ -523,6 +566,12 @@
 	border-radius: 50%;
 	background: none;
 	cursor: pointer;
+}
+
+/* Hidden while replacing, keeping its space. */
+.tile-remove[hidden],
+.choice-remove[hidden] {
+	visibility: hidden;
 }
 
 .tile-remove span {
@@ -750,6 +799,11 @@
 	background: #f1efee;
 }
 
+/* Hidden while replacing, keeping its space so the grid doesn't move. */
+.add-board[hidden] {
+	visibility: hidden;
+}
+
 .add-board button {
 	padding: 6px 12px;
 	border-radius: 5px;
@@ -894,6 +948,11 @@
 .choice:disabled {
 	cursor: default;
 	opacity: 0.6;
+}
+
+/* The printing being replaced reads as itself, not as a choice that is out of reach. */
+.current .choice:disabled {
+	opacity: 1;
 }
 
 .choice-list .in-deck .choice {

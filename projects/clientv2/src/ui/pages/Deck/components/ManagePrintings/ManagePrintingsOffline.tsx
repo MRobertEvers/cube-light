@@ -134,11 +134,9 @@ export function ManagePrintingsOffline(props: ManagePrintingsProps) {
 								return (
 									<li
 										key={choice.uuid}
-										className={
-											totalOf(choice.counts) > 0
-												? styles['in-deck']
-												: undefined
-										}
+										className={`${totalOf(choice.counts) > 0 ? styles['in-deck'] : ''} ${
+											choice.current ? styles['current'] : ''
+										}`}
 									>
 										<button
 											type="button"
@@ -158,6 +156,11 @@ export function ManagePrintingsOffline(props: ManagePrintingsProps) {
 													{choice.printing.setName ?? ' '}
 												</span>
 											</span>
+											{choice.current && (
+												<span className={styles['current-tag']} aria-hidden="true">
+													Current
+												</span>
+											)}
 											{owned > 0 && (
 												<BoardChips
 													chips={[{ label: `own ${owned}`, tone: 'owned' }]}
@@ -184,11 +187,12 @@ export function ManagePrintingsOffline(props: ManagePrintingsProps) {
 												</span>
 											)}
 										</button>
-										{choice.count > 0 && !replacing && (
+										{choice.count > 0 && (
 											<ChoiceRemoveButton
 												manager={manager}
 												uuid={choice.uuid}
 												className={styles['choice-remove']}
+												hidden={!!replacing}
 											/>
 										)}
 									</li>

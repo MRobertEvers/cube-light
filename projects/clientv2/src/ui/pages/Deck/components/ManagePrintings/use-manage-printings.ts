@@ -79,6 +79,8 @@ export type PrintingChoice = {
 	inDeck: string;
 	/** What a click does, spoken. */
 	actionLabel: string;
+	/** The printing being replaced, listed in its place so the grid doesn't move. */
+	current: boolean;
 	disabled: boolean;
 };
 
@@ -100,7 +102,7 @@ export type ManagePrintingsManager = {
 	setAddBoard: (board: DeckBoard) => void;
 	query: string;
 	setQuery: (query: string) => void;
-	/** Printings on the "all" side, sorted and matching the search, less the one being replaced. */
+	/** Printings on the "all" side, sorted and matching the search; the same order whether replacing or adding. */
 	choices: CardPrinting[];
 	/** Printings the deck had when the editor opened. */
 	initial: ReadonlyMap<string, BoardCounts>;
@@ -209,9 +211,6 @@ export function useManagePrintings(
 					!!printing.setName?.toLowerCase().includes(needle)
 			);
 	}, [printings, query, initial, ownership]);
-	const choices = replacingUuid
-		? sorted.filter((choice) => choice.uuid !== replacingUuid)
-		: sorted;
 
 	function countsOf(uuid: string): BoardCounts {
 		return countsIn(counts, uuid);
@@ -330,6 +329,7 @@ export function useManagePrintings(
 		const choiceCounts = countsOf(uuid);
 		const count = choiceCounts[addBoard];
 		const label = `${printing.name}, ${setNameOf(printing)}`;
+		const current = uuid === replacingUuid;
 		const inDeck = DECK_BOARD_ORDER.filter((board) => choiceCounts[board] > 0)
 			.map((board) => `${choiceCounts[board]} in ${boardName(board)}`)
 			.join(', ');
@@ -340,12 +340,15 @@ export function useManagePrintings(
 			count,
 			label,
 			inDeck,
-			actionLabel: replacing
-				? `Change all ${copies(replacingCount)} to ${label}${inDeck ? `, ${inDeck} already` : ''}`
-				: `Add a ${label} copy to the ${boardName(addBoard)}${inDeck ? `, ${inDeck}` : ''}`,
+			actionLabel: current
+				? `${label}, the printing being changed`
+				: replacing
+					? `Change all ${copies(replacingCount)} to ${label}${inDeck ? `, ${inDeck} already` : ''}`
+					: `Add a ${label} copy to the ${boardName(addBoard)}${inDeck ? `, ${inDeck}` : ''}`,
 			disabled: replacingUuid
 				? !canReplace(replacingUuid, uuid)
-				: count >= MAX_COPIES
+				: count >= MAX_COPIES,
+			current
 		};
 	}
 
@@ -370,7 +373,7 @@ export function useManagePrintings(
 		setAddBoard,
 		query,
 		setQuery,
-		choices,
+		choices: sorted,
 		initial,
 		countsOf,
 		ownedOf,

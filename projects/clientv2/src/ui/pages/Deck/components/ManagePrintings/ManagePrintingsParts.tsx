@@ -209,31 +209,35 @@ export function AllPrintingsHeader(props: { manager: ManagePrintingsManager }) {
 				<h3 id="manage-printings-all" className={styles['pane-label']}>
 					{replacing ? 'Change printing' : 'All printings'}
 				</h3>
-				<p>
-					{replacing
-						? `Choose a new printing for all ${copies(replacingCount)} from ${setNameOf(replacing)}. Each board keeps its count.`
-						: `Choose a printing to add a copy to the ${boardName(addBoard)}.`}
+				{/* Both texts share one cell, so the taller sets its height in either mode. */}
+				<p className={styles['all-hint']}>
+					<span hidden={!!replacing}>
+						{`Choose a printing to add a copy to the ${boardName(addBoard)}.`}
+					</span>
+					<span hidden={!replacing}>
+						{`Choose a new printing for all ${copies(replacingCount)}. Each board keeps its count.`}
+					</span>
 				</p>
 			</div>
-			{!replacing && (
-				<div
-					className={styles['add-board']}
-					role="radiogroup"
-					aria-label="Add copies to"
-				>
-					{DECK_BOARD_ORDER.map((board) => (
-						<button
-							key={board}
-							type="button"
-							role="radio"
-							aria-checked={addBoard === board}
-							onClick={() => manager.setAddBoard(board)}
-						>
-							{DECK_BOARD_LABELS[board]}
-						</button>
-					))}
-				</div>
-			)}
+			{/* Stays mounted while replacing, keeping its space so the grid below doesn't move. */}
+			<div
+				className={styles['add-board']}
+				role="radiogroup"
+				aria-label="Add copies to"
+				hidden={!!replacing}
+			>
+				{DECK_BOARD_ORDER.map((board) => (
+					<button
+						key={board}
+						type="button"
+						role="radio"
+						aria-checked={addBoard === board}
+						onClick={() => manager.setAddBoard(board)}
+					>
+						{DECK_BOARD_LABELS[board]}
+					</button>
+				))}
+			</div>
 			<input
 				className={styles['search']}
 				type="search"
@@ -260,13 +264,16 @@ export function ChoiceRemoveButton(props: {
 	manager: ManagePrintingsManager;
 	uuid: string;
 	className: string;
+	/** Hides it while replacing, keeping its space. */
+	hidden: boolean;
 }) {
-	const { manager, uuid, className } = props;
+	const { manager, uuid, className, hidden } = props;
 	const choice = manager.choiceOf(uuid);
 	return (
 		<button
 			type="button"
 			className={className}
+			hidden={hidden}
 			aria-label={`Remove a ${choice.label} copy from the ${boardName(manager.addBoard)}`}
 			onClick={() => manager.setCount(uuid, manager.addBoard, choice.count - 1)}
 		>
