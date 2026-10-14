@@ -74,30 +74,26 @@ export function DeckPrintingText(props: {
 }
 
 /**
- * A deck row's controls: change every copy to another printing, and each board's
- * stepper with arrows that move a copy between them.
+ * A deck row's controls: the row itself, which a click makes the one whose art the
+ * printings change, and each board's stepper with arrows that move a copy between them.
  */
 export function DeckRowControls(props: {
 	manager: ManagePrintingsManager;
 	uuid: string;
-	/** True while there are no other printings to change to yet. */
-	changeDisabled: boolean;
 }) {
-	const { manager, uuid, changeDisabled } = props;
+	const { manager, uuid } = props;
 	const rowCounts = manager.countsOf(uuid);
 	const label = `${manager.rowPrinting(uuid).name}, ${setNameOf(manager.rowPrinting(uuid))}`;
 	return (
 		<>
+			{/* Covers the whole row, under its steppers. */}
 			<button
 				type="button"
-				className={styles['change-printing']}
-				aria-label={`Change all ${copies(totalOf(rowCounts))} of ${label} to another printing`}
-				title="Change all copies to another printing"
-				disabled={changeDisabled}
+				className={styles['select-row']}
+				aria-label={`Change the art of all ${copies(totalOf(rowCounts))} of ${label}`}
+				aria-pressed={manager.replacingUuid === uuid}
 				onClick={() => manager.startReplacing(uuid)}
-			>
-				<ReplaceIcon />
-			</button>
+			/>
 			<div className={styles['board-counts']}>
 				<BoardStepper
 					board="main"
@@ -141,8 +137,8 @@ export function DeckRowControls(props: {
 }
 
 /**
- * Below the deck rows: a note when none are left, moving a whole board, the
- * phone's way to the other printings, and each board's total.
+ * Below the deck rows: a note when none are left, adding another printing,
+ * moving a whole board, and each board's total.
  */
 export function DeckPaneActions(props: {
 	manager: ManagePrintingsManager;
@@ -150,7 +146,7 @@ export function DeckPaneActions(props: {
 	addHint: string;
 }) {
 	const { manager, addHint } = props;
-	const { rows, target, boardTotals } = manager;
+	const { rows, target, boardTotals, adding } = manager;
 	return (
 		<>
 			{rows.length === 0 && (
@@ -159,6 +155,21 @@ export function DeckPaneActions(props: {
 					printing to put it back.
 				</p>
 			)}
+			{/* Turns the printings beside the deck from changing a row's art to adding copies. */}
+			<button
+				type="button"
+				className={styles['add-printing']}
+				aria-pressed={adding}
+				onClick={adding ? manager.stopChoosingPrinting : manager.startAdding}
+			>
+				<span className={styles['add-printing-icon']} aria-hidden="true">
+					<PlusIcon />
+				</span>
+				<span className={styles['add-printing-text']}>
+					<span>Add a printing</span>
+					<span>{addHint}</span>
+				</span>
+			</button>
 			{rows.length > 0 && (
 				<div className={styles['move-all']}>
 					{DECK_BOARD_ORDER.map((from) => (
@@ -174,19 +185,6 @@ export function DeckPaneActions(props: {
 					))}
 				</div>
 			)}
-			<button
-				type="button"
-				className={styles['add-printing']}
-				onClick={manager.startAdding}
-			>
-				<span className={styles['add-printing-icon']} aria-hidden="true">
-					<PlusIcon />
-				</span>
-				<span className={styles['add-printing-text']}>
-					<span>Add a printing</span>
-					<span>{addHint}</span>
-				</span>
-			</button>
 			<dl className={styles['total']}>
 				{DECK_BOARD_ORDER.map((board) => (
 					<div key={board}>
@@ -393,21 +391,6 @@ function PlusIcon() {
 				stroke="currentColor"
 				strokeWidth="1.8"
 				strokeLinecap="round"
-			/>
-		</svg>
-	);
-}
-
-function ReplaceIcon() {
-	return (
-		<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-			<path
-				d="M2.5 5.5h9M9.5 3.5l2 2-2 2M13.5 10.5h-9M6.5 8.5l-2 2 2 2"
-				fill="none"
-				stroke="currentColor"
-				strokeWidth="1.5"
-				strokeLinecap="round"
-				strokeLinejoin="round"
 			/>
 		</svg>
 	);

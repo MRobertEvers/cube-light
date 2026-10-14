@@ -72,7 +72,6 @@
 
 .done:focus-visible,
 .add-printing:focus-visible,
-.change-printing:focus-visible,
 .stepper button:focus-visible,
 .tile:focus-visible,
 .tile-remove:focus-visible,
@@ -133,10 +132,11 @@
 
 .deck-row {
 	display: grid;
+	position: relative;
 	grid-template-areas:
-		'image text change'
-		'image counts counts';
-	grid-template-columns: 44px minmax(0, 1fr) auto;
+		'image text'
+		'image counts';
+	grid-template-columns: 44px minmax(0, 1fr);
 	align-items: center;
 	gap: 8px 12px;
 	padding: 10px;
@@ -148,6 +148,29 @@
 .deck-row.replacing {
 	border-color: var(--deck-accent, #7a3431);
 	box-shadow: 0 0 0 1px var(--deck-accent, #7a3431);
+}
+
+/* The whole row picks it as the one whose art the printings change. */
+.select-row {
+	position: absolute;
+	inset: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: inherit;
+	background: none;
+	cursor: pointer;
+}
+
+.select-row:focus-visible {
+	outline: 2px solid var(--deck-accent, #7a3431);
+	outline-offset: 2px;
+}
+
+@media (hover: hover) {
+	.deck-row:not(.replacing):hover {
+		border-color: #d8b9b2;
+	}
 }
 
 .deck-row img {
@@ -182,38 +205,6 @@
 	font-size: 12px;
 	font-weight: 600;
 	letter-spacing: 0.04em;
-}
-
-.change-printing {
-	grid-area: change;
-	display: flex;
-	flex: none;
-	align-items: center;
-	justify-content: center;
-	width: 32px;
-	height: 32px;
-	margin: 0;
-	padding: 0;
-	border: 0;
-	border-radius: 6px;
-	background: white;
-	color: var(--deck-accent, #7a3431);
-	cursor: pointer;
-}
-
-.deck-row.replacing .change-printing {
-	background: #f6ece9;
-}
-
-@media (hover: hover) {
-	.change-printing:hover:not(:disabled) {
-		background: #f6ece9;
-	}
-}
-
-.change-printing:disabled {
-	color: #b8b0ad;
-	cursor: default;
 }
 
 .stepper {
@@ -272,12 +263,12 @@
 	line-height: 1.45;
 }
 
-/* Phones only; the desktop shows every printing beside the deck. */
+/* Turns the printings beside the deck to adding copies; pressed while they do. */
 .add-printing {
-	display: none;
+	display: flex;
 	align-items: center;
 	gap: 12px;
-	margin: 16px;
+	margin: 12px 16px 0;
 	min-height: 60px;
 	padding: 8px 14px;
 	border: 1px dashed #d8b9b2;
@@ -287,6 +278,18 @@
 	font: inherit;
 	text-align: left;
 	cursor: pointer;
+}
+
+.add-printing[aria-pressed='true'] {
+	border-style: solid;
+	border-color: var(--deck-accent, #7a3431);
+	box-shadow: 0 0 0 1px var(--deck-accent, #7a3431);
+}
+
+@media (hover: hover) {
+	.add-printing:hover {
+		background: #f6ece9;
+	}
 }
 
 .add-printing-icon {
@@ -635,12 +638,6 @@
 		border-radius: 9px;
 	}
 
-	.change-printing {
-		width: 44px;
-		height: 44px;
-		border-radius: 9px;
-	}
-
 	.stepper {
 		border-radius: 10px;
 	}
@@ -648,10 +645,6 @@
 	.stepper-count {
 		min-width: 30px;
 		font-size: 16px;
-	}
-
-	.add-printing {
-		display: flex;
 	}
 
 	.total {
@@ -696,12 +689,20 @@
 	}
 }
 
+/* Above the row's select button; only its buttons take clicks, the rest selects the row. */
 .board-counts {
+	position: relative;
+	z-index: 1;
+	pointer-events: none;
 	grid-area: counts;
 	display: flex;
 	align-items: flex-end;
 	justify-content: space-between;
 	gap: 6px;
+}
+
+.board-counts button {
+	pointer-events: auto;
 }
 
 .board-stepper {
@@ -829,8 +830,8 @@
 @media (max-width: 680px) {
 	.deck-row {
 		grid-template-areas:
-			'image text change'
-			'counts counts counts';
+			'image text'
+			'counts counts';
 	}
 
 	.move-copy button {
@@ -901,9 +902,9 @@
 
 .deck-row-text-only {
 	grid-template-areas:
-		'text change'
-		'counts counts';
-	grid-template-columns: minmax(0, 1fr) auto;
+		'text'
+		'counts';
+	grid-template-columns: minmax(0, 1fr);
 }
 
 .choice-list {
@@ -1014,7 +1015,7 @@
 
 	.deck-row-text-only {
 		grid-template-areas:
-			'text change'
-			'counts counts';
+			'text'
+			'counts';
 	}
 }

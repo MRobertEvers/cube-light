@@ -75,11 +75,7 @@ export function ManagePrintingsOnline(props: ManagePrintingsProps) {
 									uuid={uuid}
 									setLine={setNameOf(manager.rowPrinting(uuid))}
 								/>
-								<DeckRowControls
-									manager={manager}
-									uuid={uuid}
-									changeDisabled={loading || !!loadError}
-								/>
+								<DeckRowControls manager={manager} uuid={uuid} />
 							</li>
 						))}
 					</ul>

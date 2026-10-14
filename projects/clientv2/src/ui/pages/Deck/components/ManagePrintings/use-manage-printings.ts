@@ -95,6 +95,9 @@ export type ManagePrintingsManager = {
 	saving: boolean;
 	saveError: string | null;
 	view: 'deck' | 'all';
+	/** True while a click on the "all" side adds a copy instead of changing the active row's art. */
+	adding: boolean;
+	/** The deck row whose art a click on the "all" side changes; null while adding. */
 	replacingUuid: string | null;
 	replacing: PrintingInfo | undefined;
 	replacingCount: number;
@@ -115,15 +118,18 @@ export type ManagePrintingsManager = {
 	moveCopies: (uuid: string, from: DeckBoard, count: number) => void;
 	moveAll: (from: DeckBoard) => void;
 	startAdding: () => void;
+	/** Makes a deck row the one whose art the "all" side changes. */
 	startReplacing: (uuid: string) => void;
 	stopChoosingPrinting: () => void;
-	/** A click on a printing on the "all" side: replaces, or adds a copy. */
+	/** A click on a printing on the "all" side: changes the active row's art, or adds a copy. */
 	choose: (uuid: string) => void;
 };
 
 /**
  * The card editor's state and steps: counts shown on top of unsaved steps, the
- * deck rows' order, the chosen board and search, and replacing a whole row.
+ * deck rows' order, the chosen board and search, and the row whose art the
+ * printings change. That row is the first one until another is chosen; adding
+ * copies is a mode the person turns on.
  * `printings` are what the "all printings" side may offer.
  */
 export function useManagePrintings(
@@ -159,7 +165,11 @@ export function useManagePrintings(
 	const [addBoard, setAddBoard] = useState<DeckBoard>(target.board);
 	const [query, setQuery] = useState('');
 	const [view, setView] = useState<'deck' | 'all'>('deck');
-	const [replacingUuid, setReplacingUuid] = useState<string | null>(null);
+	const [adding, setAdding] = useState(false);
+	// The row the person chose; follows its art when that changes.
+	const [selectedUuid, setSelectedUuid] = useState<string | null>(
+		() => order[0] ?? null
+	);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const saving = pending.length > 0;
 
@@ -219,6 +229,12 @@ export function useManagePrintings(
 	const rows = order
 		.concat(Array.from(counts.keys()).filter((uuid) => !order.includes(uuid)))
 		.filter((uuid) => totalOf(countsOf(uuid)) > 0);
+	// A chosen row that left the deck hands over to the first one.
+	const replacingUuid = adding
+		? null
+		: selectedUuid && rows.includes(selectedUuid)
+			? selectedUuid
+			: (rows[0] ?? null);
 	const boardTotals: BoardCounts = {
 		main: rows.reduce((sum, uuid) => sum + countsOf(uuid).main, 0),
 		side: rows.reduce((sum, uuid) => sum + countsOf(uuid).side, 0)
@@ -284,17 +300,18 @@ export function useManagePrintings(
 	}
 
 	function startAdding() {
-		setReplacingUuid(null);
+		setAdding(true);
 		setView('all');
 	}
 
 	function startReplacing(uuid: string) {
-		setReplacingUuid(uuid);
+		setSelectedUuid(uuid);
+		setAdding(false);
 		setView('all');
 	}
 
 	function stopChoosingPrinting() {
-		setReplacingUuid(null);
+		setAdding(false);
 		setView('deck');
 	}
 
@@ -314,6 +331,8 @@ export function useManagePrintings(
 	function replaceAllCopies(sourceUuid: string, targetUuid: string) {
 		if (!canReplace(sourceUuid, targetUuid)) return;
 		take([{ type: 'replace', from: sourceUuid, to: targetUuid }]);
+		// The row keeps being the one a click changes, now under its new art.
+		setSelectedUuid(targetUuid);
 		stopChoosingPrinting();
 	}
 
@@ -366,6 +385,7 @@ export function useManagePrintings(
 		saving,
 		saveError,
 		view,
+		adding,
 		replacingUuid,
 		replacing,
 		replacingCount,
