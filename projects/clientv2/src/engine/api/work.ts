@@ -76,7 +76,8 @@ export class WorkApi {
 			(candidate) => candidate.workId === item.workId
 		);
 		if (!current) throw new Error('Could not download the queued photo');
-		const blobId = current.imageUrl.split('/').pop()!;
+		// Never from imageUrl: that is an object URL (blob:<origin>/<uuid>) or a placeholder.
+		const blobId = current.blobId;
 		let blob: Blob;
 		try {
 			blob = await this.tori.blob(blobId);

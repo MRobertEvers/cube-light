@@ -14,6 +14,9 @@ export type WorkItem = {
 	progress: { completed: number; total: number };
 	cardsAdded: number;
 	error: string | null;
+	/** The queued photo's upload (`blob_<sha256>`): what the scan reads. */
+	blobId: string;
+	/** The photo for display: an object URL, or a placeholder while it loads. */
 	imageUrl: string;
 	createdAt: string;
 	updatedAt: string;

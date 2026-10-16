@@ -102,7 +102,7 @@ export function projectQuery(data: Dataset, cards: CardCatalog, sidecars: ImageS
         case 'profile': return states.find((state) => state.kind === 'profile') || null;
         case 'work': return { items: states.filter((state): state is WorkState => state.kind === 'work').map((item) => {
             const deck = states.find((state) => state.id === item.deckId);
-            return { workId: item.id, kind: 'card-image-ocr', deck: deck?.kind === 'deck' ? { deckId: deck.id, name: deck.name } : null, status: item.status, fileName: item.fileName, pipeline: item.pipeline, progress: { completed: item.completed, total: item.total }, cardsAdded: item.cardsAdded, error: item.error, imageUrl: blobs.url(item.blobId), createdAt: item.createdAt, updatedAt: item.updatedAt };
+            return { workId: item.id, kind: 'card-image-ocr', deck: deck?.kind === 'deck' ? { deckId: deck.id, name: deck.name } : null, status: item.status, fileName: item.fileName, pipeline: item.pipeline, progress: { completed: item.completed, total: item.total }, cardsAdded: item.cardsAdded, error: item.error, blobId: item.blobId, imageUrl: blobs.url(item.blobId), createdAt: item.createdAt, updatedAt: item.updatedAt };
         }) };
         case 'history': {
             const deck = states.find((state) => state.id === query.id);

@@ -198,6 +198,8 @@ checksum-verified) and Emscripten (`emsdk`). The system's Node is too old. To de
 export PATH=$HOME/.local/share/cube-light/node/bin:$PATH
 source ~/.local/share/cube-light/emsdk/emsdk_env.sh
 npm --prefix projects/server run build && npm --prefix projects/clientv2 run build
+# Keep this build's hashed files for tabs still running it after the next build (CLIENT_ASSET_ROOT).
+node -e "import('./scripts/retain-client-assets.mjs').then((m) => m.retainClientAssets({ source: 'projects/clientv2/dist/assets', destination: process.env.HOME + '/.local/share/cube-light/client-assets' }))"
 systemctl --user restart cube-light-api cube-light
 journalctl --user -u cube-light-api -f      # its log: settings, merges, art
 ```

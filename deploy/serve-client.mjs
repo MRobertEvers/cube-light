@@ -40,7 +40,22 @@ const types = {
   ".jpg": "image/jpeg",
   ".svg": "image/svg+xml",
 };
+// One line per request in the service's log (journalctl): who, what, the answer and how long it
+// took, or "cut off" when the connection closed before the answer was sent (a download given up).
+// CLIENT_ACCESS_LOG=0 turns it off.
+const accessLog = process.env.CLIENT_ACCESS_LOG !== "0";
+function logRequest(req, res, began) {
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  const agent = String(req.headers["user-agent"] || "");
+  const device = /Android/.test(agent) ? "android" : /iPhone|iPad/.test(agent) ? "ios" : /Mobile/.test(agent) ? "mobile" : "desktop";
+  const outcome = res.writableFinished ? res.statusCode : `${res.statusCode} cut off`;
+  console.log(`${forwarded || req.socket.remoteAddress} ${device} ${req.method} ${req.url} ${outcome} ${Date.now() - began}ms`);
+}
 const handler = async function (req, res) {
+  if (accessLog) {
+    const began = Date.now();
+    res.on("close", function () { logRequest(req, res, began); });
+  }
   try {
     if (req.url === '/api' || req.url.startsWith('/api/')) {
       const upstream = new URL(apiOrigin);

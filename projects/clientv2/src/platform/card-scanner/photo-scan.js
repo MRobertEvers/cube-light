@@ -1,5 +1,11 @@
 import { PaddleOCR } from '@paddleocr/paddleocr-js';
 import { createWorker } from 'tesseract.js';
+// PaddleOCR's prebuilt worker embeds ONNX Runtime Web 1.24.3 and, unless told otherwise, loads that
+// version's WebAssembly from a CDN (jsDelivr): a device that could not reach it had no text reader
+// ("no available backend found"). This build serves the same file itself. The version must be the
+// one the worker embeds (package.json's onnxruntime-web-paddle; check on a @paddleocr/paddleocr-js
+// upgrade), or the WebAssembly fails to link.
+import ortWasmUrl from 'onnxruntime-web-paddle/ort-wasm-simd-threaded.jsep.wasm?url';
 /**
  * @param {number} length
  * @param {number} size
@@ -87,7 +93,10 @@ export async function scanPhoto(options) {
 						ortOptions: {
 							backend: 'auto',
 							numThreads: 1,
-							simd: true
+							simd: true,
+							wasmPaths: {
+								wasm: new URL(ortWasmUrl, location.origin).href
+							}
 						}
 					});
 		if (engine === 'tesseract')
