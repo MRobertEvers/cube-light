@@ -62,8 +62,11 @@ function distance(a, b) {
  * @param {import('./types.js').NameIndex} index
  */
 export function rankNames(text, index) {
-	const key = normalize(text);
-	if (key.length < 5 || key.length > 55) return [];
+	// Arena shortens long names with an ellipsis; what is left must start the name.
+	const cut = text.search(/\.\.\.|…/),
+		truncated = cut >= 0,
+		key = normalize(truncated ? text.slice(0, cut) : text);
+	if (key.length < 3 || key.length > 55) return [];
 	const shared = new Map();
 	for (const g of grams(key))
 		for (const id of index.postings.get(g) || [])
@@ -71,10 +74,12 @@ export function rankNames(text, index) {
 	const byName = new Map();
 	for (const [id] of Array.from(shared).sort((a, b) => b[1] - a[1]).slice(0, 180)) {
 		const e = index.entries[id];
-		if (Math.abs(e.key.length - key.length) > Math.max(8, key.length * 0.5))
+		if (truncated ? e.key.length <= key.length :
+			Math.abs(e.key.length - key.length) > Math.max(8, key.length * 0.5))
 			continue;
-		const score =
-			1 - distance(key, e.key) / Math.max(key.length, e.key.length);
+		const target = truncated ? e.key.slice(0, key.length) : e.key,
+			score =
+				1 - distance(key, target) / Math.max(key.length, target.length);
 		if (score > (byName.get(e.name)?.score ?? -1))
 			byName.set(e.name, { name: e.name, score, exact: key === e.key });
 	}
@@ -114,19 +119,23 @@ const NON_TITLE =
 export function matchDetections(outputs, index) {
 	const candidates = [];
 	for (const item of outputs.flatMap((o) => o.items)) {
-		const text = item.text.trim();
+		// Deck lists put the count before the name: "4x Fell".
+		const text = item.text
+			.trim()
+			.replace(/^\d{1,2}\s*[xX×][\s(\[|]+(?=[A-Za-z])/, '');
 		if (item.score < 0.45 || NON_TITLE.test(text) || /[()]/.test(text))
 			continue;
 		const ranked = rankNames(text, index);
-		const best = ranked[0];
-		if (!best || best.score < 0.58) continue;
+		const best = ranked[0],
+			short = normalize(text).length < 8;
+		if (!best || best.score < 0.58 || (short && !best.exact)) continue;
 		const margin = best.score - (ranked[1]?.score || 0);
 		const accepted =
 			best.score >= 0.84 &&
 			item.score >= 0.75 &&
 			(best.exact || /^[A-Z]/.test(text)) &&
 			(best.exact || margin >= 0.12) &&
-			normalize(text).length >= 8;
+			!short;
 		const candidate = {
 			text,
 			ocrScore: item.score,
@@ -136,7 +145,9 @@ export function matchDetections(outputs, index) {
 			status: accepted ? 'accepted' : 'review',
 			alternatives: ranked,
 			poly: item.poly,
-			box: bounds(item.poly)
+			box: bounds(item.poly),
+			// A short name such as "Fell" matches too much rules text on its own.
+			shortExact: short && item.score >= 0.95
 		};
 		const duplicate = candidates.find((c) =>
 			sameLine(c.box, candidate.box)
@@ -153,5 +164,25 @@ export function matchDetections(outputs, index) {
 				Object.assign(duplicate, candidate);
 		} else candidates.push(candidate);
 	}
+	acceptListRows(candidates);
 	return candidates.sort((a, b) => a.box.y - b.box.y || a.box.x - b.box.x);
+}
+/**
+ * A deck list stacks names in one column at one height. A short exact name
+ * counts when it lines up with at least two accepted names that way.
+ * @param {Array<{status: string, shortExact: boolean, box: import('./types.js').Bounds}>} candidates
+ */
+function acceptListRows(candidates) {
+	const accepted = candidates.filter((c) => c.status === 'accepted');
+	for (const c of candidates) {
+		if (c.status === 'accepted' || !c.shortExact) continue;
+		const column = accepted.filter(
+			(other) =>
+				Math.abs(other.box.x - c.box.x) < c.box.h &&
+				Math.min(other.box.h, c.box.h) / Math.max(other.box.h, c.box.h) >
+					0.75 &&
+				Math.abs(other.box.y - c.box.y) < c.box.h * 4
+		);
+		if (column.length >= 2) c.status = 'accepted';
+	}
 }

@@ -44,6 +44,9 @@ export async function scanExperimental(options) {
 		url,
 		tileSize: 960,
 		overlap: 200,
+		// Deck-list screenshots print names wider than a fine tile; a shrunken
+		// pass keeps each whole name inside one tile.
+		coarse: { tileSize: 2400, overlap: 600, scale: 0.4 },
 		detThresh: 0.1,
 		boxThresh: 0.3,
 		isCancelled,
@@ -127,10 +130,13 @@ export async function scanExperimental(options) {
 		}
 		add(refined, 0.75, 0.12, 'Printed-name font fit');
 		await onStage('font', { candidates, outputs: refined });
+		// A screenshot can have no card title strips at all; then nothing is eligible.
 		const lines = await findTitleStrips(image),
-			typical = lines.slice().sort((a, b) => b.length - a.length)[
-				Math.min(12, lines.length - 1)
-			].length;
+			typical = lines.length
+				? lines.slice().sort((a, b) => b.length - a.length)[
+						Math.min(12, lines.length - 1)
+					].length
+				: 0;
 		function eligible(row) {
 			const b = bounds(row.poly),
 				cx = b.x + b.w / 2,
