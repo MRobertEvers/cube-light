@@ -14,8 +14,12 @@ export function digest(value: unknown): string {
 export class SyncRepository {
     readonly database: SqliteDatabase;
     serverInstanceId = '';
+    private readonly changeListeners: Array<() => void> = [];
 
     constructor(database: SqliteDatabase) { this.database = database; }
+
+    /** Called after each command that recorded events (the shared database passes them on). */
+    onChange(listener: () => void): void { this.changeListeners.push(listener); }
 
     async initialize(): Promise<void> {
         await this.database.exec(`
@@ -185,11 +189,11 @@ export class SyncRepository {
         if (!request || request.protocolVersion !== 1 || request.serverInstanceId !== this.serverInstanceId || request.accountId !== accountId || request.datasetId !== 'shared' || typeof request.operationId !== 'string' || !/^[A-Za-z0-9_-]{16,80}$/.test(request.operationId) || !Number.isSafeInteger(request.expectedRevision) || request.expectedRevision < 0) throw new DomainError('Invalid sync envelope or account.');
         if (request.command.type.startsWith('profile.') && request.command.id !== `profile_${accountId}`) throw new DomainError('Cannot edit another account.');
         const requestHash = digest(request);
-        return this.database.transaction((tx) => {
+        const settled = this.database.transaction((tx) => {
             const existing = tx.get<{ RequestHash: string; Outcome: string }>('SELECT * FROM SyncReceipts WHERE AccountId=? AND OperationId=?', [accountId, request.operationId]);
             if (existing) {
                 if (existing.RequestHash !== requestHash) throw new DomainError('Operation ID reused with different content.');
-                return JSON.parse(existing.Outcome);
+                return { outcome: JSON.parse(existing.Outcome) as CommandOutcome, recorded: false };
             }
             const command = request.command;
             const head = tx.get<HeadRow>('SELECT * FROM SyncHeads WHERE Id=?', [command.id]);
@@ -233,8 +237,10 @@ export class SyncRepository {
                 outcome.replicas.push(replica); outcome.revisions[id] = replica.sequence;
             }
             tx.run('INSERT INTO SyncReceipts VALUES (?, ?, ?, ?)', [accountId, request.operationId, requestHash, JSON.stringify(outcome)]);
-            return outcome;
+            return { outcome, recorded: outcome.events.length > 0 };
         });
+        if (settled.recorded) for (const listener of this.changeListeners) listener();
+        return settled.outcome;
     }
 
     private requireBlob(tx: SqliteTransaction, id: string): void {

@@ -1,6 +1,7 @@
 import type { ImageMeta } from '@torimtg/core';
 import type { ImageCache, ImageState } from './ImageCache';
 import type { ImageMeasurer } from './image-measurer';
+import type { ArtMirror } from './art-mirror';
 
 export type ImageVariant = 'small' | 'normal' | 'large' | 'art_crop';
 /** Which side of the printed card: a double-faced card (transform, modal) has a back of its own. */
@@ -86,7 +87,8 @@ export function localDeckArtUrl(
  * Card images from Scryfall, stored once in the art cache and downloaded by one process at a
  * time: processes on this machine that share the cache wait for each other's downloads. Each
  * image is measured when it is stored, and the measurements are kept for the client to read
- * with a deck.
+ * with a deck. With a mirror (a second art cache, the NAS's), an image is copied from there
+ * before Scryfall is asked, and what Scryfall brings is copied up to it.
  */
 export class CardImageService {
 	private readonly inFlight = new Map<string, Promise<Buffer | null>>();
@@ -94,15 +96,18 @@ export class CardImageService {
 	private readonly cache: ImageCache;
 	private readonly measurer: ImageMeasurer;
 	private readonly fetchImage: typeof fetch;
+	private readonly mirror: ArtMirror | null;
 
 	constructor(
 		cache: ImageCache,
 		measurer: ImageMeasurer,
-		fetchImageArg?: typeof fetch
+		fetchImageArg?: typeof fetch,
+		mirrorArg?: ArtMirror | null
 	) {
 		this.cache = cache;
 		this.measurer = measurer;
 		this.fetchImage = fetchImageArg === undefined ? fetch : fetchImageArg;
+		this.mirror = mirrorArg === undefined ? null : mirrorArg;
 	}
 
 	/** The image, downloading it when no one has; null when Scryfall has none (a single-faced
@@ -202,13 +207,21 @@ export class CardImageService {
 		}
 	}
 
-	/** Downloads an image this service has claimed, and stores it or records the failure. */
+	/**
+	 * Downloads an image this service has claimed, from the mirror when it has it, else from
+	 * Scryfall, and stores it or records the failure.
+	 */
 	private async download(
 		id: string,
 		variant: ImageVariant,
 		face: CardFace,
 		key: string
 	): Promise<Buffer | null> {
+		const name = imageName(id, face);
+		const mirrored = this.mirror
+			? await this.mirror.read(variant, name).catch(() => null)
+			: null;
+		if (mirrored) return this.keep(id, variant, key, mirrored);
 		const url = `https://cards.scryfall.io/${variant}/${face}/${id[0]}/${id[1]}/${id}.jpg`;
 		let image: Buffer;
 		try {
@@ -239,10 +252,22 @@ export class CardImageService {
 			await this.cache.fail(key, String(error));
 			throw error;
 		}
+		await this.keep(id, variant, key, image);
+		if (this.mirror) this.mirror.push(variant, name, image);
+		return image;
+	}
+
+	/** Stores an image this service has claimed, and measures it. */
+	private async keep(
+		id: string,
+		variant: ImageVariant,
+		key: string,
+		image: Buffer
+	): Promise<Buffer> {
 		try {
 			await this.cache.set(key, image);
 		} catch (error) {
-			// Scryfall served it; storing it failed, so let the next request try again.
+			// The image was had; storing it failed, so let the next request try again.
 			await this.cache.release(key).catch(() => undefined);
 			throw error;
 		}

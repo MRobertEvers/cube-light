@@ -13,6 +13,8 @@ const {
 	localDeckArtUrl
 } = require('../build/src/images/card-images');
 const { NativeImageMeasurer } = require('../build/src/images/image-measurer');
+const { ArtMirror } = require('../build/src/images/art-mirror');
+const { mkdir, writeFile } = require('node:fs/promises');
 const { createRoutesImages } = require('../build/src/routes/images');
 const { cors } = require('../build/src/auth/middleware');
 const { thumbHashToApproximateAspectRatio } = require('@torimtg/core');
@@ -412,4 +414,39 @@ test('server processes sharing one cache and index download an image once', { ti
 		for (const child of children) if (child.exitCode === null) child.kill();
 	}
 	assert.deepEqual(await readFile(path.join(scratch.root, 'art_crop', `${id}.jpg`)), twoTone);
+}));
+
+test('an image the cache lacks is copied from the mirror before Scryfall is asked', () => withArtCache(async (scratch) => {
+	const mirrorRoot = path.join(scratch.root, '..', 'mirror');
+	await mkdir(path.join(mirrorRoot, 'art_crop'), { recursive: true });
+	await writeFile(path.join(mirrorRoot, 'art_crop', `${id}.jpg`), jpeg);
+	const mirror = new ArtMirror(mirrorRoot);
+	const cache = scratch.open();
+	const images = new CardImageService(cache, new NativeImageMeasurer(), async () => {
+		throw new Error('Scryfall was asked');
+	}, mirror);
+	assert.deepEqual(await images.get(id, 'art_crop'), jpeg);
+	assert.equal(mirror.fromMirror, 1);
+	// Now in this machine's cache: the mirror is not read again.
+	assert.deepEqual(await scratch.open().get(`art_crop/${id}`), jpeg);
+}));
+
+test('an image Scryfall brings is copied up to the mirror, and a broken mirror copy is passed over', () => withArtCache(async (scratch) => {
+	const mirrorRoot = path.join(scratch.root, '..', 'mirror');
+	await mkdir(path.join(mirrorRoot, 'normal'), { recursive: true });
+	await writeFile(path.join(mirrorRoot, 'normal', `${id}.jpg`), 'not a jpeg');
+	const mirror = new ArtMirror(mirrorRoot);
+	let downloads = 0;
+	const images = new CardImageService(scratch.open(), new NativeImageMeasurer(), async () => {
+		downloads++;
+		return new Response(jpeg, { headers: { 'Content-Type': 'image/jpeg' } });
+	}, mirror);
+	assert.deepEqual(await images.get(id, 'art_crop'), jpeg);
+	assert.deepEqual(await images.get(id, 'normal'), jpeg);
+	assert.equal(downloads, 2);
+	for (let waited = 0; mirror.toMirror < 1 && waited < 2000; waited += 20) await sleep(20);
+	assert.deepEqual(await readFile(path.join(mirrorRoot, 'art_crop', `${id}.jpg`)), jpeg);
+	// The mirror already had a file for normal (broken): it is left for whoever put it there.
+	assert.equal(await readFile(path.join(mirrorRoot, 'normal', `${id}.jpg`), 'utf8'), 'not a jpeg');
+	assert.deepEqual((await readdir(path.join(mirrorRoot, 'art_crop'))).filter((name) => name.endsWith('.part')), []);
 }));

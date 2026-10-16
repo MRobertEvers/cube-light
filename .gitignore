@@ -51,3 +51,6 @@ projects/clientv2/playwright-report/
 
 # Playwright MCP session logs and snapshots
 /.playwright-mcp/
+
+# Local settings (.env.template lists them)
+.env

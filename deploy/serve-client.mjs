@@ -7,14 +7,25 @@ import { createReadStream, readFileSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+// Settings from the repository's .env (CUBE_ENV_FILE names another; .env.template lists
+// them). A variable already set in the environment wins over the file.
+const settings = process.env.CUBE_ENV_FILE ||
+  fileURLToPath(new URL("../.env", import.meta.url));
+try {
+  process.loadEnvFile(settings);
+} catch (error) {
+  if (error.code !== "ENOENT") throw error;
+}
 const root = path.resolve(
     process.env.CLIENT_DIST_ROOT ||
       fileURLToPath(new URL("../projects/clientv2/dist/", import.meta.url)),
   ),
   retainedAssets = process.env.CLIENT_ASSET_ROOT
     ? path.resolve(process.env.CLIENT_ASSET_ROOT) : null,
-  port = Number(process.env.PORT ?? 3000),
-  host = process.env.HOST || "127.0.0.1";
+  port = Number(process.env.CUBE_CLIENT_PORT ?? process.env.PORT ?? 3000),
+  host = process.env.CUBE_CLIENT_HOST || process.env.HOST || "127.0.0.1",
+  apiOrigin = process.env.API_ORIGIN ||
+    `http://127.0.0.1:${process.env.CUBE_API_PORT || 4040}`;
 const types = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -32,11 +43,15 @@ const types = {
 const handler = async function (req, res) {
   try {
     if (req.url === '/api' || req.url.startsWith('/api/')) {
-      const upstream = new URL(process.env.API_ORIGIN || 'http://127.0.0.1:4040');
+      const upstream = new URL(apiOrigin);
       const transport = upstream.protocol === 'https:' ? https : http;
+      // The API trusts this hop (CUBE_TRUST_PROXY) to name the browser's address.
+      const peer = req.socket.remoteAddress || '';
+      const forwardedFor = req.headers['x-forwarded-for']
+        ? `${req.headers['x-forwarded-for']}, ${peer}` : peer;
       const forwarded = transport.request(upstream, {
         method: req.method, path: req.url.slice(4) || '/',
-        headers: Object.assign({}, req.headers, { 'x-forwarded-prefix': '/api' })
+        headers: Object.assign({}, req.headers, { 'x-forwarded-prefix': '/api', 'x-forwarded-for': forwardedFor })
       }, function (response) {
         res.writeHead(response.statusCode, response.headers); response.pipe(res);
       });

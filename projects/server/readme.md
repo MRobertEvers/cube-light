@@ -8,6 +8,10 @@ Use Node.js 24 or newer and install dependencies with `npm install` in this dire
 
 Run `npm start` to build and start the server on port 4040.
 
+The server reads its settings from `.env` in the repository's root (`CUBE_ENV_FILE` names
+another file); a variable already set in the environment wins. `.env.template` lists them:
+the ports, `CLIENT_ORIGINS`, the application database and its shared copy, and the art cache.
+
 Run `npm run dev` to build and start the server with hot reload. Changes to
 TypeScript source files recompile and restart the server automatically. Stop it
 with Ctrl-C. Changes to the SQLite card data or native name-index code require
@@ -110,6 +114,12 @@ the C library (`3rd/artcache`, a copy of mtg-ai's `torimtg/3rd/artcache` made by
   `<per-user data>/torimtg/scryfall_cache` (`%LOCALAPPDATA%` on Windows,
   `~/Library/Application Support` on macOS, `$XDG_DATA_HOME` or `~/.local/share`
   elsewhere). It may be on a network share used by several machines.
+- **The mirror** (optional, `TORIMTG_ART_MIRROR`, as torimtgd's `--art-mirror`) is a second
+  folder in the same layout behind the first, normally the NAS's behind a local one. An image
+  the folder lacks is copied from the mirror before Scryfall is asked, and one Scryfall brings is
+  copied up to the mirror in the background (written beside its place and renamed into it, at
+  most four at once). A mirror that is not mounted, or does not answer within 15 seconds, is
+  passed over for Scryfall.
 - **The index** is this machine's SQLite record of the folder: which images are there,
   which process here is downloading which, recent failures, and each image's
   measurements (size, palette and preview, served at `/images/<variant>/<id>.json`). It
@@ -140,6 +150,44 @@ there is downloaded again). To use another storage system, implement `ImageCache
 in `src/images/ImageCache.ts` and replace `ArtCacheImageCache` in `src/main.ts`. Run
 `npm run test:images` to test image fetching, the cache shared between processes and
 machines, and HTTP responses.
+
+## Shared database
+
+Several cube-light servers on one network can share their decks, collections and accounts
+through a copy of the application database on the NAS: the second level behind each server's own
+`database.sqlite`. Set `CUBE_SHARED_DATABASE` to the copy's path, by convention
+`<share>/cube-light/database/cube-light-application-database.sqlite`; a `README.txt` beside it
+says what it is. Each server keeps serving from its own database, and merges with the copy:
+
+- **at boot**, before it listens. A server with no database of its own starts from the copy, less
+  what belongs to the server that made it. The first server finds no copy and makes it.
+- **after its own changes**, `CUBE_SHARED_CHANGE_SECONDS` (30) after the first.
+- **every `CUBE_SHARED_SYNC_SECONDS`** (300), to take the other servers' changes.
+- **when it stops**, for at most 30 seconds.
+
+A merge takes `<copy>.lock` (made exclusively; one older than ten minutes is a dead server's and
+is taken over), copies the file to this machine, merges both ways, and writes the result back
+beside the copy and renames it into place. The copy is never opened where it lies, since SQLite's
+locks do not hold over SMB. `cube-light-application-database.json` holds the copy's revision, so
+when neither side has changed a merge reads only that. With the NAS away, the server serves its
+own database and merges when the NAS is back.
+
+What is merged (`src/sync/shared-merge.ts`):
+
+- **The event ledger.** Where one server's chain for a deck, collection, location, scan or
+  profile extends the other's, the missing events are copied as they are. Where both changed it
+  since they last merged, the copy's chain is kept and this server's own events are replayed on
+  top of it, as a git rebase does. Card quantity changes are recomputed from their deltas, so
+  both servers' additions count. An event that no longer applies (its deck was deleted on the
+  other server, say) is dropped, logged and kept in the `SharedMergeConflicts` table.
+- **Accounts**, by id and name. The newer password wins, and "sign out everywhere" carries over.
+  An account whose name has another id on the other server is a conflict and is left apart.
+- **Uploads** (scan photos, banner images), by their content hash.
+
+Sessions, signing keys, receipts, scan leases and each server's identity are never merged.
+Devices hold a session with one server, so a device signs in once to each.
+
+Run `node --test test/shared-database.test.js` (after `npm run compile`) to test merging.
 
 ## Parallax art (height maps)
 

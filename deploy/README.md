@@ -163,3 +163,44 @@ The pre-cleanup snapshot was retained after removing standalone retired model fi
 Run `node --test deploy/test/*.test.mjs` from the repository root. The tests publish an old build, remove its release directory, and verify that a new server still serves its lazy module and worker with the correct MIME/cache/range behavior. They also check current HTML, missing-model 404s, and immutable-file collision rejection.
 
 This fixes the observed late-scan error for `paddle-region-reader-CqU0OoUX.js`: an open tab had code from the earlier release, but the server only served the newer release's hashed filenames. Model inference was not the cause. Already-failed jobs do not resume automatically when an asset becomes available. Cards already imported remain in the deck; restarting a separate import into the same deck can duplicate them.
+
+## Hosting on Linux
+
+`matthew-NUC11PAHi7` serves `https://cube-light.mrobertevers.com`. The reverse proxy terminates
+TLS and reaches it over WireGuard (`10.0.0.8`) on port 4089. Two systemd user units, in
+`deploy/systemd/` and installed in `~/.config/systemd/user/`, run from this checkout:
+
+| Unit | What | Where |
+|---|---|---|
+| `cube-light.service` | `deploy/serve-client.mjs`: the built client, and `/api` passed on | `CUBE_CLIENT_HOST:CUBE_CLIENT_PORT` (`0.0.0.0:4089`) |
+| `cube-light-api.service` | the API server, `projects/server/build/src/main.js` | `CUBE_API_HOST:CUBE_API_PORT` (`127.0.0.1:4040`) |
+
+Both read `.env` in the repository's root (`.env.template` lists the settings). On this machine:
+
+- **Its database** is `projects/server/database.sqlite`. Its second level is the NAS's
+  `cube-light/database/cube-light-application-database.sqlite`, shared with the other cube-light
+  servers (`projects/server/readme.md`, "Shared database"). It started from the NAS backup of
+  2026-10-14.
+- **Its card art** is torimtgd's: `~/Documents/git_repos/mtg-ai-assets/scryfall`, with the NAS's
+  `mtg-ai-assets/scryfall` as the mirror behind it.
+- **Logins** need `CLIENT_ORIGINS` to name the site, because the proxy does not keep the browser's
+  `Host`. `CUBE_TRUST_PROXY` trusts loopback and the WireGuard network to name the browser's address.
+
+Lingering is on (`loginctl enable-linger`), so the units start at boot. The NAS is GNOME's gvfs
+mount, which appears only once the desktop session logs in. Until then the server serves its own
+database and art, and merges with the NAS within five minutes of the mount appearing. A CIFS
+mount in `/etc/fstab` would make the NAS available at boot as well.
+
+Its toolchain is under `~/.local/share/cube-light/`: Node 24 (`node`, the official build,
+checksum-verified) and Emscripten (`emsdk`). The system's Node is too old. To deploy a change:
+
+```sh
+export PATH=$HOME/.local/share/cube-light/node/bin:$PATH
+source ~/.local/share/cube-light/emsdk/emsdk_env.sh
+npm --prefix projects/server run build && npm --prefix projects/clientv2 run build
+systemctl --user restart cube-light-api cube-light
+journalctl --user -u cube-light-api -f      # its log: settings, merges, art
+```
+
+Add an account with `npm --prefix projects/server run create-user -- <name>`. The shared database
+then carries it to the other servers.

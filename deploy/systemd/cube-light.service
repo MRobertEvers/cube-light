@@ -1,0 +1,16 @@
+# cube-light's site: the built client (projects/clientv2/dist) on CUBE_CLIENT_HOST:CUBE_CLIENT_PORT
+# from the repository's .env, with /api passed to cube-light-api.service. A reverse proxy sends the
+# site's traffic here. Installed as cube-light-api.service says.
+[Unit]
+Description=cube-light site (client and /api)
+After=network-online.target cube-light-api.service
+Wants=network-online.target cube-light-api.service
+
+[Service]
+WorkingDirectory=%h/Documents/git_repos/cube-light
+ExecStart=%h/.local/share/cube-light/node/bin/node deploy/serve-client.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

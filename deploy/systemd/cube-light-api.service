@@ -1,0 +1,20 @@
+# cube-light's API server (projects/server), on CUBE_API_HOST:CUBE_API_PORT from the repository's
+# .env. A systemd user unit: copy to ~/.config/systemd/user/, then
+#   systemctl --user daemon-reload && systemctl --user enable --now cube-light-api cube-light
+# Paths assume the checkout at ~/Documents/git_repos/cube-light and Node 24 at
+# ~/.local/share/cube-light/node (deploy/README.md, "Hosting on Linux").
+[Unit]
+Description=cube-light API server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=%h/Documents/git_repos/cube-light/projects/server
+ExecStart=%h/.local/share/cube-light/node/bin/node --enable-source-maps build/src/main.js
+Restart=always
+RestartSec=5
+# A stop first gives the shared database (on the NAS) the last changes; that waits up to 30 s.
+TimeoutStopSec=45
+
+[Install]
+WantedBy=default.target
