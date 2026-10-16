@@ -16,7 +16,7 @@ import type {
 	BannerSubjectMask
 } from '../domain/appearance/banner-blend';
 import type { CardImagePipeline } from '../domain/scans/image-scan-pipelines';
-import type { CardImageCandidate, ImageRegion } from '../domain/scans/scan-candidates';
+import type { CardImageCandidate, ImageRegion, ImageScanLayout } from '../domain/scans/scan-candidates';
 import type { TableName } from './local-store/schema';
 import type { CardListProblem } from '../domain/card-names/card-list-problem';
 import type { OfflineShellStatus } from '../domain/models/offline-shell';
@@ -186,6 +186,7 @@ export type CardScanUpdate = {
 	completed: number;
 	total: number;
 	region: ImageRegion | null;
+	layout: ImageScanLayout | null;
 	candidates: CardImageCandidate[];
 	message?: string;
 	indeterminate?: boolean;
@@ -199,7 +200,7 @@ export interface CardScanner {
 		onUpdate: (update: CardScanUpdate) => void,
 		isCancelled: () => boolean,
 		options: { pipeline: CardImagePipeline }
-	): Promise<{ candidates: CardImageCandidate[]; width: number; height: number }>;
+	): Promise<{ layout: ImageScanLayout; candidates: CardImageCandidate[]; width: number; height: number }>;
 }
 
 export interface CardNameSearch {

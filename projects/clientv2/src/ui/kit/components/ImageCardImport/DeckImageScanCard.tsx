@@ -9,7 +9,7 @@ import { addScanCandidate, dismissScan } from 'src/redux/scans/scans.thunks';
 import { useImageImportQueue } from 'src/ui/kit/utils/use-image-import-queue';
 import { useWorkQueue } from 'src/ui/kit/utils/use-work-queue';
 import { workProgress, workStatusText } from 'src/ui/kit/utils/work-status';
-import type { ImageRegion } from 'src/domain/scans/scan-candidates';
+import { copiesOf, type ImageRegion } from 'src/domain/scans/scan-candidates';
 import { LogoInkwellPulse } from 'src/ui/kit/components/LogoInkwellPulse/LogoInkwellPulse';
 import { useDocumentScrollLock } from 'src/ui/kit/hooks/useDocumentScrollLock';
 import { useHotkey, useHotkeyLayer } from 'src/ui/kit/hotkeys/Hotkeys';
@@ -28,13 +28,13 @@ function groupCandidates(task: ImageScanTask): CandidateGroup[] {
 	for (const candidate of task.candidates) {
 		const item = groups.get(candidate.name);
 		if (item) {
-			item.count++;
+			item.count += copiesOf(candidate);
 			item.boxes.push(candidate.box);
 			item.score = Math.max(item.score, candidate.score);
 		} else {
 			groups.set(candidate.name, {
 				name: candidate.name,
-				count: 1,
+				count: copiesOf(candidate),
 				boxes: [candidate.box],
 				score: candidate.score
 			});
@@ -60,6 +60,13 @@ export function statusText(task: ImageScanTask): string {
 		case 'error':
 			return 'Image scan needs attention';
 	}
+}
+
+/** What the scan decided the image shows, once it can tell. */
+function layoutText(task: ImageScanTask): string {
+	if (task.layout === 'list') return ' Reading it as a deck list.';
+	if (task.layout === 'cards') return ' Reading it as cards.';
+	return '';
 }
 
 export function totalAdded(task: ImageScanTask): number {
@@ -247,7 +254,7 @@ export function ImageScanContent(props: { task: ImageScanTask }) {
 				/>
 				<p role="status">
 					{statusText(task)}. {task.candidates.length} name candidates
-					found.
+					found.{layoutText(task)}
 				</p>
 			</div>
 			<div
@@ -390,7 +397,9 @@ export function ImageScanContent(props: { task: ImageScanTask }) {
 									{group.name}
 								</button>
 								<small>
-									{group.count} seen · {added} added
+									{group.count}{' '}
+									{task.layout === 'list' ? 'listed' : 'seen'} ·{' '}
+									{added} added
 									{planned > added
 										? ` · ${planned - added} adding`
 										: ''}{' '}

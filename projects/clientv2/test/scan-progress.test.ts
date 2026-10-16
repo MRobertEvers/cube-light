@@ -36,6 +36,15 @@ test('recognition does not claim completion before cards are added', () => {
 			completed: 48,
 			total: 48
 		}).completed,
+		90
+	);
+	// A deck list then re-reads its counts.
+	assert.equal(
+		progressFor('paddle-only', {
+			phase: 'Read list counts',
+			completed: 14,
+			total: 14
+		}).completed,
 		99
 	);
 });

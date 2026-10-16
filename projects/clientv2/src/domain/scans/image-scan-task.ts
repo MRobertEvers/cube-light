@@ -1,5 +1,5 @@
 import type { CardImagePipeline } from './image-scan-pipelines';
-import type { CardImageCandidate, ImageRegion } from './scan-candidates';
+import type { CardImageCandidate, ImageRegion, ImageScanLayout } from './scan-candidates';
 
 export type ImageScanStatus =
 	'queued' | 'loading' | 'scanning' | 'adding' | 'completed' | 'error';
@@ -14,6 +14,8 @@ export type ImageScanTask = {
 	completed: number;
 	total: number;
 	region: ImageRegion | null;
+	/** Null until the scan has read enough text to tell. */
+	layout: ImageScanLayout | null;
 	candidates: CardImageCandidate[];
 	phaseLabel?: string;
 	progressIndeterminate?: boolean;

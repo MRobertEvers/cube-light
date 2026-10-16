@@ -51,3 +51,9 @@ test('a short exact name on its own stays in review', () => {
 	const [candidate] = matchDetections([{ items: [row('Fell', 600)] }], index);
 	assert.equal(candidate.status, 'review');
 });
+
+test('a card named like a face of another card is matched as itself', () => {
+	const faces = buildIndex(['Emeritus of Conflict // Lightning Bolt', 'Lightning Bolt']);
+	assert.equal(rankNames('Lightning Bolt', faces)[0].name, 'Lightning Bolt');
+	assert.equal(rankNames('Emeritus of Conflict', faces)[0].name, 'Emeritus of Conflict // Lightning Bolt');
+});

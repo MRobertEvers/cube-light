@@ -10,6 +10,13 @@ import {
 	bounds,
 	sameLine
 } from './photo-match.js';
+import {
+	acceptCountedLines,
+	attachCounts,
+	countTokens,
+	detectLayout
+} from './list-layout.js';
+import { readListCounts } from './list-counts.js';
 
 /**
  * @typedef {Object} ExperimentalScanOptions
@@ -61,14 +68,45 @@ export async function scanExperimental(options) {
 		}
 	});
 	passes.push(baseline);
-	let candidates = matchDetections(baseline.outputs, index).filter(
-		(c) => c.status === 'accepted'
-	);
-	await onStage('baseline', { candidates, pass: baseline });
+	const lines = matchDetections(baseline.outputs, index);
+	attachCounts(lines, countTokens(baseline.outputs), null);
+	const shape = detectLayout(lines);
+	if (shape.layout === 'list') {
+		// A list's names are plain text, so the card-title stages have nothing to add.
+		await onStage('layout', { layout: 'list', candidates: [] });
+		const image = await createImageBitmap(await (await fetch(url)).blob());
+		try {
+			passes.push(
+				await readListCounts(image, lines, shape.side, {
+					onProgress,
+					isCancelled
+				})
+			);
+		} finally {
+			image.close();
+		}
+		acceptCountedLines(lines);
+		const listed = lines.filter((c) => c.status === 'accepted');
+		await onStage('list', { layout: 'list', candidates: listed });
+		return {
+			engine: 'paddle-list',
+			pipeline,
+			layout: 'list',
+			names: Array.from(new Set(listed.map((c) => c.name))).sort(),
+			candidates: listed,
+			passes,
+			totalMs: performance.now() - started,
+			cancelled: isCancelled(),
+			usesCachedProposals: false
+		};
+	}
+	let candidates = lines.filter((c) => c.status === 'accepted');
+	await onStage('baseline', { layout: 'cards', candidates, pass: baseline });
 	if (pipeline === 'paddle-only')
 		return {
 			engine: 'paddle-text-only',
 			pipeline,
+			layout: 'cards',
 			names: Array.from(new Set(candidates.map((c) => c.name))).sort(),
 			candidates,
 			passes,
@@ -250,6 +288,7 @@ export async function scanExperimental(options) {
 		return {
 			engine: 'card-aware-paddle-medium',
 			pipeline,
+			layout: 'cards',
 			names: Array.from(new Set(candidates.map((c) => c.name))).sort(),
 			candidates,
 			passes,

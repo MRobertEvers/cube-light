@@ -1,5 +1,5 @@
 import type { ImportedCard } from 'src/domain/models/deck';
-import type { CardImageCandidate } from './scan-candidates';
+import { copiesOf, type CardImageCandidate } from './scan-candidates';
 
 /** All candidates have already resolved to canonical names from the card-name index. */
 export function resolvedCandidateAdditions(
@@ -8,7 +8,7 @@ export function resolvedCandidateAdditions(
 ): ImportedCard[] {
 	const totals = new Map<string, number>();
 	for (const candidate of candidates) {
-		totals.set(candidate.name, (totals.get(candidate.name) ?? 0) + 1);
+		totals.set(candidate.name, (totals.get(candidate.name) ?? 0) + copiesOf(candidate));
 	}
 	const additions: ImportedCard[] = [];
 	for (const [name, total] of totals) {

@@ -59,6 +59,7 @@ export class ImageImportQueue {
 				completed: task.completed,
 				total: task.total,
 				region: task.region,
+				layout: task.layout,
 				candidates: task.candidates.slice(),
 				addedCounts: Object.assign({}, task.addedCounts),
 				plannedCounts: Object.assign({}, task.plannedCounts),
@@ -96,6 +97,7 @@ export class ImageImportQueue {
 			completed: 0,
 			total: 0,
 			region: null,
+			layout: null,
 			candidates: [],
 			addedCounts: {},
 			plannedCounts: {},
@@ -215,6 +217,7 @@ export class ImageImportQueue {
 							task.completed = update.completed;
 							task.total = update.total;
 							task.region = update.region;
+							task.layout = update.layout;
 							task.candidates = update.candidates;
 							runner?.progress(update.completed, update.total);
 							this.scheduleResolvedMatches(task);

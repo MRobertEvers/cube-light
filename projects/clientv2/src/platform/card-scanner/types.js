@@ -5,8 +5,8 @@
  * @typedef {number[]} Point
  * @typedef {Point[]} Polygon
  * @typedef {{x: number, y: number, w: number, h: number}} Bounds
- * @typedef {{name: string, score: number, exact?: boolean}} NameMatch
- * @typedef {{entries: Array<{name: string, key: string}>, postings: Map<string, number[]>}} NameIndex
+ * @typedef {{name: string, score: number, exact?: boolean, face?: boolean}} NameMatch
+ * @typedef {{entries: Array<{name: string, key: string, face: boolean}>, postings: Map<string, number[]>}} NameIndex
  * @typedef {{phase?: string, completed?: number, total?: number}} ScanProgress
  * @typedef {(progress: ScanProgress) => void} ProgressCallback
  * @typedef {() => boolean} CancellationCallback

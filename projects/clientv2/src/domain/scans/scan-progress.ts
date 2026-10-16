@@ -9,6 +9,7 @@ type Stage = [number, number, string];
 const cardStages: Record<string, Stage> = {
 	'Prepare text reader': [0, 5, 'Loading text models'],
 	'Read visible titles': [5, 25, 'Reading text'],
+	'Read list counts': [25, 99, 'Reading card counts'],
 	'Build title index: light': [25, 28, 'Indexing card names · pass 1/3'],
 	'Title proposals: light': [28, 38, 'Finding titles · pass 1/3'],
 	'Build title index: ink': [38, 41, 'Indexing card names · pass 2/3'],
@@ -24,7 +25,8 @@ const cardStages: Record<string, Stage> = {
 };
 const textStages: Record<string, Stage> = {
 	'Prepare text reader': [0, 10, 'Loading text models'],
-	'Read visible titles': [10, 99, 'Reading text']
+	'Read visible titles': [10, 90, 'Reading text'],
+	'Read list counts': [90, 99, 'Reading card counts']
 };
 
 /** Stage-weighted work progress; never an elapsed-time or download estimate. */

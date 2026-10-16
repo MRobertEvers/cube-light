@@ -1,4 +1,5 @@
 // Pure browser/Node module. No photo labels, coordinates, or expected deck list.
+import { parseLine } from './list-layout.js';
 /**
  * @param {string} text
  */
@@ -27,7 +28,7 @@ export function buildIndex(names) {
 		.filter((name) => !name.startsWith('A-'))
 		.flatMap((name) =>
 			[name].concat(name.includes(' // ') ? name.split(' // ') : []).map(
-				(alias) => ({ name, key: normalize(alias) })
+				(alias) => ({ name, key: normalize(alias), face: alias !== name })
 			)
 		);
 	const postings = new Map();
@@ -81,9 +82,17 @@ export function rankNames(text, index) {
 			score =
 				1 - distance(key, target) / Math.max(key.length, target.length);
 		if (score > (byName.get(e.name)?.score ?? -1))
-			byName.set(e.name, { name: e.name, score, exact: key === e.key });
+			byName.set(e.name, {
+				name: e.name,
+				score,
+				exact: key === e.key,
+				face: e.face
+			});
 	}
-	return Array.from(byName.values()).sort((a, b) => b.score - a.score).slice(0, 3);
+	// "Lightning Bolt" is a card of its own before it is a face of another.
+	return Array.from(byName.values())
+		.sort((a, b) => b.score - a.score || Number(a.face) - Number(b.face))
+		.slice(0, 3);
 }
 /**
  * @param {import('./types.js').Polygon} poly
@@ -119,10 +128,9 @@ const NON_TITLE =
 export function matchDetections(outputs, index) {
 	const candidates = [];
 	for (const item of outputs.flatMap((o) => o.items)) {
-		// Deck lists put the count before the name: "4x Fell".
-		const text = item.text
-			.trim()
-			.replace(/^\d{1,2}\s*[xX×][\s(\[|]+(?=[A-Za-z])/, '');
+		// Deck lists write a count beside the name: "4x Fell", "Fell 4".
+		const line = parseLine(item.text),
+			text = line.text;
 		if (item.score < 0.45 || NON_TITLE.test(text) || /[()]/.test(text))
 			continue;
 		const ranked = rankNames(text, index);
@@ -147,7 +155,8 @@ export function matchDetections(outputs, index) {
 			poly: item.poly,
 			box: bounds(item.poly),
 			// A short name such as "Fell" matches too much rules text on its own.
-			shortExact: short && item.score >= 0.95
+			shortExact: short && item.score >= 0.95,
+			count: line.count
 		};
 		const duplicate = candidates.find((c) =>
 			sameLine(c.box, candidate.box)
@@ -160,8 +169,12 @@ export function matchDetections(outputs, index) {
 					c.ocrScore * 0.01
 				);
 			}
-			if (priority(candidate) > priority(duplicate))
+			if (priority(candidate) > priority(duplicate)) {
+				// Another read of the line may be the one that caught its count.
+				const count = candidate.count || duplicate.count;
 				Object.assign(duplicate, candidate);
+				duplicate.count = count;
+			} else if (!duplicate.count) duplicate.count = candidate.count;
 		} else candidates.push(candidate);
 	}
 	acceptListRows(candidates);
