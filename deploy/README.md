@@ -163,3 +163,22 @@ The pre-cleanup snapshot was retained after removing standalone retired model fi
 Run `node --test deploy/test/*.test.mjs` from the repository root. The tests publish an old build, remove its release directory, and verify that a new server still serves its lazy module and worker with the correct MIME/cache/range behavior. They also check current HTML, missing-model 404s, and immutable-file collision rejection.
 
 This fixes the observed late-scan error for `paddle-region-reader-CqU0OoUX.js`: an open tab had code from the earlier release, but the server only served the newer release's hashed filenames. Model inference was not the cause. Already-failed jobs do not resume automatically when an asset becomes available. Cards already imported remain in the deck; restarting a separate import into the same deck can duplicate them.
+
+### Public hostname: cube-light.mrobertevers.com
+
+`https://cube-light.mrobertevers.com` is served by the home server (`10.0.0.8`) on port
+**4089**, through the Node reverse proxy on the `mrobertevers.com` cloud box (`35.206.97.22`,
+VPN `10.0.0.1`). `torimtg.mrobertevers.com` → `10.0.0.8:8790` is set up the same way.
+
+- **DNS:** A record `cube-light` → `35.206.97.22` in the GoDaddy `mrobertevers.com` zone.
+  `scripts/public-host-dns.sh [label]` creates it (idempotent). It runs on the proxy box over
+  SSH so the GoDaddy token never leaves it.
+- **TLS:** ends at the proxy with its `*.mrobertevers.com` wildcard certificate, which renews
+  there by itself. Nothing to configure here.
+- **Route:** one entry in `HOST_APPS` in the dustinssols repo's `deploy/reverse-proxy.js` (the
+  source of truth for the proxy; see its `deploy/reverse-proxy.md`), deployed with
+  `./deploy/deploy.sh --proxy` from that repo. The path and WebSocket upgrades pass through
+  untouched as plain HTTP over the VPN, with `X-Forwarded-Proto: https`.
+- **On 10.0.0.8:** the app must listen on port 4089 bound to `0.0.0.0` (or the VPN address).
+  A `localhost`-only listener refuses the proxy and the site answers `502 Bad Gateway`. Add
+  `https://cube-light.mrobertevers.com` to `CLIENT_ORIGINS` if the API is on another origin.
