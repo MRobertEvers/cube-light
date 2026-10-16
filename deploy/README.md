@@ -166,7 +166,8 @@ This fixes the observed late-scan error for `paddle-region-reader-CqU0OoUX.js`: 
 
 ## Hosting on Linux
 
-`matthew-NUC11PAHi7` serves `https://cube-light.mrobertevers.com`. The reverse proxy terminates
+`matthew-NUC11PAHi7` serves `https://cube-lite.mrobertevers.com` (the older spelling
+`cube-light.mrobertevers.com` is routed there too). The reverse proxy terminates
 TLS and reaches it over WireGuard (`10.0.0.8`) on port 4089. Two systemd user units, in
 `deploy/systemd/` and installed in `~/.config/systemd/user/`, run from this checkout:
 
@@ -206,3 +207,22 @@ journalctl --user -u cube-light-api -f      # its log: settings, merges, art
 
 Add an account with `npm --prefix projects/server run create-user -- <name>`. The shared database
 then carries it to the other servers.
+
+### Public hostname: cube-lite.mrobertevers.com
+
+`https://cube-lite.mrobertevers.com` is served by the home server (`10.0.0.8`) on port
+**4089**, through the Node reverse proxy on the `mrobertevers.com` cloud box (`35.206.97.22`,
+VPN `10.0.0.1`). `torimtg.mrobertevers.com` → `10.0.0.8:8790` is set up the same way.
+
+- **DNS:** A record `cube-lite` (and the older `cube-light`) → `35.206.97.22` in the GoDaddy `mrobertevers.com` zone.
+  `scripts/public-host-dns.sh [label]` creates it (idempotent). It runs on the proxy box over
+  SSH so the GoDaddy token never leaves it.
+- **TLS:** ends at the proxy with its `*.mrobertevers.com` wildcard certificate, which renews
+  there by itself. Nothing to configure here.
+- **Route:** an entry per name in `HOST_APPS` in the dustinssols repo's `deploy/reverse-proxy.js` (the
+  source of truth for the proxy; see its `deploy/reverse-proxy.md`), deployed with
+  `./deploy/deploy.sh --proxy` from that repo. The path and WebSocket upgrades pass through
+  untouched as plain HTTP over the VPN, with `X-Forwarded-Proto: https`.
+- **On 10.0.0.8:** the app must listen on port 4089 bound to `0.0.0.0` (or the VPN address).
+  A `localhost`-only listener refuses the proxy and the site answers `502 Bad Gateway`. `CLIENT_ORIGINS`
+  in `.env` names both hostnames.

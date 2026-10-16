@@ -49,23 +49,35 @@ export async function freshProposals(image, names, options) {
 				indexBlur = blur;
 			}
 			const plane =
-					mode === 'plane'
-						? await (async function () {
-								onProgress({
-									phase: 'Straighten card plane',
-									completed: 0,
-									total: 0
-								});
-								const result = await rectifyPlane(image);
-								onProgress({
-									phase: 'Straighten card plane',
-									completed: 1,
-									total: 1
-								});
-								return result;
-							})()
-						: null,
-				source = plane?.canvas || image,
+				mode === 'plane'
+					? await (async function () {
+							onProgress({
+								phase: 'Straighten card plane',
+								completed: 0,
+								total: 0
+							});
+							// Screenshots and deck lists show no card outlines to straighten by.
+							const result = await rectifyPlane(image).catch(
+								(error) => {
+									if (
+										error instanceof Error &&
+										error.message ===
+											'No reliable plane reference'
+									)
+										return null;
+									throw error;
+								}
+							);
+							onProgress({
+								phase: 'Straighten card plane',
+								completed: 1,
+								total: 1
+							});
+							return result;
+						})()
+					: null;
+			if (mode === 'plane' && !plane) continue;
+			const source = plane?.canvas || image,
 				lines = plane
 					? await titleProposals(source)
 					: (imageLines ||= await titleProposals(source));

@@ -37,6 +37,7 @@ export function tileStarts(length, size, overlap) {
  * @property {number} [tileSize]
  * @property {number} [overlap]
  * @property {number} [scale]
+ * @property {{tileSize: number, overlap: number, scale: number}} [coarse] A second, shrunken tiling read after the fine one; skipped when one fine tile covers the image.
  * @property {number} [detThresh]
  * @property {number} [boxThresh]
  * @property {import('./types.js').ProgressCallback} [onProgress]
@@ -53,6 +54,7 @@ export async function scanPhoto(options) {
 		tileSize = 1400,
 		overlap = 300,
 		scale = 1,
+		coarse,
 		detThresh = 0.3,
 		boxThresh = 0.6,
 		onProgress,
@@ -107,14 +109,27 @@ export async function scanPhoto(options) {
 			total: 1
 		});
 		const loadMs = performance.now() - began;
-		const regions = tileStarts(image.height, tileSize, overlap).flatMap(
-			(y) =>
-				tileStarts(image.width, tileSize, overlap).map((x) => ({
-					x,
-					y,
-					w: Math.min(tileSize, image.width),
-					h: Math.min(tileSize, image.height)
-				}))
+		/**
+		 * @param {{tileSize: number, overlap: number, scale: number}} layout
+		 */
+		function tiles(layout) {
+			return tileStarts(image.height, layout.tileSize, layout.overlap).flatMap(
+				(y) =>
+					tileStarts(image.width, layout.tileSize, layout.overlap).map(
+						(x) => ({
+							x,
+							y,
+							w: Math.min(layout.tileSize, image.width),
+							h: Math.min(layout.tileSize, image.height),
+							scale: layout.scale
+						})
+					)
+			);
+		}
+		const regions = tiles({ tileSize, overlap, scale }).concat(
+			coarse && Math.max(image.width, image.height) > tileSize
+				? tiles(coarse)
+				: []
 		);
 		const outputs = [];
 		onProgress?.({
@@ -125,8 +140,8 @@ export async function scanPhoto(options) {
 		for (const region of regions) {
 			if (isCancelled()) break;
 			const canvas = document.createElement('canvas');
-			canvas.width = region.w * scale;
-			canvas.height = region.h * scale;
+			canvas.width = Math.round(region.w * region.scale);
+			canvas.height = Math.round(region.h * region.scale);
 			canvas
 				.getContext('2d')
 				.drawImage(
@@ -171,7 +186,7 @@ export async function scanPhoto(options) {
 					})
 				)[0].items;
 			outputs.push({
-				region,
+				region: { x: region.x, y: region.y, w: region.w, h: region.h },
 				ms: performance.now() - t,
 				items: items.map((item) => ({
 					text: item.text,
@@ -182,7 +197,10 @@ export async function scanPhoto(options) {
 						 */
 						(values) => {
 							const [x, y] = values;
-							return [x / scale + region.x, y / scale + region.y];
+							return [
+								x / region.scale + region.x,
+								y / region.scale + region.y
+							];
 						}
 					)
 				}))
@@ -204,6 +222,7 @@ export async function scanPhoto(options) {
 			tileSize,
 			overlap,
 			scale,
+			coarse,
 			detThresh,
 			boxThresh,
 			width: image.width,
