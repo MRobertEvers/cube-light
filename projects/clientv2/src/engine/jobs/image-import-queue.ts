@@ -85,6 +85,9 @@ export class ImageImportQueue {
 		const runner = runnerArg === undefined ? null : runnerArg;
 		const pipeline = pipelineArg === undefined ? 'card-aware' : pipelineArg;
 
+		// A queued item scanned again replaces this device's earlier run of it, so a failure the
+		// retry has got past does not stay on screen as "needs attention" beside it.
+		if (runner) this.forgetFinished(runner.workId);
 		const id = `scan-${++this.nextId}`;
 		this.tasks.push({
 			id,
@@ -117,6 +120,17 @@ export class ImageImportQueue {
 		URL.revokeObjectURL(task.imageUrl);
 		this.tasks = this.tasks.filter((item) => item.id !== id);
 		this.publish();
+	}
+
+	/** Drops this device's finished or failed runs of a queued item; one still running stays. */
+	private forgetFinished(workId: string) {
+		const finished = this.tasks.filter(
+			(item) =>
+				item.workId === workId &&
+				(item.status === 'completed' || item.status === 'error')
+		);
+		for (const task of finished) URL.revokeObjectURL(task.imageUrl);
+		this.tasks = this.tasks.filter((item) => !finished.includes(item));
 	}
 
 	private scheduleAdditions(
